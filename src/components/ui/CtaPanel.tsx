@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import { paths } from "@/lib/routes";
 import { ButtonLink } from "./ButtonLink";
 import { Container } from "./Container";
@@ -8,8 +9,11 @@ export function CtaPanel({
   title = "Tell us about your project.",
   body = "Share what you are planning and where. We will review the details and explain how we can help with drawings and the permit process.",
   primaryLabel = "Discuss Your Project",
+  href = paths.contact,
   id = "cta-heading",
 }: {
+  /** Inquiry link; service pages pass a link that preselects the project type. */
+  href?: Route;
   title?: string;
   body?: string;
   primaryLabel?: string;
@@ -28,7 +32,7 @@ export function CtaPanel({
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-navy-100/85">{body}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:col-span-4 lg:flex-col lg:items-stretch">
-            <ButtonLink href={paths.contact} variant="copper">
+            <ButtonLink href={href} variant="copper">
               {primaryLabel}
             </ButtonLink>
             <ButtonLink href={paths.howItWorks} variant="ghost-light">

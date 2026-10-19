@@ -23,6 +23,7 @@ export default function ServicesPage() {
     <>
       <PageHeader
         crumbs={[{ name: "Services", path: paths.services }]}
+        pageType="CollectionPage"
         eyebrow="Services"
         title="Permit drawings and permit guidance, from first question to municipal review."
         lead="We prepare the drawings and documentation a building permit application needs, and help you understand each step. Choose a service to see what it involves."

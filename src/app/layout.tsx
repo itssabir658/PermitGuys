@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, Newsreader } from "next/font/google";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { SiteTelemetry } from "@/components/layout/SiteTelemetry";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { site } from "@/content/site";
@@ -12,7 +13,6 @@ const newsreader = Newsreader({
   variable: "--font-newsreader",
   subsets: ["latin"],
   display: "swap",
-  axes: ["opsz"],
 });
 
 const instrumentSans = Instrument_Sans({
@@ -27,7 +27,18 @@ export const metadata: Metadata = {
   description: site.description,
   applicationName: site.name,
   // Until the production URL is configured, keep every page out of search indexes.
-  robots: site.indexable ? { index: true, follow: true } : { index: false, follow: false },
+  robots: site.indexable
+    ? {
+        index: true,
+        follow: true,
+        // Let search and answer engines show full snippets and large image previews.
+        googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large", "max-video-preview": -1 },
+      }
+    : { index: false, follow: false },
+  verification: {
+    google: site.verification.google,
+    ...(site.verification.bing ? { other: { "msvalidate.01": site.verification.bing } } : {}),
+  },
   formatDetection: { telephone: false, email: false, address: false },
 };
 
@@ -46,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </main>
         <SiteFooter />
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
+        <SiteTelemetry />
       </body>
     </html>
   );

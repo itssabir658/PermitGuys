@@ -1,10 +1,8 @@
 import { ArrowLink } from "@/components/ui/ButtonLink";
 import { FaqList } from "@/components/ui/FaqList";
-import { JsonLd } from "@/components/ui/JsonLd";
 import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { homeFaqs } from "@/content/faqs";
-import { faqSchema } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 
 export function HomeFaq() {
@@ -21,7 +19,6 @@ export function HomeFaq() {
           <FaqList faqs={homeFaqs} />
         </div>
       </div>
-      <JsonLd data={faqSchema(homeFaqs)} />
     </Section>
   );
 }

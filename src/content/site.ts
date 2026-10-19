@@ -20,8 +20,14 @@ export const site = {
     address: null as string | null,
     hours: null as string | null,
   },
+  /** Absolute or root-relative URL of the supplied logo (square, at least 112px). */
+  logo: null as string | null,
   /** Verified credentials only, such as designer registrations (BCIN). */
   credentials: [] as string[],
+  /**
+   * Official profiles the business controls, such as its Google Business
+   * Profile, LinkedIn or Houzz page. Used for schema.org `sameAs`.
+   */
   social: [] as { label: string; url: string }[],
   /**
    * Set NEXT_PUBLIC_SITE_URL to the production origin. Until it is set,
@@ -29,4 +35,9 @@ export const site = {
    */
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   indexable: Boolean(process.env.NEXT_PUBLIC_SITE_URL) && process.env.SITE_NOINDEX !== "true",
+  /** Search engine ownership tokens (meta tag method). See docs/SEARCH_CONSOLE.md. */
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    bing: process.env.BING_SITE_VERIFICATION || undefined,
+  },
 } as const;

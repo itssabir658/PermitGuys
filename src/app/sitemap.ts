@@ -5,7 +5,8 @@ import { absoluteUrl, paths } from "@/lib/routes";
 
 /**
  * Only canonical, indexable URLs: static pages plus generated pages for
- * services, guides, confirmed locations and approved projects.
+ * services, guides, confirmed locations and approved projects. Last-modified
+ * dates are included only where a real review date exists.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPaths = [
@@ -13,7 +14,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     paths.services,
     paths.serviceAreas,
     paths.guides,
-    paths.projects,
+    // The projects index is listed only once it has approved case studies.
+    ...(getProjects().length ? [paths.projects] : []),
     paths.howItWorks,
     paths.about,
     paths.contact,

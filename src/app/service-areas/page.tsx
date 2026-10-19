@@ -22,6 +22,7 @@ export default function ServiceAreasPage() {
     <>
       <PageHeader
         crumbs={[{ name: "Service areas", path: paths.serviceAreas }]}
+        pageType="CollectionPage"
         eyebrow="Service areas"
         title="Permit support across the Greater Toronto Area."
         lead="Each GTA municipality runs its own building department, with its own by-laws, forms and submission requirements. We work with homeowners and property owners across the GTA."

@@ -27,6 +27,17 @@ describe("content validation", () => {
     expect(() => validateContent({ ...base, guides: g })).toThrow(/question/);
   });
 
+  it("requires question-led guide section headings", () => {
+    const g = [{ ...guides[0], sections: [{ ...guides[0].sections[0], heading: "Who issues permits" }] }, ...guides.slice(1)];
+    expect(() => validateContent({ ...base, guides: g })).toThrow(/heading should be phrased as a question/);
+  });
+
+  it("rejects malformed tables", () => {
+    const sec = { heading: "How long?", paragraphs: ["Text."], table: { caption: "c", columns: ["a", "b"], rows: [["only one"]], source: "s" } };
+    const g = [{ ...guides[0], sections: [sec] }, ...guides.slice(1)];
+    expect(() => validateContent({ ...base, guides: g })).toThrow(/1 cells for 2 columns/);
+  });
+
   it("rejects a reviewer without a review date", () => {
     const g = [{ ...guides[0], reviewer: { name: "A. Person", credentials: "BCIN" }, lastReviewed: null }, ...guides.slice(1)];
     expect(() => validateContent({ ...base, guides: g })).toThrow(/lastReviewed/);

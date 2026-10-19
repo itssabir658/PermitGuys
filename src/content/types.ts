@@ -93,10 +93,25 @@ export interface Service {
   seo: SeoFields;
 }
 
+export interface DataTable {
+  caption: string;
+  columns: string[];
+  rows: string[][];
+  /** Where the figures come from, shown under the table. */
+  source: string;
+}
+
 export interface GuideSection {
+  /** Phrase as the question a reader would ask. */
   heading: string;
   paragraphs: string[];
   list?: string[];
+  table?: DataTable;
+}
+
+export interface KeyTerm {
+  term: string;
+  definition: string;
 }
 
 export interface Guide {
@@ -108,6 +123,8 @@ export interface Guide {
   summary: string;
   directAnswer: string;
   sections: GuideSection[];
+  /** Plain-language definitions of terms the guide relies on. */
+  keyTerms?: KeyTerm[];
   sources: SourceRef[];
   /** ISO date of the last human review, or null until a review happens. */
   lastReviewed: string | null;

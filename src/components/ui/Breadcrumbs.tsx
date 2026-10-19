@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { breadcrumbSchema } from "@/lib/jsonld";
+import { breadcrumbSchema, webPageSchema, type WebPageType } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 import { JsonLd } from "./JsonLd";
 
@@ -9,8 +9,18 @@ export interface Crumb {
   path: string;
 }
 
-/** Visible breadcrumb trail plus matching BreadcrumbList structured data. */
-export function Breadcrumbs({ items, onDark }: { items: Crumb[]; onDark?: boolean }) {
+export interface PageSchema {
+  /** The page's visible name, normally its H1. */
+  name: string;
+  type?: WebPageType;
+  extra?: Record<string, unknown>;
+}
+
+/**
+ * Visible breadcrumb trail plus matching structured data: the page's WebPage
+ * entity and a BreadcrumbList that mirrors the visible trail.
+ */
+export function Breadcrumbs({ items, onDark, page }: { items: Crumb[]; onDark?: boolean; page: PageSchema }) {
   const trail = [{ name: "Home", path: paths.home }, ...items];
   return (
     <>
@@ -37,7 +47,12 @@ export function Breadcrumbs({ items, onDark }: { items: Crumb[]; onDark?: boolea
           })}
         </ol>
       </nav>
-      <JsonLd data={breadcrumbSchema(trail)} />
+      <JsonLd
+        data={[
+          webPageSchema({ path: trail[trail.length - 1].path, name: page.name, type: page.type, extra: page.extra }),
+          breadcrumbSchema(trail),
+        ]}
+      />
     </>
   );
 }

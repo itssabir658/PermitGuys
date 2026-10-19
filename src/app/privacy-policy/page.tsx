@@ -31,8 +31,11 @@ export default function PrivacyPage() {
           <p>When you send an inquiry, we collect the details you choose to provide, such as:</p>
           <ul>
             <li>your name, email address and, if you provide it, phone number;</li>
-            <li>the municipality of the property and a description of your project.</li>
+            <li>your preferred contact method, the municipality or location of the property and a description of your project.</li>
           </ul>
+          <p>
+            With an inquiry we also record how you found the website, where available: campaign tags in the link you followed, the name of the website that referred you and the first page you visited. We do not record the full address of the referring page.
+          </p>
           <p>
             We may also collect basic technical information, such as pages visited, to understand how the website is used. <Placeholder>name any analytics tool, or state that none is used</Placeholder>
           </p>
