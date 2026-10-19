@@ -28,11 +28,11 @@ export function SectionHeading({
   return (
     <div className={cn("max-w-3xl", className)}>
       {eyebrow ? <Eyebrow onDark={onDark} code={code}>{eyebrow}</Eyebrow> : null}
-      <Tag id={id} className={cn("mt-6 font-display text-balance", size === "lg" ? "text-display-lg" : "text-display-md", onDark ? "text-paper" : "text-navy-900")}>
+      <Tag id={id} className={cn("mt-6 font-display text-balance", size === "lg" ? "text-display-lg" : "text-display-md", onDark ? "text-paper" : "text-charcoal-900")}>
         {title}
       </Tag>
       {intro ? (
-        <div className={cn("mt-6 max-w-2xl text-lg leading-relaxed text-pretty", onDark ? "text-navy-100/85" : "text-ink-muted")}>
+        <div className={cn("mt-6 max-w-2xl text-lg leading-relaxed text-pretty", onDark ? "text-charcoal-100/85" : "text-ink-muted")}>
           {intro}
         </div>
       ) : null}

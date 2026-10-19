@@ -22,20 +22,20 @@ import { paths } from "@/lib/routes";
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="border-t border-white/10 py-4 first:border-t-0 first:pt-0 last:pb-0">
-      <dt className="text-label text-copper-300">{label}</dt>
-      <dd className="mt-1.5 leading-relaxed text-navy-100/90">{children}</dd>
+      <dt className="text-label text-brand-300">{label}</dt>
+      <dd className="mt-1.5 leading-relaxed text-charcoal-100/90">{children}</dd>
     </div>
   );
 }
 
-const linkClass = "underline decoration-copper-300/60 underline-offset-4 hover:text-paper hover:decoration-copper-300";
+const linkClass = "underline decoration-brand-300/60 underline-offset-4 hover:text-paper hover:decoration-brand-300";
 
 export function ReviewsAndMap({ reviews }: { reviews: ReviewSummary | null }) {
   const projects = getProjects().slice(0, 3);
   const { credentials, map } = site;
 
   return (
-    <section aria-labelledby="proof-heading" className="bg-glow-navy relative overflow-hidden text-paper">
+    <section aria-labelledby="proof-heading" className="bg-glow-dark relative overflow-hidden text-paper">
       <div aria-hidden="true" className="bg-drafting-grid-dark absolute inset-0 opacity-70" />
       <Container className="relative py-16 sm:py-20 lg:py-28">
         <div data-reveal="">
@@ -105,8 +105,8 @@ export function ReviewsAndMap({ reviews }: { reviews: ReviewSummary | null }) {
                   <Link href={paths.project(p.slug)} className="group glass-dark block h-full rounded-3xl p-2 transition-transform duration-500 ease-out-soft hover:-translate-y-1">
                     <Figure visual={p.visual} tone="dark" caption={false} />
                     <span className="block p-4">
-                      <span className="block font-display text-xl text-paper group-hover:text-copper-300">{p.title}</span>
-                      <span className="mt-2 block text-navy-100/75">{p.summary}</span>
+                      <span className="block font-display text-xl text-paper group-hover:text-brand-300">{p.title}</span>
+                      <span className="mt-2 block text-charcoal-100/75">{p.summary}</span>
                     </span>
                   </Link>
                 </li>

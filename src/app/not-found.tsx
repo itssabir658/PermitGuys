@@ -12,20 +12,20 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <section className="bg-glow-navy relative overflow-hidden text-paper">
-      <div aria-hidden="true" className="bg-drafting-grid-dark absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_95%)]" />
+    <section className="bg-glow-paper relative overflow-hidden text-charcoal-900">
+      <div aria-hidden="true" className="bg-drafting-grid absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_95%)]" />
       <Container className="relative py-24 sm:py-32">
-        <Eyebrow onDark>Page not found</Eyebrow>
+        <Eyebrow>Page not found</Eyebrow>
         <h1 className="mt-6 max-w-3xl font-display text-display-lg">We could not find that page.</h1>
-        <p className="mt-6 max-w-xl text-lg text-navy-100/85">The link may be out of date, or the page may have moved. These are good places to continue.</p>
+        <p className="mt-6 max-w-xl text-lg text-ink-muted">The link may be out of date, or the page may have moved. These are good places to continue.</p>
         <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row">
-          <ButtonLink href={paths.home} variant="copper">
+          <ButtonLink href={paths.home} variant="brand">
             Go to the homepage
           </ButtonLink>
-          <ButtonLink href={paths.services} variant="ghost-light">
+          <ButtonLink href={paths.services} variant="secondary">
             Explore services
           </ButtonLink>
-          <ButtonLink href={paths.guides} variant="ghost-light">
+          <ButtonLink href={paths.guides} variant="secondary">
             Read permit guides
           </ButtonLink>
         </div>

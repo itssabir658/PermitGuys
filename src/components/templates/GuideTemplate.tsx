@@ -42,12 +42,12 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
         lead={guide.summary}
         schemaExtra={guidePageFacts(guide)}
       >
-        <DirectAnswer onDark>{guide.directAnswer}</DirectAnswer>
-        <p className="mt-6 text-sm text-navy-100/70">
+        <DirectAnswer>{guide.directAnswer}</DirectAnswer>
+        <p className="mt-6 text-sm text-ink-muted">
           {guide.lastReviewed ? (
             <>Last reviewed {formatDate(guide.lastReviewed)}</>
           ) : (
-            <Placeholder onDark>review date, set once a qualified reviewer has checked this guide</Placeholder>
+            <Placeholder>review date, set once a qualified reviewer has checked this guide</Placeholder>
           )}
         </p>
       </PageHeader>
@@ -74,7 +74,7 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
             <dl className="max-w-3xl divide-y divide-line border-y border-line">
               {guide.keyTerms.map((t) => (
                 <div key={t.term} className="grid gap-2 py-5 sm:grid-cols-[12rem_1fr] sm:gap-8">
-                  <dt className="font-semibold text-navy-900">{t.term}</dt>
+                  <dt className="font-semibold text-charcoal-900">{t.term}</dt>
                   <dd className="leading-relaxed text-ink">{t.definition}</dd>
                 </div>
               ))}
@@ -95,7 +95,7 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
         >
           <SourceList sources={guide.sources} />
           <div className="mt-10 border-t border-line pt-8 text-[0.95rem] text-ink-muted">
-            <h3 className="font-semibold text-navy-900">Reviewed by</h3>
+            <h3 className="font-semibold text-charcoal-900">Reviewed by</h3>
             <p className="mt-2">
               {guide.reviewer ? (
                 <>

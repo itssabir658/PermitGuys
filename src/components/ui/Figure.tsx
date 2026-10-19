@@ -33,12 +33,12 @@ export function Figure({
 }) {
   const { photo } = visual;
   return (
-    <figure className={cn("relative", framed && (tone === "dark" ? "glass-dark rounded-[1.75rem] p-2" : "glass rounded-[1.75rem] p-2"), className)}>
+    <figure className={cn("relative", framed && (tone === "dark" ? "rounded-[1.75rem] bg-charcoal-900 p-2 shadow-[0_40px_80px_-40px_rgb(28_28_28/0.6)]" : "glass rounded-[1.75rem] p-2"), className)}>
       <div
         className={cn(
           "relative overflow-hidden rounded-[1.25rem]",
           aspect,
-          tone === "dark" ? "bg-navy-800 bg-drafting-grid-dark text-paper/80" : "bg-paper-100 bg-drafting-grid text-navy-900",
+          tone === "dark" ? "bg-charcoal-800 bg-drafting-grid-dark text-paper/80" : "bg-paper-100 bg-drafting-grid text-charcoal-900",
         )}
       >
         {photo ? (
@@ -50,7 +50,7 @@ export function Figure({
         )}
       </div>
       {caption ? (
-        <figcaption className={cn("mt-3 text-xs", framed && "px-3 pb-1", captionOnDark ? "text-navy-100/70" : "text-ink-muted")}>
+        <figcaption className={cn("mt-3 text-xs", framed && "px-3 pb-1", captionOnDark ? "text-charcoal-100/70" : "text-ink-muted")}>
           {photo ? (
             <>Photo: {photo.credit} ({photo.licence})</>
           ) : (

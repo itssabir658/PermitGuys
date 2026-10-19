@@ -4,19 +4,19 @@ import type { ReactNode } from "react";
 import { ArrowRight } from "./Icons";
 import { cn } from "./cn";
 
-type Variant = "primary" | "secondary" | "copper" | "ghost-light";
+type Variant = "primary" | "secondary" | "brand" | "ghost-light";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-navy-900 text-paper shadow-[0_10px_30px_-12px_rgb(20_38_61/0.6)] hover:bg-navy-800",
-  secondary: "glass text-navy-900 hover:bg-white/80",
-  copper: "bg-copper-500 text-navy-950 shadow-[0_12px_32px_-12px_rgb(199_122_69/0.75)] hover:bg-copper-300",
+  primary: "bg-charcoal-900 text-paper shadow-[0_10px_30px_-12px_rgb(28_28_28/0.55)] hover:bg-charcoal-800",
+  secondary: "glass text-charcoal-900 hover:bg-white/80",
+  brand: "bg-brand-500 text-white shadow-[0_12px_32px_-12px_rgb(202_58_49/0.6)] hover:bg-brand-600",
   "ghost-light": "glass-dark text-paper hover:bg-white/10",
 };
 
 const arrowCell: Record<Variant, string> = {
   primary: "bg-white/10",
-  secondary: "bg-navy-900 text-paper",
-  copper: "bg-navy-950/10",
+  secondary: "bg-charcoal-900 text-paper",
+  brand: "bg-white/15",
   "ghost-light": "bg-white/10",
 };
 
@@ -61,7 +61,7 @@ export function ArrowLink({ href, children, className, onDark }: { href: Route; 
       href={href}
       className={cn(
         "group inline-flex items-center gap-2 border-b pb-1 text-[0.95rem] font-semibold transition-colors",
-        onDark ? "border-copper-300/60 text-paper hover:border-copper-300" : "border-copper-500/60 text-navy-900 hover:border-copper-600",
+        onDark ? "border-brand-300/60 text-paper hover:border-brand-300" : "border-brand-500/60 text-charcoal-900 hover:border-brand-600",
         className,
       )}
     >

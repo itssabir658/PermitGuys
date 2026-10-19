@@ -1,36 +1,39 @@
 @import "tailwindcss";
 
 /*
- * PermitGuys design tokens.
- * Brand colours: deep navy #14263D, warm off-white #F7F6F2 and copper
- * #C77A45, with tints derived from them. Use copper-700 for small copper
- * text on light grounds and copper-300 on navy so both meet WCAG AA.
+ * PermitGuys design tokens, from the logo and permitguys.ca: logo red #EE352F
+ * (brand-400, for marks and drawings), button red #CA3A31 (brand-500, for
+ * text and fills), charcoal #27272A and near-black #1C1C1C, white and a pale
+ * cool grey #F2F5F9. Pages are pale grey and white with charcoal bands.
+ * brand-500 passes WCAG AA as text on white and on the grey (the logo red
+ * does not); on charcoal use brand-300. White text sits on red fills.
  * Type: Lufga for headings and Gilroy for body (see src/app/fonts.ts).
  */
 @theme {
-  --color-navy-950: #0d1a2b;
-  --color-navy-900: #14263d;
-  --color-navy-800: #1d3452;
-  --color-navy-700: #2b4566;
-  --color-navy-600: #445d7d;
-  --color-navy-300: #a9b6c6;
-  --color-navy-100: #e3e8ee;
+  --color-charcoal-950: #141416;
+  --color-charcoal-900: #1c1c1c;
+  --color-charcoal-800: #27272a;
+  --color-charcoal-700: #3a3a3e;
+  --color-charcoal-600: #55555b;
+  --color-charcoal-300: #b4b4ba;
+  --color-charcoal-100: #e7e7ea;
 
-  --color-paper: #f7f6f2;
-  --color-paper-100: #f1efe8;
-  --color-paper-200: #e8e4da;
-  --color-paper-300: #d8d2c4;
+  --color-paper: #f2f5f9;
+  --color-paper-100: #e9edf2;
+  --color-paper-200: #dfe4ea;
+  --color-paper-300: #ced5dd;
 
-  --color-copper-300: #e2b18c;
-  --color-copper-500: #c77a45;
-  --color-copper-600: #ad6534;
-  --color-copper-700: #8f5129;
-  --color-copper-800: #74401f;
+  --color-brand-300: #f28b82;
+  --color-brand-400: #ee352f;
+  --color-brand-500: #ca3a31;
+  --color-brand-600: #b3322a;
+  --color-brand-700: #9c2a23;
+  --color-brand-800: #7f221c;
 
-  --color-ink: #14263d;
-  --color-ink-muted: #4c5a6b;
-  --color-line: #d8d2c4;
-  --color-line-strong: #b9b1a0;
+  --color-ink: #1c1c1c;
+  --color-ink-muted: #55585e;
+  --color-line: #dcdee1;
+  --color-line-strong: #b9bec6;
 
   --font-display: var(--font-heading), "Lufga", ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-body), "Gilroy", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -65,9 +68,8 @@
     scroll-padding-top: 6rem;
   }
 
-  /* Navy shows only behind the floating header and on overscroll; main is paper. */
   body {
-    background-color: var(--color-navy-900);
+    background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
     text-rendering: optimizeLegibility;
@@ -79,12 +81,12 @@
   }
 
   ::selection {
-    background-color: var(--color-copper-300);
-    color: var(--color-navy-950);
+    background-color: var(--color-brand-300);
+    color: var(--color-charcoal-950);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-copper-600);
+    outline: 2px solid var(--color-brand-600);
     outline-offset: 3px;
   }
 
@@ -137,29 +139,29 @@
     top: 0.8em;
     width: 0.7em;
     height: 1px;
-    background-color: var(--color-copper-500);
+    background-color: var(--color-brand-500);
   }
   .prose-pg a {
-    color: var(--color-copper-700);
+    color: var(--color-brand-700);
     text-decoration: underline;
     text-underline-offset: 0.2em;
     text-decoration-thickness: 1px;
   }
   .prose-pg a:hover {
-    color: var(--color-navy-900);
+    color: var(--color-charcoal-900);
   }
 
-  /* Navy and paper grounds with soft copper and steel glows, so glass reads as glass. */
-  .bg-glow-navy {
+  /* Charcoal and pale grey grounds with soft red and grey glows, so glass reads as glass. */
+  .bg-glow-dark {
     background:
-      radial-gradient(55% 60% at 88% 0%, rgb(199 122 69 / 0.3), transparent 70%),
-      radial-gradient(45% 55% at 0% 100%, rgb(68 93 125 / 0.55), transparent 70%),
-      var(--color-navy-900);
+      radial-gradient(55% 60% at 88% 0%, rgb(202 58 49 / 0.3), transparent 70%),
+      radial-gradient(45% 55% at 0% 100%, rgb(110 116 128 / 0.55), transparent 70%),
+      var(--color-charcoal-900);
   }
   .bg-glow-paper {
     background:
-      radial-gradient(40% 45% at 100% 0%, rgb(199 122 69 / 0.13), transparent 70%),
-      radial-gradient(40% 55% at 0% 100%, rgb(68 93 125 / 0.12), transparent 70%),
+      radial-gradient(40% 45% at 100% 0%, rgb(202 58 49 / 0.13), transparent 70%),
+      radial-gradient(40% 55% at 0% 100%, rgb(110 116 128 / 0.12), transparent 70%),
       var(--color-paper);
   }
 
@@ -177,7 +179,7 @@
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(199 122 69 / 0.16), transparent 45%);
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(202 58 49 / 0.16), transparent 45%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -203,14 +205,14 @@
   /* Hairline drafting grid used behind drawings and on dark panels. */
   .bg-drafting-grid {
     background-image:
-      linear-gradient(to right, rgb(20 38 61 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(20 38 61 / 0.06) 1px, transparent 1px);
+      linear-gradient(to right, rgb(28 28 28 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(28 28 28 / 0.06) 1px, transparent 1px);
     background-size: 24px 24px;
   }
   .bg-drafting-grid-dark {
     background-image:
-      linear-gradient(to right, rgb(247 246 242 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(247 246 242 / 0.05) 1px, transparent 1px);
+      linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 }
@@ -223,7 +225,7 @@
   border: 1px solid rgb(255 255 255 / 0.75);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.7),
-    0 16px 40px -20px rgb(20 38 61 / 0.28);
+    0 16px 40px -20px rgb(28 28 28 / 0.28);
 }
 @utility glass-dark {
   background-color: rgb(255 255 255 / 0.06);

@@ -20,7 +20,7 @@ export const metadata = pageMetadata({
 // Google reviews refresh once a day (REVIEWS_REVALIDATE_SECONDS in src/lib/reviews.ts).
 export const revalidate = 86400;
 
-const linkClass = "text-navy-900 underline underline-offset-4 hover:text-copper-700";
+const linkClass = "text-charcoal-900 underline underline-offset-4 hover:text-brand-700";
 
 export default async function ContactPage() {
   const { contact, map } = site;
@@ -62,25 +62,25 @@ export default async function ContactPage() {
           </div>
           <div className="space-y-4 lg:col-span-5">
           <aside className="glass rounded-3xl p-6 sm:p-8" aria-labelledby="direct-heading">
-            <h2 id="direct-heading" className="text-label text-copper-700">
+            <h2 id="direct-heading" className="text-label text-brand-700">
               Contact directly
             </h2>
-            <dl className="mt-4 divide-y divide-navy-900/[0.08]">
+            <dl className="mt-4 divide-y divide-charcoal-900/[0.08]">
               <div className="py-4">
                 <dt className="text-sm text-ink-muted">Phone</dt>
-                <dd className="mt-1 text-navy-900">
+                <dd className="mt-1 text-charcoal-900">
                   {contact.phone ? <PhoneLink location="contact-sidebar" className={linkClass} /> : <Placeholder>phone number</Placeholder>}
                 </dd>
               </div>
               <div className="py-4">
                 <dt className="text-sm text-ink-muted">Email</dt>
-                <dd className="mt-1 text-navy-900">
+                <dd className="mt-1 text-charcoal-900">
                   {contact.email ? <EmailLink location="contact-sidebar" className={linkClass} /> : <Placeholder>email address</Placeholder>}
                 </dd>
               </div>
               <div className="py-4">
                 <dt className="text-sm text-ink-muted">Hours</dt>
-                <dd className="mt-1 text-navy-900">{contact.hours ?? <Placeholder>business hours</Placeholder>}</dd>
+                <dd className="mt-1 text-charcoal-900">{contact.hours ?? <Placeholder>business hours</Placeholder>}</dd>
               </div>
             </dl>
             <p className="mt-4 text-sm leading-relaxed text-ink-muted">

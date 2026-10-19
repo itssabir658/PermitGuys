@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /*
  * Front elevation of a GTA bungalow with a proposed second storey, drawn the
  * way a permit set shows it: existing work in solid line, work to be removed
- * dashed, new work in copper, with level datums and a legend. It is an
+ * dashed, new work in red, with level datums and a legend. It is an
  * illustration, not a real project, and is captioned as such.
  *
  * `view` switches between the house as it stands and the proposal. New
@@ -55,7 +55,7 @@ const fade = "motion-safe:transition-opacity motion-safe:duration-500";
 
 export function HeroDrawing({
   className,
-  accent = "#E2B18C",
+  accent = "#EE352F",
   view = "proposed",
   drawKey = 0,
 }: {

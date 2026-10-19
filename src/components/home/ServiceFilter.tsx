@@ -39,14 +39,14 @@ export function ServiceFilter({ heading, counts, children, className }: { headin
                 }}
                 className={cn(
                   "inline-flex min-h-11 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold sm:px-4 transition-colors duration-300",
-                  filter === f.id ? "bg-navy-900 text-paper shadow-[0_8px_20px_-10px_rgb(20_38_61/0.7)]" : "text-navy-800 hover:bg-white/80",
+                  filter === f.id ? "bg-charcoal-900 text-paper shadow-[0_8px_20px_-10px_rgb(28_28_28/0.7)]" : "text-charcoal-800 hover:bg-white/80",
                 )}
               >
                 <span>
                   {f.label}
                   {f.more ? <span className="hidden sm:inline">{f.more}</span> : null}
                 </span>
-                <span className={cn("rounded-full px-1.5 text-xs tabular-nums", filter === f.id ? "bg-white/15" : "bg-navy-900/[0.07]")}>{counts[f.id]}</span>
+                <span className={cn("rounded-full px-1.5 text-xs tabular-nums", filter === f.id ? "bg-white/15" : "bg-charcoal-900/[0.07]")}>{counts[f.id]}</span>
               </button>
             ))}
           </div>

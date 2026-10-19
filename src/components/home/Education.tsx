@@ -30,18 +30,18 @@ export function Education() {
           {guides.map((g, i) => (
             <li
               key={g.slug}
-              className="spotlight group glass relative flex flex-col rounded-3xl p-6 transition-transform duration-500 ease-out-soft hover:-translate-y-1 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-copper-600 sm:p-7"
+              className="spotlight group glass relative flex flex-col rounded-3xl p-6 transition-transform duration-500 ease-out-soft hover:-translate-y-1 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-brand-600 sm:p-7"
             >
-              <p className="text-label text-copper-700">Guide {String(i + 1).padStart(2, "0")}</p>
-              <h3 className="mt-4 font-display text-[1.45rem] leading-snug text-balance text-navy-900">
+              <p className="text-label text-brand-700">Guide {String(i + 1).padStart(2, "0")}</p>
+              <h3 className="mt-4 font-display text-[1.45rem] leading-snug text-balance text-charcoal-900">
                 <Link href={paths.guide(g.slug)} className="after:absolute after:inset-0 after:rounded-3xl after:content-[''] focus-visible:outline-none">
                   {g.title}
                 </Link>
               </h3>
               <p className="mt-3 leading-relaxed text-ink-muted">{g.summary}</p>
-              <span aria-hidden="true" className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-navy-900">
+              <span aria-hidden="true" className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-charcoal-900">
                 Read the guide
-                <ArrowRight className="size-4 text-copper-600 transition-transform duration-300 ease-out-soft group-hover:translate-x-1" />
+                <ArrowRight className="size-4 text-brand-600 transition-transform duration-300 ease-out-soft group-hover:translate-x-1" />
               </span>
             </li>
           ))}

@@ -16,8 +16,8 @@ export function ProjectEvidence({ projects, context }: { projects: CaseStudy[]; 
     <ul className="divide-y divide-line border-y border-line">
       {projects.map((p) => (
         <li key={p.slug}>
-          <Link href={paths.project(p.slug)} className="block py-6 hover:text-copper-700">
-            <span className="font-display text-xl text-navy-900">{p.title}</span>
+          <Link href={paths.project(p.slug)} className="block py-6 hover:text-brand-700">
+            <span className="font-display text-xl text-charcoal-900">{p.title}</span>
             <span className="mt-1 block text-ink-muted">{p.summary}</span>
           </Link>
         </li>

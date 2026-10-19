@@ -31,7 +31,7 @@ export default function ServiceAreasPage() {
       <Section labelledBy="confirmed-heading">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <h2 id="confirmed-heading" className="font-display text-display-md text-navy-900">
+            <h2 id="confirmed-heading" className="font-display text-display-md text-charcoal-900">
               Municipalities we serve
             </h2>
           </div>
@@ -50,7 +50,7 @@ export default function ServiceAreasPage() {
       <Section tone="light" bordered labelledBy="official-heading">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <h2 id="official-heading" className="font-display text-display-md text-navy-900">
+            <h2 id="official-heading" className="font-display text-display-md text-charcoal-900">
               Find your building department
             </h2>
             <p className="mt-5 text-lg leading-relaxed text-ink-muted">
@@ -60,11 +60,11 @@ export default function ServiceAreasPage() {
           <div className="grid gap-10 sm:grid-cols-2 lg:col-span-8">
             {gtaMunicipalities.map((region) => (
               <div key={region.region}>
-                <h3 className="text-label text-copper-700">{region.region}</h3>
+                <h3 className="text-label text-brand-700">{region.region}</h3>
                 <ul className="mt-4 divide-y divide-line border-y border-line">
                   {region.municipalities.map((m) => (
                     <li key={m.name}>
-                      <a href={m.url} target="_blank" rel="noopener" className="flex items-center justify-between py-3 text-navy-900 hover:text-copper-700">
+                      <a href={m.url} target="_blank" rel="noopener" className="flex items-center justify-between py-3 text-charcoal-900 hover:text-brand-700">
                         <span>
                           {m.name}
                           <span className="sr-only"> official website (opens in a new tab)</span>

@@ -13,8 +13,8 @@ export function FaqList({ faqs, className }: { faqs: Faq[]; className?: string }
       {faqs.map((faq) => (
         <details key={faq.question} className="smooth group glass rounded-2xl open:bg-white/80">
           <summary className="flex cursor-pointer list-none items-start justify-between gap-6 rounded-2xl px-5 py-5 text-left sm:px-7 sm:py-6 [&::-webkit-details-marker]:hidden">
-            <h3 className="font-display text-lg leading-snug text-navy-900 sm:text-xl">{faq.question}</h3>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-navy-900/10 bg-white/70 text-copper-600 transition-all duration-300 group-open:rotate-45 group-open:border-copper-500 group-open:bg-copper-500 group-open:text-navy-950">
+            <h3 className="font-display text-lg leading-snug text-charcoal-900 sm:text-xl">{faq.question}</h3>
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-charcoal-900/10 bg-white/70 text-brand-600 transition-all duration-300 group-open:rotate-45 group-open:border-brand-500 group-open:bg-brand-500 group-open:text-white">
               <PlusIcon className="size-4" />
             </span>
           </summary>

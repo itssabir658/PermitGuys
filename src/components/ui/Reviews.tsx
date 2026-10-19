@@ -28,9 +28,9 @@ export function Stars({ rating, className, onDark }: { rating: number; className
   const filled = (Math.max(0, Math.min(5, rating)) / 5) * 100;
   return (
     <span aria-hidden="true" className={cn("relative inline-flex", className)}>
-      <StarRow className={onDark ? "text-white/20" : "text-navy-900/15"} />
+      <StarRow className={onDark ? "text-white/20" : "text-charcoal-900/15"} />
       <span className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${filled}%` }}>
-        <StarRow className={onDark ? "text-copper-300" : "text-copper-500"} />
+        <StarRow className={onDark ? "text-brand-300" : "text-brand-500"} />
       </span>
     </span>
   );
@@ -43,14 +43,14 @@ export function RatingCard({ summary, onDark, className, headingLevel = "h3" }: 
   const H = headingLevel;
   return (
     <div className={cn("spotlight flex flex-col rounded-3xl p-6 sm:p-8", onDark ? "glass-dark" : "glass", className)}>
-      <H className={cn("text-label", onDark ? "text-copper-300" : "text-copper-700")}>Google reviews</H>
+      <H className={cn("text-label", onDark ? "text-brand-300" : "text-brand-700")}>Google reviews</H>
       <p className="mt-5 flex items-end gap-4">
-        <span className={cn("font-display text-[4.5rem] leading-[0.85] font-semibold tracking-[-0.04em] tabular-nums", onDark ? "text-paper" : "text-navy-900")}>
+        <span className={cn("font-display text-[4.5rem] leading-[0.85] font-semibold tracking-[-0.04em] tabular-nums", onDark ? "text-paper" : "text-charcoal-900")}>
           {summary.rating.toFixed(1)}
         </span>
         <span className="pb-1">
           <Stars rating={summary.rating} onDark={onDark} className="text-xl" />
-          <span className={cn("mt-1.5 block text-sm", onDark ? "text-navy-100/80" : "text-ink-muted")}>
+          <span className={cn("mt-1.5 block text-sm", onDark ? "text-charcoal-100/80" : "text-ink-muted")}>
             <span className="sr-only">Rated {summary.rating.toFixed(1)} out of 5 from </span>
             {summary.count} reviews<span className="sr-only"> on Google</span>
           </span>
@@ -60,14 +60,14 @@ export function RatingCard({ summary, onDark, className, headingLevel = "h3" }: 
         href={summary.url}
         className={cn(
           "group mt-8 inline-flex min-h-11 w-fit items-center gap-2 rounded-xl px-4 text-[0.95rem] font-semibold transition-colors",
-          onDark ? "bg-white/10 text-paper hover:bg-white/15" : "bg-navy-900 text-paper hover:bg-navy-800",
+          onDark ? "bg-white/10 text-paper hover:bg-white/15" : "bg-charcoal-900 text-paper hover:bg-charcoal-800",
         )}
       >
         Read the reviews on Google
         <ExternalIcon />
       </a>
       {summary.source === "profile" && summary.asOf ? (
-        <p className={cn("mt-4 text-xs", onDark ? "text-navy-100/65" : "text-ink-muted")}>From our Google Business Profile on {dateFormat.format(new Date(summary.asOf))}.</p>
+        <p className={cn("mt-4 text-xs", onDark ? "text-charcoal-100/65" : "text-ink-muted")}>From our Google Business Profile on {dateFormat.format(new Date(summary.asOf))}.</p>
       ) : null}
     </div>
   );
@@ -76,11 +76,11 @@ export function RatingCard({ summary, onDark, className, headingLevel = "h3" }: 
 /** Compact rating link for tight spaces such as the hero. */
 export function RatingBadge({ summary, className }: { summary: ReviewSummary; className?: string }) {
   return (
-    <a href={summary.url} className={cn("group glass-dark inline-flex items-center gap-4 rounded-2xl py-3 pr-5 pl-4 transition-colors hover:bg-white/10", className)}>
-      <span className="font-display text-3xl leading-none font-semibold tracking-[-0.03em] text-paper tabular-nums">{summary.rating.toFixed(1)}</span>
+    <a href={summary.url} className={cn("group glass inline-flex items-center gap-4 rounded-2xl py-3 pr-5 pl-4 transition-colors hover:bg-white", className)}>
+      <span className="font-display text-3xl leading-none font-semibold tracking-[-0.03em] text-charcoal-900 tabular-nums">{summary.rating.toFixed(1)}</span>
       <span>
-        <Stars rating={summary.rating} onDark className="text-[0.95rem]" />
-        <span className="mt-1 flex items-center gap-1.5 text-sm text-navy-100/85">
+        <Stars rating={summary.rating} className="text-[0.95rem]" />
+        <span className="mt-1 flex items-center gap-1.5 text-sm text-ink-muted">
           <span className="sr-only">Rated {summary.rating.toFixed(1)} out of 5 from </span>
           {summary.count} Google reviews
           <ExternalIcon className="size-3 opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -104,19 +104,19 @@ function ReviewCard({ review, onDark }: { review: GoogleReview; onDark?: boolean
     <span className="font-semibold">{review.author}</span>
   );
   return (
-    <figure className={cn("flex h-full flex-col rounded-3xl p-6", onDark ? "glass-dark text-paper" : "glass text-navy-900")}>
+    <figure className={cn("flex h-full flex-col rounded-3xl p-6", onDark ? "glass-dark text-paper" : "glass text-charcoal-900")}>
       <Stars rating={review.rating} onDark={onDark} />
       <span className="sr-only">Rated {review.rating} out of 5.</span>
-      <blockquote className={cn("mt-4 line-clamp-[8] flex-1 leading-relaxed", onDark ? "text-navy-100/90" : "text-ink")}>
+      <blockquote className={cn("mt-4 line-clamp-[8] flex-1 leading-relaxed", onDark ? "text-charcoal-100/90" : "text-ink")}>
         <p>{review.text}</p>
       </blockquote>
       <figcaption className="mt-6 flex items-center gap-3 text-sm">
-        <span aria-hidden="true" className={cn("flex size-10 shrink-0 items-center justify-center rounded-full font-semibold", onDark ? "bg-copper-300 text-navy-950" : "bg-navy-900 text-paper")}>
+        <span aria-hidden="true" className={cn("flex size-10 shrink-0 items-center justify-center rounded-full font-semibold", onDark ? "bg-brand-500 text-white" : "bg-charcoal-900 text-paper")}>
           {initials(review.author)}
         </span>
         <span>
           {author}
-          <span className={cn("block", onDark ? "text-navy-100/65" : "text-ink-muted")}>
+          <span className={cn("block", onDark ? "text-charcoal-100/65" : "text-ink-muted")}>
             {review.relativeTime ? `${review.relativeTime} on Google` : "On Google"}
           </span>
         </span>

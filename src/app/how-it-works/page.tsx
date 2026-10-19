@@ -65,7 +65,7 @@ export default function HowItWorksPage() {
           <div className="grid gap-10 xl:grid-cols-3">
             {responsibilities.map((r) => (
               <div key={r.who}>
-                <h3 className="mb-4 text-label text-copper-700">{r.who}</h3>
+                <h3 className="mb-4 text-label text-brand-700">{r.who}</h3>
                 <RuledList items={r.items} />
               </div>
             ))}

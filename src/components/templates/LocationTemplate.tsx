@@ -39,7 +39,7 @@ export function LocationTemplate({ location }: { location: Location }) {
           <div className="space-y-10">
             {location.localPermitInfo.map((block) => (
               <div key={block.heading}>
-                <h3 className="text-lg font-semibold text-navy-900">{block.heading}</h3>
+                <h3 className="text-lg font-semibold text-charcoal-900">{block.heading}</h3>
                 <div className="prose-pg mt-3">
                   {block.paragraphs.map((p) => (
                     <p key={p}>{p}</p>
@@ -59,7 +59,7 @@ export function LocationTemplate({ location }: { location: Location }) {
           <ul className="space-y-3">
             {location.officialLinks.map((link) => (
               <li key={link.url}>
-                <a href={link.url} target="_blank" rel="noopener" className="inline-flex items-center gap-2 font-medium text-navy-900 underline decoration-line-strong underline-offset-4 hover:text-copper-700">
+                <a href={link.url} target="_blank" rel="noopener" className="inline-flex items-center gap-2 font-medium text-charcoal-900 underline decoration-line-strong underline-offset-4 hover:text-brand-700">
                   {link.label}
                   <ExternalIcon />
                   <span className="sr-only">(opens in a new tab)</span>

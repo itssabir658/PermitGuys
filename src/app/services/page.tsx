@@ -49,7 +49,7 @@ export default function ServicesPage() {
           <div className="grid gap-10 lg:grid-cols-12">
             <div className="lg:col-span-4">
               <Eyebrow code={String(i + 1).padStart(2, "0")}>{g.eyebrow}</Eyebrow>
-              <h2 id={`${g.id}-heading`} className="mt-6 font-display text-display-md text-navy-900">
+              <h2 id={`${g.id}-heading`} className="mt-6 font-display text-display-md text-charcoal-900">
                 {g.title}
               </h2>
               <p className="mt-4 max-w-sm leading-relaxed text-ink-muted">{g.intro}</p>
@@ -72,16 +72,16 @@ export default function ServicesPage() {
         <div className="grid gap-8 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <Eyebrow code="03">Also on our drawing board</Eyebrow>
-            <h2 id="other-work-heading" className="mt-6 font-display text-display-sm text-navy-900">
+            <h2 id="other-work-heading" className="mt-6 font-display text-display-sm text-charcoal-900">
               Other work we take on
             </h2>
           </div>
           <ul className="divide-y divide-line border-y border-line lg:col-span-8">
             {otherWork.map((item) => (
               <li key={item.label}>
-                <Link href={item.href} className="group flex items-center justify-between gap-6 py-4 text-lg text-navy-900 hover:text-copper-700">
+                <Link href={item.href} className="group flex items-center justify-between gap-6 py-4 text-lg text-charcoal-900 hover:text-brand-700">
                   {item.label}
-                  <ArrowRight className="size-4 shrink-0 text-copper-600 transition-transform duration-300 ease-out-soft group-hover:translate-x-1" />
+                  <ArrowRight className="size-4 shrink-0 text-brand-600 transition-transform duration-300 ease-out-soft group-hover:translate-x-1" />
                 </Link>
               </li>
             ))}

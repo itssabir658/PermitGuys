@@ -9,7 +9,7 @@ import { useEffect } from "react";
  * - Scroll reveal: elements marked data-reveal that start below the fold
  *   fade up as they enter the viewport. Content is visible by default, so
  *   it stays readable without JavaScript and for crawlers.
- * - Spotlight: cards with the .spotlight class get a soft copper glow that
+ * - Spotlight: cards with the .spotlight class get a soft red glow that
  *   follows the pointer.
  * - Section tracking: the "On this page" index marks the section being read.
  * The first two are skipped for visitors who prefer reduced motion.

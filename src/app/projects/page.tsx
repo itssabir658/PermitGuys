@@ -38,7 +38,7 @@ export default function ProjectsPage() {
               <li key={p.slug}>
                 <Link href={paths.project(p.slug)} className="group block">
                   <Figure visual={p.visual} caption={false} />
-                  <h3 className="mt-6 font-display text-2xl text-navy-900 group-hover:text-copper-700">{p.title}</h3>
+                  <h3 className="mt-6 font-display text-2xl text-charcoal-900 group-hover:text-brand-700">{p.title}</h3>
                   <p className="mt-2 text-ink-muted">{p.summary}</p>
                 </Link>
               </li>
@@ -47,15 +47,15 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid gap-10 lg:grid-cols-12">
             <div className="lg:col-span-5">
-              <p className="font-display text-display-sm text-navy-900">Case studies are being prepared.</p>
+              <p className="font-display text-display-sm text-charcoal-900">Case studies are being prepared.</p>
               <p className="mt-5 text-lg leading-relaxed text-ink-muted">
                 We only publish projects with our clients&apos; permission. In the meantime, our services and permit guides explain how we approach each type of project.
               </p>
               <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
-                <Link href={paths.services} className="border-b border-copper-500/60 pb-1 font-medium text-navy-900 hover:border-copper-600">
+                <Link href={paths.services} className="border-b border-brand-500/60 pb-1 font-medium text-charcoal-900 hover:border-brand-600">
                   Explore services
                 </Link>
-                <Link href={paths.guides} className="border-b border-copper-500/60 pb-1 font-medium text-navy-900 hover:border-copper-600">
+                <Link href={paths.guides} className="border-b border-brand-500/60 pb-1 font-medium text-charcoal-900 hover:border-brand-600">
                   Read permit guides
                 </Link>
               </div>

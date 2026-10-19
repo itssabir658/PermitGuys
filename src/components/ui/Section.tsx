@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 import { Container } from "./Container";
 import { cn } from "./cn";
 
-type Tone = "paper" | "light" | "navy";
+type Tone = "paper" | "light" | "dark";
 
 const tones: Record<Tone, string> = {
   paper: "bg-paper text-ink",
   light: "bg-paper-100 text-ink",
-  navy: "bg-navy-900 text-paper",
+  dark: "bg-charcoal-900 text-white",
 };
 
 /** Vertical rhythm and background tone for every page section. Content fades up into view (data-reveal). */

@@ -107,7 +107,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
                   <Link
                     href={group.href}
                     aria-current={active ? "page" : undefined}
-                    className={cn("relative block rounded-xl px-3.5 py-2.5 text-[0.95rem] text-navy-100/85 transition-colors hover:bg-white/[0.07] hover:text-paper xl:px-4", active && "bg-white/[0.08] text-paper")}
+                    className={cn("relative block rounded-xl px-3.5 py-2.5 text-[0.95rem] text-charcoal-700 transition-colors hover:bg-charcoal-900/[0.05] hover:text-charcoal-900 xl:px-4", active && "bg-charcoal-900/[0.06] text-charcoal-900")}
                   >
                     {group.label}
                   </Link>
@@ -124,8 +124,8 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
                   aria-controls={menuId(group.label)}
                   onClick={() => setOpenMenu(open ? null : key)}
                   className={cn(
-                    "relative flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-[0.95rem] text-navy-100/85 transition-colors hover:bg-white/[0.07] hover:text-paper xl:px-4",
-                    (active || open) && "bg-white/[0.08] text-paper",
+                    "relative flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-[0.95rem] text-charcoal-700 transition-colors hover:bg-charcoal-900/[0.05] hover:text-charcoal-900 xl:px-4",
+                    (active || open) && "bg-charcoal-900/[0.06] text-charcoal-900",
                   )}
                 >
                   {group.label}
@@ -136,7 +136,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
                 <div
                   id={menuId(group.label)}
                   hidden={!open}
-                  className="absolute top-full left-0 z-50 mt-3 w-[23rem] rounded-2xl border border-white/10 bg-navy-950/90 p-2 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.7)] backdrop-blur-xl"
+                  className="absolute top-full left-0 z-50 mt-3 w-[23rem] rounded-2xl border border-white bg-white/90 p-2 shadow-[0_30px_60px_-30px_rgb(28_28_28/0.45)] ring-1 ring-charcoal-900/[0.06] backdrop-blur-xl"
                 >
                   <ul>
                     {group.links.map((link) => (
@@ -144,10 +144,10 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
                         <Link
                           href={link.href}
                           aria-current={pathname === link.href ? "page" : undefined}
-                          className="block rounded-xl px-4 py-3 transition-colors hover:bg-white/[0.07] focus-visible:bg-white/[0.07]"
+                          className="block rounded-xl px-4 py-3 transition-colors hover:bg-paper focus-visible:bg-paper"
                         >
-                          <span className="block text-[0.95rem] font-medium text-paper">{link.label}</span>
-                          {link.description ? <span className="mt-0.5 block text-sm leading-snug text-navy-100/70 line-clamp-2">{link.description}</span> : null}
+                          <span className="block text-[0.95rem] font-medium text-charcoal-900">{link.label}</span>
+                          {link.description ? <span className="mt-0.5 block text-sm leading-snug text-ink-muted line-clamp-2">{link.description}</span> : null}
                         </Link>
                       </li>
                     ))}
@@ -161,7 +161,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
 
       <Link
         href={ctaHref}
-        className="hidden min-h-11 items-center gap-2 rounded-xl bg-copper-500 px-5 text-[0.95rem] font-semibold text-navy-950 transition-colors hover:bg-copper-300 sm:inline-flex"
+        className="hidden min-h-11 items-center gap-2 rounded-xl bg-brand-500 px-5 text-[0.95rem] font-semibold text-white transition-colors hover:bg-brand-600 sm:inline-flex"
       >
         Discuss your project
       </Link>
@@ -170,7 +170,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
       <button
         ref={mobileButtonRef}
         type="button"
-        className="inline-flex size-11 items-center justify-center rounded-xl text-paper hover:bg-white/[0.07] lg:hidden"
+        className="inline-flex size-11 items-center justify-center rounded-xl text-charcoal-900 hover:bg-charcoal-900/[0.05] lg:hidden"
         aria-expanded={mobileOpen}
         aria-controls={`${baseId}-mobile`}
         onClick={() => (mobileOpen ? closeMobile() : setMobileOpen(true))}
@@ -186,13 +186,13 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
         ref={panelRef}
         id={`${baseId}-mobile`}
         hidden={!mobileOpen}
-        className="fixed inset-x-3 top-[5.25rem] bottom-3 z-50 overflow-y-auto rounded-2xl border border-white/10 bg-navy-950/95 pt-2 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.7)] backdrop-blur-xl sm:inset-x-4 lg:hidden"
+        className="fixed inset-x-3 top-[5.25rem] bottom-3 z-50 overflow-y-auto rounded-2xl border border-white bg-white/95 pt-2 shadow-[0_30px_60px_-30px_rgb(28_28_28/0.45)] ring-1 ring-charcoal-900/[0.06] backdrop-blur-xl sm:inset-x-4 lg:hidden"
       >
         <nav aria-label="Main" className="px-5 pb-8 sm:px-8">
-          <ul className="divide-y divide-white/10">
+          <ul className="divide-y divide-charcoal-900/10">
             {groups.map((group) => (
               <li key={group.label} className="py-5">
-                <Link href={group.href} className="font-display text-2xl text-paper">
+                <Link href={group.href} className="font-display text-2xl text-charcoal-900">
                   {group.label}
                 </Link>
                 {group.links.length > 1 ? (
@@ -201,7 +201,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
                       .filter((l) => l.href !== group.href)
                       .map((link) => (
                         <li key={link.href + link.label}>
-                          <Link href={link.href} className="block py-1.5 text-navy-100/75 hover:text-paper">
+                          <Link href={link.href} className="block py-1.5 text-ink-muted hover:text-charcoal-900">
                             {link.label}
                           </Link>
                         </li>
@@ -211,7 +211,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
               </li>
             ))}
           </ul>
-          <Link href={ctaHref} className="mt-4 flex min-h-12 items-center justify-between rounded-xl bg-copper-500 px-6 font-semibold text-navy-950">
+          <Link href={ctaHref} className="mt-4 flex min-h-12 items-center justify-between rounded-xl bg-brand-500 px-6 font-semibold text-white">
             Discuss your project
             <ArrowRight />
           </Link>
