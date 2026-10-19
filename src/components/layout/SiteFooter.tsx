@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { footerNav } from "@/content/navigation";
 import { site } from "@/content/site";
+import { EmailLink, PhoneLink } from "@/components/ui/ContactLinks";
 import { Container } from "@/components/ui/Container";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { paths } from "@/lib/routes";
@@ -18,8 +19,8 @@ export function SiteFooter() {
             </Link>
             <p className="mt-6 max-w-sm leading-relaxed text-navy-100/75">{site.tagline}.</p>
             <address className="mt-8 space-y-2 text-sm not-italic text-navy-100/80">
-              <p>{contact.phone ?? <Placeholder onDark>phone number</Placeholder>}</p>
-              <p>{contact.email ?? <Placeholder onDark>email address</Placeholder>}</p>
+              <p>{contact.phone ? <PhoneLink location="footer" className="hover:text-paper" /> : <Placeholder onDark>phone number</Placeholder>}</p>
+              <p>{contact.email ? <EmailLink location="footer" className="hover:text-paper" /> : <Placeholder onDark>email address</Placeholder>}</p>
               <p>{contact.address ?? <Placeholder onDark>business address, if it will be published</Placeholder>}</p>
             </address>
           </div>
@@ -50,7 +51,7 @@ export function SiteFooter() {
             </Link>
           </p>
         </div>
-        <p className="mt-6 max-w-3xl text-xs leading-relaxed text-navy-100/50">
+        <p className="mt-6 max-w-3xl text-xs leading-relaxed text-navy-100/75">
           Information on this website is general guidance, not legal or code advice. Permit requirements are set by your municipality, which decides whether a permit is issued.
         </p>
       </Container>

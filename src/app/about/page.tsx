@@ -25,6 +25,7 @@ export default function AboutPage() {
     <>
       <PageHeader
         crumbs={[{ name: "About", path: paths.about }]}
+        pageType="AboutPage"
         eyebrow="About"
         title="Permit drawings, prepared with the review in mind."
         lead="PermitGuys is a building permit consulting and permit drawing service for homeowners and property owners in the Greater Toronto Area."

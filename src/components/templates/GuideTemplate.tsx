@@ -1,6 +1,7 @@
 import type { Guide } from "@/content/types";
 import { ArticleLayout, ArticleSection, RuledList } from "@/components/ui/Article";
 import { CtaPanel } from "@/components/ui/CtaPanel";
+import { DataTableView } from "@/components/ui/DataTable";
 import { DirectAnswer } from "@/components/ui/DirectAnswer";
 import { FaqList } from "@/components/ui/FaqList";
 import { JsonLd } from "@/components/ui/JsonLd";
@@ -8,7 +9,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { SourceList, formatDate } from "@/components/ui/SourceList";
 import { pickGuides, pickServices } from "@/lib/content";
-import { faqSchema, guideSchema } from "@/lib/jsonld";
+import { guidePageFacts, guideSchema } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 import { RelatedContent } from "./RelatedContent";
 
@@ -23,6 +24,7 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
   const sections = guide.sections.map((s) => ({ ...s, id: slugify(s.heading) }));
   const toc = [
     ...sections.map((s) => ({ id: s.id, label: s.heading })),
+    ...(guide.keyTerms?.length ? [{ id: "key-terms", label: "Key terms" }] : []),
     ...(guide.faqs.length ? [{ id: "faq", label: "Questions" }] : []),
     { id: "sources", label: "Sources and review" },
     { id: "related", label: "Related" },
@@ -38,6 +40,7 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
         eyebrow="Permit guide"
         title={guide.title}
         lead={guide.summary}
+        schemaExtra={guidePageFacts(guide)}
       >
         <DirectAnswer>{guide.directAnswer}</DirectAnswer>
         <p className="mt-6 text-sm text-ink-muted">
@@ -62,8 +65,22 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
                 <RuledList items={section.list} />
               </div>
             ) : null}
+            {section.table ? <DataTableView table={section.table} /> : null}
           </ArticleSection>
         ))}
+
+        {guide.keyTerms?.length ? (
+          <ArticleSection id="key-terms" title="Key terms">
+            <dl className="max-w-3xl divide-y divide-line border-y border-line">
+              {guide.keyTerms.map((t) => (
+                <div key={t.term} className="grid gap-2 py-5 sm:grid-cols-[12rem_1fr] sm:gap-8">
+                  <dt className="font-semibold text-navy-900">{t.term}</dt>
+                  <dd className="leading-relaxed text-ink">{t.definition}</dd>
+                </div>
+              ))}
+            </dl>
+          </ArticleSection>
+        ) : null}
 
         {guide.faqs.length ? (
           <ArticleSection id="faq" title="Questions">
@@ -96,8 +113,8 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
         </ArticleSection>
       </ArticleLayout>
 
-      <CtaPanel title="Have a question about your own project?" />
-      <JsonLd data={[guideSchema(guide, path), ...(guide.faqs.length ? [faqSchema(guide.faqs)] : [])]} />
+      <CtaPanel title="Have a question about your own project?" primaryLabel="Ask About Your Project" />
+      <JsonLd data={guideSchema(guide, path)} />
     </>
   );
 }

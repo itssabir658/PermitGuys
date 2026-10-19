@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StepList } from "@/components/ui/StepList";
 import { getProjectsForService, pickGuides, pickServices } from "@/lib/content";
-import { faqSchema, serviceSchema } from "@/lib/jsonld";
+import { serviceSchema } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 import { ProjectEvidence } from "./ProjectEvidence";
 import { RelatedContent } from "./RelatedContent";
@@ -42,7 +42,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
       </PageHeader>
 
       <ArticleLayout toc={toc}>
-        <ArticleSection id="overview" title="Overview">
+        <ArticleSection id="overview" title="What does this service include?">
           <div className="prose-pg">
             {service.overview.map((p) => (
               <p key={p}>{p}</p>
@@ -50,18 +50,18 @@ export function ServiceTemplate({ service }: { service: Service }) {
           </div>
         </ArticleSection>
 
-        <ArticleSection id="who" title="Who this service is for">
+        <ArticleSection id="who" title="Who is this service for?">
           <RuledList items={service.whoItsFor} />
         </ArticleSection>
 
-        <ArticleSection id="requirements" title="Typical requirements" intro={service.typicalRequirements.intro}>
+        <ArticleSection id="requirements" title="What does a permit application usually need?" intro={service.typicalRequirements.intro}>
           <RuledList items={service.typicalRequirements.items} />
           <Note>{service.typicalRequirements.qualifier}</Note>
         </ArticleSection>
 
         <ArticleSection
           id="process"
-          title="Process and responsibilities"
+          title="Who does what, step by step?"
           intro="Each step shows who carries it. We prepare drawings and documentation; the municipality reviews the application and decides on the permit."
         >
           <StepList steps={service.process} />
@@ -69,7 +69,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
 
         <ArticleSection
           id="cost-timeline"
-          title="What affects cost and timing"
+          title="What affects cost and timing?"
           intro="We do not publish set prices or timelines because both depend on the project. These are the factors that shape them."
         >
           <div className="grid gap-10 md:grid-cols-2">
@@ -84,11 +84,11 @@ export function ServiceTemplate({ service }: { service: Service }) {
           </div>
         </ArticleSection>
 
-        <ArticleSection id="projects" title="Projects">
+        <ArticleSection id="projects" title="Examples of our work">
           <ProjectEvidence projects={projects} context={service.navLabel.toLowerCase()} />
         </ArticleSection>
 
-        <ArticleSection id="faq" title="Questions about this service">
+        <ArticleSection id="faq" title="Common questions">
           <FaqList faqs={service.faqs} />
         </ArticleSection>
 
@@ -97,8 +97,11 @@ export function ServiceTemplate({ service }: { service: Service }) {
         </ArticleSection>
       </ArticleLayout>
 
-      <CtaPanel title={`Discuss your ${service.navLabel.toLowerCase().replace(/ permits$/, "")} project.`} />
-      <JsonLd data={[serviceSchema(service, path), faqSchema(service.faqs)]} />
+      <CtaPanel
+        title={`Discuss your ${service.navLabel.toLowerCase().replace(/ permits$/, "")} project.`}
+        href={paths.contactFor(service.slug)}
+      />
+      <JsonLd data={serviceSchema(service, path)} />
     </>
   );
 }

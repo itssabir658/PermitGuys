@@ -1,34 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import Script from "next/script";
+import { useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { cn } from "@/components/ui/cn";
+import { track } from "@/lib/analytics";
+import { ATTRIBUTION_STORAGE_KEY, sanitizeAttribution } from "@/lib/inquiry/attribution";
+import { HONEYPOT_FIELD } from "@/lib/inquiry/protection";
+import type { InquiryState } from "@/lib/inquiry/state";
 import { paths } from "@/lib/routes";
-import { projectStages, projectTypes } from "@/lib/validation/inquiry";
-import { submitInquiry, type InquiryState } from "./actions";
+import {
+  formToRecord,
+  inquiryFields,
+  limits,
+  projectStages,
+  projectTypeForService,
+  projectTypes,
+  validateInquiry,
+  type InquiryErrors,
+  type InquiryField,
+} from "@/lib/validation/inquiry";
+import { submitInquiry } from "./actions";
 
+const ERROR = "text-[#a3361f]";
 const field =
-  "mt-2 block w-full rounded-[2px] border border-line-strong bg-paper px-4 py-3 text-base text-navy-900 placeholder:text-ink-muted/70 focus:border-navy-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-copper-600";
+  "mt-2 block w-full rounded-[2px] border border-line-strong bg-paper px-4 py-3 text-base text-navy-900 placeholder:text-ink-muted/70 focus:border-navy-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper-600";
+const invalid = "border-[#a3361f]";
+
+const labels: Record<InquiryField, string> = {
+  name: "Your name",
+  email: "Email",
+  phone: "Phone",
+  preferredContact: "Preferred contact method",
+  projectType: "Project type",
+  municipality: "Municipality or project location",
+  stage: "Where are you in the project?",
+  details: "Tell us about your project",
+  consent: "Consent to contact",
+};
+
+/** The element an error-summary link moves focus to. */
+const focusTarget = (f: InquiryField) => (f === "preferredContact" ? "preferredContact-email" : f);
+
+const describedBy = (id: string, error?: string, hint?: boolean) =>
+  [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
 
 function Field({
   id,
-  label,
   error,
   hint,
   optional,
   children,
 }: {
-  id: string;
-  label: string;
+  id: InquiryField;
   error?: string;
   hint?: string;
   optional?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div>
       <label htmlFor={id} className="text-sm font-medium text-navy-900">
-        {label}
+        {labels[id]}
         {optional ? <span className="font-normal text-ink-muted"> (optional)</span> : null}
       </label>
       {hint ? (
@@ -37,115 +70,423 @@ function Field({
         </p>
       ) : null}
       {children}
-      {error ? (
-        <p id={`${id}-error`} className="mt-2 text-sm text-[#a3361f]">
-          {error}
-        </p>
-      ) : null}
+      <FieldError id={id} error={error} />
     </div>
   );
 }
 
-const describedBy = (id: string, error?: string, hint?: boolean) =>
-  [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
+function FieldError({ id, error }: { id: string; error?: string }) {
+  return error ? (
+    <p id={`${id}-error`} className={cn("mt-2 text-sm", ERROR)}>
+      <span className="sr-only">Error: </span>
+      {error}
+    </p>
+  ) : null;
+}
 
-export function InquiryForm() {
+function ErrorSummary({ errors, summaryRef }: { errors: InquiryErrors; summaryRef: React.RefObject<HTMLDivElement | null> }) {
+  const list = inquiryFields.filter((f) => errors[f]);
+  if (list.length === 0) return null;
+  return (
+    <div ref={summaryRef} tabIndex={-1} aria-labelledby="error-summary-title" className="border-l-2 border-[#a3361f] bg-[#a3361f]/5 p-5 focus:outline-2 focus:outline-offset-2 focus:outline-[#a3361f]">
+      <h2 id="error-summary-title" className="font-semibold text-[#7d2914]">
+        There {list.length === 1 ? "is a problem" : `are ${list.length} problems`} with your inquiry
+      </h2>
+      <ul className="mt-3 space-y-1.5 text-sm">
+        {list.map((f) => (
+          <li key={f}>
+            <a
+              href={`#${focusTarget(f)}`}
+              className="text-[#7d2914] underline underline-offset-4"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById(focusTarget(f))?.focus();
+              }}
+            >
+              {errors[f]}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+type Notice = { tone: "warning" | "error"; title: string; body: ReactNode };
+
+function noticeFor(status: InquiryState["status"], directContact: ReactNode): Notice | null {
+  switch (status) {
+    case "not_configured":
+      return {
+        tone: "warning",
+        title: "Your inquiry was not sent.",
+        body: <>Online inquiries are not connected yet, so nothing was sent. Your details are still in the form. {directContact}</>,
+      };
+    case "failed":
+      return {
+        tone: "error",
+        title: "Your inquiry was not sent.",
+        body: <>Something went wrong on our side and we could not confirm delivery. Your details are still in the form, so please try again in a moment. {directContact}</>,
+      };
+    case "rate_limited":
+      return {
+        tone: "error",
+        title: "Too many attempts.",
+        body: <>We received several inquiries from your connection in a short time. Please wait a few minutes and try again. {directContact}</>,
+      };
+    case "blocked":
+      return {
+        tone: "error",
+        title: "We could not send your inquiry.",
+        body: <>Our spam protection stopped this submission. Please wait a moment and try again. {directContact}</>,
+      };
+    default:
+      return null;
+  }
+}
+
+declare global {
+  interface Window {
+    turnstile?: { reset: (el?: string | HTMLElement) => void };
+  }
+}
+
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+export function InquiryForm({ directContact }: { directContact: ReactNode }) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(submitInquiry, { status: "idle" });
+  const [clientErrors, setClientErrors] = useState<InquiryErrors | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const noticeRef = useRef<HTMLDivElement>(null);
+  const successRef = useRef<HTMLHeadingElement>(null);
+  const started = useRef(false);
+  const meta = useRef<{ id: string; startedAt: string; attribution: string } | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
+
+  // Client-only values live in hidden inputs written after hydration, and
+  // again after every server response because React resets the form then.
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    if (!meta.current) {
+      const params = new URLSearchParams(window.location.search);
+      let attribution = {};
+      try {
+        attribution = sanitizeAttribution(sessionStorage.getItem(ATTRIBUTION_STORAGE_KEY) ?? "");
+      } catch {
+        attribution = {};
+      }
+      const service = params.get("service");
+      meta.current = {
+        id: crypto.randomUUID(),
+        startedAt: String(Date.now()),
+        attribution: JSON.stringify(sanitizeAttribution({ ...attribution, cta_service: service ?? undefined })),
+      };
+      const preset = projectTypeForService(service);
+      const select = form.elements.namedItem("projectType") as HTMLSelectElement | null;
+      if (preset && select && !select.value) select.value = preset;
+    }
+    const set = (name: string, value: string) => {
+      const el = form.elements.namedItem(name) as HTMLInputElement | null;
+      if (el) el.value = value;
+    };
+    set("submissionId", meta.current.id);
+    set("startedAt", meta.current.startedAt);
+    set("attribution", meta.current.attribution);
+    if (state.status !== "idle" && state.status !== "sent") window.turnstile?.reset();
+  }, [state]);
+
+  // Move focus to whatever the visitor needs to read next.
+  useEffect(() => {
+    if (state.status === "sent") {
+      successRef.current?.focus();
+      track("inquiry_form_success");
+    } else if (state.status === "invalid") summaryRef.current?.focus();
+    else if (state.status !== "idle") noticeRef.current?.focus();
+  }, [state]);
+
+  useEffect(() => {
+    if (focusRequest) summaryRef.current?.focus();
+  }, [focusRequest]);
 
   if (state.status === "sent") {
     return (
-      <div role="status" className="border-l-2 border-copper-500 bg-paper-100 p-8">
-        <h2 className="font-display text-display-sm text-navy-900">Thank you. Your inquiry has been sent.</h2>
-        <p className="mt-4 text-ink-muted">We will review your project details and reply by email.</p>
+      <div className="border-l-2 border-copper-500 bg-paper-100 p-8 sm:p-10">
+        <h2 ref={successRef} tabIndex={-1} className="font-display text-display-sm text-navy-900 focus:outline-none">
+          Thank you. Your inquiry has been sent.
+        </h2>
+        <p className="mt-4 text-ink-muted">
+          We have received your project details and will reply using your preferred contact method. Your reference is{" "}
+          <strong className="font-semibold text-navy-900">{state.reference}</strong>.
+        </p>
+        <p className="mt-4 text-ink-muted">
+          While you wait, our{" "}
+          <Link href={paths.guides} className="text-navy-900 underline underline-offset-4">
+            permit guides
+          </Link>{" "}
+          explain what most projects involve.
+        </p>
       </div>
     );
   }
 
-  const errors = state.status === "invalid" ? state.errors : {};
-  const values = state.status === "invalid" || state.status === "unavailable" ? state.values : {};
+  const errors: InquiryErrors = clientErrors ?? (state.status === "invalid" ? state.errors : {});
+  const values = state.status === "idle" ? {} : state.values;
+  const notice = noticeFor(state.status, directContact);
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (pending) {
+      e.preventDefault();
+      return;
+    }
+    const result = validateInquiry(formToRecord(new FormData(e.currentTarget)));
+    if (!result.ok) {
+      e.preventDefault();
+      setClientErrors(result.errors);
+      setFocusRequest((n) => n + 1);
+      return;
+    }
+    setClientErrors(null);
+    track("inquiry_form_submit", { project_type: result.value.projectType, preferred_contact: result.value.preferredContact });
+  };
+
+  const onFirstInteraction = () => {
+    if (started.current) return;
+    started.current = true;
+    track("inquiry_form_start");
+  };
 
   return (
-    <form action={action} noValidate className="space-y-7" aria-describedby="form-status">
-      <div id="form-status" role="status" aria-live="polite">
-        {state.status === "invalid" ? (
-          <p className="border-l-2 border-[#a3361f] bg-[#a3361f]/5 p-4 text-sm text-[#7d2914]">Please check the highlighted fields.</p>
-        ) : null}
-        {state.status === "unavailable" ? (
-          <p data-placeholder="" className="border border-dashed border-copper-500 bg-copper-500/[0.07] p-4 text-sm text-copper-700">
-            Online inquiries are not connected yet, so your message was not sent. Please contact us directly using the details on this page.
-          </p>
-        ) : null}
-      </div>
+    <form
+      ref={formRef}
+      action={action}
+      onSubmit={onSubmit}
+      onFocus={onFirstInteraction}
+      noValidate
+      aria-busy={pending}
+      aria-labelledby="inquiry-form-title"
+      className="space-y-7"
+    >
+      <h2 id="inquiry-form-title" className="sr-only">
+        Project inquiry form
+      </h2>
 
+      <ErrorSummary errors={errors} summaryRef={summaryRef} />
+
+      {notice ? (
+        <div
+          ref={noticeRef}
+          tabIndex={-1}
+          role="alert"
+          className={cn(
+            "p-5 text-sm leading-relaxed focus:outline-2 focus:outline-offset-2",
+            notice.tone === "warning"
+              ? "border border-dashed border-copper-500 bg-copper-500/[0.07] text-copper-700 focus:outline-copper-600"
+              : "border-l-2 border-[#a3361f] bg-[#a3361f]/5 text-[#7d2914] focus:outline-[#a3361f]",
+          )}
+        >
+          <p className="font-semibold">{notice.title}</p>
+          <p className="mt-1">{notice.body}</p>
+        </div>
+      ) : null}
+
+      <p className="text-sm text-ink-muted">All fields are required unless marked optional.</p>
+
+      {/* Spam honeypot: hidden from people and assistive technology. */}
       <div className="hidden" aria-hidden="true">
-        <label htmlFor="company">Company</label>
-        <input id="company" name="company" type="text" tabIndex={-1} autoComplete="off" />
+        <label htmlFor={HONEYPOT_FIELD}>Leave this field empty</label>
+        <input id={HONEYPOT_FIELD} name={HONEYPOT_FIELD} type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
       </div>
+      <input type="hidden" name="submissionId" defaultValue="" />
+      <input type="hidden" name="startedAt" defaultValue="" />
+      <input type="hidden" name="attribution" defaultValue="" />
 
       <div className="grid gap-7 sm:grid-cols-2">
-        <Field id="name" label="Your name" error={errors.name}>
-          <input id="name" name="name" type="text" autoComplete="name" required defaultValue={values.name} aria-invalid={Boolean(errors.name)} aria-describedby={describedBy("name", errors.name)} className={cn(field, errors.name && "border-[#a3361f]")} />
+        <Field id="name" error={errors.name}>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            autoComplete="name"
+            required
+            maxLength={limits.name}
+            defaultValue={values.name}
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={describedBy("name", errors.name)}
+            className={cn(field, errors.name && invalid)}
+          />
         </Field>
-        <Field id="email" label="Email" error={errors.email}>
-          <input id="email" name="email" type="email" autoComplete="email" required defaultValue={values.email} aria-invalid={Boolean(errors.email)} aria-describedby={describedBy("email", errors.email)} className={cn(field, errors.email && "border-[#a3361f]")} />
+        <Field id="email" error={errors.email}>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            spellCheck={false}
+            required
+            maxLength={limits.email}
+            defaultValue={values.email}
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={describedBy("email", errors.email)}
+            className={cn(field, errors.email && invalid)}
+          />
         </Field>
-        <Field id="phone" label="Phone" optional error={errors.phone}>
-          <input id="phone" name="phone" type="tel" autoComplete="tel" defaultValue={values.phone} aria-invalid={Boolean(errors.phone)} aria-describedby={describedBy("phone", errors.phone)} className={cn(field, errors.phone && "border-[#a3361f]")} />
+        <Field id="phone" optional hint="Needed only if you prefer a call." error={errors.phone}>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={limits.phone}
+            defaultValue={values.phone}
+            aria-invalid={Boolean(errors.phone)}
+            aria-describedby={describedBy("phone", errors.phone, true)}
+            className={cn(field, errors.phone && invalid)}
+          />
         </Field>
-        <Field id="municipality" label="Property municipality" optional hint="For example, Toronto or Mississauga." error={errors.municipality}>
-          <input id="municipality" name="municipality" type="text" autoComplete="address-level2" defaultValue={values.municipality} aria-invalid={Boolean(errors.municipality)} aria-describedby={describedBy("municipality", errors.municipality, true)} className={field} />
-        </Field>
-        <Field id="projectType" label="Project type" error={errors.projectType}>
-          <select id="projectType" name="projectType" required defaultValue={values.projectType ?? ""} aria-invalid={Boolean(errors.projectType)} aria-describedby={describedBy("projectType", errors.projectType)} className={cn(field, errors.projectType && "border-[#a3361f]")}>
+        <fieldset aria-describedby={errors.preferredContact ? "preferredContact-error" : undefined}>
+          <legend className="text-sm font-medium text-navy-900">{labels.preferredContact}</legend>
+          <div className="mt-2 flex gap-3">
+            {(
+              [
+                ["email", "Email"],
+                ["phone", "Phone"],
+              ] as const
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                htmlFor={`preferredContact-${value}`}
+                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-[2px] border border-line-strong bg-paper px-4 text-base text-navy-900 has-[:checked]:border-navy-900 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-copper-600"
+              >
+                <input
+                  id={`preferredContact-${value}`}
+                  type="radio"
+                  name="preferredContact"
+                  value={value}
+                  defaultChecked={(values.preferredContact ?? "email") === value}
+                  className="size-4 accent-navy-900 focus:outline-none"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          <FieldError id="preferredContact" error={errors.preferredContact} />
+        </fieldset>
+        <Field id="projectType" error={errors.projectType}>
+          <select
+            id="projectType"
+            name="projectType"
+            required
+            defaultValue={values.projectType ?? ""}
+            aria-invalid={Boolean(errors.projectType)}
+            aria-describedby={describedBy("projectType", errors.projectType)}
+            className={cn(field, errors.projectType && invalid)}
+          >
             <option value="" disabled>
               Choose one
             </option>
             {projectTypes.map((t) => (
-              <option key={t}>{t}</option>
+              <option key={t.label} value={t.label}>
+                {t.label}
+              </option>
             ))}
           </select>
         </Field>
-        <Field id="stage" label="Where are you in the project?" error={errors.stage}>
-          <select id="stage" name="stage" required defaultValue={values.stage ?? ""} aria-invalid={Boolean(errors.stage)} aria-describedby={describedBy("stage", errors.stage)} className={cn(field, errors.stage && "border-[#a3361f]")}>
-            <option value="" disabled>
-              Choose one
-            </option>
+        <Field id="municipality" hint="For example, Toronto, Mississauga or Vaughan." error={errors.municipality}>
+          <input
+            id="municipality"
+            name="municipality"
+            type="text"
+            autoComplete="address-level2"
+            required
+            maxLength={limits.municipality}
+            defaultValue={values.municipality}
+            aria-invalid={Boolean(errors.municipality)}
+            aria-describedby={describedBy("municipality", errors.municipality, true)}
+            className={cn(field, errors.municipality && invalid)}
+          />
+        </Field>
+        <Field id="stage" optional error={errors.stage}>
+          <select
+            id="stage"
+            name="stage"
+            defaultValue={values.stage ?? ""}
+            aria-invalid={Boolean(errors.stage)}
+            aria-describedby={describedBy("stage", errors.stage)}
+            className={cn(field, errors.stage && invalid)}
+          >
+            <option value="">Choose one</option>
             {projectStages.map((t) => (
-              <option key={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </select>
         </Field>
       </div>
 
-      <Field id="details" label="Tell us about your project" hint="What you want to build or change, and anything you already know about the property." error={errors.details}>
-        <textarea id="details" name="details" rows={6} required defaultValue={values.details} aria-invalid={Boolean(errors.details)} aria-describedby={describedBy("details", errors.details, true)} className={cn(field, "resize-y", errors.details && "border-[#a3361f]")} />
+      <Field id="details" hint="What you want to build or change, and anything you already know about the property. Please leave out sensitive personal information." error={errors.details}>
+        <textarea
+          id="details"
+          name="details"
+          rows={6}
+          required
+          maxLength={limits.detailsMax}
+          defaultValue={values.details}
+          aria-invalid={Boolean(errors.details)}
+          aria-describedby={describedBy("details", errors.details, true)}
+          className={cn(field, "resize-y", errors.details && invalid)}
+        />
       </Field>
 
       <div>
         <div className="flex items-start gap-3">
-          <input id="consent" name="consent" type="checkbox" required aria-invalid={Boolean(errors.consent)} aria-describedby={describedBy("consent", errors.consent)} className="mt-1 size-4 accent-navy-900" />
+          <input
+            id="consent"
+            name="consent"
+            type="checkbox"
+            required
+            defaultChecked={values.consent === "on"}
+            aria-invalid={Boolean(errors.consent)}
+            aria-describedby={describedBy("consent", errors.consent)}
+            className="mt-1 size-5 shrink-0 accent-navy-900"
+          />
           <label htmlFor="consent" className="text-sm leading-relaxed text-ink-muted">
-            PermitGuys may contact me about this inquiry. See our{" "}
+            PermitGuys may use these details to contact me about this inquiry, as described in the{" "}
             <Link href={paths.privacy} className="text-navy-900 underline underline-offset-4">
               privacy policy
             </Link>
             .
           </label>
         </div>
-        {errors.consent ? (
-          <p id="consent-error" className="mt-2 text-sm text-[#a3361f]">
-            {errors.consent}
-          </p>
-        ) : null}
+        <FieldError id="consent" error={errors.consent} />
       </div>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex min-h-12 items-center justify-center bg-navy-900 px-8 text-[0.95rem] font-medium text-paper transition-colors hover:bg-navy-800 disabled:opacity-60"
-      >
-        {pending ? "Sending…" : "Send inquiry"}
-      </button>
+      {turnstileSiteKey ? (
+        <>
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+          <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />
+        </>
+      ) : null}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+        <button
+          type="submit"
+          disabled={pending}
+          className="inline-flex min-h-12 items-center justify-center gap-3 bg-navy-900 px-8 text-[0.95rem] font-medium text-paper transition-colors hover:bg-navy-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper-600 disabled:cursor-wait disabled:opacity-70"
+        >
+          {pending ? (
+            <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-paper/40 border-t-paper motion-reduce:animate-none" />
+          ) : null}
+          {pending ? "Sending…" : "Send inquiry"}
+        </button>
+        <p role="status" aria-live="polite" className="text-sm text-ink-muted">
+          {pending ? "Sending your inquiry. Please keep this page open." : ""}
+        </p>
+      </div>
     </form>
   );
 }

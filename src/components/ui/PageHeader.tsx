@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { WebPageType } from "@/lib/jsonld";
 import { Breadcrumbs, type Crumb } from "./Breadcrumbs";
 import { Container } from "./Container";
 import { Eyebrow } from "./Eyebrow";
@@ -11,8 +12,13 @@ export function PageHeader({
   lead,
   aside,
   children,
+  pageType,
+  schemaExtra,
 }: {
   crumbs: Crumb[];
+  /** schema.org WebPage subtype for this page. */
+  pageType?: WebPageType;
+  schemaExtra?: Record<string, unknown>;
   eyebrow?: string;
   title: string;
   lead?: ReactNode;
@@ -22,7 +28,7 @@ export function PageHeader({
   return (
     <header className="border-b border-line bg-paper pt-10 pb-16 sm:pt-12 lg:pb-24">
       <Container>
-        <Breadcrumbs items={crumbs} />
+        <Breadcrumbs items={crumbs} page={{ name: title, type: pageType, extra: schemaExtra }} />
         <div className={aside ? "mt-12 grid gap-12 lg:grid-cols-12 lg:items-end lg:gap-16" : "mt-12"}>
           <div className={aside ? "lg:col-span-7" : "max-w-4xl"}>
             {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}

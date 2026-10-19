@@ -111,7 +111,21 @@ export function validateContent({ services, guides, locations, projects }: Conte
     if (g.sections.length < 1) p.push(`${w}.sections needs at least 1 section`);
     g.sections.forEach((sec, i) => {
       text(p, `${w}.sections[${i}].heading`, sec.heading);
+      if (!sec.heading.trim().endsWith("?")) p.push(`${w}.sections[${i}].heading should be phrased as a question`);
       list(p, `${w}.sections[${i}].paragraphs`, sec.paragraphs);
+      if (sec.table) {
+        const t = sec.table;
+        text(p, `${w}.sections[${i}].table.caption`, t.caption);
+        text(p, `${w}.sections[${i}].table.source`, t.source);
+        if (t.rows.length < 1) p.push(`${w}.sections[${i}].table needs at least 1 row`);
+        t.rows.forEach((row, r) => {
+          if (row.length !== t.columns.length) p.push(`${w}.sections[${i}].table row ${r} has ${row.length} cells for ${t.columns.length} columns`);
+        });
+      }
+    });
+    g.keyTerms?.forEach((k, i) => {
+      text(p, `${w}.keyTerms[${i}].term`, k.term);
+      text(p, `${w}.keyTerms[${i}].definition`, k.definition);
     });
     if (g.sources.length < 1) p.push(`${w}.sources needs at least 1 source`);
     g.sources.forEach((s, i) => source(p, `${w}.sources[${i}]`, s));

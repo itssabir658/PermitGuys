@@ -18,17 +18,36 @@ Requires Node 20.9 or newer.
 
 ## Environment variables
 
+Copy `.env.example` to `.env.local` for local work and set the same variables in the hosting provider for production. Secrets are only read on the server; only `NEXT_PUBLIC_*` values reach the browser.
+
 | Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Production origin, e.g. `https://www.example.ca`. Until set, every page is `noindex` and `robots.txt` blocks crawlers. |
+| `NEXT_PUBLIC_SITE_URL` | Production origin, e.g. `https://permitguys.ca`. Until set, every page is `noindex` and `robots.txt` blocks crawlers. Needed at build time. |
 | `SITE_NOINDEX` | Set to `true` on staging to keep it out of search even with a site URL. |
-| `INQUIRY_WEBHOOK_URL` | Endpoint that receives contact-form submissions as JSON. Until set, the form validates but tells visitors it is not connected. |
+| `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION` | Search engine ownership meta tags (docs/SEARCH_CONSOLE.md). |
+| `RESEND_API_KEY`, `INQUIRY_EMAIL_FROM`, `INQUIRY_EMAIL_TO` | Email each inquiry to the business through Resend. |
+| `INQUIRY_WEBHOOK_URL`, `INQUIRY_WEBHOOK_SECRET` | Send each inquiry as signed JSON to a CRM or automation tool. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Optional Cloudflare Turnstile spam check. |
+| `INQUIRY_RATE_LIMIT_MAX`, `INQUIRY_RATE_LIMIT_WINDOW_MINUTES`, `INQUIRY_MIN_FILL_SECONDS` | Optional spam-protection tuning. |
+
+Without a configured destination the form validates but tells visitors their inquiry was not sent. Details in docs/INQUIRY.md.
+
+## Tests
+
+```bash
+npm run check                    # lint, typecheck, 57 unit tests
+npm run build && npm run test:e2e   # Playwright: every route, forms, axe accessibility, desktop/tablet/mobile
+npm start & npm run check:site      # crawler: links, metadata, canonicals, JSON-LD, sitemap, redirects, 404s
+```
 
 ## Where things are
 
 - `docs/IMPLEMENTATION_PLAN.md`: architecture, routes, design system, SEO/AEO/GEO and QA
 - `docs/CONTENT.md`: how to edit services, guides, service areas and case studies
 - `docs/IMAGES.md`: how to add licensed photography
+- `docs/INQUIRY.md`: the inquiry form, delivery adapters, spam protection and analytics events
+- `docs/SEARCH_CONSOLE.md`: turning on indexing, Search Console and Bing setup at launch
+- `docs/AUDIT.md`: the SEO, inquiry and QA audit report
 - `src/content/`: all copy and data
 
 ## Launch checklist
@@ -44,5 +63,7 @@ Search the code for `PLACEHOLDER` or the rendered pages for `data-placeholder` t
 - [ ] Licensed photography (`docs/IMAGES.md`)
 - [ ] A qualified reviewer checks each guide and the sources (`checked`, `lastReviewed`, `reviewer`)
 - [ ] Privacy policy reviewed and completed
-- [ ] `INQUIRY_WEBHOOK_URL` connected and tested
+- [ ] Inquiry delivery configured (Resend and/or a CRM webhook) and a real test inquiry received
+- [ ] Old permitguys.ca URLs exported from Search Console and mapped in `src/content/redirects.ts`
+- [ ] Search Console and Bing set up (docs/SEARCH_CONSOLE.md)
 - [ ] `NEXT_PUBLIC_SITE_URL` set on production

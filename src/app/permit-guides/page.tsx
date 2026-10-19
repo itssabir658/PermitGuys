@@ -18,6 +18,7 @@ export default function GuidesPage() {
     <>
       <PageHeader
         crumbs={[{ name: "Permit guides", path: paths.guides }]}
+        pageType="CollectionPage"
         eyebrow="Resources"
         title="Permit guides for homeowners."
         lead="Clear answers to common building permit questions, with links to the official sources. Your municipality has the final word on your project."

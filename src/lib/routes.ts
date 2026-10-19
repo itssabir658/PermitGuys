@@ -19,6 +19,8 @@ export const paths = {
   guides: r("/permit-guides/"),
   guide: (slug: string) => r(`/permit-guides/${slug}/`),
   contact: r("/contact/"),
+  /** Contact page with the matching project type preselected. */
+  contactFor: (serviceSlug: string) => r(`/contact/?service=${encodeURIComponent(serviceSlug)}`),
   privacy: r("/privacy-policy/"),
 } as const;
 

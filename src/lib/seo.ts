@@ -13,6 +13,13 @@ interface PageMeta {
 }
 
 /**
+ * Default share image (app/opengraph-image.tsx). Pages that set openGraph
+ * replace the root image, so it is listed explicitly here; segments with
+ * their own opengraph-image file (services, guides) override it.
+ */
+const defaultImage = { url: "/opengraph-image/", width: 1200, height: 630, alt: `${site.name}: permit drawings and permit guidance in the GTA` };
+
+/**
  * Builds title, description, canonical URL and social metadata the same way
  * for every page. The canonical is relative and resolved against
  * metadataBase in the root layout.
@@ -30,8 +37,9 @@ export function pageMetadata({ title, description, path, absoluteTitle, noindex,
       siteName: site.name,
       locale: site.locale,
       type,
+      images: [defaultImage],
     },
-    twitter: { card: "summary_large_image", title: fullTitle, description },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images: [defaultImage] },
     ...(noindex ? { robots: { index: false, follow: true } } : {}),
   };
 }

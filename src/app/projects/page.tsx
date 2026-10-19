@@ -8,10 +8,13 @@ import { getProjects } from "@/lib/content";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
 
+// Kept out of search results until approved case studies exist, so an empty
+// placeholder page is never indexed (the sitemap applies the same rule).
 export const metadata = pageMetadata({
   title: "Projects and Case Studies",
   description: "Case studies of permit drawing and permit process work by PermitGuys in the Greater Toronto Area.",
   path: paths.projects,
+  noindex: getProjects().length === 0,
 });
 
 export default function ProjectsPage() {
@@ -20,6 +23,7 @@ export default function ProjectsPage() {
     <>
       <PageHeader
         crumbs={[{ name: "Projects", path: paths.projects }]}
+        pageType="CollectionPage"
         eyebrow="Projects"
         title="Projects and case studies."
         lead="Real projects, described accurately and published with our clients' permission."

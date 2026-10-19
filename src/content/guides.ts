@@ -18,14 +18,14 @@ export const guides: Guide[] = [
       "In Ontario you generally need a building permit to construct, renovate, demolish or change the use of a building. Permits are issued by your municipality's building department, which is also the authority on whether your specific project needs one.",
     sections: [
       {
-        heading: "Who issues building permits",
+        heading: "Who issues building permits in Ontario?",
         paragraphs: [
           "Building permits in Ontario are issued under the Building Code Act by the body that enforces the Building Code in your area. In the GTA, that is your municipality's building department, such as Toronto Building in the City of Toronto.",
           "Because each municipality administers its own permits and by-laws, the details of what needs a permit, what to submit and what fees apply can differ from one municipality to the next.",
         ],
       },
       {
-        heading: "Work that commonly needs a permit",
+        heading: "What work commonly needs a permit?",
         paragraphs: [
           "Municipal guidance across Ontario commonly lists work like the following as needing a permit. It is a starting point, not a complete list.",
         ],
@@ -40,17 +40,34 @@ export const guides: Guide[] = [
         ],
       },
       {
-        heading: "Work that often does not",
+        heading: "What work often does not need a permit?",
         paragraphs: [
           "Many municipalities exempt minor and cosmetic work. The City of Mississauga, for example, lists re-shingling a roof and replacing a window with one of the same size among work that does not need a permit. Small sheds can be exempt when they meet size and use conditions set out in the Building Code.",
           "Even when a permit is not required, zoning rules such as setbacks and lot coverage still apply. Check with your municipality before you build.",
         ],
       },
       {
-        heading: "How to confirm for your project",
+        heading: "How do I confirm whether my project needs a permit?",
         paragraphs: [
           "The reliable way to confirm is to contact your municipality's building department with a description of the work. If you are planning a larger project, we can assess the scope and tell you which approvals it is likely to involve.",
         ],
+      },
+    ],
+    keyTerms: [
+      {
+        term: "Building permit",
+        definition:
+          "Written permission from your municipality's chief building official to construct, renovate, demolish or change the use of a building, issued under Ontario's Building Code Act.",
+      },
+      {
+        term: "Building Code",
+        definition:
+          "The provincial regulation under the Building Code Act that sets construction standards in Ontario. Municipal building departments review permit applications against it.",
+      },
+      {
+        term: "Zoning by-law",
+        definition:
+          "A municipal by-law that controls how land may be used and where buildings can go and how large they can be, through rules such as setbacks, height and lot coverage.",
       },
     ],
     sources: [sources.ontarioBuildingPermits, sources.buildingCodeAct, sources.mississaugaBeforeYouApply],
@@ -82,29 +99,46 @@ export const guides: Guide[] = [
       "A home addition generally needs a building permit, and the design must meet both your municipality's zoning by-law and the Ontario Building Code. If the design does not meet zoning, a planning approval such as a minor variance may be needed before the permit can be issued.",
     sections: [
       {
-        heading: "Start with zoning",
+        heading: "Why does an addition start with zoning?",
         paragraphs: [
           "Zoning by-laws control things like how close an addition can be to the property lines, how tall it can be and how much of the lot can be covered. Checking these early tells you how much room the design has.",
           "Where a design does not meet a zoning requirement, owners can usually apply to the municipality's Committee of Adjustment for a minor variance. That is a separate process, and it generally has to be resolved before the building permit is issued.",
         ],
       },
       {
-        heading: "What the drawings usually include",
+        heading: "What do addition drawings usually include?",
         paragraphs: [
           "Addition applications typically include a site plan, floor plans, elevations, building sections and structural information. Many municipalities also ask for a current survey and energy efficiency information. Your municipality publishes its own list of required documents.",
         ],
       },
       {
-        heading: "Who can prepare the drawings",
+        heading: "Who can prepare permit drawings in Ontario?",
         paragraphs: [
           "Under Ontario's Building Code, permit drawings for most projects must be prepared by a designer who is qualified and registered with the province, or by a licensed architect or professional engineer. Owners can generally prepare drawings for their own house. Qualified designers are identified by a Building Code Identification Number (BCIN), which can be checked in the province's public registry.",
         ],
       },
       {
-        heading: "Review and revisions",
+        heading: "What happens during the municipal review?",
         paragraphs: [
           "Once the application is complete, the municipality reviews it and may issue comments asking for clarification or changes. Responding clearly and completely to those comments is one of the most effective ways to keep an application moving.",
         ],
+      },
+    ],
+    keyTerms: [
+      {
+        term: "Minor variance",
+        definition:
+          "Permission from a municipality's Committee of Adjustment for a small departure from a zoning by-law requirement, such as a reduced setback.",
+      },
+      {
+        term: "BCIN",
+        definition:
+          "Building Code Identification Number. The province issues it to designers who are qualified and registered under the Building Code, and it appears on the drawings they prepare.",
+      },
+      {
+        term: "Complete application",
+        definition:
+          "A permit application that includes all the documents and information the Building Code and your municipality require. Review time frames start once an application is complete.",
       },
     ],
     sources: [sources.ontarioBuildingPermits, sources.buildingCodeAct],
@@ -136,7 +170,7 @@ export const guides: Guide[] = [
       "To create a legal basement apartment in Ontario you need a building permit, and the unit must meet the Building Code, the Fire Code and your municipality's zoning rules. Some GTA municipalities also require second units to be registered.",
     sections: [
       {
-        heading: "The approvals involved",
+        heading: "Which approvals does a basement apartment involve?",
         paragraphs: [
           "The Government of Ontario's guide to adding a second unit recommends speaking with your municipality's planning and building departments first, because they can confirm the zoning, Building Code and permit requirements for your property.",
         ],
@@ -148,16 +182,28 @@ export const guides: Guide[] = [
         ],
       },
       {
-        heading: "What reviewers commonly look at",
+        heading: "What do reviewers commonly look at?",
         paragraphs: [
           "Common points of review for basement units include ceiling height, exits and egress windows, fire separations between units, smoke and carbon monoxide alarms, and heating and ventilation. Requirements can differ depending on the age of the house.",
         ],
       },
       {
-        heading: "Check feasibility before you design",
+        heading: "Why check feasibility before you design?",
         paragraphs: [
           "Some basements need significant work to become a legal unit, for example to achieve the required ceiling height or a compliant exit. A feasibility review of the existing basement before full drawings helps you understand what the project involves.",
         ],
+      },
+    ],
+    keyTerms: [
+      {
+        term: "Second unit",
+        definition:
+          "A self-contained residential unit, such as a basement apartment, created within a house or on the same property. Ontario also uses the term additional residential unit.",
+      },
+      {
+        term: "Fire separation",
+        definition:
+          "Construction, such as walls and ceilings with a required fire-resistance rating, that limits the spread of fire between units.",
       },
     ],
     sources: [sources.ontarioSecondUnit, sources.esa, sources.buildingCodeAct],
@@ -189,7 +235,7 @@ export const guides: Guide[] = [
       "Permit fees are set by each municipality, commonly based on the type and size of the project, so there is no single figure for the GTA. Ontario's Building Code sets time frames for municipalities to decide on complete applications, but the overall timeline also depends on design, other approvals and revisions.",
     sections: [
       {
-        heading: "What shapes the cost",
+        heading: "What shapes the cost?",
         paragraphs: [
           "A project's permit costs usually come from two places: the municipality's permit fee and the cost of preparing the drawings and documentation.",
         ],
@@ -200,14 +246,25 @@ export const guides: Guide[] = [
         ],
       },
       {
-        heading: "Review time frames for complete applications",
+        heading: "How long does the municipality have to decide on a complete application?",
         paragraphs: [
           "Ontario's Building Code sets time frames within which a municipality must decide whether to issue a permit once it has a complete application. The City of Toronto, for example, lists 10 business days for houses, 15 for small buildings, 20 for large buildings and 30 for complex buildings.",
           "These time frames apply to the municipality's review of a complete application. They do not include the time to prepare drawings or obtain other approvals, and they can restart or extend when an application is incomplete or needs revisions.",
         ],
+        table: {
+          caption: "City of Toronto review time frames for complete building permit applications",
+          columns: ["Type of building", "Time frame for a decision"],
+          rows: [
+            ["House", "10 business days"],
+            ["Small building", "15 business days"],
+            ["Large building", "20 business days"],
+            ["Complex building", "30 business days"],
+          ],
+          source: "City of Toronto, Building permit review streams. Other municipalities publish their own time frames.",
+        },
       },
       {
-        heading: "What helps an application move",
+        heading: "What helps keep an application moving?",
         paragraphs: [
           "Submitting a complete application, resolving any zoning issues before applying and responding fully to review comments are the factors applicants most directly control.",
         ],

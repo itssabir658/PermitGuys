@@ -64,7 +64,7 @@ scripts/check-site.mjs    Crawler: status codes, links, headings, metadata, 404s
 ## 6. SEO, AEO and GEO
 
 - `pageMetadata()` gives every page a title, description, canonical, Open Graph and Twitter data in one format.
-- Structured data: `ProfessionalService` and `WebSite` site-wide (only supplied facts), `BreadcrumbList` on inner pages, `Service` + `FAQPage` on services, `Article` (with citations) + `FAQPage` on guides.
+- Structured data, linked by `@id`: `Organization` (becomes `ProfessionalService` once an address is confirmed) and `WebSite` site-wide, `WebPage` (or `AboutPage`, `ContactPage`, `CollectionPage`) plus `BreadcrumbList` on inner pages, `Service` on services, `Article` (author and publisher the organization, with citations) on guides. No `FAQPage`: Google limits FAQ rich results to government and health sites, and the answers are already plain HTML.
 - Answer-first pages: each service and guide opens with a short, quotable direct answer; FAQs are in plain HTML.
 - Sources and review status are visible on every guide; reviewer attribution only when verified.
 - `/llms.txt` lists services and guides with their direct answers for AI assistants.
