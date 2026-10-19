@@ -1,6 +1,6 @@
 import type { ProcessStep } from "./types";
 
-/** The four-step overview used on the homepage and the How it works page. */
+/** The five-step overview used on the homepage and the How it works page. */
 export const homeSteps: ProcessStep[] = [
   {
     title: "Tell us about your project",
@@ -19,7 +19,12 @@ export const homeSteps: ProcessStep[] = [
   },
   {
     title: "We support the permit process",
-    body: "We help you through the application and respond to review comments on our drawings. The municipality reviews the application and decides on the permit.",
+    body: "We help you through the application and respond to review comments on our drawings.",
     owner: "PermitGuys",
+  },
+  {
+    title: "The municipality decides",
+    body: "Your municipality reviews the application, may ask for revisions, and decides whether to issue the permit. Inspections follow during construction.",
+    owner: "Municipality",
   },
 ];

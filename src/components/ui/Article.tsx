@@ -13,7 +13,7 @@ export function ArticleLayout({ toc, children }: { toc: TocItem[]; children: Rea
       <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
         <aside className="hidden lg:col-span-3 lg:block">
           <nav aria-label="On this page" className="sticky top-28">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">On this page</p>
+            <p className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-copper-700">On this page</p>
             <ul className="mt-5 space-y-3 border-l border-line text-sm">
               {toc.map((item) => (
                 <li key={item.id}>

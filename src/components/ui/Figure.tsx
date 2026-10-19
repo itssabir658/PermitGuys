@@ -16,7 +16,10 @@ export function Figure({
   aspect = "aspect-[4/3]",
   tone = "light",
   caption = true,
+  captionOnDark,
 }: {
+  /** Set when the figure sits on a dark section, so the caption stays legible. */
+  captionOnDark?: boolean;
   visual: Visual;
   className?: string;
   priority?: boolean;
@@ -44,7 +47,7 @@ export function Figure({
         )}
       </div>
       {caption ? (
-        <figcaption className={cn("mt-3 text-xs tracking-wide", tone === "dark" ? "text-navy-100/60" : "text-ink-muted")}>
+        <figcaption className={cn("mt-3 font-mono text-[0.68rem] tracking-[0.06em]", captionOnDark ? "text-navy-100/70" : "text-ink-muted")}>
           {photo ? (
             <>Photo: {photo.credit} ({photo.licence})</>
           ) : (

@@ -7,10 +7,10 @@ import { paths } from "@/lib/routes";
 
 export function HomeFaq() {
   return (
-    <Section tone="light" labelledBy="faq-heading" bordered id="questions">
+    <Section labelledBy="faq-heading" bordered id="questions">
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
-          <SectionHeading id="faq-heading" eyebrow="Questions" title="Common questions." intro="General answers. Your municipality has the final word on requirements for your property." />
+          <SectionHeading id="faq-heading" code="06" size="md" eyebrow="Questions" title="Common questions." intro="General answers. Your municipality has the final word on requirements for your property." />
           <div className="mt-8">
             <ArrowLink href={paths.guides}>Read the permit guides</ArrowLink>
           </div>

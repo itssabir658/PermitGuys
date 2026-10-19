@@ -1,7 +1,11 @@
+import Link from "next/link";
 import { CtaPanel } from "@/components/ui/CtaPanel";
-import { LinkRows } from "@/components/ui/LinkRows";
+import { IndexList } from "@/components/ui/IndexList";
+import { Eyebrow } from "@/components/ui/Eyebrow";
+import { ArrowRight } from "@/components/ui/Icons";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Section } from "@/components/ui/Section";
+import { otherWork } from "@/content/other-work";
 import { getServicesByCategory } from "@/lib/content";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
@@ -14,8 +18,20 @@ export const metadata = pageMetadata({
 });
 
 const groups = [
-  { id: "residential", title: "Residential", category: "residential" as const },
-  { id: "commercial", title: "Commercial and rental", category: "commercial" as const },
+  {
+    id: "residential",
+    eyebrow: "Homes",
+    title: "Residential",
+    intro: "Additions, basement apartments, decks and new homes, for homeowners across the GTA.",
+    category: "residential" as const,
+  },
+  {
+    id: "commercial",
+    eyebrow: "Businesses and landlords",
+    title: "Commercial and rental",
+    intro: "Interior renovations, commercial spaces and rental properties.",
+    category: "commercial" as const,
+  },
 ];
 
 export default function ServicesPage() {
@@ -29,13 +45,19 @@ export default function ServicesPage() {
         lead="We prepare the drawings and documentation a building permit application needs, and help you understand each step. Choose a service to see what it involves."
       />
       {groups.map((g, i) => (
-        <Section key={g.id} labelledBy={`${g.id}-heading`} tone={i % 2 ? "light" : "paper"} bordered={i > 0}>
+        <Section key={g.id} labelledBy={`${g.id}-heading`} bordered={i > 0}>
           <div className="grid gap-10 lg:grid-cols-12">
-            <h2 id={`${g.id}-heading`} className="font-display text-display-md text-navy-900 lg:col-span-4">
-              {g.title}
-            </h2>
+            <div className="lg:col-span-4">
+              <Eyebrow code={String(i + 1).padStart(2, "0")}>{g.eyebrow}</Eyebrow>
+              <h2 id={`${g.id}-heading`} className="mt-6 font-display text-display-md text-navy-900">
+                {g.title}
+              </h2>
+              <p className="mt-4 max-w-sm leading-relaxed text-ink-muted">{g.intro}</p>
+            </div>
             <div className="lg:col-span-8">
-              <LinkRows
+              <IndexList
+                start={i === 0 ? 1 : getServicesByCategory("residential").length + 1}
+                columns={["No.", "Service", "What it covers"]}
                 items={getServicesByCategory(g.category).map((s) => ({
                   href: paths.service(s.slug),
                   title: s.name,
@@ -46,6 +68,26 @@ export default function ServicesPage() {
           </div>
         </Section>
       ))}
+      <Section labelledBy="other-work-heading" tone="light" bordered>
+        <div className="grid gap-8 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <Eyebrow code="03">Also on our drawing board</Eyebrow>
+            <h2 id="other-work-heading" className="mt-6 font-display text-display-sm text-navy-900">
+              Other work we take on
+            </h2>
+          </div>
+          <ul className="divide-y divide-line border-y border-line lg:col-span-8">
+            {otherWork.map((item) => (
+              <li key={item.label}>
+                <Link href={item.href} className="group flex items-center justify-between gap-6 py-4 text-lg text-navy-900 hover:text-copper-700">
+                  {item.label}
+                  <ArrowRight className="size-4 shrink-0 text-copper-600 transition-transform duration-300 ease-out-soft group-hover:translate-x-1" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Section>
       <CtaPanel title="Not sure which service fits?" body="Tell us what you are planning. We will help you work out which drawings and approvals the project is likely to need." />
     </>
   );

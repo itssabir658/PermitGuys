@@ -8,11 +8,15 @@ type Variant = "primary" | "secondary" | "copper" | "ghost-light";
 
 const variants: Record<Variant, string> = {
   primary: "bg-navy-900 text-paper hover:bg-navy-800",
-  secondary: "border border-navy-900/30 text-navy-900 hover:border-navy-900 hover:bg-navy-900/[0.03]",
+  secondary: "border border-navy-900/35 text-navy-900 hover:border-navy-900 hover:bg-navy-900/[0.03]",
   copper: "bg-copper-500 text-navy-950 hover:bg-copper-300",
   "ghost-light": "border border-paper/35 text-paper hover:border-paper hover:bg-paper/5",
 };
 
+/**
+ * Square-cornered call to action. The arrow sits in its own cell, like a cell
+ * in a drawing's title block, which keeps buttons from reading as pills.
+ */
 export function ButtonLink({
   href,
   children,
@@ -30,13 +34,17 @@ export function ButtonLink({
     <Link
       href={href}
       className={cn(
-        "group inline-flex min-h-12 items-center justify-center gap-3 rounded-[2px] px-6 py-3 text-[0.95rem] font-medium tracking-[0.01em] transition-colors duration-200",
+        "group inline-flex min-h-12 items-stretch justify-between text-[0.95rem] font-medium tracking-[0.005em] transition-colors duration-200",
         variants[variant],
         className,
       )}
     >
-      {children}
-      {arrow ? <ArrowRight className="size-4 transition-transform duration-300 ease-out-soft group-hover:translate-x-1" /> : null}
+      <span className="flex items-center px-6 py-3">{children}</span>
+      {arrow ? (
+        <span aria-hidden="true" className="flex w-12 shrink-0 items-center justify-center border-l border-current/20">
+          <ArrowRight className="size-4 transition-transform duration-300 ease-out-soft group-hover:translate-x-0.5" />
+        </span>
+      ) : null}
     </Link>
   );
 }

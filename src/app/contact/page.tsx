@@ -53,7 +53,7 @@ export default function ContactPage() {
             <InquiryForm directContact={directContact} />
           </div>
           <aside className="lg:col-span-4 lg:col-start-9" aria-labelledby="direct-heading">
-            <h2 id="direct-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-copper-700">
+            <h2 id="direct-heading" className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-copper-700">
               Contact directly
             </h2>
             <dl className="mt-6 divide-y divide-line border-y border-line">

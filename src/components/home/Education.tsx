@@ -8,12 +8,14 @@ import { paths } from "@/lib/routes";
 export function Education() {
   const guides = getGuides();
   return (
-    <Section labelledBy="guides-heading">
+    <Section tone="light" bordered labelledBy="guides-heading">
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <SectionHeading
             id="guides-heading"
+            code="04"
             eyebrow="Permit guides"
+            size="md"
             title="Understand the process before you start."
             intro="Plain-language guides to the questions homeowners ask most, with links to the official sources."
           />

@@ -1,3 +1,5 @@
+import type { Photo } from "./types";
+
 /**
  * Business facts. Every `null` here is information the business has not
  * supplied yet. Templates show a clearly marked placeholder for null values
@@ -22,6 +24,18 @@ export const site = {
   },
   /** Absolute or root-relative URL of the supplied logo (square, at least 112px). */
   logo: null as string | null,
+  /**
+   * Licensed architectural photograph for the homepage hero (landscape, at
+   * least 2000px wide, stored under /public/images). Until one is supplied the
+   * hero shows a drafted elevation instead. See docs/IMAGES.md.
+   */
+  heroPhoto: null as Photo | null,
+  /**
+   * Google review summary, shown as a link to the Business Profile once the
+   * business confirms it. Never marked up as review structured data:
+   * Google does not allow self-serving review markup.
+   */
+  reviews: null as { rating: string; count: number; url: string } | null,
   /** Verified credentials only, such as designer registrations (BCIN). */
   credentials: [] as string[],
   /**

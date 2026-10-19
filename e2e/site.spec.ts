@@ -99,6 +99,13 @@ test.describe("navigation", () => {
     await expect(page.getByLabel("Project type")).toHaveValue("Deck");
   });
 
+  test("the homepage project picker opens the form with the project type chosen", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Start an inquiry: Deck" }).first().click();
+    await expect(page).toHaveURL(/\/contact\/\?service=deck-permits$/);
+    await expect(page.getByLabel("Project type")).toHaveValue("Deck");
+  });
+
   test("touch targets are at least 44px on small screens", async ({ page }, info) => {
     test.skip(info.project.name !== "mobile", "Mobile only");
     await page.goto("/contact/");

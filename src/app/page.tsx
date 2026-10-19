@@ -1,5 +1,4 @@
 import { Education } from "@/components/home/Education";
-import { FeaturedProjects } from "@/components/home/FeaturedProjects";
 import { Hero } from "@/components/home/Hero";
 import { HomeFaq } from "@/components/home/HomeFaq";
 import { HowItWorks } from "@/components/home/HowItWorks";
@@ -26,9 +25,8 @@ export default function HomePage() {
       <Hero />
       <ServiceIntro />
       <HowItWorks />
-      <FeaturedProjects />
-      <Education />
       <ProjectProof />
+      <Education />
       <ServiceArea />
       <HomeFaq />
       <CtaPanel />

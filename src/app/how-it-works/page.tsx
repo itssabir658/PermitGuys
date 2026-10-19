@@ -14,7 +14,7 @@ export const metadata = pageMetadata({
 });
 
 const toc = [
-  { id: "steps", label: "The four steps" },
+  { id: "steps", label: "The five steps" },
   { id: "responsibilities", label: "Who does what" },
   { id: "prepare", label: "What to have ready" },
 ];
@@ -58,14 +58,14 @@ export default function HowItWorksPage() {
         lead="A building permit involves several parties. Here is how the work is divided, so you know what to expect at each step."
       />
       <ArticleLayout toc={toc}>
-        <ArticleSection id="steps" title="The four steps">
+        <ArticleSection id="steps" title="The five steps">
           <StepList steps={homeSteps} />
         </ArticleSection>
         <ArticleSection id="responsibilities" title="Who does what">
           <div className="grid gap-10 xl:grid-cols-3">
             {responsibilities.map((r) => (
               <div key={r.who}>
-                <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-copper-700">{r.who}</h3>
+                <h3 className="mb-4 font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-copper-700">{r.who}</h3>
                 <RuledList items={r.items} />
               </div>
             ))}

@@ -1,61 +1,57 @@
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import Link from "next/link";
+import { ArrowLink } from "@/components/ui/ButtonLink";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { gtaMunicipalities } from "@/content/locations";
 import { getLocations } from "@/lib/content";
 import { paths } from "@/lib/routes";
-import Link from "next/link";
 
 export function ServiceArea() {
   const confirmed = getLocations();
   return (
-    <Section labelledBy="area-heading">
+    <Section labelledBy="area-heading" bordered>
       <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-4">
           <SectionHeading
             id="area-heading"
+            code="05"
+            size="md"
             eyebrow="Service area"
-            title="Focused on the Greater Toronto Area."
-            intro="Every municipality runs its own building department, by-laws and submission requirements. We work with homeowners and property owners across the GTA."
+            title="Across the Greater Toronto Area."
+            intro="Every municipality runs its own building department, by-laws and submission requirements, so we confirm them for each property."
           />
-          <div className="mt-10">
-            <ButtonLink href={paths.serviceAreas} variant="secondary">
-              View service areas
-            </ButtonLink>
+          <div className="mt-8">
+            <ArrowLink href={paths.serviceAreas}>View service areas</ArrowLink>
           </div>
         </div>
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-8">
           {confirmed.length > 0 ? (
-            <ul className="grid gap-px border border-line bg-line sm:grid-cols-2">
+            <ul className="grid border-t border-navy-900 sm:grid-cols-2">
               {confirmed.map((l) => (
-                <li key={l.slug} className="bg-paper">
-                  <Link href={paths.serviceArea(l.slug)} className="block p-6 hover:bg-paper-100">
-                    <span className="font-display text-xl text-navy-900">{l.name}</span>
+                <li key={l.slug} className="border-b border-line">
+                  <Link href={paths.serviceArea(l.slug)} className="group block py-5 sm:pr-6">
+                    <span className="font-display text-2xl text-navy-900 group-hover:text-copper-700">{l.name}</span>
                     <span className="mt-1 block text-sm text-ink-muted">{l.region}</span>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="border border-line">
-              <p className="border-b border-line px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                The regions of the GTA
-              </p>
-              <ul className="grid sm:grid-cols-2">
+            <>
+              <p className="border-b border-navy-900 pb-3 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-ink-muted">The regions of the GTA, for reference</p>
+              <dl className="grid gap-x-10 sm:grid-cols-2">
                 {gtaMunicipalities.map((r) => (
-                  <li key={r.region} className="border-b border-line px-6 py-5 sm:odd:border-r">
-                    <span className="font-display text-xl text-navy-900">{r.region}</span>
-                    <span className="mt-1 block text-sm text-ink-muted">{r.municipalities.map((m) => m.name).join(", ")}</span>
-                  </li>
+                  <div key={r.region} className="border-b border-line py-5">
+                    <dt className="font-display text-2xl text-navy-900">{r.region}</dt>
+                    <dd className="mt-1 text-ink-muted">{r.municipalities.map((m) => m.name).join(", ")}</dd>
+                  </div>
                 ))}
-              </ul>
-              <div className="p-6">
-                <Placeholder block>
-                  confirm which municipalities PermitGuys serves. Until then, this lists the GTA&apos;s regions for reference only and does not claim coverage.
-                </Placeholder>
-              </div>
-            </div>
+              </dl>
+              <Placeholder block className="mt-8">
+                confirm which municipalities PermitGuys serves. Until then, this lists the GTA&apos;s regions for reference only and does not claim coverage.
+              </Placeholder>
+            </>
           )}
         </div>
       </div>

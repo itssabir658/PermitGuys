@@ -42,12 +42,12 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
         lead={guide.summary}
         schemaExtra={guidePageFacts(guide)}
       >
-        <DirectAnswer>{guide.directAnswer}</DirectAnswer>
-        <p className="mt-6 text-sm text-ink-muted">
+        <DirectAnswer onDark>{guide.directAnswer}</DirectAnswer>
+        <p className="mt-6 text-sm text-navy-100/70">
           {guide.lastReviewed ? (
             <>Last reviewed {formatDate(guide.lastReviewed)}</>
           ) : (
-            <Placeholder>review date, set once a qualified reviewer has checked this guide</Placeholder>
+            <Placeholder onDark>review date, set once a qualified reviewer has checked this guide</Placeholder>
           )}
         </p>
       </PageHeader>

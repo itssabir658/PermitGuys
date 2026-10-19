@@ -163,7 +163,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
         href={ctaHref}
         className="hidden min-h-11 items-center bg-navy-900 px-5 text-[0.95rem] font-medium text-paper transition-colors hover:bg-navy-800 sm:inline-flex"
       >
-        Get Started
+        Discuss your project
       </Link>
 
       {/* Mobile */}
@@ -212,7 +212,7 @@ export function MainNav({ groups, ctaHref }: { groups: NavGroup[]; ctaHref: Rout
             ))}
           </ul>
           <Link href={ctaHref} className="mt-8 flex min-h-12 items-center justify-between bg-navy-900 px-6 text-paper">
-            Get Started
+            Discuss your project
             <ArrowRight />
           </Link>
         </nav>
