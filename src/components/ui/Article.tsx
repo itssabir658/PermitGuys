@@ -12,12 +12,12 @@ export function ArticleLayout({ toc, children }: { toc: TocItem[]; children: Rea
     <Container className="py-16 sm:py-20 lg:py-24">
       <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
         <aside className="hidden lg:col-span-3 lg:block">
-          <nav aria-label="On this page" className="sticky top-28">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">On this page</p>
-            <ul className="mt-5 space-y-3 border-l border-line text-sm">
+          <nav aria-label="On this page" data-toc="" className="glass sticky top-28 rounded-2xl p-5">
+            <p className="text-label text-brand-700">On this page</p>
+            <ul className="mt-4 space-y-1 text-sm">
               {toc.map((item) => (
                 <li key={item.id}>
-                  <a href={`#${item.id}`} className="-ml-px block border-l border-transparent pl-4 text-ink-muted hover:border-copper-500 hover:text-navy-900">
+                  <a href={`#${item.id}`} className="block rounded-lg px-3 py-2 text-ink-muted transition-colors hover:bg-white/80 hover:text-charcoal-900 aria-[current=location]:bg-charcoal-900 aria-[current=location]:text-paper">
                     {item.label}
                   </a>
                 </li>
@@ -33,8 +33,8 @@ export function ArticleLayout({ toc, children }: { toc: TocItem[]; children: Rea
 
 export function ArticleSection({ id, title, children, intro }: { id: string; title: string; children: ReactNode; intro?: ReactNode }) {
   return (
-    <section aria-labelledby={`${id}-heading`} id={id} className="scroll-mt-28">
-      <h2 id={`${id}-heading`} className="font-display text-display-md text-balance text-navy-900">
+    <section aria-labelledby={`${id}-heading`} id={id} data-reveal="" className="scroll-mt-28">
+      <h2 id={`${id}-heading`} className="font-display text-display-md text-balance text-charcoal-900">
         {title}
       </h2>
       {intro ? <div className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-muted">{intro}</div> : null}
@@ -43,13 +43,13 @@ export function ArticleSection({ id, title, children, intro }: { id: string; tit
   );
 }
 
-/** Ruled bullet list with copper dashes, matching .prose-pg lists. */
+/** Bullet list in a glass card, one ruled row per item. */
 export function RuledList({ items }: { items: string[] }) {
   return (
-    <ul className="max-w-3xl divide-y divide-line border-y border-line">
+    <ul className="glass max-w-3xl divide-y divide-charcoal-900/[0.08] rounded-2xl px-5 sm:px-6">
       {items.map((item) => (
         <li key={item} className="flex gap-4 py-4 leading-relaxed text-ink">
-          <span aria-hidden="true" className="mt-3 h-px w-4 shrink-0 bg-copper-500" />
+          <span aria-hidden="true" className="mt-[0.6rem] size-1.5 shrink-0 rounded-full bg-brand-500" />
           <span>{item}</span>
         </li>
       ))}
@@ -58,5 +58,5 @@ export function RuledList({ items }: { items: string[] }) {
 }
 
 export function Note({ children }: { children: ReactNode }) {
-  return <p className="mt-6 max-w-3xl border-l-2 border-navy-300 pl-5 text-[0.95rem] leading-relaxed text-ink-muted">{children}</p>;
+  return <p className="mt-4 max-w-3xl rounded-r-xl border-l-2 border-brand-500 bg-paper-100 py-3 pr-4 pl-5 text-[0.95rem] leading-relaxed text-ink-muted">{children}</p>;
 }

@@ -2,15 +2,15 @@ import type { ReactNode } from "react";
 import { Container } from "./Container";
 import { cn } from "./cn";
 
-type Tone = "paper" | "light" | "navy";
+type Tone = "paper" | "light" | "dark";
 
 const tones: Record<Tone, string> = {
   paper: "bg-paper text-ink",
   light: "bg-paper-100 text-ink",
-  navy: "bg-navy-900 text-paper",
+  dark: "bg-charcoal-900 text-white",
 };
 
-/** Vertical rhythm and background tone for every page section. */
+/** Vertical rhythm and background tone for every page section. Content fades up into view (data-reveal). */
 export function Section({
   children,
   tone = "paper",
@@ -32,9 +32,11 @@ export function Section({
     <section
       id={id}
       aria-labelledby={labelledBy}
-      className={cn(tones[tone], "py-20 sm:py-24 lg:py-32", bordered && "border-t border-line", className)}
+      className={cn(tones[tone], "py-16 sm:py-20 lg:py-28", bordered && "border-t border-line", className)}
     >
-      <Container narrow={narrow}>{children}</Container>
+      <Container narrow={narrow}>
+        <div data-reveal="">{children}</div>
+      </Container>
     </section>
   );
 }

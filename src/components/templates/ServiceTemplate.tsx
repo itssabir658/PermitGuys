@@ -36,7 +36,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
         ]}
         eyebrow={service.category === "residential" ? "Residential service" : "Commercial service"}
         title={service.name}
-        aside={<Figure visual={service.visual} priority sizes="(min-width: 1024px) 40vw, 100vw" />}
+        aside={<Figure visual={service.visual} tone="dark" captionOnDark framed priority sizes="(min-width: 1024px) 40vw, 100vw" />}
       >
         <DirectAnswer>{service.directAnswer}</DirectAnswer>
       </PageHeader>
@@ -74,11 +74,11 @@ export function ServiceTemplate({ service }: { service: Service }) {
         >
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <h3 className="mb-4 text-lg font-semibold text-navy-900">Cost factors</h3>
+              <h3 className="mb-4 text-lg font-semibold text-charcoal-900">Cost factors</h3>
               <RuledList items={service.costFactors} />
             </div>
             <div>
-              <h3 className="mb-4 text-lg font-semibold text-navy-900">Timeline factors</h3>
+              <h3 className="mb-4 text-lg font-semibold text-charcoal-900">Timeline factors</h3>
               <RuledList items={service.timelineFactors} />
             </div>
           </div>

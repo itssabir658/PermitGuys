@@ -1,39 +1,45 @@
+import Image from "next/image";
 import Link from "next/link";
 import { primaryNav } from "@/content/navigation";
 import { site } from "@/content/site";
-import { Container } from "@/components/ui/Container";
 import { paths } from "@/lib/routes";
 import { MainNav } from "./MainNav";
 
 /**
- * Wordmark placeholder: set in the display face until the logo is supplied.
- * Replace the contents of <Wordmark> with the logo SVG when available.
+ * The PermitGuys logo as supplied: red "permit", charcoal "guys". On dark
+ * grounds "guys" switches to white (permitguys-logo-on-dark.png).
  */
-export function Wordmark({ onDark }: { onDark?: boolean }) {
+export function Logo({ onDark, className }: { onDark?: boolean; className?: string }) {
   return (
-    <span className="inline-flex items-center gap-2.5" data-placeholder-logo="">
-      <span aria-hidden="true" className="grid size-7 grid-cols-2 grid-rows-2 gap-[3px] p-[3px] ring-1 ring-copper-500">
-        <span className="bg-copper-500" />
-        <span className={onDark ? "bg-paper/80" : "bg-navy-900"} />
-        <span className={onDark ? "bg-paper/80" : "bg-navy-900"} />
-        <span className={onDark ? "bg-paper/25" : "bg-navy-900/25"} />
-      </span>
-      <span className={`font-display text-[1.45rem] leading-none tracking-[-0.01em] ${onDark ? "text-paper" : "text-navy-900"}`}>
-        {site.name}
-      </span>
-    </span>
+    <Image
+      src={onDark ? "/brand/permitguys-logo-on-dark.png" : "/brand/permitguys-logo.png"}
+      alt={site.name}
+      width={327}
+      height={61}
+      unoptimized
+      priority={!onDark}
+      className={className ?? "h-7 w-auto"}
+    />
   );
 }
 
+/**
+ * Floating glass bar. The blur sits on its own layer behind the content:
+ * backdrop-filter on the bar itself would trap the fixed mobile menu inside it.
+ */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper">
-      <Container className="flex h-[4.5rem] items-center justify-between gap-6">
-        <Link href={paths.home} className="shrink-0" aria-label={`${site.name} home`}>
-          <Wordmark />
+    <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4">
+      <div className="relative isolate mx-auto flex h-16 max-w-[84rem] items-center justify-between gap-6 pr-2 pl-4 sm:pl-6">
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 rounded-2xl border border-white bg-white/75 shadow-[0_18px_40px_-24px_rgb(28_28_28/0.35)] ring-1 ring-charcoal-900/[0.06] backdrop-blur-xl backdrop-saturate-150"
+        />
+        <Link href={paths.home} className="shrink-0 rounded-lg" aria-label={`${site.name} home`}>
+          <Logo />
         </Link>
         <MainNav groups={primaryNav} ctaHref={paths.contact} />
-      </Container>
+      </div>
     </header>
   );
 }

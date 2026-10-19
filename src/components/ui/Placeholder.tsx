@@ -23,7 +23,7 @@ export function Placeholder({
       data-placeholder=""
       className={cn(
         "border border-dashed font-mono text-[0.8em] tracking-tight",
-        onDark ? "border-copper-300/70 bg-copper-300/10 text-copper-300" : "border-copper-500 bg-copper-500/[0.07] text-copper-700",
+        onDark ? "border-brand-300/70 bg-brand-300/10 text-brand-300" : "border-brand-500 bg-brand-500/[0.07] text-brand-700",
         block ? "block rounded-[2px] p-4 leading-relaxed" : "inline-block rounded-[2px] px-1.5 py-0.5",
         className,
       )}

@@ -1,25 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Sans, Newsreader } from "next/font/google";
+import { bodyFont, headingFont } from "./fonts";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { InteractionEffects } from "@/components/layout/InteractionEffects";
 import { SiteTelemetry } from "@/components/layout/SiteTelemetry";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { site } from "@/content/site";
 import { organizationSchema, websiteSchema } from "@/lib/jsonld";
 import "./globals.css";
-
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const instrumentSans = Instrument_Sans({
-  variable: "--font-instrument-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -43,21 +32,22 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#14263D",
+  themeColor: "#F2F5F9",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-CA" className={`${newsreader.variable} ${instrumentSans.variable} antialiased`}>
+    <html lang="en-CA" className={`${headingFont.variable} ${bodyFont.variable} antialiased`}>
       <body className="flex min-h-screen flex-col">
         <SkipLink />
         <SiteHeader />
-        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
+        <main id="main" tabIndex={-1} className="flex-1 bg-paper focus:outline-none">
           {children}
         </main>
         <SiteFooter />
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <SiteTelemetry />
+        <InteractionEffects />
       </body>
     </html>
   );

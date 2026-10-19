@@ -26,6 +26,6 @@ visual: {
 
 `Figure` then renders the photo with `next/image` at the same aspect ratio, and the caption shows the credit.
 
-For the homepage hero, replace the drawing panel in `src/components/home/Hero.tsx` with a `<Figure visual={...} priority />` or place the photo behind the drawing.
+For the homepage hero, set `heroPhoto` in `src/content/site.ts` to a `Photo` (landscape, 3:2, at least 2000px wide). The hero then shows the photograph in place of the drafted elevation (`src/components/home/HeroDrawing.tsx`) and credits it in the caption. A real PermitGuys project photo works best: an addition or a finished basement unit shot straight on, in daylight, without people.
 
 Only use real project photos with the client's permission. Do not present stock photos as PermitGuys projects.

@@ -117,7 +117,7 @@ export const services: Service[] = [
     relatedServices: ["custom-home-permits", "interior-renovation-permits", "deck-permits"],
     visual: {
       drawing: "addition",
-      alt: "Line drawing of a two-storey house elevation with a rear addition outlined in copper.",
+      alt: "Line drawing of a two-storey house elevation with a rear addition outlined in red.",
     },
     seo: {
       title: "Residential Addition Permits in the GTA",
@@ -287,7 +287,7 @@ export const services: Service[] = [
     relatedServices: ["commercial-permits", "legal-basement-permits", "residential-additions"],
     visual: {
       drawing: "interior",
-      alt: "Line drawing of an interior floor plan with a wall being removed, marked in copper.",
+      alt: "Line drawing of an interior floor plan with a wall being removed, marked in red.",
     },
     seo: {
       title: "Interior Renovation Permits in the GTA",

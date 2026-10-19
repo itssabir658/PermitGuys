@@ -25,13 +25,13 @@ export function Breadcrumbs({ items, onDark, page }: { items: Crumb[]; onDark?: 
   return (
     <>
       <nav aria-label="Breadcrumb">
-        <ol className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${onDark ? "text-navy-100/70" : "text-ink-muted"}`}>
+        <ol className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${onDark ? "text-charcoal-100/70" : "text-ink-muted"}`}>
           {trail.map((item, i) => {
             const last = i === trail.length - 1;
             return (
               <li key={item.path} className="flex items-center gap-2">
                 {last ? (
-                  <span aria-current="page" className={onDark ? "text-paper" : "text-navy-900"}>
+                  <span aria-current="page" className={onDark ? "text-paper" : "text-charcoal-900"}>
                     {item.name}
                   </span>
                 ) : (
@@ -39,7 +39,7 @@ export function Breadcrumbs({ items, onDark, page }: { items: Crumb[]; onDark?: 
                     <Link href={item.path as Route} className="underline-offset-4 hover:underline">
                       {item.name}
                     </Link>
-                    <span aria-hidden="true" className="text-copper-500">/</span>
+                    <span aria-hidden="true" className="text-brand-500">/</span>
                   </>
                 )}
               </li>

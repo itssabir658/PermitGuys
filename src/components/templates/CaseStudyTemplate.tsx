@@ -28,7 +28,7 @@ export function CaseStudyTemplate({ project }: { project: CaseStudy }) {
         eyebrow={location ? `Case study · ${location.name}` : "Case study"}
         title={project.title}
         lead={project.summary}
-        aside={<Figure visual={project.visual} priority />}
+        aside={<Figure visual={project.visual} tone="dark" captionOnDark framed priority />}
       />
       <ArticleLayout toc={toc}>
         <ArticleSection id="brief" title="The brief">
