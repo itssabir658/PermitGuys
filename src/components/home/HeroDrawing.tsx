@@ -6,8 +6,13 @@ import type { ReactNode } from "react";
  * dashed, new work in copper, with level datums and a legend. It is an
  * illustration, not a real project, and is captioned as such.
  *
+ * `view` switches between the house as it stands and the proposal. New
+ * strokes carry pathLength="1" so the .draw-in animation can draw them.
+ *
  * Pure SVG: no requests, no layout shift, crisp at any width.
  */
+
+export type ElevationView = "existing" | "proposed";
 
 const MONO = "var(--font-mono), ui-monospace, monospace";
 
@@ -34,19 +39,33 @@ function Datum({ y, label, accent, isNew }: { y: number; label: string; accent: 
   );
 }
 
-function Window({ x, y, w, h, lights = 2 }: { x: number; y: number; w: number; h: number; lights?: number }) {
+function Window({ x, y, w, h, lights = 2, pathLength }: { x: number; y: number; w: number; h: number; lights?: number; pathLength?: number }) {
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} />
+      <rect x={x} y={y} width={w} height={h} pathLength={pathLength} />
       {Array.from({ length: lights - 1 }, (_, i) => (
-        <line key={i} x1={x + ((i + 1) * w) / lights} y1={y} x2={x + ((i + 1) * w) / lights} y2={y + h} strokeWidth={0.75} />
+        <line key={i} x1={x + ((i + 1) * w) / lights} y1={y} x2={x + ((i + 1) * w) / lights} y2={y + h} strokeWidth={0.75} pathLength={pathLength} />
       ))}
-      <line x1={x - 4} y1={y + h + 3} x2={x + w + 4} y2={y + h + 3} strokeWidth={1.25} />
+      <line x1={x - 4} y1={y + h + 3} x2={x + w + 4} y2={y + h + 3} strokeWidth={1.25} pathLength={pathLength} />
     </g>
   );
 }
 
-export function HeroDrawing({ className, accent = "#E2B18C" }: { className?: string; accent?: string }) {
+const fade = "motion-safe:transition-opacity motion-safe:duration-500";
+
+export function HeroDrawing({
+  className,
+  accent = "#E2B18C",
+  view = "proposed",
+  drawKey = 0,
+}: {
+  className?: string;
+  accent?: string;
+  view?: ElevationView;
+  /** Change it to replay the draw-in animation. */
+  drawKey?: number;
+}) {
+  const proposed = view === "proposed";
   return (
     <svg viewBox="0 0 760 530" className={className} fill="none" stroke="currentColor" strokeWidth={1.25} strokeLinejoin="round" aria-hidden="true" focusable="false">
       <defs>
@@ -88,35 +107,45 @@ export function HeroDrawing({ className, accent = "#E2B18C" }: { className?: str
       <rect x={298} y={428} width={54} height={6} strokeWidth={0.9} />
       <rect x={292} y={434} width={66} height={6} strokeWidth={0.9} />
 
-      {/* Existing roof, to be removed */}
-      <path d="M134 320L325 254L516 320" strokeDasharray="6 5" opacity={0.55} strokeWidth={1} />
-
-      {/* Proposed second storey and roof */}
-      <g stroke={accent}>
-        <rect x={150} y={200} width={350} height={120} strokeWidth={1.5} />
-        <path d="M128 200L325 128L522 200Z" strokeWidth={1.5} />
-        <line x1={128} y1={206} x2={522} y2={206} strokeWidth={0.75} />
-        <Window x={180} y={232} w={52} h={58} />
-        <Window x={299} y={232} w={52} h={58} />
-        <Window x={418} y={232} w={52} h={58} />
-        <rect x={364} y={150} width={22} height={34} strokeWidth={1} />
+      {/* Existing roof: dashed (to be removed) under the proposal, solid on its own */}
+      <path d="M134 320L325 254L516 320" strokeDasharray="6 5" strokeWidth={1} className={fade} opacity={proposed ? 0.55 : 0} />
+      <path d="M134 320L325 254L516 320" className={fade} opacity={proposed ? 0 : 1} />
+      <g className={fade} opacity={proposed ? 0 : 1}>
+        <Datum y={254} label="RIDGE, EXISTING" accent={accent} />
+        <Note x={325} y={218} anchor="middle" opacity={0.8}>
+          EXISTING BUNGALOW
+        </Note>
       </g>
 
-      {/* Dimension string over the new storey */}
-      <g stroke={accent} strokeWidth={0.9}>
-        <line x1={150} y1={96} x2={500} y2={96} />
-        <line x1={150} y1={88} x2={150} y2={120} opacity={0.6} />
-        <line x1={500} y1={88} x2={500} y2={120} opacity={0.6} />
-        <line x1={145} y1={101} x2={155} y2={91} />
-        <line x1={495} y1={101} x2={505} y2={91} />
+      {/* Proposed work: fades out for the existing view and draws in again when shown. */}
+      <g key={drawKey} className={proposed ? "draw-in" : fade} opacity={proposed ? 1 : 0}>
+        {/* Second storey and roof */}
+        <g stroke={accent}>
+          <rect x={150} y={200} width={350} height={120} strokeWidth={1.5} pathLength={1} />
+          <path d="M128 200L325 128L522 200Z" strokeWidth={1.5} pathLength={1} />
+          <line x1={128} y1={206} x2={522} y2={206} strokeWidth={0.75} pathLength={1} />
+          <Window x={180} y={232} w={52} h={58} pathLength={1} />
+          <Window x={299} y={232} w={52} h={58} pathLength={1} />
+          <Window x={418} y={232} w={52} h={58} pathLength={1} />
+          <rect x={364} y={150} width={22} height={34} strokeWidth={1} pathLength={1} />
+        </g>
+
+        {/* Dimension string over the new storey */}
+        <g stroke={accent} strokeWidth={0.9}>
+          <line x1={150} y1={96} x2={500} y2={96} pathLength={1} />
+          <line x1={150} y1={88} x2={150} y2={120} opacity={0.6} pathLength={1} />
+          <line x1={500} y1={88} x2={500} y2={120} opacity={0.6} pathLength={1} />
+          <line x1={145} y1={101} x2={155} y2={91} pathLength={1} />
+          <line x1={495} y1={101} x2={505} y2={91} pathLength={1} />
+        </g>
+        <Note x={325} y={88} anchor="middle" fill={accent} opacity={1}>
+          NEW SECOND STOREY ON EXISTING FOOTPRINT
+        </Note>
+        <Datum y={128} label="RIDGE, NEW" accent={accent} isNew />
+        <Datum y={200} label="EAVES, NEW" accent={accent} isNew />
       </g>
-      <Note x={325} y={88} anchor="middle" fill={accent} opacity={1}>
-        NEW SECOND STOREY ON EXISTING FOOTPRINT
-      </Note>
 
       {/* Level datums */}
-      <Datum y={128} label="RIDGE, NEW" accent={accent} isNew />
-      <Datum y={200} label="EAVES, NEW" accent={accent} isNew />
       <Datum y={320} label="SECOND FLOOR" accent={accent} />
       <Datum y={440} label="GRADE" accent={accent} />
 

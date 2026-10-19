@@ -10,7 +10,7 @@ const tones: Record<Tone, string> = {
   navy: "bg-navy-900 text-paper",
 };
 
-/** Vertical rhythm and background tone for every page section. */
+/** Vertical rhythm and background tone for every page section. Content fades up into view (data-reveal). */
 export function Section({
   children,
   tone = "paper",
@@ -34,7 +34,9 @@ export function Section({
       aria-labelledby={labelledBy}
       className={cn(tones[tone], "py-16 sm:py-20 lg:py-28", bordered && "border-t border-line", className)}
     >
-      <Container narrow={narrow}>{children}</Container>
+      <Container narrow={narrow}>
+        <div data-reveal="">{children}</div>
+      </Container>
     </section>
   );
 }

@@ -2,10 +2,10 @@
 
 /*
  * PermitGuys design tokens.
- * Brand colours are fixed by the brief: deep navy #14263D, warm off-white
- * #F7F6F2 and muted copper #C77A45. Supporting tints are derived from them.
- * Copper at full strength is reserved for rules, marks and large type; use
- * copper-700 for small copper text so it meets WCAG AA on paper.
+ * Brand colours: deep navy #14263D, warm off-white #F7F6F2 and copper
+ * #C77A45, with tints derived from them. Use copper-700 for small copper
+ * text on light grounds and copper-300 on navy so both meet WCAG AA.
+ * Type: Lufga for headings and Gilroy for body (see src/app/fonts.ts).
  */
 @theme {
   --color-navy-950: #0d1a2b;
@@ -32,25 +32,26 @@
   --color-line: #d8d2c4;
   --color-line-strong: #b9b1a0;
 
-  --font-display: var(--font-newsreader), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* Technical annotation face: sheet labels, step numbers, drawing notes. */
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: var(--font-heading), "Lufga", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), "Gilroy", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Drawing annotations and placeholders only. */
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --text-display-2xl: clamp(2.75rem, 1.2rem + 5.6vw, 6.4rem);
-  --text-display-2xl--line-height: 0.98;
-  --text-display-2xl--letter-spacing: -0.025em;
-  --text-display-xl: clamp(2.5rem, 1.5rem + 4vw, 4.75rem);
-  --text-display-xl--line-height: 1.02;
-  --text-display-xl--letter-spacing: -0.02em;
-  --text-display-lg: clamp(2.1rem, 1.5rem + 2.6vw, 3.6rem);
-  --text-display-lg--line-height: 1.06;
-  --text-display-lg--letter-spacing: -0.015em;
-  --text-display-md: clamp(1.7rem, 1.35rem + 1.4vw, 2.5rem);
-  --text-display-md--line-height: 1.12;
-  --text-display-md--letter-spacing: -0.01em;
-  --text-display-sm: clamp(1.35rem, 1.2rem + 0.6vw, 1.7rem);
-  --text-display-sm--line-height: 1.2;
+  --text-display-2xl: clamp(2.6rem, 1.2rem + 5vw, 5.75rem);
+  --text-display-2xl--line-height: 1;
+  --text-display-2xl--letter-spacing: -0.035em;
+  --text-display-xl: clamp(2.3rem, 1.4rem + 3.6vw, 4.25rem);
+  --text-display-xl--line-height: 1.04;
+  --text-display-xl--letter-spacing: -0.03em;
+  --text-display-lg: clamp(1.95rem, 1.4rem + 2.3vw, 3.25rem);
+  --text-display-lg--line-height: 1.08;
+  --text-display-lg--letter-spacing: -0.025em;
+  --text-display-md: clamp(1.6rem, 1.3rem + 1.2vw, 2.25rem);
+  --text-display-md--line-height: 1.15;
+  --text-display-md--letter-spacing: -0.02em;
+  --text-display-sm: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --text-display-sm--line-height: 1.25;
+  --text-display-sm--letter-spacing: -0.01em;
 
   --container-site: 82rem;
   --container-prose: 42rem;
@@ -64,12 +65,17 @@
     scroll-padding-top: 6rem;
   }
 
+  /* Navy shows only behind the floating header and on overscroll; main is paper. */
   body {
-    background-color: var(--color-paper);
+    background-color: var(--color-navy-900);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
     text-rendering: optimizeLegibility;
+  }
+
+  /* Headings default to medium weight; font-semibold and friends still win. */
+  :where(.font-display) {
+    font-weight: 500;
   }
 
   ::selection {
@@ -85,6 +91,7 @@
   @media (prefers-reduced-motion: no-preference) {
     html {
       scroll-behavior: smooth;
+      interpolate-size: allow-keywords;
     }
   }
 }
@@ -102,6 +109,7 @@
   }
   .prose-pg h2 {
     font-family: var(--font-display);
+    font-weight: 500;
     font-size: var(--text-display-sm);
     line-height: 1.2;
     margin-top: 2.2em;
@@ -141,6 +149,57 @@
     color: var(--color-navy-900);
   }
 
+  /* Navy and paper grounds with soft copper and steel glows, so glass reads as glass. */
+  .bg-glow-navy {
+    background:
+      radial-gradient(55% 60% at 88% 0%, rgb(199 122 69 / 0.3), transparent 70%),
+      radial-gradient(45% 55% at 0% 100%, rgb(68 93 125 / 0.55), transparent 70%),
+      var(--color-navy-900);
+  }
+  .bg-glow-paper {
+    background:
+      radial-gradient(40% 45% at 100% 0%, rgb(199 122 69 / 0.13), transparent 70%),
+      radial-gradient(40% 55% at 0% 100%, rgb(68 93 125 / 0.12), transparent 70%),
+      var(--color-paper);
+  }
+
+  /*
+   * Pointer spotlight for interactive cards. InteractionEffects.tsx sets --mx and --my
+   * as the pointer moves; without JavaScript the card simply has no glow.
+   */
+  .spotlight {
+    position: relative;
+    isolation: isolate;
+  }
+  .spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(199 122 69 / 0.16), transparent 45%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+
+  /* FAQ disclosures open smoothly where the browser supports it. */
+  @media (prefers-reduced-motion: no-preference) {
+    details.smooth::details-content {
+      block-size: 0;
+      overflow-y: clip;
+      transition:
+        block-size 0.35s var(--ease-out-soft),
+        content-visibility 0.35s allow-discrete;
+    }
+    details.smooth[open]::details-content {
+      block-size: auto;
+    }
+  }
+
   /* Hairline drafting grid used behind drawings and on dark panels. */
   .bg-drafting-grid {
     background-image:
@@ -156,6 +215,36 @@
   }
 }
 
+/* Frosted glass panels, light and dark. */
+@utility glass {
+  background-color: rgb(255 255 255 / 0.6);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 16px 40px -20px rgb(20 38 61 / 0.28);
+}
+@utility glass-dark {
+  background-color: rgb(255 255 255 / 0.06);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 0.13);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 24px 60px -28px rgb(0 0 0 / 0.6);
+}
+
+/* Small uppercase label used above headings and in cards. */
+@utility text-label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @layer utilities {
   /* Restrained entrance motion; disabled for users who prefer less motion. */
   @media (prefers-reduced-motion: no-preference) {
@@ -165,6 +254,44 @@
     .motion-rise-delay {
       animation: pg-rise 0.9s var(--ease-out-soft) 0.12s both;
     }
+
+    /* Scroll reveal, applied by InteractionEffects.tsx only to content below the fold. */
+    [data-reveal] {
+      transition:
+        opacity 0.8s var(--ease-out-soft),
+        transform 0.8s var(--ease-out-soft);
+    }
+    [data-reveal="hidden"] {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+
+    /* New work in the hero drawing draws itself in: strokes marked pathLength="1". */
+    .draw-in [pathLength] {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: pg-draw 1.6s var(--ease-out-soft) 0.25s forwards;
+    }
+  }
+}
+
+/*
+ * Services filter (ServiceFilter.tsx): hide cards outside the chosen
+ * category. Unlayered so it wins over the cards' own display utilities.
+ */
+[data-filter="residential"] > [data-category="commercial"],
+[data-filter="commercial"] > [data-category="residential"] {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-filtered] > * {
+    animation: pg-rise 0.6s var(--ease-out-soft) both;
+  }
+}
+
+@keyframes pg-draw {
+  to {
+    stroke-dashoffset: 0;
   }
 }
 

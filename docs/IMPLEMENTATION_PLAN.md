@@ -46,7 +46,7 @@ scripts/check-site.mjs    Crawler: status codes, links, headings, metadata, 404s
 ## 4. Design system
 
 - Tokens in `src/app/globals.css` (`@theme`): navy `#14263D`, paper `#F7F6F2`, copper `#C77A45` with derived tints; copper-700 for small copper text (AA contrast on paper).
-- Type: Newsreader (display serif) and Instrument Sans (UI and body), loaded with `next/font` (self-hosted at build, no layout shift). Fluid display sizes via `text-display-*`.
+- Type: Lufga for headings and Gilroy for body (with Outfit and Plus Jakarta Sans as stand-ins until the licensed files are added; see docs/DESIGN.md), loaded with `next/font` (self-hosted at build, no layout shift). Fluid display sizes via `text-display-*`.
 - Layout: `Container` (78rem max), `Section` (tones: paper, light, navy), hairline rules instead of cards, 2px corner radius.
 - Components: `ButtonLink`, `ArrowLink`, `Eyebrow`, `SectionHeading`, `PageHeader`, `DirectAnswer`, `Breadcrumbs`, `FaqList` (native `<details>`), `StepList` (with step owner), `LinkRows`, `Figure`, `Drawing`, `SourceList`, `Placeholder`, `CtaPanel`, `ArticleLayout`.
 - Imagery: drafted SVG line drawings in a permit-drawing style stand in for photography (stock sites were unreachable from the build environment). `Figure` switches to `next/image` when a `photo` is added, with a fixed aspect ratio so nothing shifts.

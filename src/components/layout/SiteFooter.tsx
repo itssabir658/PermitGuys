@@ -27,7 +27,7 @@ export function SiteFooter() {
           <nav aria-label="Footer" className="grid gap-10 sm:grid-cols-3 lg:col-span-8">
             {footerNav.map((col) => (
               <div key={col.heading}>
-                <h2 className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-copper-300">{col.heading}</h2>
+                <h2 className="text-label text-copper-300">{col.heading}</h2>
                 <ul className="mt-5 space-y-3 text-[0.95rem]">
                   {col.links.map((link) => (
                     <li key={link.href}>

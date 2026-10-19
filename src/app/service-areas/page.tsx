@@ -60,7 +60,7 @@ export default function ServiceAreasPage() {
           <div className="grid gap-10 sm:grid-cols-2 lg:col-span-8">
             {gtaMunicipalities.map((region) => (
               <div key={region.region}>
-                <h3 className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-copper-700">{region.region}</h3>
+                <h3 className="text-label text-copper-700">{region.region}</h3>
                 <ul className="mt-4 divide-y divide-line border-y border-line">
                   {region.municipalities.map((m) => (
                     <li key={m.name}>

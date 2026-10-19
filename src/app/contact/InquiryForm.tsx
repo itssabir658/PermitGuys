@@ -24,7 +24,7 @@ import { submitInquiry } from "./actions";
 
 const ERROR = "text-[#a3361f]";
 const field =
-  "mt-2 block w-full rounded-[2px] border border-line-strong bg-paper px-4 py-3 text-base text-navy-900 placeholder:text-ink-muted/70 focus:border-navy-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper-600";
+  "mt-2 block w-full rounded-xl border border-navy-900/20 bg-white/85 px-4 py-3 text-base text-navy-900 placeholder:text-ink-muted/70 focus:border-navy-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper-600";
 const invalid = "border-[#a3361f]";
 
 const labels: Record<InquiryField, string> = {
@@ -88,7 +88,7 @@ function ErrorSummary({ errors, summaryRef }: { errors: InquiryErrors; summaryRe
   const list = inquiryFields.filter((f) => errors[f]);
   if (list.length === 0) return null;
   return (
-    <div ref={summaryRef} tabIndex={-1} aria-labelledby="error-summary-title" className="border-l-2 border-[#a3361f] bg-[#a3361f]/5 p-5 focus:outline-2 focus:outline-offset-2 focus:outline-[#a3361f]">
+    <div ref={summaryRef} tabIndex={-1} aria-labelledby="error-summary-title" className="rounded-r-xl border-l-2 border-[#a3361f] bg-[#a3361f]/5 p-5 focus:outline-2 focus:outline-offset-2 focus:outline-[#a3361f]">
       <h2 id="error-summary-title" className="font-semibold text-[#7d2914]">
         There {list.length === 1 ? "is a problem" : `are ${list.length} problems`} with your inquiry
       </h2>
@@ -212,7 +212,8 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
 
   if (state.status === "sent") {
     return (
-      <div className="border-l-2 border-copper-500 bg-paper-100 p-8 sm:p-10">
+      <div className="relative overflow-hidden rounded-2xl bg-paper-100 p-8 sm:p-10">
+        <span aria-hidden="true" className="absolute inset-y-8 left-0 w-1 rounded-r-full bg-copper-500" />
         <h2 ref={successRef} tabIndex={-1} className="font-display text-display-sm text-navy-900 focus:outline-none">
           Thank you. Your inquiry has been sent.
         </h2>
@@ -280,7 +281,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
           tabIndex={-1}
           role="alert"
           className={cn(
-            "p-5 text-sm leading-relaxed focus:outline-2 focus:outline-offset-2",
+            "rounded-xl p-5 text-sm leading-relaxed focus:outline-2 focus:outline-offset-2",
             notice.tone === "warning"
               ? "border border-dashed border-copper-500 bg-copper-500/[0.07] text-copper-700 focus:outline-copper-600"
               : "border-l-2 border-[#a3361f] bg-[#a3361f]/5 text-[#7d2914] focus:outline-[#a3361f]",
@@ -359,7 +360,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
               <label
                 key={value}
                 htmlFor={`preferredContact-${value}`}
-                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-[2px] border border-line-strong bg-paper px-4 text-base text-navy-900 has-[:checked]:border-navy-900 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-copper-600"
+                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-xl border border-navy-900/20 bg-white/85 px-4 text-base text-navy-900 has-[:checked]:border-navy-900 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-copper-600"
               >
                 <input
                   id={`preferredContact-${value}`}
@@ -476,7 +477,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex min-h-12 items-center justify-center gap-3 bg-navy-900 px-8 text-[0.95rem] font-medium text-paper transition-colors hover:bg-navy-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper-600 disabled:cursor-wait disabled:opacity-70"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-navy-900 px-8 text-[0.95rem] font-semibold text-paper shadow-[0_10px_30px_-12px_rgb(20_38_61/0.6)] transition-all hover:-translate-y-0.5 hover:bg-navy-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper-600 disabled:cursor-wait disabled:opacity-70"
         >
           {pending ? (
             <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-paper/40 border-t-paper motion-reduce:animate-none" />

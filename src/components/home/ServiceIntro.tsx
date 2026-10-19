@@ -1,62 +1,99 @@
 import Link from "next/link";
 import type { Service } from "@/content/types";
 import { ArrowLink } from "@/components/ui/ButtonLink";
+import { Drawing } from "@/components/ui/Drawing";
 import { Figure } from "@/components/ui/Figure";
-import { IndexList } from "@/components/ui/IndexList";
+import { ArrowRight } from "@/components/ui/Icons";
 import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { cn } from "@/components/ui/cn";
-import { getService, getServices } from "@/lib/content";
-import { otherWork as alsoDrawn } from "@/content/other-work";
+import { getServices } from "@/lib/content";
+import { otherWork } from "@/content/other-work";
 import { paths } from "@/lib/routes";
+import { ServiceFilter, type ServiceFilterId } from "./ServiceFilter";
 
-/** High-value work, given a full spread each. */
-const featured = [
-  {
-    slug: "residential-additions",
+/*
+ * Services as a bento grid of glass cards. Additions and commercial work,
+ * the high-value projects, get double-size cards with their drawing and what
+ * an application usually includes; everyday homeowner work gets single
+ * cards. A filter narrows the grid to homes or businesses and landlords.
+ */
+
+const featured: Record<string, { kicker: string; title: string; body: string; className?: string }> = {
+  "residential-additions": {
     kicker: "Residential additions",
     title: "Room to grow, drawn to be reviewed.",
     body: "Rear, side and second-storey additions bring zoning and the Building Code together. We look at both before drawing, so the design starts from what your lot allows.",
   },
-  {
-    slug: "commercial-permits",
+  "commercial-permits": {
     kicker: "Commercial and landlord projects",
     title: "Commercial spaces with fewer surprises.",
     body: "Fit-outs, tenant improvements and changes of use raise questions about occupancy, exits and fire separations. We define the scope early and coordinate the drawings with the consultants your project needs.",
+    // Sits on the right of the grid, so the two large cards alternate.
+    className: "lg:col-start-2",
   },
-];
+};
 
-/** Everyday homeowner work, set as a drawing list. */
-const everyday = ["legal-basement-permits", "deck-permits", "interior-renovation-permits", "landlord-permits", "custom-home-permits"];
+/** Card order: each large card followed by the smaller cards beside it. */
+const order = ["residential-additions", "legal-basement-permits", "deck-permits", "commercial-permits", "landlord-permits", "interior-renovation-permits", "custom-home-permits"];
 
-function FeatureSpread({ service, kicker, title, body, reverse }: { service: Service; kicker: string; title: string; body: string; reverse?: boolean }) {
+const categoryLabel: Record<Service["category"], string> = { residential: "Home", commercial: "Business" };
+
+const cardBase =
+  "spotlight group glass relative rounded-3xl transition-transform duration-500 ease-out-soft hover:-translate-y-1 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-copper-600";
+
+/** The card's main link stretches over the whole card. */
+const stretched = "after:absolute after:inset-0 after:rounded-3xl after:content-[''] focus-visible:outline-none";
+
+function FeaturedCard({ service }: { service: Service }) {
+  const copy = featured[service.slug];
   return (
-    <article className="grid gap-10 border-t border-line pt-10 lg:grid-cols-12 lg:gap-12 lg:pt-14">
-      <Figure
-        visual={service.visual}
-        tone={reverse ? "light" : "dark"}
-        aspect="aspect-[16/11]"
-        sizes="(min-width: 1024px) 58vw, 100vw"
-        className={cn("lg:col-span-7", reverse && "lg:col-start-6 lg:row-start-1")}
-      />
-      <div className={cn("flex flex-col lg:col-span-5", reverse ? "lg:col-start-1 lg:row-start-1" : "lg:pt-6")}>
-        <p className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-copper-700">{kicker}</p>
-        <h3 className="mt-4 font-display text-display-md text-balance text-navy-900">{title}</h3>
-        <p className="mt-5 text-lg leading-relaxed text-ink-muted">{body}</p>
-        <div className="mt-8">
-          <p className="text-sm font-semibold text-navy-900">Applications usually include</p>
-          <ul className="mt-3 divide-y divide-line border-y border-line text-[0.95rem] text-ink">
-            {service.typicalRequirements.items.slice(0, 3).map((item) => (
-              <li key={item} className="flex gap-3 py-3">
-                <span aria-hidden="true" className="mt-2.5 h-px w-3 shrink-0 bg-copper-500" />
-                {item}
-              </li>
-            ))}
-          </ul>
+    <article data-category={service.category} className={cn(cardBase, "grid gap-2 p-2 sm:p-3 md:col-span-2 lg:row-span-2 lg:grid-cols-2", copy.className)}>
+      <Figure visual={service.visual} tone="dark" caption={false} aspect="aspect-[16/11] lg:aspect-auto lg:h-full" sizes="(min-width: 1024px) 30vw, 100vw" className="lg:h-full" />
+      <div className="flex flex-col p-4 sm:p-5 lg:p-6">
+        <p className="text-label text-copper-700">{copy.kicker}</p>
+        <h3 className="mt-4 font-display text-display-sm text-balance text-navy-900">{copy.title}</h3>
+        <p className="mt-4 leading-relaxed text-ink-muted">{copy.body}</p>
+        <p className="mt-6 text-sm font-semibold text-navy-900">Applications usually include</p>
+        <ul className="mt-3 space-y-2 text-[0.95rem] text-ink">
+          {service.typicalRequirements.items.slice(0, 3).map((item) => (
+            <li key={item} className="flex gap-3">
+              <span aria-hidden="true" className="mt-[0.55rem] size-1.5 shrink-0 rounded-full bg-copper-500" />
+              {item}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-auto pt-8">
+          <Link
+            href={paths.service(service.slug)}
+            className={cn("inline-flex min-h-11 items-center gap-3 rounded-xl bg-navy-900 pr-2 pl-5 text-[0.95rem] font-semibold text-paper transition-colors group-hover:bg-navy-800", stretched)}
+          >
+            {service.navLabel}
+            <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-lg bg-white/10">
+              <ArrowRight className="size-4 transition-transform duration-300 ease-out-soft group-hover:translate-x-0.5" />
+            </span>
+          </Link>
         </div>
-        <div className="mt-8">
-          <ArrowLink href={paths.service(service.slug)}>{service.name}</ArrowLink>
-        </div>
+      </div>
+    </article>
+  );
+}
+
+function ServiceCard({ service }: { service: Service }) {
+  return (
+    <article data-category={service.category} className={cn(cardBase, "flex flex-col overflow-hidden p-6 sm:p-7")}>
+      <span className="w-fit rounded-full border border-navy-900/10 bg-white/60 px-2.5 py-1 text-label text-navy-800">{categoryLabel[service.category]}</span>
+      <h3 className="mt-5 font-display text-2xl leading-tight text-navy-900">
+        <Link href={paths.service(service.slug)} className={stretched}>
+          {service.navLabel}
+        </Link>
+      </h3>
+      <p className="mt-3 leading-relaxed text-ink-muted">{service.summary}</p>
+      <div aria-hidden="true" className="mt-auto flex items-end justify-between gap-4 pt-6">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-navy-900/15 text-navy-900 transition-all duration-300 ease-out-soft group-hover:border-copper-500 group-hover:bg-copper-500 group-hover:text-navy-950">
+          <ArrowRight className="size-4 transition-transform duration-300 ease-out-soft group-hover:translate-x-0.5" />
+        </span>
+        <Drawing variant={service.visual.drawing} className="-mr-3 -mb-4 h-24 w-auto text-navy-900 opacity-55 transition-opacity duration-500 group-hover:opacity-90" />
       </div>
     </article>
   );
@@ -64,54 +101,51 @@ function FeatureSpread({ service, kicker, title, body, reverse }: { service: Ser
 
 export function ServiceIntro() {
   const all = getServices();
-  const rows = everyday.map((slug) => all.find((s) => s.slug === slug)).filter((s): s is Service => Boolean(s));
+  const services = order.map((slug) => all.find((s) => s.slug === slug)).filter((s): s is Service => Boolean(s));
+  const counts: Record<ServiceFilterId, number> = {
+    all: services.length,
+    residential: services.filter((s) => s.category === "residential").length,
+    commercial: services.filter((s) => s.category === "commercial").length,
+  };
 
   return (
-    <Section labelledBy="services-heading">
-      <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
-        <SectionHeading
-          id="services-heading"
-          code="01"
-          eyebrow="Services"
-          title="From a backyard deck to a commercial fit-out."
-          intro="We prepare the permit drawings and documentation your application needs, and explain each step in plain language."
-          className="lg:col-span-8"
-        />
-        <ArrowLink href={paths.services} className="self-start justify-self-start lg:col-span-4 lg:justify-self-end lg:self-end">
-          All services
-        </ArrowLink>
-      </div>
-
-      <div className="mt-14 space-y-16 lg:mt-20 lg:space-y-24">
-        {featured.map((f, i) => {
-          const service = getService(f.slug);
-          return service ? <FeatureSpread key={f.slug} service={service} kicker={f.kicker} title={f.title} body={f.body} reverse={i === 1} /> : null;
-        })}
-      </div>
-
-      <div className="mt-20 grid gap-10 lg:mt-28 lg:grid-cols-12 lg:gap-12">
-        <div className="lg:col-span-4">
-          <h3 className="font-display text-display-sm text-navy-900">Everyday homeowner projects</h3>
-          <p className="mt-4 max-w-sm leading-relaxed text-ink-muted">Most of the permits homeowners need start here. Each page explains what is usually involved and what the city decides.</p>
-        </div>
-        <div className="lg:col-span-8">
-          <IndexList items={rows.map((service) => ({ href: paths.service(service.slug), title: service.navLabel, description: service.summary }))} />
-
-          <div className="mt-10">
-            <p className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em] text-copper-700">Also on our drawing board</p>
-            <ul className="mt-4 flex flex-wrap gap-x-2 gap-y-2 text-[0.95rem] leading-relaxed text-navy-900">
-              {alsoDrawn.map((item, i) => (
-                <li key={item.label} className="flex items-baseline gap-2">
-                  <Link href={item.href} className="underline decoration-line-strong underline-offset-4 hover:text-copper-700 hover:decoration-copper-500">
-                    {item.label}
-                  </Link>
-                  {i < alsoDrawn.length - 1 ? <span aria-hidden="true" className="text-line-strong">/</span> : null}
-                </li>
-              ))}
-            </ul>
+    <Section labelledBy="services-heading" className="bg-glow-paper">
+      <ServiceFilter
+        counts={counts}
+        className="mt-12 lg:mt-16"
+        heading={
+          <SectionHeading
+            id="services-heading"
+            code="01"
+            eyebrow="Services"
+            title="From a backyard deck to a commercial fit-out."
+            intro="We prepare the permit drawings and documentation your application needs, and explain each step in plain language."
+          />
+        }
+      >
+        {services.map((service) =>
+          featured[service.slug] ? <FeaturedCard key={service.slug} service={service} /> : <ServiceCard key={service.slug} service={service} />,
+        )}
+        <div data-category="all" className="glass flex flex-col rounded-3xl p-6 sm:p-7 lg:col-span-2">
+          <h3 className="font-display text-2xl text-navy-900">Also on our drawing board</h3>
+          <p className="mt-3 max-w-xl leading-relaxed text-ink-muted">Other work we take on. If your project is not listed, ask us about it.</p>
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {otherWork.map((item) => (
+              <li key={item.label}>
+                <Link
+                  href={item.href}
+                  className="inline-flex min-h-10 items-center rounded-full border border-navy-900/10 bg-white/70 px-4 text-sm font-medium text-navy-900 transition-colors hover:border-copper-500 hover:bg-white hover:text-copper-800"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-auto pt-8">
+            <ArrowLink href={paths.services}>All services</ArrowLink>
           </div>
         </div>
-      </div>
+      </ServiceFilter>
     </Section>
   );
 }

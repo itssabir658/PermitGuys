@@ -17,7 +17,10 @@ export function Figure({
   tone = "light",
   caption = true,
   captionOnDark,
+  framed,
 }: {
+  /** Sets the figure in a glass frame. */
+  framed?: boolean;
   /** Set when the figure sits on a dark section, so the caption stays legible. */
   captionOnDark?: boolean;
   visual: Visual;
@@ -30,10 +33,10 @@ export function Figure({
 }) {
   const { photo } = visual;
   return (
-    <figure className={cn("relative", className)}>
+    <figure className={cn("relative", framed && (tone === "dark" ? "glass-dark rounded-[1.75rem] p-2" : "glass rounded-[1.75rem] p-2"), className)}>
       <div
         className={cn(
-          "relative overflow-hidden",
+          "relative overflow-hidden rounded-[1.25rem]",
           aspect,
           tone === "dark" ? "bg-navy-800 bg-drafting-grid-dark text-paper/80" : "bg-paper-100 bg-drafting-grid text-navy-900",
         )}
@@ -47,7 +50,7 @@ export function Figure({
         )}
       </div>
       {caption ? (
-        <figcaption className={cn("mt-3 font-mono text-[0.68rem] tracking-[0.06em]", captionOnDark ? "text-navy-100/70" : "text-ink-muted")}>
+        <figcaption className={cn("mt-3 text-xs", framed && "px-3 pb-1", captionOnDark ? "text-navy-100/70" : "text-ink-muted")}>
           {photo ? (
             <>Photo: {photo.credit} ({photo.licence})</>
           ) : (

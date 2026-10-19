@@ -36,7 +36,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
         ]}
         eyebrow={service.category === "residential" ? "Residential service" : "Commercial service"}
         title={service.name}
-        aside={<Figure visual={service.visual} tone="dark" captionOnDark priority sizes="(min-width: 1024px) 40vw, 100vw" />}
+        aside={<Figure visual={service.visual} tone="dark" captionOnDark framed priority sizes="(min-width: 1024px) 40vw, 100vw" />}
       >
         <DirectAnswer onDark>{service.directAnswer}</DirectAnswer>
       </PageHeader>

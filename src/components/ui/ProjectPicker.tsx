@@ -26,48 +26,43 @@ const shortLabel: Record<string, string> = {
 };
 
 /**
- * "What are you planning?" shortcut into the inquiry form. Each link opens
- * the form with the matching project type already selected.
+ * "What are you planning?" shortcut into the inquiry form, as a row of glass
+ * tiles. Each tile opens the form with the matching project type selected.
  */
 export function ProjectPicker({ onDark, className, id = "picker-label", title = "What are you planning?" }: { onDark?: boolean; className?: string; id?: string; title?: string }) {
   const items = order
     .map((slug) => projectTypes.find((t) => t.service === slug))
-    .filter((t): t is (typeof projectTypes)[number] => Boolean(t));
+    .filter((t): t is (typeof projectTypes)[number] => Boolean(t))
+    .map((t) => ({ href: paths.contactFor(t.service!), label: shortLabel[t.service!] ?? t.label }));
+  const tile = cn(
+    "group flex h-full min-h-[4.5rem] items-end justify-between gap-3 rounded-2xl border p-4 text-[0.95rem] font-semibold leading-snug transition-all duration-300 ease-out-soft hover:-translate-y-0.5 lg:min-h-[6.5rem]",
+    onDark ? "border-white/10 bg-white/[0.05] text-paper hover:border-copper-300/50 hover:bg-white/[0.1]" : "border-white/80 bg-white/60 text-navy-900 hover:border-copper-500/40 hover:bg-white",
+  );
   return (
-    <div className={className}>
-      <p id={id} className={cn("font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em]", onDark ? "text-copper-300" : "text-copper-700")}>
-        {title}
-      </p>
-      <ul aria-labelledby={id} className={cn("mt-4 grid border-t sm:grid-cols-2", onDark ? "border-paper/15" : "border-line")}>
-        {items.map((t) => (
-          <li key={t.label} className={cn("border-b sm:odd:border-r sm:odd:pr-5 sm:even:pl-5", onDark ? "border-paper/15" : "border-line")}>
-            <Link
-              href={paths.contactFor(t.service!)}
-              className={cn(
-                "group flex min-h-12 items-center justify-between gap-3 py-3 text-[0.95rem] transition-colors",
-                onDark ? "text-paper hover:text-copper-300" : "text-navy-900 hover:text-copper-700",
-              )}
-            >
+    <div className={cn("rounded-[1.75rem] p-4 sm:p-5", onDark ? "glass-dark" : "glass", className)}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-1 pb-4">
+        <p id={id} className={cn("font-display text-xl", onDark ? "text-paper" : "text-navy-900")}>
+          {title}
+        </p>
+        <p className={cn("text-sm", onDark ? "text-navy-100/70" : "text-ink-muted")}>Pick one to start an inquiry with it filled in.</p>
+      </div>
+      <ul aria-labelledby={id} className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+        {[...items, { href: paths.contact, label: "Something else" }].map((item) => (
+          <li key={item.label}>
+            <Link href={item.href} className={tile}>
               <span>
                 <span className="sr-only">Start an inquiry: </span>
-                {shortLabel[t.service!] ?? t.label}
+                {item.label}
               </span>
-              <ArrowRight className={cn("size-4 shrink-0 transition-transform duration-300 ease-out-soft group-hover:translate-x-0.5", onDark ? "text-copper-300" : "text-copper-600")} />
+              <ArrowRight
+                className={cn(
+                  "mb-0.5 size-4 shrink-0 -rotate-45 transition-transform duration-300 ease-out-soft group-hover:rotate-0",
+                  onDark ? "text-copper-300" : "text-copper-600",
+                )}
+              />
             </Link>
           </li>
         ))}
-        <li className={cn("border-b sm:pl-5", onDark ? "border-paper/15" : "border-line")}>
-          <Link
-            href={paths.contact}
-            className={cn("group flex min-h-12 items-center justify-between gap-3 py-3 text-[0.95rem] transition-colors", onDark ? "text-navy-100/80 hover:text-copper-300" : "text-ink-muted hover:text-copper-700")}
-          >
-            <span>
-              <span className="sr-only">Start an inquiry: </span>
-              Something else
-            </span>
-            <ArrowRight className={cn("size-4 shrink-0", onDark ? "text-copper-300" : "text-copper-600")} />
-          </Link>
-        </li>
       </ul>
     </div>
   );
