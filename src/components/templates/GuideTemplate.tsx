@@ -1,0 +1,103 @@
+import type { Guide } from "@/content/types";
+import { ArticleLayout, ArticleSection, RuledList } from "@/components/ui/Article";
+import { CtaPanel } from "@/components/ui/CtaPanel";
+import { DirectAnswer } from "@/components/ui/DirectAnswer";
+import { FaqList } from "@/components/ui/FaqList";
+import { JsonLd } from "@/components/ui/JsonLd";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Placeholder } from "@/components/ui/Placeholder";
+import { SourceList, formatDate } from "@/components/ui/SourceList";
+import { pickGuides, pickServices } from "@/lib/content";
+import { faqSchema, guideSchema } from "@/lib/jsonld";
+import { paths } from "@/lib/routes";
+import { RelatedContent } from "./RelatedContent";
+
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+export function GuideTemplate({ guide }: { guide: Guide }) {
+  const path = paths.guide(guide.slug);
+  const sections = guide.sections.map((s) => ({ ...s, id: slugify(s.heading) }));
+  const toc = [
+    ...sections.map((s) => ({ id: s.id, label: s.heading })),
+    ...(guide.faqs.length ? [{ id: "faq", label: "Questions" }] : []),
+    { id: "sources", label: "Sources and review" },
+    { id: "related", label: "Related" },
+  ];
+
+  return (
+    <>
+      <PageHeader
+        crumbs={[
+          { name: "Permit guides", path: paths.guides },
+          { name: guide.title, path },
+        ]}
+        eyebrow="Permit guide"
+        title={guide.title}
+        lead={guide.summary}
+      >
+        <DirectAnswer>{guide.directAnswer}</DirectAnswer>
+        <p className="mt-6 text-sm text-ink-muted">
+          {guide.lastReviewed ? (
+            <>Last reviewed {formatDate(guide.lastReviewed)}</>
+          ) : (
+            <Placeholder>review date, set once a qualified reviewer has checked this guide</Placeholder>
+          )}
+        </p>
+      </PageHeader>
+
+      <ArticleLayout toc={toc}>
+        {sections.map((section) => (
+          <ArticleSection key={section.id} id={section.id} title={section.heading}>
+            <div className="prose-pg">
+              {section.paragraphs.map((p) => (
+                <p key={p}>{p}</p>
+              ))}
+            </div>
+            {section.list ? (
+              <div className="mt-8">
+                <RuledList items={section.list} />
+              </div>
+            ) : null}
+          </ArticleSection>
+        ))}
+
+        {guide.faqs.length ? (
+          <ArticleSection id="faq" title="Questions">
+            <FaqList faqs={guide.faqs} />
+          </ArticleSection>
+        ) : null}
+
+        <ArticleSection
+          id="sources"
+          title="Sources and review"
+          intro="This guide is general information, not legal or code advice. Requirements change, and your municipality decides what applies to your property."
+        >
+          <SourceList sources={guide.sources} />
+          <div className="mt-10 border-t border-line pt-8 text-[0.95rem] text-ink-muted">
+            <h3 className="font-semibold text-navy-900">Reviewed by</h3>
+            <p className="mt-2">
+              {guide.reviewer ? (
+                <>
+                  {guide.reviewer.name}, {guide.reviewer.credentials}
+                </>
+              ) : (
+                <Placeholder>name and verified credentials of the person who reviews this guide</Placeholder>
+              )}
+            </p>
+          </div>
+        </ArticleSection>
+
+        <ArticleSection id="related" title="Related guides and services">
+          <RelatedContent services={pickServices(guide.relatedServices)} guides={pickGuides(guide.relatedGuides)} />
+        </ArticleSection>
+      </ArticleLayout>
+
+      <CtaPanel title="Have a question about your own project?" />
+      <JsonLd data={[guideSchema(guide, path), ...(guide.faqs.length ? [faqSchema(guide.faqs)] : [])]} />
+    </>
+  );
+}
