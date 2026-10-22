@@ -71,6 +71,30 @@ export const plates = {
     caption: "Rear deck and glazing",
     focus: "40% 60%",
   },
+  front: {
+    src: "/images/studies/infill-house-street.jpg",
+    width: 1600,
+    height: 2000,
+    alt: "Street elevation of a two-storey infill house at dusk: a dark metal upper storey with a long lit window over a glazed ground floor.",
+    caption: "Infill house, street elevation",
+    focus: "50% 60%",
+  },
+  aerial: {
+    src: "/images/studies/rear-addition-aerial.jpg",
+    width: 1600,
+    height: 2000,
+    alt: "Overhead view of an architectural model: a dark rear addition with a timber screen and deck, between pale neighbouring houses and model trees.",
+    caption: "Rear addition, model from above",
+    focus: "50% 50%",
+  },
+  storefront: {
+    src: "/images/studies/commercial-storefront.jpg",
+    width: 1600,
+    height: 2000,
+    alt: "Close view of a brick main-street building at dusk, its glazed ground-floor shop lit from within under pendant lights.",
+    caption: "Storefront at dusk",
+    focus: "55% 60%",
+  },
 } satisfies Record<string, Plate>;
 
 export type PlateKey = keyof typeof plates;
@@ -79,11 +103,11 @@ export type PlateKey = keyof typeof plates;
 export const servicePlates: Record<string, PlateKey> = {
   "residential-additions": "addition",
   "commercial-permits": "commercial",
-  "landlord-permits": "basement",
-  "interior-renovation-permits": "commercial",
+  "landlord-permits": "infill",
+  "interior-renovation-permits": "storefront",
   "legal-basement-permits": "basement",
   "deck-permits": "deck",
-  "custom-home-permits": "infill",
+  "custom-home-permits": "front",
 };
 
 export function plateForService(slug: string): Plate {

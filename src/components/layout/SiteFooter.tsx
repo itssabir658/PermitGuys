@@ -5,13 +5,14 @@ import { EmailLink, PhoneLink } from "@/components/ui/ContactLinks";
 import { Container } from "@/components/ui/Container";
 import { ArrowRight } from "@/components/ui/Icons";
 import { Placeholder } from "@/components/ui/Placeholder";
+import { RollText } from "@/components/ui/RollText";
 import { paths } from "@/lib/routes";
 import { Logo } from "./Logo";
 
 export function SiteFooter() {
   const { contact } = site;
   return (
-    <footer className="bg-charcoal-900 text-ivory">
+    <footer data-tone="dark" className="bg-charcoal-900 text-ivory">
       <Container className="pt-20 pb-10 sm:pt-28">
         <div className="grid gap-16 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-6">
@@ -36,8 +37,8 @@ export function SiteFooter() {
                 <ul className="mt-6 space-y-3 text-[0.9375rem]">
                   {col.links.map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className="link-draw text-ivory/80 transition-colors hover:text-ivory">
-                        {link.label}
+                      <Link href={link.href} className="text-ivory/80 transition-colors hover:text-ivory">
+                        <RollText>{link.label}</RollText>
                       </Link>
                     </li>
                   ))}

@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   images: {
     formats: ["image/avif", "image/webp"],
+    qualities: [75, 80, 85],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

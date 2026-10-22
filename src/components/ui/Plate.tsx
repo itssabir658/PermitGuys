@@ -57,7 +57,7 @@ export function Plate({
             fill
             sizes={sizes}
             priority={priority}
-            quality={82}
+            quality={80}
             className="object-cover"
             style={{ objectPosition: focus ?? plate.focus ?? "50% 50%" }}
           />

@@ -3,7 +3,9 @@ import { headingFont, monoFont, wordmarkFont } from "./fonts";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { InteractionEffects } from "@/components/layout/InteractionEffects";
-import { ScreenTransition, introScript } from "@/components/layout/ScreenTransition";
+import { MotionRoot } from "@/components/layout/MotionRoot";
+import { Preloader, motionScript } from "@/components/layout/Preloader";
+import { ScreenTransition } from "@/components/layout/ScreenTransition";
 import { SiteTelemetry } from "@/components/layout/SiteTelemetry";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
@@ -40,19 +42,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-CA" className={`${headingFont.variable} ${monoFont.variable} ${wordmarkFont.variable} antialiased`} suppressHydrationWarning>
       <head>
-        {/* Before first paint: skip the Ontario intro after the first page of a visit. */}
-        <script dangerouslySetInnerHTML={{ __html: introScript }} />
+        {/* Before first paint: turn on the preloader and scroll motion for visitors who allow motion. */}
+        <script dangerouslySetInnerHTML={{ __html: motionScript }} />
       </head>
       <body className="flex min-h-screen flex-col">
+        {/* First in the body, so it is in place before any content paints. */}
+        <Preloader />
         <SkipLink />
         <SiteHeader />
-        <main id="main" tabIndex={-1} className="flex-1 bg-ivory focus:outline-none">
+        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>
         <SiteFooter />
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <SiteTelemetry />
         <InteractionEffects />
+        <MotionRoot />
         <ScreenTransition />
       </body>
     </html>

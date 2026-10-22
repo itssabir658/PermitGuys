@@ -59,7 +59,7 @@ test.describe("accessibility", () => {
   test("respects reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const animation = await page.locator(".hero-line > span").first().evaluate((el) => getComputedStyle(el).animationName);
+    const animation = await page.locator(".hero-heading-line > .split-line__inner").evaluate((el) => getComputedStyle(el).animationName);
     expect(animation).toBe("none");
     await page.goto("/services/");
     const inner = await page.locator(".motion-rise").first().evaluate((el) => getComputedStyle(el).animationName);
@@ -70,6 +70,13 @@ test.describe("accessibility", () => {
 test.describe("navigation", () => {
   test("the menu opens, traps focus, closes with Escape and navigates", async ({ page }) => {
     await page.goto("/");
+    const wide = page.viewportSize()!.width >= 768;
+    // Wide screens show the bar's links at the top of the page; the menu button comes in once the page scrolls past 80px.
+    if (wide) {
+      await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+      await page.evaluate(() => window.scrollTo(0, 800));
+      await expect(page.locator(".site-nav")).toHaveAttribute("data-collapsed", "");
+    }
     const button = page.getByRole("button", { name: "Open menu" });
     await button.click();
     await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
@@ -81,7 +88,7 @@ test.describe("navigation", () => {
     await button.click();
     await menu.getByRole("link", { name: "How it works" }).click();
     await expect(page).toHaveURL(/\/how-it-works\/$/);
-    await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
+    await expect(wide ? page.getByRole("navigation", { name: "Main" }) : page.getByRole("button", { name: "Open menu" })).toBeVisible();
   });
 
   test("the desktop bar links to the main sections", async ({ page }, info) => {
@@ -141,8 +148,8 @@ test.describe("interactive pieces", () => {
 
   test("study images say they are not client projects", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("figcaption", { hasText: "Rendered study for illustration, not a client project." }).first()).toBeAttached();
-    await expect(page.locator("[aria-labelledby=studies-heading]")).toContainText("None of them is a client project.");
+    await expect(page.locator("[aria-labelledby=works-heading]")).toContainText("None of them is a client project");
+    await expect(page.getByText("Rendered study for illustration, not a client project.").first()).toBeAttached();
   });
 
   test("the map loads from Google only when asked", async ({ page }) => {

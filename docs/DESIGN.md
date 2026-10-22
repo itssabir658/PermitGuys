@@ -38,19 +38,25 @@ References studied (as text only; see the note at the end): Storey Architecture 
 
 ## Homepage
 
-Hero (full-bleed study, staggered headline) → credibility strip → editorial intro → numbered services → selected studies → pinned process → principles (dark) → service areas → reviews → guides and quick answers → final call to action → footer.
+Follows the Studio Foundry motion specification section by section; the full choreography, scroll map and deviations are in [MOTION.md](MOTION.md).
+
+1. **Hero** (`Hero.tsx`): the name set very large over a full-bleed study under a dark veil, the statement at the bottom left.
+2. **Intro** (`Intro.tsx`): six studies circling the centre while the introduction rises through it, paragraph by paragraph.
+3. **Selected studies** (`Works.tsx`): three labelled rendered studies, each leading to its service. Approved case studies are listed above them when they exist.
+4. **Our values** (`Values.tsx`): four values, the large title changing colour where it crosses each picture.
+5. **Services** (`Services.tsx`): numbered list beside one notched frame whose picture follows the active row; the page ground turns to night as it arrives.
+6. **Contact** (`Contact.tsx`): the word set large, then two cards: start a project, and call or visit (address, hours, phone, email, Google rating, credentials).
+
+Process, service areas and guides live on their own pages; the footer carries the confirmed contact details.
 
 ## Motion
 
-All motion is CSS, with one small `IntersectionObserver` (`InteractionEffects`). No animation library is loaded.
-
-- **Hero** (`Hero.tsx`, `HeroScroll.tsx`), after the Studio Foundry reference: an oversized Playfair Display wordmark across the top of the full-bleed image, the statement at the bottom left. Entrance: the image unveils and settles, the wordmark's letters rise in sequence, then the statement. On screens 1024px and wider the hero pins for one extra screen of scrolling and `--p` runs from 0 to 1: 0–40% the wordmark lifts, blurs and fades; 20–70% the image draws in to a framed plate and darkens; 45–85% the introduction and actions rise into the frame; then the next section scrolls over it. Smaller screens show everything at once.
-- **Screen transition** (`ScreenTransition.tsx`): a graphite screen on which the outline of Ontario draws itself and the GTA is marked. It plays as an intro on the first page of a visit (pure CSS, so it always lifts, and skipped on later pages by a head script) and on every in-site link: the screen wipes up, the outline draws, the next page loads underneath, and the screen lifts away. The outline is from SVG Maps (CC BY 4.0, see `public/images/CREDITS.md`).
-- **Scroll reveals:** `data-reveal` with `data-reveal-type="lines" | "mask" | "rule"` and `--d` for a delay in ms. Only elements that start below the fold are hidden, so content is visible without JavaScript and to crawlers.
-- **Drift:** `data-parallax` uses scroll-driven animations (`animation-timeline: view()`) where supported, and does nothing elsewhere.
-- **Header:** transparent over the hero, ivory once scrolled, tucks away while reading down.
-- **Menu:** full-screen graphite panel revealed by a clip-path, links rising in sequence. Focus is trapped, Escape closes it, and it is inert when closed.
-- Everything above is switched off for visitors who prefer reduced motion.
+- **Homepage:** Lenis smooth scrolling and one frame loop driving every section from scroll position; see [MOTION.md](MOTION.md).
+- **Preloader** (`Preloader.tsx`): on each full page load the outline of Ontario draws itself and the GTA is marked, then it fades away. The outline is from SVG Maps (CC BY 4.0, see `public/images/CREDITS.md`).
+- **Screen transition** (`ScreenTransition.tsx`): on every in-site link a graphite panel unfolds in 3D and scales up to cover the page while the Ontario outline draws on it; the next page loads underneath and the cover fades away.
+- **Header and menu** (`MainNav.tsx`): past 80px of scroll on wide screens the top row lifts away and a menu button takes its place; the menu opens out of that button. Links roll their letters on hover and focus.
+- **Other pages:** `data-reveal` elements below the fold rise or unveil as they enter (`InteractionEffects`), and `data-parallax` pictures drift with scroll (`MotionRoot`).
+- With reduced motion everything above is off or reduced to a short crossfade, and the homepage shows still layouts with all content visible.
 
 ## Rules
 
@@ -61,4 +67,4 @@ All motion is CSS, with one small `IntersectionObserver` (`InteractionEffects`).
 
 ## What could not be inspected
 
-The build environment's network blocks the reference sites, so they were read as text (structure, copy, section order) and not seen. Their imagery, motion and hover behaviour were not observed; the motion here is designed from the brief rather than copied.
+The build environment's network blocks the reference sites, so they were read as text (structure, copy, section order) and not seen. The motion follows the written specification Sebra supplied; the screen recording arrived only as a still frame. See "What could not be verified" in [MOTION.md](MOTION.md).

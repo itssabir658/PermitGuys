@@ -1,6 +1,20 @@
 @import "tailwindcss";
 
 /*
+ * `tracks:` applies while the scroll-scrubbed sticky tracks are on: motion
+ * allowed, JavaScript running (the head script sets data-motion) and a
+ * screen at least 500px tall. Keep in step with TRACKS_QUERY in
+ * src/lib/motion/engine.ts. Everything else gets the still layout.
+ */
+@custom-variant tracks {
+  @media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+    :root[data-motion] & {
+      @slot;
+    }
+  }
+}
+
+/*
  * PermitGuys design tokens (luxury redesign, docs/DESIGN.md).
  *
  * Materials, not decoration: warm ivory paper, stone, graphite and a near
@@ -79,10 +93,38 @@
   --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
 }
 
+/*
+ * The reference's motion vocabulary (docs/MOTION.md, "Motion design
+ * system"): power eases, out on entrances and in on exits. No bounce, no
+ * overshoot. 0.6s is the house duration; 0.9–1s only for the largest type.
+ */
+:root {
+  --e-out-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* power1.out */
+  --e-out: cubic-bezier(0.22, 0.61, 0.36, 1); /* power2.out */
+  --e-out-strong: cubic-bezier(0.22, 1, 0.36, 1); /* power3.out */
+  --e-cubic-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --e-inout: cubic-bezier(0.45, 0, 0.55, 1); /* power1.inOut */
+  --e-inout-2: cubic-bezier(0.65, 0, 0.35, 1); /* power2.inOut */
+  --e-in: cubic-bezier(0.55, 0.09, 0.68, 0.53); /* power1.in, power2.in */
+  --e-ui: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
     scroll-padding-top: 6rem;
+  }
+
+  /* Lenis smooth scroll (src/lib/motion/engine.ts). Stopped keeps programmatic scrolling, unlike clip. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  html.lenis.lenis-stopped {
+    overflow: hidden;
+  }
+  .lenis [data-lenis-prevent] {
+    overscroll-behavior: contain;
   }
 
   body {
@@ -312,17 +354,9 @@
       transform: scaleX(0);
     }
 
-    /* Page transition: after the first client navigation, each route fades up from the ivory ground. */
-    /* Scroll-linked drift for selected images, where the browser supports it. */
-    @supports (animation-timeline: view()) {
-      [data-parallax] {
-        animation: pg-parallax linear both;
-        animation-timeline: view();
-        animation-range: cover 0% cover 100%;
-      }
-      [data-parallax="slow"] {
-        animation-name: pg-parallax-slow;
-      }
+    /* Inner-page entrances wait for the preloader or the page transition to lift (data-revealed). */
+    :root[data-motion]:not([data-revealed]) :is(.motion-rise, .motion-rise-delay) {
+      animation-play-state: paused;
     }
   }
 
@@ -346,139 +380,66 @@
   }
 }
 
-@keyframes pg-parallax {
+
+/*
+ * ===== Motion (docs/MOTION.md) =====
+ * Track layouts use the `tracks` media query and the head script's
+ * data-motion: (prefers-reduced-motion: no-preference) and (min-height: 500px).
+ */
+
+/* Masked lines (src/lib/motion/split.ts): each line slides from behind its own edge. */
+.split-line {
+  display: block;
+  overflow: clip;
+  overflow-clip-margin: 0.16em;
+  padding-bottom: 0.02em;
+}
+.split-line__inner {
+  display: block;
+}
+
+@keyframes line-up {
   from {
-    transform: translateY(-7%) scale(1.14);
+    transform: translateY(120%);
   }
   to {
-    transform: translateY(7%) scale(1.14);
+    transform: translateY(0);
   }
 }
 
-@keyframes pg-parallax-slow {
+@keyframes fade-in {
   from {
-    transform: translateY(-3.5%) scale(1.08);
+    opacity: 0;
+  }
+}
+
+@keyframes nav-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes ontario-draw {
+  from {
+    stroke-dashoffset: 1;
   }
   to {
-    transform: translateY(3.5%) scale(1.08);
+    stroke-dashoffset: 0;
   }
 }
 
-/* ---- Homepage hero (Hero.tsx, HeroScroll.tsx) ---- */
-.hero__word {
-  font-size: clamp(3rem, 14vw, 17rem);
-  white-space: nowrap;
-}
-.hero__mask {
-  display: inline-block;
-  overflow: hidden;
-  padding-block: 0.06em 0.02em;
-  vertical-align: top;
-}
-.hero__ch {
-  display: inline-block;
-}
-.hero__shade {
-  opacity: 0;
-}
-
-/* Wait for the Ontario intro to lift on the first page of a visit. */
-:root {
-  --intro-delay: 1.75s;
-}
-:root[data-intro-seen] {
-  --intro-delay: 0s;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .hero__plate {
-    animation: hero-unveil 1.8s var(--ease-in-out-quint) var(--intro-delay) both;
+@keyframes dot-in {
+  from {
+    transform: scale(0);
   }
-  .hero__img {
-    animation: hero-settle 2.6s var(--ease-out-expo) var(--intro-delay) both;
-  }
-  .hero__ch {
-    animation: hero-line 1.3s var(--ease-out-expo) both;
-    animation-delay: calc(var(--intro-delay) + 0.35s + var(--i, 0) * 0.055s);
-  }
-  .hero-line > span {
-    display: inline-block;
-    animation: hero-line 1.4s var(--ease-out-expo) both;
-    animation-delay: calc(var(--intro-delay) + 0.85s + var(--i, 0) * 0.12s);
-  }
-  /* On the children, so the scroll sequence can still fade the containers. */
-  .hero__more > *,
-  .hero__cue > * {
-    animation: hero-chrome 1.2s var(--ease-out-expo) calc(var(--intro-delay) + 1.2s) both;
-  }
-  .scroll-cue::after {
-    animation: scroll-cue 2.4s var(--ease-in-out-quint) 2.4s infinite;
-  }
-
-  /*
-   * Scroll sequence, large screens only (HeroScroll marks the hero live and
-   * writes --p). The hero is pinned for one extra screen; each part maps a
-   * slice of that progress onto its own movement.
-   */
-  .hero[data-live] {
-    --p: 0;
-    height: 200svh;
-    /* Progress through each slice, clamped to 0..1. */
-    --word: clamp(0, var(--p) / 0.4, 1);
-    --frame: clamp(0, (var(--p) - 0.2) / 0.5, 1);
-    --more: clamp(0, (var(--p) - 0.45) / 0.4, 1);
-  }
-  .hero[data-live] .hero__word {
-    transform: translateY(calc(var(--word) * -42%)) scale(calc(1 - var(--word) * 0.06));
-    opacity: calc(1 - var(--word) * 1.1);
-    filter: blur(calc(var(--word) * 6px));
-  }
-  .hero[data-live] .hero__media {
-    clip-path: inset(calc(var(--frame) * 9%) calc(var(--frame) * 5%) calc(var(--frame) * 22%) calc(var(--frame) * 5%) round calc(var(--frame) * 1.25rem));
-  }
-  .hero[data-live] .hero__plate {
-    transform: scale(calc(1 + var(--p) * 0.14));
-  }
-  .hero[data-live] .hero__shade {
-    opacity: calc(var(--frame) * 0.35);
-  }
-  .hero[data-live] .hero__title {
-    transform: translateY(calc(var(--frame) * -1.5rem));
-  }
-  .hero[data-live] .hero__more {
-    opacity: var(--more);
-    transform: translateY(calc((1 - var(--more)) * 2.5rem));
-  }
-  .hero[data-live] .hero__cue {
-    opacity: calc(1 - var(--p) * 6);
+  to {
+    transform: scale(1);
   }
 }
 
-/* ---- Screen transition (ScreenTransition.tsx) ---- */
-.screen-veil {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  background: var(--color-charcoal-950);
-  color: var(--color-ivory);
-  pointer-events: none;
-  visibility: hidden;
-  clip-path: inset(100% 0 0 0);
-}
-.screen-veil__inner {
-  display: grid;
-  justify-items: center;
-  gap: 2rem;
-}
-.screen-veil__map {
-  height: min(58svh, 34rem);
-  aspect-ratio: 892 / 1000;
-  overflow: visible;
-}
-.screen-veil__land,
-.screen-veil__isle {
+/* ---- Ontario outline (OntarioOutline.tsx) ---- */
+.ontario__stroke path {
   stroke: currentColor;
   stroke-width: 1.4px;
   vector-effect: non-scaling-stroke;
@@ -486,21 +447,37 @@
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
 }
-.screen-veil__dot,
-.screen-veil__pulse {
+.ontario__dot {
+  fill: var(--color-brand-400);
   transform-box: fill-box;
   transform-origin: center;
 }
-.screen-veil__dot {
-  fill: var(--color-brand-400);
+
+/* ---- Preloader (Preloader.tsx) ---- */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: none;
+  place-items: center;
+  background: var(--color-charcoal-950);
+  color: var(--color-ivory);
 }
-.screen-veil__pulse {
-  fill: none;
-  stroke: var(--color-brand-400);
-  stroke-width: 1.4px;
-  vector-effect: non-scaling-stroke;
-  opacity: 0;
+:root[data-motion]:not([data-loaded]) .preloader {
+  display: grid;
 }
+.preloader__inner,
+.screen-veil__mark {
+  display: grid;
+  justify-items: center;
+  gap: 2rem;
+}
+.preloader__map {
+  height: min(52svh, 30rem);
+  aspect-ratio: 892 / 1000;
+  overflow: visible;
+}
+.preloader__label,
 .screen-veil__label {
   display: flex;
   gap: 1.5rem;
@@ -510,7 +487,7 @@
   text-transform: uppercase;
   color: var(--color-charcoal-300);
 }
-.screen-veil__label span + span::before {
+:is(.preloader__label, .screen-veil__label) span + span::before {
   content: "";
   display: inline-block;
   width: 0.4rem;
@@ -520,159 +497,729 @@
   background: var(--color-brand-400);
   vertical-align: 0.08em;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  /* First page of a visit: in place before paint, then lifts away. */
-  :root:not([data-intro-seen]) .screen-veil[data-phase="intro"] {
-    visibility: visible;
-    animation: veil-out 0.95s var(--ease-in-out-quint) 1.55s both;
-  }
-  .screen-veil[data-phase="intro"] :is(.screen-veil__land, .screen-veil__isle) {
-    animation: veil-draw 1.25s var(--ease-in-out-quint) 0.1s both;
-  }
-  .screen-veil[data-phase="intro"] .screen-veil__dot {
-    animation: veil-dot 0.5s var(--ease-out-expo) 1.1s both;
-  }
-  .screen-veil[data-phase="intro"] .screen-veil__pulse {
-    animation: veil-pulse 1s var(--ease-out-expo) 1.2s both;
-  }
-  .screen-veil[data-phase="intro"] .screen-veil__label {
-    animation: hero-chrome 0.8s var(--ease-out-expo) 0.5s both;
-  }
-
-  /* In-site navigation: wipe up over the page while the outline draws... */
-  .screen-veil[data-phase="cover"] {
-    visibility: visible;
-    pointer-events: auto;
-    animation: veil-in 0.7s var(--ease-in-out-quint) both;
-  }
-  .screen-veil[data-phase="cover"] :is(.screen-veil__land, .screen-veil__isle) {
-    animation: veil-draw 1.05s var(--ease-in-out-quint) 0.2s both;
-  }
-  .screen-veil[data-phase="cover"] .screen-veil__dot {
-    animation: veil-dot 0.5s var(--ease-out-expo) 1s both;
-  }
-  .screen-veil[data-phase="cover"] .screen-veil__label {
-    animation: hero-chrome 0.6s var(--ease-out-expo) 0.45s both;
-  }
-  /* ...then lift away from the new page. */
-  .screen-veil[data-phase="reveal"] {
-    visibility: visible;
-    animation: veil-out 0.9s var(--ease-in-out-quint) both;
-  }
+/* Five strokes, 0.7s each, 0.14s apart: the last is done at 1.26s. */
+.preloader .ontario__stroke path {
+  animation: ontario-draw 0.7s var(--e-inout-2) calc(var(--i) * 0.14s) both;
+}
+.preloader .ontario__dot {
+  animation: dot-in 0.45s var(--e-out-strong) 0.95s both;
+}
+.preloader__label {
+  animation: fade-in 0.6s var(--e-out) 0.3s both;
 }
 
+/* ---- Page transition (ScreenTransition.tsx) ---- */
+.screen-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  overflow: hidden;
+  color: var(--color-ivory);
+  pointer-events: none;
+  visibility: hidden;
+}
+.screen-veil:is([data-phase="cover"], [data-phase="reveal"]) {
+  visibility: visible;
+}
+.screen-veil[data-phase="cover"] {
+  pointer-events: auto;
+}
+.screen-veil__underlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(17 17 16 / 0.7);
+  opacity: 0;
+}
+/* A square big enough to cover any screen once flat, unfolding in 3D from the centre. */
+.screen-veil__scaler {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 150vmax;
+  height: 150vmax;
+  transform: translate(-50%, -50%) scale(0);
+  perspective: 1600px;
+}
+.screen-veil__panel {
+  position: absolute;
+  inset: 0;
+  background: var(--color-charcoal-950);
+  transform: rotateX(90deg) rotateY(90deg);
+}
+.screen-veil__mark {
+  position: absolute;
+  inset: 0;
+  place-content: center;
+  gap: 1.75rem;
+}
+.screen-veil__map {
+  height: min(44svh, 24rem);
+  aspect-ratio: 892 / 1000;
+  overflow: visible;
+}
+.screen-veil .ontario__stroke path {
+  stroke-dashoffset: 1;
+}
+.screen-veil .ontario__dot {
+  transform: scale(0);
+}
+.screen-veil__label {
+  opacity: 0;
+}
+.screen-veil[data-phase="cover"] .ontario__stroke path {
+  animation: ontario-draw 0.7s var(--e-inout-2) calc(0.2s + var(--i) * 0.14s) both;
+}
+.screen-veil[data-phase="cover"] .ontario__dot {
+  animation: dot-in 0.45s var(--e-out-strong) 1.05s both;
+}
+.screen-veil[data-phase="cover"] .screen-veil__label {
+  animation: fade-in 0.5s var(--e-out) 0.4s both;
+}
+.screen-veil[data-phase="reveal"] .ontario__stroke path {
+  stroke-dashoffset: 0;
+}
+.screen-veil[data-phase="reveal"] .ontario__dot {
+  transform: none;
+}
+.screen-veil[data-phase="reveal"] .screen-veil__label {
+  opacity: 1;
+}
+/* Reduced motion: the panel is simply there, and the whole screen crossfades. */
 @media (prefers-reduced-motion: reduce) {
-  .screen-veil {
-    display: none;
+  .screen-veil__scaler {
+    transform: translate(-50%, -50%) scale(1);
   }
-}
-
-@keyframes veil-in {
-  from {
-    clip-path: inset(100% 0 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes veil-out {
-  from {
-    clip-path: inset(0 0 0 0);
-  }
-  to {
-    clip-path: inset(0 0 100% 0);
-  }
-}
-
-@keyframes veil-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes veil-dot {
-  from {
-    transform: scale(0);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-@keyframes veil-pulse {
-  from {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(4);
-  }
-}
-
-@keyframes hero-unveil {
-  from {
-    clip-path: inset(18% 8% 18% 8%);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes hero-settle {
-  from {
-    transform: scale(1.22);
-  }
-  to {
-    transform: scale(1.04);
-  }
-}
-
-@keyframes hero-line {
-  from {
-    transform: translateY(108%);
-  }
-  to {
+  .screen-veil__panel {
     transform: none;
   }
-}
-
-@keyframes hero-chrome {
-  from {
-    opacity: 0;
-  }
-  to {
+  .screen-veil__underlay,
+  .screen-veil__label {
     opacity: 1;
   }
-}
-
-@keyframes scroll-cue {
-  0% {
-    transform: scaleY(0);
-    transform-origin: top;
+  .screen-veil .ontario__stroke path {
+    stroke-dashoffset: 0;
+    animation: none;
   }
-  45% {
-    transform: scaleY(1);
-    transform-origin: top;
-  }
-  55% {
-    transform: scaleY(1);
-    transform-origin: bottom;
-  }
-  100% {
-    transform: scaleY(0);
-    transform-origin: bottom;
+  .screen-veil .ontario__dot {
+    transform: none;
+    animation: none;
   }
 }
 
-/* Hovering one row of an index quietly recedes the others (ServiceIndex). */
-@media (hover: hover) and (pointer: fine) {
-  .dim-siblings:has(> li > a:hover) > li > a:not(:hover) {
-    opacity: 0.32;
+/* ---- Header and menu (MainNav.tsx) ---- */
+.site-nav {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 50;
+  color: var(--color-ink);
+  pointer-events: none;
+  transition: color 0.5s var(--e-ui);
+}
+.site-nav :is(a, button) {
+  pointer-events: auto;
+}
+.site-nav:is([data-tone="dark"], [data-open]) {
+  color: var(--color-ivory);
+}
+.site-nav__bar {
+  position: relative;
+  transition:
+    background-color 0.5s var(--e-ui),
+    backdrop-filter 0.5s var(--e-ui);
+}
+.site-nav__logo--light,
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo--dark {
+  display: none;
+}
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo--light {
+  display: block;
+}
+/* Over a dark ground the Contact button turns ivory. */
+.site-nav[data-tone="dark"] .site-nav__cta {
+  --lb-bg: var(--color-ivory);
+  --lb-fg: var(--color-ink);
+  --lb-wipe: var(--color-stone-200);
+  --lb-shine: var(--color-brand-500);
+}
+
+/* The row steps up and out past 80px (wide screens), one item after another, and comes back above it. */
+.site-nav__item {
+  transition:
+    opacity 0.6s var(--e-out),
+    transform 0.6s var(--e-out),
+    visibility 0s;
+  transition-delay: calc(var(--i, 0) * 40ms), calc(var(--i, 0) * 40ms), 0s;
+}
+@media (min-width: 768px) {
+  .site-nav[data-collapsed] .site-nav__item,
+  .site-nav[data-open] .site-nav__item:not(.site-nav__item--logo) {
+    opacity: 0;
+    transform: translateY(-12px);
+    visibility: hidden;
+    transition:
+      opacity 0.4s var(--e-in),
+      transform 0.4s var(--e-in),
+      visibility 0s linear;
+    transition-delay: calc(var(--i, 0) * 40ms), calc(var(--i, 0) * 40ms), calc(0.4s + var(--i, 0) * 40ms);
+  }
+}
+/* Phones keep the row, on a ground of its own once the page has scrolled. */
+@media (max-width: 767px) {
+  .site-nav[data-collapsed]:not([data-open]) .site-nav__bar {
+    background: rgb(244 241 235 / 0.88);
+    backdrop-filter: blur(14px);
+  }
+  .site-nav[data-collapsed][data-tone="dark"]:not([data-open]) .site-nav__bar {
+    background: rgb(25 25 24 / 0.88);
+  }
+}
+
+/* Header entrance: 1.6s after the preloader lifts, 0.06s apart. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion] .nav-intro {
+    animation: nav-in 0.8s var(--e-out) calc(1.6s + var(--i, 0) * 0.06s) both;
+  }
+  :root[data-motion]:not([data-loaded]) .nav-intro {
+    animation-play-state: paused;
+  }
+}
+
+.site-nav__menu-slot {
+  position: absolute;
+  top: 50%;
+  right: 1.25rem;
+  overflow: hidden;
+  translate: 0 -50%;
+}
+@media (min-width: 640px) {
+  .site-nav__menu-slot {
+    right: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .site-nav__menu-slot {
+    right: 3rem;
+  }
+}
+@media (min-width: 1280px) {
+  .site-nav__menu-slot {
+    right: 4rem;
+  }
+}
+.site-nav__menu-btn {
+  position: relative;
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+  background: var(--color-ink);
+  color: var(--color-ivory);
+  transition:
+    transform 0.5s var(--e-out),
+    background-color 0.4s var(--e-ui),
+    color 0.4s var(--e-ui),
+    visibility 0s;
+}
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__menu-btn {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+}
+/* Wide screens at the top of the page: the button waits below its slot, out of sight. */
+@media (min-width: 768px) {
+  .site-nav:not([data-collapsed], [data-open]) .site-nav__menu-btn {
+    transform: translateY(200%);
+    visibility: hidden;
+    transition:
+      transform 0.4s var(--e-in),
+      background-color 0.4s var(--e-ui),
+      color 0.4s var(--e-ui),
+      visibility 0s linear 0.4s;
+  }
+}
+.site-nav__icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.site-nav__icon > span {
+  position: absolute;
+  width: 1.05rem;
+  height: 1px;
+  background: currentColor;
+}
+.site-nav__icon--open > span:first-child {
+  transform: translateY(-3.5px);
+}
+.site-nav__icon--open > span:last-child {
+  transform: translateY(3.5px);
+}
+.site-nav__icon--close > span:first-child {
+  transform: rotate(45deg);
+}
+.site-nav__icon--close > span:last-child {
+  transform: rotate(-45deg);
+}
+.site-nav__icon--open {
+  transition: opacity 0.3s var(--e-out-soft) 0.2s;
+}
+.site-nav__icon--close {
+  opacity: 0;
+  transition: opacity 0.3s var(--e-out-soft);
+}
+[aria-expanded="true"] > .site-nav__icon--open {
+  opacity: 0;
+  transition-delay: 0s;
+}
+[aria-expanded="true"] > .site-nav__icon--close {
+  opacity: 1;
+  transition-delay: 0.2s;
+}
+
+.site-menu {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  left: 0.75rem;
+  z-index: 40;
+  color: var(--color-ivory);
+  visibility: hidden;
+}
+.site-menu[data-shown] {
+  visibility: visible;
+}
+@media (min-width: 768px) {
+  .site-menu {
+    left: auto;
+    width: min(46rem, calc(100vw - 1.5rem));
+  }
+}
+.site-menu__bg {
+  position: absolute;
+  inset: 0;
+  background: var(--color-charcoal-950);
+  transform-origin: 0 0;
+}
+/* The content scrolls inside the panel on short screens; the background stays put behind it. */
+.site-menu__content {
+  position: relative;
+  display: grid;
+  gap: 2.5rem;
+  max-height: calc(100svh - 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 5.5rem 1.5rem 2rem;
+}
+@media (min-width: 768px) {
+  .site-menu__content {
+    grid-template-columns: 1.35fr 1fr;
+    gap: 2rem;
+    padding: 6.5rem 2.5rem 2.5rem;
+  }
+}
+
+/* ---- Roll links (RollText.tsx, driven by MotionRoot) ---- */
+.roll {
+  position: relative;
+}
+.roll__word {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  vertical-align: top;
+}
+.roll__row {
+  display: inline-flex;
+  white-space: pre;
+}
+.roll__row--bottom {
+  position: absolute;
+  inset: 0;
+}
+.roll__c {
+  display: inline-block;
+}
+.roll__row--bottom .roll__c {
+  transform: translateY(100%);
+}
+
+/* ---- Link button (LinkButton.tsx) ---- */
+.link-button {
+  --lb-bg: var(--color-ink);
+  --lb-fg: var(--color-ivory);
+  --lb-wipe: var(--color-brand-500);
+  --lb-shine: #fff;
+  --lb-h: 2.75rem;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  height: var(--lb-h);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lb-fg);
+}
+.link-button--light {
+  --lb-bg: var(--color-ivory);
+  --lb-fg: var(--color-ink);
+  --lb-wipe: var(--color-stone-200);
+  --lb-shine: var(--color-brand-500);
+}
+.link-button__plate,
+.link-button__icon {
+  position: relative;
+  overflow: hidden;
+  background: var(--lb-bg);
+  clip-path: inset(0 round 0);
+  transition: clip-path 0.35s var(--e-cubic-out);
+}
+.link-button__plate {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 1.25rem;
+}
+.link-button__wipe {
+  position: absolute;
+  inset: 0;
+  background: var(--lb-wipe);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s var(--e-ui);
+}
+.link-button__label {
+  position: relative;
+  background: linear-gradient(100deg, var(--lb-fg) 42%, var(--lb-shine) 50%, var(--lb-fg) 58%) 100% 0 / 300% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.link-button__icon {
+  width: var(--lb-h);
+  perspective: 12rem;
+}
+.link-button__cube {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--lb-h) / -2));
+  transition: transform 0.4s var(--e-ui);
+}
+.link-button__face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--lb-bg);
+  backface-visibility: hidden;
+  transform: translateZ(calc(var(--lb-h) / 2));
+}
+.link-button__face--side {
+  background: var(--lb-wipe);
+  transform: rotateY(-90deg) translateZ(calc(var(--lb-h) / 2));
+}
+.link-button:is(:hover, :focus-visible) :is(.link-button__plate, .link-button__icon) {
+  clip-path: inset(0 round 0.55rem);
+}
+.link-button:is(:hover, :focus-visible) .link-button__wipe {
+  transform: scaleX(1);
+}
+.link-button:is(:hover, :focus-visible) .link-button__cube {
+  transform: translateZ(calc(var(--lb-h) / -2)) rotateY(90deg);
+}
+.link-button:is(:hover, :focus-visible) .link-button__label {
+  background-position: 0 0;
+  transition: background-position 0.8s ease;
+}
+
+/* The notched sheet outline for framed pictures (NotchClip.tsx). */
+.notch-clip {
+  clip-path: url(#notch-clip);
+}
+
+/* ---- Homepage: hero (Hero.tsx) ---- */
+/* The picture and header hold still for 1.5s after the preloader; then the name, then the statement. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion] .hero-heading-line > .split-line__inner {
+    animation: line-up 0.9s var(--e-out-soft) 1.5s both;
+  }
+  :root[data-motion] .hero-sub-line > .split-line__inner {
+    animation: line-up 0.7s var(--e-out) calc(2s + var(--i, 0) * 0.05s) both;
+  }
+  :root[data-motion] .hero-fig {
+    animation: fade-in 0.7s var(--e-out) 2.1s both;
+  }
+  :root[data-motion]:not([data-revealed]) :is(.hero-heading-line > .split-line__inner, .hero-sub-line > .split-line__inner, .hero-fig) {
+    animation-play-state: paused;
+  }
+}
+
+/* ---- Homepage: intro orbit (Intro.tsx) ---- */
+.intro-orbit {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.intro-orbit__item {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--size);
+  height: var(--size);
+  overflow: hidden;
+  background: var(--color-stone-300);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+}
+
+/* ---- Homepage: works (Works.tsx) ---- */
+.works-panel {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: 3rem 1.25rem;
+}
+@media (min-width: 640px) {
+  .works-panel {
+    padding-inline: 2rem;
+  }
+}
+@media (min-width: 768px) {
+  .works-panel {
+    grid-template-columns: 5fr 6fr;
+    align-items: end;
+    gap: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+  .works-panel {
+    padding-inline: 3rem;
+  }
+}
+.works-panel__frame {
+  position: relative;
+}
+.works-panel__image {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--color-stone-300);
+}
+
+/* ---- Homepage: values (Values.tsx) ---- */
+.values-outer {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: 3rem 1.25rem;
+}
+@media (min-width: 768px) {
+  .values-outer {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding-inline: 2rem;
+  }
+}
+.values-frame {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  aspect-ratio: 3 / 4;
+}
+.values-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 1.25rem;
+  text-align: center;
+}
+
+/* ---- Homepage: services (Services.tsx) ---- */
+.services-grid {
+  padding-block: 7rem 4rem;
+}
+@media (min-width: 1024px) {
+  .services-grid {
+    padding-block: 10rem 5rem;
+  }
+}
+.services-frame-col {
+  display: none;
+}
+@media (min-width: 768px) {
+  .services-frame-col {
+    display: block;
+  }
+}
+.services-frame-pin {
+  position: sticky;
+  top: 15svh;
+}
+.services-frame {
+  position: relative;
+  height: min(70svh, 44rem);
+  max-width: 100%;
+  aspect-ratio: 4 / 5;
+  margin-left: auto;
+  overflow: hidden;
+  background: var(--color-charcoal-800);
+}
+.services-item__label {
+  opacity: 0.4;
+  transition: opacity 0.3s var(--e-ui);
+}
+.services-item:is(:hover, :focus-within, [data-active]) .services-item__label {
+  opacity: 1;
+}
+
+/* ---- Homepage: the tracks ---- */
+@media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] :is(.intro-copy, [data-services-heading]):not([data-split]) {
+    opacity: 0;
+  }
+  :root[data-motion] .intro-copy {
+    position: absolute;
+    inset-inline: 1.25rem;
+    top: 50%;
+    translate: 0 -50%;
+  }
+  :root[data-motion] .intro-copy .split-line__inner {
+    opacity: 0;
+    transform: translateY(120%);
+  }
+
+  :root[data-motion] .works-panel {
+    display: block;
+    max-width: none;
+    height: 150vh;
+    padding: 0;
+  }
+  :root[data-motion] .works-panel__frame {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 20svh;
+  }
+  :root[data-motion] .works-panel__image {
+    height: min(56svh, 90vw);
+    transform: translate3d(0, 100px, 0) scale(0.5);
+  }
+  :root[data-motion] .works-item {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 1.75rem;
+    padding-inline: 1.25rem;
+  }
+  :root[data-motion] .works-item > * {
+    opacity: 0;
+  }
+
+  :root[data-motion] .values-outer {
+    display: flex;
+    max-width: none;
+    height: 110vh;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  :root[data-motion] .values-frame {
+    width: auto;
+    max-width: none;
+    height: min(62svh, 40rem, 100vw);
+  }
+  :root[data-motion] [data-values-image] {
+    transform: scale(0.5);
+  }
+  :root[data-motion] .values-text > * {
+    opacity: 0;
+  }
+
+  :root[data-motion] [data-contact-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 640px) {
+  :root[data-motion] .works-item {
+    padding-inline: 2rem;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 1024px) {
+  :root[data-motion] .works-panel__frame {
+    justify-content: flex-end;
+    padding: 0 10vw 0 0;
+  }
+  :root[data-motion] .works-panel__image {
+    height: min(64svh, 44rem);
+  }
+  :root[data-motion] .works-item {
+    top: 50%;
+    bottom: auto;
+    max-width: 44vw;
+    padding-inline: 3rem;
+    translate: 0 -50%;
+  }
+}
+/* Phones: Services becomes a 300vh track with the list pinned. */
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 700px) {
+  :root[data-motion] .services-track {
+    height: 300vh;
+  }
+  :root[data-motion] .services-stage {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100svh;
+    flex-direction: column;
+    justify-content: center;
+  }
+  :root[data-motion] .services-grid {
+    gap: 1.25rem;
+    padding-block: 4.75rem 1.25rem;
+  }
+  :root[data-motion] .services-frame-col {
+    display: block;
+    order: -1;
+  }
+  :root[data-motion] .services-frame-pin {
+    position: static;
+  }
+  :root[data-motion] .services-frame {
+    width: 100%;
+    height: 22svh;
+    aspect-ratio: auto;
+  }
+  :root[data-motion] .services-list {
+    margin-top: 1.25rem;
+  }
+  :root[data-motion] .services-item a {
+    padding-block: 0.4rem;
+  }
+  :root[data-motion] .services-item__label {
+    font-size: 1.25rem;
+  }
+}
+
+/* Reduced motion: transitions and animations end at once (the scroll engine also stands still). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

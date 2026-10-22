@@ -3,37 +3,35 @@
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { GTA_POINT, ONTARIO_PATHS, ONTARIO_VIEWBOX } from "@/content/ontario";
+import { engine } from "@/lib/motion/engine";
+import { cssEase } from "@/lib/motion/math";
+import { OntarioOutline } from "./OntarioOutline";
 
 /*
- * Screen transition with the Ontario outline.
+ * Page transition (docs/MOTION.md, "Page transitions"), with the outline of
+ * Ontario drawn over it.
  *
- * First visit of a session ("intro"): a graphite screen is already in place
- * when the page paints, the outline of Ontario draws itself, the Greater
- * Toronto Area is marked, and the screen lifts away to reveal the hero. This
- * part is pure CSS (globals.css, "Screen transition"), so it finishes even
- * if JavaScript never runs. A small script in the document head skips it on
- * later pages of the same visit.
+ * In: a graphite panel at the centre of the screen unfolds in 3D (rotated
+ * 90° on both axes to flat, 0.7s) while a dim underlay fades in; from 0.35s
+ * it scales up from nothing to cover the screen (0.7s, accelerating). The
+ * outline draws over it from 0.2s. The next page is requested once the
+ * panel covers the screen, and the transition waits for the outline to
+ * finish.
+ * Out: everything fades away over 0.7s, and the new page's own entrance
+ * starts (the document gets data-revealed again).
  *
- * In-site navigation ("cover" then "reveal"): clicking an internal link
- * wipes the screen up from the bottom while the outline draws, the next page
- * loads underneath, and the screen lifts away again.
- *
- * Visitors who prefer reduced motion get neither: links navigate normally
- * and the intro is hidden.
+ * With reduced motion it is a 0.3s crossfade either way. Clicks with a
+ * modifier key, new-tab links, downloads and jumps within the page are left
+ * to the browser.
  */
 
-type Phase = "intro" | "idle" | "cover" | "reveal";
+type Phase = "idle" | "cover" | "reveal";
 
-/** Time from click until the next page is requested, and until it may be revealed. */
-const COVER_MS = 700;
-const MIN_HOLD_MS = 1250;
-const REVEAL_MS = 900;
-
-export const INTRO_KEY = "pg-intro-seen";
-
-/** Runs before first paint: skip the intro after the first page of a visit. */
-export const introScript = `try{if(sessionStorage.getItem("${INTRO_KEY}")||matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.dataset.introSeen=""}catch(e){}`;
+/** Panel unfolded and scaled to cover; the outline's last stroke done. */
+const COVER_MS = 1050;
+const HOLD_MS = 1500;
+const OUT_MS = 700;
+const QUICK_MS = 300;
 
 function internalHref(event: MouseEvent): string | null {
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return null;
@@ -51,47 +49,61 @@ function internalHref(event: MouseEvent): string | null {
 export function ScreenTransition() {
   const router = useRouter();
   const pathname = usePathname();
-  const [phase, setPhase] = useState<Phase>("intro");
-  const pending = useRef<{ from: string; startedAt: number } | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const veil = useRef<HTMLDivElement>(null);
+  const underlay = useRef<HTMLDivElement>(null);
+  const scaler = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const pending = useRef<{ from: string; startedAt: number; quick: boolean; hash: boolean } | null>(null);
   const timers = useRef<number[]>([]);
 
   const later = (fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
   };
 
-  // Intro: end it once its CSS has played, or at once if it was skipped.
-  useEffect(() => {
-    const seen = "introSeen" in document.documentElement.dataset;
-    if (!seen) {
-      try {
-        sessionStorage.setItem(INTRO_KEY, "1");
-      } catch {
-        // Storage can be unavailable; the intro then plays on each full page load.
-      }
-    }
-    const t = window.setTimeout(() => setPhase("idle"), seen ? 0 : 2600);
-    return () => window.clearTimeout(t);
-  }, []);
+  const reveal = (quick: boolean) => {
+    document.documentElement.dataset.revealed = "";
+    engine.start();
+    setPhase("reveal");
+    const out = veil.current?.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: quick ? QUICK_MS : OUT_MS,
+      easing: quick ? cssEase.power2InOut : cssEase.power1InOut,
+      fill: "forwards",
+    });
+    const done = () => {
+      veil.current?.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+      setPhase("idle");
+    };
+    if (out) out.finished.then(done, done);
+    else done();
+  };
 
   // Intercept internal link clicks and cover the screen before navigating.
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const href = internalHref(event);
       if (!href) return;
       event.preventDefault();
       if (pending.current) return;
-      pending.current = { from: location.pathname, startedAt: performance.now() };
+      const quick = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      pending.current = { from: location.pathname, startedAt: performance.now(), quick, hash: href.includes("#") };
+      delete document.documentElement.dataset.revealed;
+      engine.stop();
       setPhase("cover");
+      if (quick) {
+        veil.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: QUICK_MS, easing: cssEase.power2InOut, fill: "both" });
+      } else {
+        underlay.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: 200, easing: cssEase.power1InOut, fill: "both" });
+        panel.current?.animate([{ transform: "rotateX(90deg) rotateY(90deg)" }, { transform: "rotateX(0deg) rotateY(0deg)" }], { duration: 700, easing: cssEase.power1InOut, fill: "both" });
+        scaler.current?.animate([{ transform: "translate(-50%, -50%) scale(0)" }, { transform: "translate(-50%, -50%) scale(1)" }], { duration: 700, delay: 350, easing: cssEase.in, fill: "both" });
+      }
       router.prefetch(href as Route);
-      later(() => router.push(href as Route), COVER_MS);
+      later(() => router.push(href as Route), quick ? QUICK_MS : COVER_MS);
       // Never leave the screen covered, whatever happens to the navigation.
       later(() => {
-        if (pending.current) {
-          pending.current = null;
-          setPhase("reveal");
-          later(() => setPhase("idle"), REVEAL_MS);
-        }
+        if (!pending.current) return;
+        pending.current = null;
+        reveal(quick);
       }, 5000);
     };
     document.addEventListener("click", onClick, { capture: true });
@@ -107,25 +119,22 @@ export function ScreenTransition() {
     const p = pending.current;
     if (!p || pathname === p.from) return;
     pending.current = null;
-    const wait = Math.max(0, MIN_HOLD_MS - (performance.now() - p.startedAt));
-    const t1 = window.setTimeout(() => setPhase("reveal"), wait);
-    const t2 = window.setTimeout(() => setPhase("idle"), wait + REVEAL_MS);
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
+    // Start the new page at the top (a link to a fragment is left to the router).
+    if (!p.hash) engine.scrollTo(0, true);
+    engine.requestMeasure();
+    const wait = Math.max(0, (p.quick ? QUICK_MS : HOLD_MS) - (performance.now() - p.startedAt));
+    const t = window.setTimeout(() => reveal(p.quick), wait);
+    return () => window.clearTimeout(t);
   }, [pathname]);
 
   return (
-    <div aria-hidden="true" data-phase={phase} className="screen-veil">
-      <div className="screen-veil__inner">
-        <svg viewBox={ONTARIO_VIEWBOX} className="screen-veil__map" fill="none">
-          {ONTARIO_PATHS.map((d, i) => (
-            <path key={i} d={d} pathLength={1} className={i === 0 ? "screen-veil__land" : "screen-veil__isle"} />
-          ))}
-          <circle cx={GTA_POINT.x} cy={GTA_POINT.y} r={11} className="screen-veil__dot" />
-          <circle cx={GTA_POINT.x} cy={GTA_POINT.y} r={11} className="screen-veil__pulse" />
-        </svg>
+    <div ref={veil} aria-hidden="true" data-phase={phase} className="screen-veil">
+      <div ref={underlay} className="screen-veil__underlay" />
+      <div ref={scaler} className="screen-veil__scaler">
+        <div ref={panel} className="screen-veil__panel" />
+      </div>
+      <div className="screen-veil__mark">
+        <OntarioOutline className="screen-veil__map" />
         <p className="screen-veil__label">
           <span>Ontario</span>
           <span>Greater Toronto Area</span>
