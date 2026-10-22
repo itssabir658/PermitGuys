@@ -7,12 +7,11 @@ import { useEffect } from "react";
  * Renders nothing. Adds page-wide effects without wrapping content in
  * client components:
  * - Scroll reveal: elements marked data-reveal that start below the fold
- *   fade up as they enter the viewport. Content is visible by default, so
- *   it stays readable without JavaScript and for crawlers.
- * - Spotlight: cards with the .spotlight class get a soft red glow that
- *   follows the pointer.
+ *   are hidden, then revealed as they enter the viewport (rise, line mask,
+ *   image unveil or drawn rule; see globals.css). Content is visible by
+ *   default, so it stays readable without JavaScript and for crawlers.
+ *   Skipped for visitors who prefer reduced motion.
  * - Section tracking: the "On this page" index marks the section being read.
- * The first two are skipped for visitors who prefer reduced motion.
  */
 export function InteractionEffects() {
   const pathname = usePathname();
@@ -29,7 +28,7 @@ export function InteractionEffects() {
           observer.unobserve(entry.target);
         }
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.01 },
     );
 
     const fold = window.innerHeight;
@@ -45,19 +44,6 @@ export function InteractionEffects() {
       document.querySelectorAll<HTMLElement>('[data-reveal="hidden"]').forEach((el) => (el.dataset.reveal = "shown"));
     };
   }, [pathname]);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const onMove = (e: PointerEvent) => {
-      const card = (e.target instanceof Element ? e.target : null)?.closest<HTMLElement>(".spotlight");
-      if (!card) return;
-      const rect = card.getBoundingClientRect();
-      card.style.setProperty("--mx", `${e.clientX - rect.left}px`);
-      card.style.setProperty("--my", `${e.clientY - rect.top}px`);
-    };
-    document.addEventListener("pointermove", onMove, { passive: true });
-    return () => document.removeEventListener("pointermove", onMove);
-  }, []);
 
   useEffect(() => {
     const links = [...document.querySelectorAll<HTMLAnchorElement>('nav[data-toc] a[href^="#"]')];

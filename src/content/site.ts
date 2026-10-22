@@ -1,5 +1,3 @@
-import type { Photo } from "./types";
-
 /**
  * Business facts. Every `null` here is information the business has not
  * supplied yet. Templates show a clearly marked placeholder for null values
@@ -24,12 +22,6 @@ export const site = {
   },
   /** Absolute or root-relative URL of the supplied logo (square, at least 112px). */
   logo: null as string | null,
-  /**
-   * Licensed architectural photograph for the homepage hero (landscape, at
-   * least 2000px wide, stored under /public/images). Until one is supplied the
-   * hero shows a drafted elevation instead. See docs/IMAGES.md.
-   */
-  heroPhoto: null as Photo | null,
   /**
    * Google review summary from the Business Profile, read from the
    * profile on the date in `asOf`. Shown as a link to the reviews; live

@@ -12,14 +12,13 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <section className="bg-glow-paper relative overflow-hidden text-charcoal-900">
-      <div aria-hidden="true" className="bg-drafting-grid absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_95%)]" />
-      <Container className="relative py-24 sm:py-32">
+    <section className="bg-ivory text-ink">
+      <Container className="pt-36 pb-28 sm:pt-44 sm:pb-36">
         <Eyebrow>Page not found</Eyebrow>
-        <h1 className="mt-6 max-w-3xl font-display text-display-lg">We could not find that page.</h1>
-        <p className="mt-6 max-w-xl text-lg text-ink-muted">The link may be out of date, or the page may have moved. These are good places to continue.</p>
+        <h1 className="mt-8 max-w-4xl font-display text-display-xl font-light">We could not find that page.</h1>
+        <p className="mt-8 max-w-xl text-lede text-ink-muted">The link may be out of date, or the page may have moved. These are good places to continue.</p>
         <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row">
-          <ButtonLink href={paths.home} variant="brand">
+          <ButtonLink href={paths.home} variant="primary">
             Go to the homepage
           </ButtonLink>
           <ButtonLink href={paths.services} variant="secondary">

@@ -25,21 +25,21 @@ export function Breadcrumbs({ items, onDark, page }: { items: Crumb[]; onDark?: 
   return (
     <>
       <nav aria-label="Breadcrumb">
-        <ol className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${onDark ? "text-charcoal-100/70" : "text-ink-muted"}`}>
+        <ol className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-label ${onDark ? "text-charcoal-300" : "text-ink-muted"}`}>
           {trail.map((item, i) => {
             const last = i === trail.length - 1;
             return (
               <li key={item.path} className="flex items-center gap-2">
                 {last ? (
-                  <span aria-current="page" className={onDark ? "text-paper" : "text-charcoal-900"}>
+                  <span aria-current="page" className={onDark ? "text-ivory" : "text-ink"}>
                     {item.name}
                   </span>
                 ) : (
                   <>
-                    <Link href={item.path as Route} className="underline-offset-4 hover:underline">
+                    <Link href={item.path as Route} className="link-draw hover:text-ink">
                       {item.name}
                     </Link>
-                    <span aria-hidden="true" className="text-brand-500">/</span>
+                    <span aria-hidden="true">/</span>
                   </>
                 )}
               </li>

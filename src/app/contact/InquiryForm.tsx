@@ -24,7 +24,7 @@ import { submitInquiry } from "./actions";
 
 const ERROR = "text-[#a3361f]";
 const field =
-  "mt-2 block w-full rounded-xl border border-charcoal-900/20 bg-white/85 px-4 py-3 text-base text-charcoal-900 placeholder:text-ink-muted/70 focus:border-charcoal-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
+  "mt-2 block w-full rounded-none border-0 border-b border-ink/25 bg-transparent px-0 py-3.5 text-lg text-ink transition-colors duration-500 placeholder:text-ink-muted/70 hover:border-ink/50 focus:border-ink focus:ring-0 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-500";
 const invalid = "border-[#a3361f]";
 
 const labels: Record<InquiryField, string> = {
@@ -60,7 +60,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="text-sm font-medium text-charcoal-900">
+      <label htmlFor={id} className="text-label text-ink-muted">
         {labels[id]}
         {optional ? <span className="font-normal text-ink-muted"> (optional)</span> : null}
       </label>
@@ -212,9 +212,8 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
 
   if (state.status === "sent") {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-paper-100 p-8 sm:p-10">
-        <span aria-hidden="true" className="absolute inset-y-8 left-0 w-1 rounded-r-full bg-brand-500" />
-        <h2 ref={successRef} tabIndex={-1} className="font-display text-display-sm text-charcoal-900 focus:outline-none">
+      <div className="border-l border-ink/25 py-2 pl-8">
+        <h2 ref={successRef} tabIndex={-1} className="font-display text-display-md font-light text-ink focus:outline-none">
           Thank you. Your inquiry has been sent.
         </h2>
         <p className="mt-4 text-ink-muted">
@@ -281,7 +280,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
           tabIndex={-1}
           role="alert"
           className={cn(
-            "rounded-xl p-5 text-sm leading-relaxed focus:outline-2 focus:outline-offset-2",
+            "p-5 text-sm leading-relaxed focus:outline-2 focus:outline-offset-2",
             notice.tone === "warning"
               ? "border border-dashed border-brand-500 bg-brand-500/[0.07] text-brand-700 focus:outline-brand-600"
               : "border-l-2 border-[#a3361f] bg-[#a3361f]/5 text-[#7d2914] focus:outline-[#a3361f]",
@@ -349,7 +348,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
           />
         </Field>
         <fieldset aria-describedby={errors.preferredContact ? "preferredContact-error" : undefined}>
-          <legend className="text-sm font-medium text-charcoal-900">{labels.preferredContact}</legend>
+          <legend className="text-label text-ink-muted">{labels.preferredContact}</legend>
           <div className="mt-2 flex gap-3">
             {(
               [
@@ -360,7 +359,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
               <label
                 key={value}
                 htmlFor={`preferredContact-${value}`}
-                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-xl border border-charcoal-900/20 bg-white/85 px-4 text-base text-charcoal-900 has-[:checked]:border-charcoal-900 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-600"
+                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-full px-5 text-base text-ink ring-1 ring-ink/20 transition-colors duration-500 ring-inset has-[:checked]:bg-ink has-[:checked]:text-ivory has-[:checked]:ring-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500"
               >
                 <input
                   id={`preferredContact-${value}`}
@@ -368,7 +367,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
                   name="preferredContact"
                   value={value}
                   defaultChecked={(values.preferredContact ?? "email") === value}
-                  className="size-4 accent-charcoal-900 focus:outline-none"
+                  className="size-4 accent-brand-500 focus:outline-none"
                 />
                 {label}
               </label>
@@ -477,12 +476,12 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-brand-500 px-8 text-[0.95rem] font-semibold text-white shadow-[0_12px_32px_-12px_rgb(202_58_49/0.6)] transition-all hover:-translate-y-0.5 hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-wait disabled:opacity-70"
+          className="group inline-flex min-h-13 items-center justify-center gap-4 rounded-full bg-ink py-1.5 pr-1.5 pl-8 text-[0.9375rem] font-medium text-ivory transition-colors duration-500 hover:bg-charcoal-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-wait disabled:opacity-70"
         >
-          {pending ? (
-            <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-paper/40 border-t-paper motion-reduce:animate-none" />
-          ) : null}
           {pending ? "Sending…" : "Send inquiry"}
+          <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-full bg-brand-500 text-white">
+            {pending ? <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" /> : <span className="size-1.5 rounded-full bg-white transition-transform duration-500 group-hover:scale-[2]" />}
+          </span>
         </button>
         <p role="status" aria-live="polite" className="text-sm text-ink-muted">
           {pending ? "Sending your inquiry. Please keep this page open." : ""}

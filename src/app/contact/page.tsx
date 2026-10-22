@@ -20,7 +20,7 @@ export const metadata = pageMetadata({
 // Google reviews refresh once a day (REVIEWS_REVALIDATE_SECONDS in src/lib/reviews.ts).
 export const revalidate = 86400;
 
-const linkClass = "text-charcoal-900 underline underline-offset-4 hover:text-brand-700";
+const linkClass = "link-rule text-ink";
 
 export default async function ContactPage() {
   const { contact, map } = site;
@@ -54,45 +54,41 @@ export default async function ContactPage() {
         title="Tell us about your project."
         lead="Share a few details about what you are planning and where. We will review them and reply to explain how we can help with drawings and the permit process."
       />
-      <div className="bg-glow-paper">
-      <Container className="py-16 sm:py-20 lg:py-24">
-        <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-          <div className="glass rounded-[1.75rem] p-5 sm:p-8 lg:col-span-7 lg:p-10">
+      <Container className="pb-24 sm:pb-32 lg:pb-40">
+        <div className="grid gap-20 lg:grid-cols-12 lg:gap-8">
+          <div className="lg:col-span-7">
             <InquiryForm directContact={directContact} />
           </div>
-          <div className="space-y-4 lg:col-span-5">
-          <aside className="glass rounded-3xl p-6 sm:p-8" aria-labelledby="direct-heading">
-            <h2 id="direct-heading" className="text-label text-brand-700">
-              Contact directly
-            </h2>
-            <dl className="mt-4 divide-y divide-charcoal-900/[0.08]">
-              <div className="py-4">
-                <dt className="text-sm text-ink-muted">Phone</dt>
-                <dd className="mt-1 text-charcoal-900">
-                  {contact.phone ? <PhoneLink location="contact-sidebar" className={linkClass} /> : <Placeholder>phone number</Placeholder>}
-                </dd>
-              </div>
-              <div className="py-4">
-                <dt className="text-sm text-ink-muted">Email</dt>
-                <dd className="mt-1 text-charcoal-900">
-                  {contact.email ? <EmailLink location="contact-sidebar" className={linkClass} /> : <Placeholder>email address</Placeholder>}
-                </dd>
-              </div>
-              <div className="py-4">
-                <dt className="text-sm text-ink-muted">Hours</dt>
-                <dd className="mt-1 text-charcoal-900">{contact.hours ?? <Placeholder>business hours</Placeholder>}</dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-              Please do not send personal information beyond what is needed to describe your project.
-            </p>
-          </aside>
-          {reviews ? <RatingCard summary={reviews} headingLevel="h2" /> : null}
-          <MapCard query={map.query} label={map.label} note={map.note} onLight />
+          <div className="space-y-16 lg:col-span-4 lg:col-start-9">
+            <aside className="border-t border-ink/25 pt-8" aria-labelledby="direct-heading">
+              <h2 id="direct-heading" className="text-label text-ink-muted">
+                Contact directly
+              </h2>
+              <dl className="mt-4 divide-y divide-line">
+                <div className="py-4">
+                  <dt className="text-label text-ink-muted">Phone</dt>
+                  <dd className="mt-2 text-lg text-ink">
+                    {contact.phone ? <PhoneLink location="contact-sidebar" className={linkClass} /> : <Placeholder>phone number</Placeholder>}
+                  </dd>
+                </div>
+                <div className="py-4">
+                  <dt className="text-label text-ink-muted">Email</dt>
+                  <dd className="mt-2 text-lg text-ink">
+                    {contact.email ? <EmailLink location="contact-sidebar" className={linkClass} /> : <Placeholder>email address</Placeholder>}
+                  </dd>
+                </div>
+                <div className="py-4">
+                  <dt className="text-label text-ink-muted">Hours</dt>
+                  <dd className="mt-2 text-lg text-ink">{contact.hours ?? <Placeholder>business hours</Placeholder>}</dd>
+                </div>
+              </dl>
+              <p className="mt-4 text-sm leading-relaxed text-ink-muted">Please do not send personal information beyond what is needed to describe your project.</p>
+            </aside>
+            {reviews ? <RatingCard summary={reviews} headingLevel="h2" /> : null}
+            <MapCard query={map.query} label={map.label} note={map.note} onLight />
           </div>
         </div>
       </Container>
-      </div>
     </>
   );
 }

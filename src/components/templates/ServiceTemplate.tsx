@@ -3,7 +3,8 @@ import { ArticleLayout, ArticleSection, Note, RuledList } from "@/components/ui/
 import { CtaPanel } from "@/components/ui/CtaPanel";
 import { DirectAnswer } from "@/components/ui/DirectAnswer";
 import { FaqList } from "@/components/ui/FaqList";
-import { Figure } from "@/components/ui/Figure";
+import { Plate } from "@/components/ui/Plate";
+import { plateForService } from "@/content/imagery";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StepList } from "@/components/ui/StepList";
@@ -36,7 +37,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
         ]}
         eyebrow={service.category === "residential" ? "Residential service" : "Commercial service"}
         title={service.name}
-        aside={<Figure visual={service.visual} tone="dark" captionOnDark framed priority sizes="(min-width: 1024px) 40vw, 100vw" />}
+        aside={<Plate plate={plateForService(service.slug)} reveal={false} priority fig="01" aspect="aspect-[4/5]" sizes="(min-width: 1024px) 33vw, 100vw" />}
       >
         <DirectAnswer>{service.directAnswer}</DirectAnswer>
       </PageHeader>

@@ -59,39 +59,37 @@ test.describe("accessibility", () => {
   test("respects reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const animation = await page.locator(".motion-rise").first().evaluate((el) => getComputedStyle(el).animationName);
+    const animation = await page.locator(".hero-line > span").first().evaluate((el) => getComputedStyle(el).animationName);
     expect(animation).toBe("none");
+    await page.goto("/services/");
+    const inner = await page.locator(".motion-rise").first().evaluate((el) => getComputedStyle(el).animationName);
+    expect(inner).toBe("none");
   });
 });
 
 test.describe("navigation", () => {
-  test("desktop menus open, close with Escape and navigate", async ({ page }, info) => {
-    test.skip(info.project.name !== "desktop", "Desktop navigation");
-    await page.goto("/");
-    const trigger = page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Services" });
-    await trigger.click();
-    await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await page.keyboard.press("Escape");
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
-    await expect(trigger).toBeFocused();
-    await trigger.click();
-    await page.getByRole("link", { name: /Deck permits/ }).first().click();
-    await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
-  });
-
-  test("the mobile menu opens, closes with Escape and navigates", async ({ page }, info) => {
-    test.skip(info.project.name === "desktop", "Mobile and tablet navigation");
+  test("the menu opens, traps focus, closes with Escape and navigates", async ({ page }) => {
     await page.goto("/");
     const button = page.getByRole("button", { name: "Open menu" });
     await button.click();
     await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
+    const menu = page.getByRole("navigation", { name: "Site menu" });
+    await expect(menu.getByRole("link", { name: "Home" })).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
+    await expect(menu).toBeHidden();
     await button.click();
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "How it works" }).click();
+    await menu.getByRole("link", { name: "How it works" }).click();
     await expect(page).toHaveURL(/\/how-it-works\/$/);
     await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
+  });
+
+  test("the desktop bar links to the main sections", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "Desktop navigation");
+    await page.goto("/");
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Guides" }).click();
+    await expect(page).toHaveURL(/\/permit-guides\/$/);
+    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Guides" })).toHaveAttribute("aria-current", "page");
   });
 
   test("calls to action lead to real pages", async ({ page }) => {
@@ -101,11 +99,10 @@ test.describe("navigation", () => {
     await expect(page.getByLabel("Project type")).toHaveValue("Deck");
   });
 
-  test("the homepage project picker opens the form with the project type chosen", async ({ page }) => {
+  test("the homepage service index opens each service", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Start an inquiry: Deck" }).first().click();
-    await expect(page).toHaveURL(/\/contact\/\?service=deck-permits$/);
-    await expect(page.getByLabel("Project type")).toHaveValue("Deck");
+    await page.locator("#services").getByRole("link", { name: /deck permit/i }).first().click();
+    await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
   });
 
   test("touch targets are at least 44px on small screens", async ({ page }, info) => {
@@ -125,36 +122,10 @@ test.describe("navigation", () => {
 });
 
 test.describe("interactive pieces", () => {
-  test("the hero elevation switches between existing and proposed", async ({ page }) => {
+  test("study images say they are not client projects", async ({ page }) => {
     await page.goto("/");
-    const proposed = page.getByRole("button", { name: "Proposed" });
-    await expect(proposed).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "Existing" }).click();
-    await expect(page.getByRole("img", { name: /bungalow as it stands today/ })).toBeVisible();
-    await proposed.click();
-    await expect(page.getByRole("img", { name: /proposed second-storey addition/ })).toBeVisible();
-  });
-
-  test("the services filter narrows the grid", async ({ page }) => {
-    await page.goto("/");
-    const grid = page.locator("[data-filter]");
-    await page.getByRole("button", { name: /^Homes/ }).click();
-    await expect(grid.getByRole("link", { name: "Deck permits" })).toBeVisible();
-    await expect(grid.getByRole("link", { name: "Commercial permits" })).toBeHidden();
-    await page.getByRole("button", { name: /^Businesses/ }).click();
-    await expect(grid.getByRole("link", { name: "Commercial permits" })).toBeVisible();
-    await expect(grid.getByRole("link", { name: "Deck permits" })).toBeHidden();
-  });
-
-  test("the process steps work as tabs", async ({ page, isMobile }) => {
-    test.skip(isMobile, "Keyboard test");
-    await page.goto("/");
-    await page.getByRole("tab", { name: /Tell us about your project/ }).click();
-    await page.keyboard.press("ArrowDown");
-    const second = page.getByRole("tab", { name: /We assess the requirements/ });
-    await expect(second).toHaveAttribute("aria-selected", "true");
-    await expect(second).toBeFocused();
-    await expect(page.getByRole("tabpanel")).toContainText("We review the scope");
+    await expect(page.locator("figcaption", { hasText: "Rendered study for illustration, not a client project." }).first()).toBeAttached();
+    await expect(page.locator("[aria-labelledby=studies-heading]")).toContainText("None of them is a client project.");
   });
 
   test("the map loads from Google only when asked", async ({ page }) => {

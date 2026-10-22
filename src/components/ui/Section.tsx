@@ -5,12 +5,12 @@ import { cn } from "./cn";
 type Tone = "paper" | "light" | "dark";
 
 const tones: Record<Tone, string> = {
-  paper: "bg-paper text-ink",
-  light: "bg-paper-100 text-ink",
-  dark: "bg-charcoal-900 text-white",
+  paper: "bg-ivory text-ink",
+  light: "bg-stone-100 text-ink",
+  dark: "bg-charcoal-950 text-ivory",
 };
 
-/** Vertical rhythm and background tone for every page section. Content fades up into view (data-reveal). */
+/** Vertical rhythm and background tone for page sections. Content rises into view (data-reveal). */
 export function Section({
   children,
   tone = "paper",
@@ -29,12 +29,9 @@ export function Section({
   narrow?: boolean;
 }) {
   return (
-    <section
-      id={id}
-      aria-labelledby={labelledBy}
-      className={cn(tones[tone], "py-16 sm:py-20 lg:py-28", bordered && "border-t border-line", className)}
-    >
+    <section id={id} aria-labelledby={labelledBy} className={cn(tones[tone], "py-20 sm:py-28 lg:py-36", className)}>
       <Container narrow={narrow}>
+        {bordered ? <div aria-hidden="true" data-reveal="" data-reveal-type="rule" className={cn("mb-16 h-px lg:mb-24", tone === "dark" ? "bg-ivory/15" : "bg-line")} /> : null}
         <div data-reveal="">{children}</div>
       </Container>
     </section>

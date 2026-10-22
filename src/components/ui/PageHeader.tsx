@@ -5,9 +5,8 @@ import { Container } from "./Container";
 import { Eyebrow } from "./Eyebrow";
 
 /**
- * Opening block for inner pages: breadcrumbs, H1 and a direct answer, on the
- * same pale grey drafting ground as the homepage hero so every page opens
- * the same way. Drawings in the aside sit on a charcoal sheet (Figure tone="dark").
+ * Opening block for inner pages: breadcrumbs, a large editorial H1 and a
+ * direct answer on the ivory ground, with an optional plate alongside.
  */
 export function PageHeader({
   crumbs,
@@ -30,19 +29,19 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="bg-glow-paper relative overflow-hidden text-charcoal-900">
-      <div aria-hidden="true" className="bg-drafting-grid absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_95%)]" />
-      <Container className="relative pt-8 pb-14 sm:pt-10 sm:pb-16 lg:pb-20">
+    <header className="bg-ivory text-ink">
+      <Container className="pt-28 pb-16 sm:pt-36 sm:pb-20 lg:pt-44 lg:pb-28">
         <Breadcrumbs items={crumbs} page={{ name: title, type: pageType, extra: schemaExtra }} />
-        <div className={aside ? "mt-12 grid gap-12 lg:mt-16 lg:grid-cols-12 lg:items-end lg:gap-16" : "mt-12 lg:mt-16"}>
-          <div className={aside ? "lg:col-span-7" : "max-w-4xl"}>
-            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-            <h1 className="motion-rise mt-6 font-display text-display-xl text-balance">{title}</h1>
-            {lead ? <div className="mt-7 max-w-2xl text-lg leading-relaxed text-pretty text-ink-muted sm:text-xl">{lead}</div> : null}
-            {children ? <div className="mt-10">{children}</div> : null}
+        <div className={aside ? "mt-14 grid gap-14 lg:mt-24 lg:grid-cols-12 lg:items-end lg:gap-8" : "mt-14 lg:mt-24"}>
+          <div className={aside ? "lg:col-span-7" : "max-w-5xl"}>
+            {eyebrow ? <Eyebrow className="motion-rise">{eyebrow}</Eyebrow> : null}
+            <h1 className="motion-rise mt-8 font-display text-display-xl font-light text-balance">{title}</h1>
+            {lead ? <div className="motion-rise-delay mt-8 max-w-2xl text-lede text-pretty text-ink-muted">{lead}</div> : null}
+            {children ? <div className="motion-rise-delay mt-12 max-w-2xl">{children}</div> : null}
           </div>
-          {aside ? <div className="motion-rise-delay lg:col-span-5">{aside}</div> : null}
+          {aside ? <div className="lg:col-span-4 lg:col-start-9">{aside}</div> : null}
         </div>
+        <div aria-hidden="true" data-reveal="" data-reveal-type="rule" className="mt-16 h-px bg-line lg:mt-24" />
       </Container>
     </header>
   );

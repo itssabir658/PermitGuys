@@ -1,11 +1,17 @@
-import { Education } from "@/components/home/Education";
+import { Credibility } from "@/components/home/Credibility";
+import { FinalCta } from "@/components/home/FinalCta";
 import { Hero } from "@/components/home/Hero";
-import { HomeFaq } from "@/components/home/HomeFaq";
-import { HowItWorks } from "@/components/home/HowItWorks";
-import { ReviewsAndMap } from "@/components/home/ReviewsAndMap";
-import { ServiceIntro } from "@/components/home/ServiceIntro";
-import { CtaPanel } from "@/components/ui/CtaPanel";
+import { Insights } from "@/components/home/Insights";
+import { Intro } from "@/components/home/Intro";
+import { Principles } from "@/components/home/Principles";
+import { Process } from "@/components/home/Process";
+import { Regions } from "@/components/home/Regions";
+import { Reviews } from "@/components/home/Reviews";
+import { Services } from "@/components/home/Services";
+import { Studies } from "@/components/home/Studies";
+import { Container } from "@/components/ui/Container";
 import { JsonLd } from "@/components/ui/JsonLd";
+import { homeSteps } from "@/content/process";
 import { site } from "@/content/site";
 import { webPageSchema } from "@/lib/jsonld";
 import { getGoogleReviews } from "@/lib/reviews";
@@ -26,13 +32,21 @@ export default async function HomePage() {
   const reviews = await getGoogleReviews();
   return (
     <>
-      <Hero reviews={reviews} />
-      <ServiceIntro />
-      <HowItWorks />
-      <ReviewsAndMap reviews={reviews} />
-      <Education />
-      <HomeFaq />
-      <CtaPanel />
+      <Hero />
+      <Credibility reviews={reviews} />
+      <Intro />
+      <Services />
+      <Studies />
+      <section aria-labelledby="process-heading" className="bg-ivory py-24 sm:py-32 lg:py-44">
+        <Container>
+          <Process steps={homeSteps} />
+        </Container>
+      </section>
+      <Principles />
+      <Regions />
+      <Reviews reviews={reviews} />
+      <Insights />
+      <FinalCta />
       <JsonLd data={webPageSchema({ path: "/", name: `${site.name}: permit drawings and permit guidance in the GTA`, breadcrumb: false })} />
     </>
   );

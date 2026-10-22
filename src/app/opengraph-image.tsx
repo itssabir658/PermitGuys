@@ -6,5 +6,5 @@ export const size = ogSize;
 export const contentType = ogContentType;
 
 export default function Image() {
-  return ogImage({ eyebrow: "Greater Toronto Area", title: "Your project. The right drawings. A clearer path to approval." });
+  return ogImage({ eyebrow: "Greater Toronto Area", title: "Clarity in every detail. Confidence in every permit." });
 }

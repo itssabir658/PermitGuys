@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { bodyFont, headingFont } from "./fonts";
+import { headingFont, monoFont } from "./fonts";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { InteractionEffects } from "@/components/layout/InteractionEffects";
@@ -32,16 +32,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F2F5F9",
+  themeColor: "#F4F1EB",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-CA" className={`${headingFont.variable} ${bodyFont.variable} antialiased`}>
+    <html lang="en-CA" className={`${headingFont.variable} ${monoFont.variable} antialiased`}>
       <body className="flex min-h-screen flex-col">
         <SkipLink />
         <SiteHeader />
-        <main id="main" tabIndex={-1} className="flex-1 bg-paper focus:outline-none">
+        <main id="main" tabIndex={-1} className="flex-1 bg-ivory focus:outline-none">
           {children}
         </main>
         <SiteFooter />
