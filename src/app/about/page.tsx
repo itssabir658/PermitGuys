@@ -52,9 +52,9 @@ export default function AboutPage() {
           />
         </ArticleSection>
         <ArticleSection id="team" title="Team and credentials">
+          {site.credentials.length ? <RuledList items={site.credentials.map((c) => `${c}.`)} /> : null}
           <Placeholder block>
-            team members, roles and verified credentials, such as designer qualification and registration (BCIN) details, professional memberships and insurance.
-            {site.credentials.length === 0 ? " None are published until they are supplied and verified." : null}
+            team members and their roles, the names behind the credentials above, professional memberships and insurance.
           </Placeholder>
         </ArticleSection>
         <ArticleSection id="story" title="Our story">

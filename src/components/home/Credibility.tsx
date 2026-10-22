@@ -4,13 +4,14 @@ import { ExternalIcon } from "@/components/ui/Icons";
 import { Stars } from "@/components/ui/Reviews";
 import { homeSteps } from "@/content/process";
 import { services } from "@/content/services";
+import { site } from "@/content/site";
 import type { ReviewSummary } from "@/lib/reviews";
 
 /*
  * A restrained line of facts a visitor can check: the Google rating (live
  * or as recorded from the Business Profile, always linked), the scope of
- * services and where we work. Nothing here is a credential we have not
- * verified.
+ * services, our credentials as the business confirmed them, and the
+ * process. Nothing here is a credential the business has not confirmed.
  */
 
 function Item({ figure, children, index }: { figure: ReactNode; children: ReactNode; index: number }) {
@@ -46,7 +47,15 @@ export function Credibility({ reviews }: { reviews: ReviewSummary | null }) {
           <Item index={1} figure={<>{services.length}</>}>
             permit services, {words[homes - 1] ?? homes} for homes and {words[business - 1] ?? business} for businesses and landlords
           </Item>
-          <Item index={2} figure="GTA">Permit drawings and guidance across the Greater Toronto Area</Item>
+          {site.credentials.length ? (
+            <Item index={2} figure="BCIN">
+              {site.credentials.join(". ")}.
+            </Item>
+          ) : (
+            <Item index={2} figure="GTA">
+              Permit drawings and guidance across the Greater Toronto Area
+            </Item>
+          )}
           <Item index={3} figure={<>{homeSteps.length}</>}>steps from the first conversation to the municipality&rsquo;s decision</Item>
         </div>
       </Container>

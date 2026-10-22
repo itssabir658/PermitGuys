@@ -26,6 +26,7 @@ export function SiteFooter() {
               <p>{contact.phone ? <PhoneLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>phone number</Placeholder>}</p>
               <p>{contact.email ? <EmailLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>email address</Placeholder>}</p>
               <p>{contact.address ?? <Placeholder onDark>business address, if it will be published</Placeholder>}</p>
+              {contact.hours ? <p>{contact.hours}</p> : null}
             </address>
           </div>
           <nav aria-label="Footer" className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:col-span-6">

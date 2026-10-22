@@ -2,16 +2,24 @@ import { describe, expect, it } from "vitest";
 import { guides } from "@/content/guides";
 import { legacyRedirects } from "@/content/redirects";
 import { services } from "@/content/services";
+import { site } from "@/content/site";
 import { breadcrumbSchema, guidePageFacts, guideSchema, organizationSchema, serviceSchema, webPageSchema } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
 
 describe("structured data", () => {
-  it("describes the business without unverified facts", () => {
+  it("describes the business with confirmed facts only", () => {
     const org = organizationSchema();
-    // No confirmed address yet, so not a LocalBusiness type.
-    expect(org["@type"]).toBe("Organization");
-    for (const key of ["telephone", "email", "address", "aggregateRating", "review", "openingHours"]) expect(org).not.toHaveProperty(key);
+    // The office address is confirmed, so the business is a LocalBusiness type with a postal address and weekday hours.
+    expect(org["@type"]).toBe("ProfessionalService");
+    expect(org).toMatchObject({
+      telephone: site.contact.phone,
+      email: site.contact.email,
+      address: { "@type": "PostalAddress", addressLocality: "Oakville", postalCode: "L6L 5W2" },
+      openingHoursSpecification: [{ dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "09:00", closes: "17:00" }],
+    });
+    // Never self-serving review markup.
+    for (const key of ["aggregateRating", "review"]) expect(org).not.toHaveProperty(key);
     expect(org.knowsAbout).toEqual(services.map((s) => s.name));
   });
 

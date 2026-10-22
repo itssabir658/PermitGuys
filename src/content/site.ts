@@ -14,12 +14,23 @@ export const site = {
   /** Region named in the brief. Individual municipalities are confirmed in locations.ts. */
   region: "Greater Toronto Area, Ontario",
   locale: "en_CA",
+  /** Confirmed by the business on 2026-10-22 (office address, phone, email and hours from its card). */
   contact: {
-    phone: null as string | null,
-    email: null as string | null,
-    address: null as string | null,
-    hours: null as string | null,
+    phone: "416-479-9556" as string | null,
+    email: "info@permitguys.ca" as string | null,
+    address: "2115 South Service Rd West, Oakville, ON L6L 5W2" as string | null,
+    hours: "Weekdays 9:00 AM to 5:00 PM. Weekends by appointment only." as string | null,
   },
+  /** The office address in parts, for structured data. */
+  postalAddress: {
+    streetAddress: "2115 South Service Rd West",
+    addressLocality: "Oakville",
+    addressRegion: "ON",
+    postalCode: "L6L 5W2",
+    addressCountry: "CA",
+  } as { streetAddress: string; addressLocality: string; addressRegion: string; postalCode: string; addressCountry: string } | null,
+  /** Weekday opening hours for structured data; weekends are by appointment and left out. */
+  openingHours: [{ days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "09:00", closes: "17:00" }] as { days: string[]; opens: string; closes: string }[],
   /** Absolute or root-relative URL of the supplied logo (square, at least 112px). */
   logo: null as string | null,
   /**
@@ -42,11 +53,11 @@ export const site = {
    */
   map: {
     query: "Permitguys, 2115 S Service Rd W, Oakville, ON L6L 5W2",
-    label: "2115 S Service Rd W, Oakville, ON",
-    note: "As listed on our Google Business Profile.",
+    label: "2115 South Service Rd West, Oakville, ON L6L 5W2",
+    note: "Our office. Weekend visits by appointment only.",
   } as { query: string; label: string; note?: string },
-  /** Verified credentials only, such as designer registrations (BCIN). */
-  credentials: [] as string[],
+  /** Verified credentials only, in the business's own words (confirmed 2026-10-22). */
+  credentials: ["Small Buildings BCIN certified", "Full architectural stamps in house"] as string[],
   /**
    * Official profiles the business controls, such as its Google Business
    * Profile, LinkedIn or Houzz page. Used for schema.org `sameAs`.

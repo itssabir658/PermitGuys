@@ -16,7 +16,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | `brand-400` | `#EE352F` | The logo red. Dots, rules and small marks only. |
 | `brand-500` … `brand-700` | `#C2352C` … `#8F271F` | Red text on light grounds, if ever needed. Use `brand-300` on dark. |
 
-- **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels, figure numbers and metadata (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
+- **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels, figure numbers and metadata, and Playfair Display Black only for the hero wordmark (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
 - **Scale:** `text-hero` (fluid up to 8.5rem), `text-display-2xl` … `text-display-sm`, `text-lede`, `text-label` (mono, uppercase, tracked).
 - **Easing:** `ease-out-expo` for reveals and hovers, `ease-in-out-quint` for masks and the menu panel. Durations sit between 0.5s and 1.4s.
 - **Width:** content runs to `max-w-site` (100rem) on a 12-column grid; long copy stays at `max-w-prose`.
@@ -44,12 +44,12 @@ Hero (full-bleed study, staggered headline) → credibility strip → editorial 
 
 All motion is CSS, with one small `IntersectionObserver` (`InteractionEffects`). No animation library is loaded.
 
-- **Hero entrance** (`hero-plate`, `hero-line`, `hero-fade`, `hero-chrome`): the image unveils from a framed crop and settles from a slight scale, the headline lines rise out of masks, then the copy, actions and header follow. Plays once; the page is usable from the first frame.
+- **Hero** (`Hero.tsx`, `HeroScroll.tsx`), after the Studio Foundry reference: an oversized Playfair Display wordmark across the top of the full-bleed image, the statement at the bottom left. Entrance: the image unveils and settles, the wordmark's letters rise in sequence, then the statement. On screens 1024px and wider the hero pins for one extra screen of scrolling and `--p` runs from 0 to 1: 0–40% the wordmark lifts, blurs and fades; 20–70% the image draws in to a framed plate and darkens; 45–85% the introduction and actions rise into the frame; then the next section scrolls over it. Smaller screens show everything at once.
+- **Screen transition** (`ScreenTransition.tsx`): a graphite screen on which the outline of Ontario draws itself and the GTA is marked. It plays as an intro on the first page of a visit (pure CSS, so it always lifts, and skipped on later pages by a head script) and on every in-site link: the screen wipes up, the outline draws, the next page loads underneath, and the screen lifts away. The outline is from SVG Maps (CC BY 4.0, see `public/images/CREDITS.md`).
 - **Scroll reveals:** `data-reveal` with `data-reveal-type="lines" | "mask" | "rule"` and `--d` for a delay in ms. Only elements that start below the fold are hidden, so content is visible without JavaScript and to crawlers.
 - **Drift:** `data-parallax` uses scroll-driven animations (`animation-timeline: view()`) where supported, and does nothing elsewhere.
 - **Header:** transparent over the hero, ivory once scrolled, tucks away while reading down.
 - **Menu:** full-screen graphite panel revealed by a clip-path, links rising in sequence. Focus is trapped, Escape closes it, and it is inert when closed.
-- **Page transitions:** a short fade-and-rise (`template.tsx`, `.page-enter`) that only runs after an in-site link click, never on the first page of a visit.
 - Everything above is switched off for visitors who prefer reduced motion.
 
 ## Rules
