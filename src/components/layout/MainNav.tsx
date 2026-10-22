@@ -55,26 +55,18 @@ export function MainNav({
   }
 
   useEffect(() => {
-    // From the first in-site link click on, pages arrive with the gentle page transition.
-    // The first page of a visit never waits on it.
-    const onClick = (e: MouseEvent) => {
-      const link = (e.target as Element | null)?.closest?.("a[href^='/']");
-      if (link) document.documentElement.dataset.navigated = "";
-    };
-    document.addEventListener("click", onClick, { capture: true });
-    return () => document.removeEventListener("click", onClick, { capture: true });
-  }, []);
-
-  useEffect(() => {
     let lastY = window.scrollY;
     let frame = 0;
     const update = () => {
       frame = 0;
       const y = window.scrollY;
       setScrolled(y > 24);
-      setOverHero(pathname === "/" && y < window.innerHeight - 96);
+      const hero = pathname === "/" ? document.querySelector("[data-hero]") : null;
+      const onHero = Boolean(hero && hero.getBoundingClientRect().bottom > 96);
+      setOverHero(onHero);
       if (Math.abs(y - lastY) > 6) {
-        setTucked(y > lastY && y > 240);
+        // Stay in place over the pinned hero; step aside while reading further down.
+        setTucked(!onHero && y > lastY && y > 240);
         lastY = y;
       }
     };
@@ -159,17 +151,16 @@ export function MainNav({
             </ul>
           </nav>
 
-          <div className="relative z-10 flex items-center gap-2 sm:gap-6">
+          <div className="relative z-10 flex items-center gap-1.5">
             <Link
               href={ctaHref}
               className={cn(
-                "group hidden min-h-11 items-center gap-3 rounded-full border px-5 text-[0.9375rem] transition-colors duration-500 sm:inline-flex",
-                light ? "border-ivory/40 hover:border-ivory hover:bg-ivory hover:text-ink" : "border-ink/25 hover:border-ink hover:bg-ink hover:text-ivory",
+                "hidden min-h-11 items-center px-5 font-mono text-[0.75rem] tracking-[0.12em] uppercase transition-colors duration-500 sm:inline-flex",
+                light ? "bg-charcoal-950/90 text-ivory hover:bg-ivory hover:text-ink" : "bg-ink text-ivory hover:bg-brand-500",
                 open && "invisible",
               )}
             >
-              Start a project
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-400 transition-transform duration-500 group-hover:scale-150" />
+              Contact
             </Link>
             <button
               ref={buttonRef}
@@ -177,18 +168,15 @@ export function MainNav({
               aria-expanded={open}
               aria-controls={`${baseId}-menu`}
               onClick={() => (open ? close() : setOpen(true))}
-              className="group -mr-2 inline-flex min-h-11 items-center gap-3 px-2 text-[0.9375rem]"
+              className={cn(
+                "group inline-flex size-11 items-center justify-center transition-colors duration-500",
+                open ? "bg-ivory text-ink" : light ? "bg-charcoal-950/90 text-ivory hover:bg-ivory hover:text-ink" : "bg-ink text-ivory hover:bg-brand-500",
+              )}
             >
               <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
-              <span aria-hidden="true" className="relative hidden h-5 overflow-hidden sm:block">
-                <span className={cn("block transition-transform duration-500 ease-out-expo", open && "-translate-y-1/2")}>
-                  <span className="block h-5">Menu</span>
-                  <span className="block h-5">Close</span>
-                </span>
-              </span>
-              <span aria-hidden="true" className="relative block h-3 w-7">
-                <span className={cn("absolute right-0 block h-px bg-current transition-all duration-500 ease-out-expo", open ? "top-1.5 w-7 rotate-[24deg]" : "top-0.5 w-7 group-hover:w-5")} />
-                <span className={cn("absolute right-0 block h-px bg-current transition-all duration-500 ease-out-expo", open ? "top-1.5 w-7 -rotate-[24deg]" : "top-2.5 w-5 group-hover:w-7")} />
+              <span aria-hidden="true" className={cn("relative block size-3.5 transition-transform duration-500 ease-out-expo", open && "rotate-45")}>
+                <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-current" />
+                <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-current" />
               </span>
             </button>
           </div>

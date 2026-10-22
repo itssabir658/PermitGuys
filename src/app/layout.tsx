@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { headingFont, monoFont } from "./fonts";
+import { headingFont, monoFont, wordmarkFont } from "./fonts";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { InteractionEffects } from "@/components/layout/InteractionEffects";
+import { ScreenTransition, introScript } from "@/components/layout/ScreenTransition";
 import { SiteTelemetry } from "@/components/layout/SiteTelemetry";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
@@ -37,7 +38,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-CA" className={`${headingFont.variable} ${monoFont.variable} antialiased`}>
+    <html lang="en-CA" className={`${headingFont.variable} ${monoFont.variable} ${wordmarkFont.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Before first paint: skip the Ontario intro after the first page of a visit. */}
+        <script dangerouslySetInnerHTML={{ __html: introScript }} />
+      </head>
       <body className="flex min-h-screen flex-col">
         <SkipLink />
         <SiteHeader />
@@ -48,6 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <SiteTelemetry />
         <InteractionEffects />
+        <ScreenTransition />
       </body>
     </html>
   );

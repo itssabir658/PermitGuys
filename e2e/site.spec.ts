@@ -122,6 +122,23 @@ test.describe("navigation", () => {
 });
 
 test.describe("interactive pieces", () => {
+  test("in-site links pass through the Ontario screen transition", async ({ page }) => {
+    await page.goto("/services/");
+    await page.getByRole("link", { name: /deck permit/i }).first().click();
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "cover");
+    await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
+  });
+
+  test("the transition and intro stay out of the way with reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await expect(page.locator(".screen-veil")).toBeHidden();
+    await page.locator("#services").getByRole("link", { name: /deck permit/i }).first().click();
+    await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
+  });
+
   test("study images say they are not client projects", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("figcaption", { hasText: "Rendered study for illustration, not a client project." }).first()).toBeAttached();
