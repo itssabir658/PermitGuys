@@ -335,6 +335,7 @@
  *   data-reveal-type="draw"   an Ontario outline draws stroke by stroke
  * Content is visible by default: only the script hides it, never with
  * reduced motion, so it stays readable without JavaScript and for crawlers.
+ * The hidden states are for the screen only, so a page prints in full.
  */
 
 /* A row's bottom hairline, drawn by a pseudo-element so it can draw across with its row. */
@@ -351,7 +352,7 @@
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media screen and (prefers-reduced-motion: no-preference) {
   :root[data-motion] .page-crumbs {
     animation: fade-in 0.6s var(--e-out) both;
   }
@@ -377,9 +378,10 @@
   /*
    * A study band starts below the fold, so only its top shows: an entrance
    * ease brings its rising edge over the fold while the title is still
-   * landing, instead of after it.
+   * landing, instead of after it. Set on the figure, so its caption keeps
+   * the same delay.
    */
-  .motion-unveil--band {
+  figure:has(.motion-unveil--band) {
     --unveil-duration: 1.5s;
     --unveil-ease: var(--e-out-strong);
     --unveil-delay: 0.3s;
@@ -438,6 +440,17 @@
   }
   .row-rule[data-reveal="hidden"]::after {
     transform: scaleX(0);
+  }
+
+  /* Whatever holds focus is never left hidden (InteractionEffects also shows it on focus). */
+  [data-reveal="hidden"]:focus-within {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0s;
+  }
+  [data-reveal-lines][data-reveal="hidden"]:focus-within .split-line__inner,
+  .row-rule[data-reveal="hidden"]:focus-within::after {
+    transform: none;
   }
 
   [data-reveal-type="mask"] {

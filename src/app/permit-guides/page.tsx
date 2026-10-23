@@ -29,11 +29,10 @@ export default function GuidesPage() {
       <PlateBand plate={plates.basement} />
       <Section labelledBy="guides-list-heading" first>
         <div className="grid gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <Eyebrow>Resources</Eyebrow>
-            <h2 id="guides-list-heading" className="sr-only">
+          <div data-row="" className="lg:col-span-4">
+            <Eyebrow as="h2" id="guides-list-heading">
               All guides
-            </h2>
+            </Eyebrow>
           </div>
           <div className="lg:col-span-8">
             <LinkRows

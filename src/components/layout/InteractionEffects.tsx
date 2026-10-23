@@ -21,11 +21,12 @@ interface Arrival {
  *   chart or list comes in as it is reached rather than as one slab. Other
  *   data-reveal elements rise, unveil, draw a rule or draw an outline.
  *   Each piece is hidden, then shown as it reaches the bottom 8% of the
- *   screen; pieces that arrive together follow one another in reading
- *   order, and anything already in the first screen waits for the page
- *   header's entrance (data-revealed). Content is visible by default, so it
- *   stays readable without JavaScript and for crawlers. Skipped for
- *   visitors who prefer reduced motion.
+ *   screen, or at once when it takes focus or the pointer; pieces that
+ *   arrive together follow one another in reading order, and anything
+ *   already in the first screen waits for the page header's entrance
+ *   (data-revealed). Content is visible by default, so it stays readable
+ *   without JavaScript, for crawlers and in print. Skipped for visitors who
+ *   prefer reduced motion.
  * - Section tracking: the "On this page" index marks the section being read.
  */
 export function InteractionEffects() {
@@ -81,6 +82,29 @@ export function InteractionEffects() {
       el.dataset.reveal = "hidden";
       return true;
     };
+
+    // Whatever takes focus or the pointer is shown at once, so neither ever lands on a piece that is still hidden (a
+    // short row resting in the bottom 8%, or one still waiting for the header). On focus a piece already on its way
+    // also skips the rest of its wait in the stagger. The pointer never runs ahead of the header's entrance.
+    const uncover = (event: Event) => {
+      const focus = event.type === "focusin";
+      if (!(event.target instanceof Element) || (!focus && !("revealed" in root.dataset))) return;
+      for (let el = event.target.closest<HTMLElement>("[data-reveal]"); el; el = el.parentElement?.closest<HTMLElement>("[data-reveal]") ?? null) {
+        if (el.dataset.reveal === "hidden") {
+          observer.unobserve(el);
+          waiting = waiting.filter((arrival) => arrival.el !== el);
+          el.style.setProperty("--o", "0");
+          el.dataset.reveal = "shown";
+        }
+        if (!focus || typeof CSSTransition === "undefined") continue;
+        for (const run of el.getAnimations({ subtree: true })) {
+          const delay = run.effect?.getTiming().delay ?? 0;
+          if (run instanceof CSSTransition && typeof run.currentTime === "number" && run.currentTime < delay) run.currentTime = delay;
+        }
+      }
+    };
+    document.addEventListener("focusin", uncover, true);
+    document.addEventListener("pointerover", uncover, { passive: true });
 
     document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => {
       if (hide(el)) observer.observe(el);
@@ -138,6 +162,8 @@ export function InteractionEffects() {
     return () => {
       alive = false;
       cancelAnimationFrame(frame);
+      document.removeEventListener("focusin", uncover, true);
+      document.removeEventListener("pointerover", uncover);
       observer.disconnect();
       lifted.disconnect();
       resize.disconnect();

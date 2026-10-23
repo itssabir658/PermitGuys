@@ -5,11 +5,12 @@ import { cn } from "./cn";
  * Small mono label above headings, set like the annotation on a drawing
  * sheet. `code` adds a sheet number ("01") so a long page reads in order;
  * without one, the label carries the red dot. `as` sets it as a small
- * heading where it names a list (region names, "Related guides").
+ * heading where it names a list (region names, "Related guides"), and
+ * `id` lets it label its section.
  */
-export function Eyebrow({ children, className, onDark, code, as: Tag = "p" }: { children: ReactNode; className?: string; onDark?: boolean; code?: string; as?: "p" | "h2" | "h3" }) {
+export function Eyebrow({ children, className, onDark, code, as: Tag = "p", id }: { children: ReactNode; className?: string; onDark?: boolean; code?: string; as?: "p" | "h2" | "h3"; id?: string }) {
   return (
-    <Tag className={cn("flex items-center gap-3 text-label", onDark ? "text-charcoal-300" : "text-ink-muted", className)}>
+    <Tag id={id} className={cn("flex items-center gap-3 text-label", onDark ? "text-charcoal-300" : "text-ink-muted", className)}>
       {code ? (
         <span className={cn("tabular-nums", onDark ? "text-ivory" : "text-ink")}>{code}</span>
       ) : (

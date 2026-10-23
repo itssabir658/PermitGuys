@@ -55,7 +55,7 @@ Process, service areas and guides live on their own pages; the footer carries th
 - **Preloader** (`Preloader.tsx`): on each full page load the outline of Ontario draws itself and the GTA is marked, then it fades away. The outline is from SVG Maps (CC BY 4.0, see `public/images/CREDITS.md`).
 - **Screen transition** (`ScreenTransition.tsx`): on every in-site link a graphite panel unfolds in 3D and scales up to cover the page while the Ontario outline draws on it; the next page loads underneath and the cover fades away.
 - **Header and menu** (`MainNav.tsx`): past 80px of scroll on wide screens the top row lifts away and a menu button takes its place; the menu opens out of that button. Links roll their letters on hover and focus.
-- **Other pages:** once the preloader or transition clears, the page header enters in order (breadcrumbs, label, the H1 line by line from behind masks, lead, rule) and the first study unveils. Below it headings rise line by line and rows, hairlines and blocks follow one another in reading order as they enter (`InteractionEffects`); `data-parallax` pictures drift with scroll (`MotionRoot`).
+- **Other pages:** once the preloader or transition clears, the page header enters in order (breadcrumbs, label, the H1 line by line from behind masks, lead, rule) and the first study unveils. Below it headings rise line by line and rows, hairlines and blocks follow one another in reading order as they enter (`InteractionEffects`); anything that takes focus or the pointer shows at once, and print shows everything; `data-parallax` pictures drift with scroll (`MotionRoot`).
 - With reduced motion everything above is off or reduced to a short crossfade, and the homepage shows still layouts with all content visible.
 
 ## Rules

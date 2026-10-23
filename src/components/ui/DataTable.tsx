@@ -1,10 +1,14 @@
 import type { DataTable } from "@/content/types";
 
-/** A captioned data table that scrolls sideways on narrow screens instead of overflowing. */
+/**
+ * A captioned data table that scrolls sideways on narrow screens instead of
+ * overflowing. It never scrolls vertically, so rows rising into place on
+ * the scroll (globals.css, "Inner pages") cannot add a vertical scrollbar.
+ */
 export function DataTableView({ table }: { table: DataTable }) {
   return (
     <figure className="mt-8 max-w-(--measure-article)">
-      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={table.caption}>
+      <div className="overflow-x-auto overflow-y-hidden" tabIndex={0} role="region" aria-label={table.caption}>
         <table className="w-full border-collapse text-left text-[0.95rem]">
           <caption className="pb-4 text-left font-semibold text-charcoal-900">{table.caption}</caption>
           <thead>

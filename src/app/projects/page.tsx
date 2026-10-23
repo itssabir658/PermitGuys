@@ -38,7 +38,9 @@ export default function ProjectsPage() {
               <li key={p.slug}>
                 <Link href={paths.project(p.slug)} className="group block">
                   <Figure visual={p.visual} caption={false} />
-                  <h3 className="mt-6 font-display text-2xl text-charcoal-900 group-hover:text-brand-700">{p.title}</h3>
+                  <h3 className="mt-6 font-display text-2xl text-charcoal-900">
+                    <span className="link-draw">{p.title}</span>
+                  </h3>
                   <p className="mt-2 text-ink-muted">{p.summary}</p>
                 </Link>
               </li>
