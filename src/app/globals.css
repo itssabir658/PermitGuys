@@ -185,8 +185,7 @@
   }
   /* On dark grounds the ring is brand-300 (8:1 on graphite; brand-500 would be about 3:1). */
   [data-tone="dark"] :focus-visible,
-  .site-menu :focus-visible,
-  :root[data-ground="night"] [data-services] :focus-visible {
+  .site-menu :focus-visible {
     outline-color: var(--color-brand-300);
   }
 
@@ -1379,6 +1378,10 @@ body:has(.not-found__map) .site-footer__place {
 }
 /* On the tracks the outline waits undrawn until the footer comes up (with reduced motion and on the still layout it is simply there). */
 @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  /* Its own layer, so redrawing the strokes repaints the outline alone, not the whole footer. */
+  :root[data-motion] .site-footer__map {
+    will-change: transform;
+  }
   :root[data-motion] .site-footer__map .ontario__stroke path {
     stroke-dashoffset: 1;
   }
