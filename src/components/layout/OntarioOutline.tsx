@@ -7,7 +7,8 @@ const strokes = [ONTARIO_PATHS.slice(0, 1), ONTARIO_PATHS.slice(1, 2), ONTARIO_P
 /**
  * The outline of Ontario with the Greater Toronto Area marked, drawn stroke
  * by stroke by CSS (globals.css, "Preloader" and "Screen transition"). Each
- * group carries its index in --i for the stagger.
+ * group carries its index in --i for the stagger. The ring behind the dot
+ * rings out once in the preloader and is hidden everywhere else.
  */
 export function OntarioOutline({ className }: { className?: string }) {
   return (
@@ -19,6 +20,7 @@ export function OntarioOutline({ className }: { className?: string }) {
           ))}
         </g>
       ))}
+      <circle cx={GTA_POINT.x} cy={GTA_POINT.y} r={11} className="ontario__pulse" />
       <circle cx={GTA_POINT.x} cy={GTA_POINT.y} r={11} className="ontario__dot" />
     </svg>
   );

@@ -39,68 +39,173 @@ export function roll(inP: number, outP: number) {
   return outP > 0 ? -MASK * outP : MASK * (1 - inP);
 }
 
-/* ---- Hero (200vh track, 100vh sticky stage) ---- */
+/* ---- Hero (250vh track, 100vh sticky stage, pinned for 1.5 screens) ---- */
 
-/** Heading rises and sub-line sinks by half a screen while both fade, from half a screen of scroll to the end of the track. */
-export function heroState(scroll: number, top: number, height: number, vh: number) {
-  const p = fit(scroll, top + vh * 0.5, top + height, 0, 1);
-  const r = vh * 0.5;
-  return { p, headingY: -p * r, subY: p * r, opacity: 1 - p };
+/**
+ * The hero as the intro's ivory sheet rises over it (from 0.5 to 1.5
+ * screens; Intro.tsx). The statement leaves upward through its masks first,
+ * since the sheet arrives at its edge (0.02 → 0.37); the name follows,
+ * gone by 0.72, before the sheet reaches it, lifting 0.08 screen as it
+ * goes. The caption fades by 0.3. The picture recedes under the sheet the
+ * whole time: it drifts up, grows 8% and darkens.
+ */
+export function heroState(scroll: number, top: number, vh: number) {
+  const s = Math.max(0, (scroll - top) / vh);
+  const name = tween(s, 0.12, 0.6, ease.power2In);
+  const pic = tween(s, 0, 1.5, ease.power1InOut);
+  return {
+    nameRoll: roll(1, name),
+    headingY: -0.08 * vh * name,
+    subRoll: [0, 1].map((i) => roll(1, tween(s, 0.02 + i * 0.05, 0.3, ease.power2In))),
+    figOpacity: 1 - tween(s, 0, 0.3),
+    imageScale: 1 + 0.08 * pic,
+    imageY: -0.04 * vh * pic,
+    dim: 0.45 * pic,
+  };
 }
 
-/* ---- Intro orbit (600vh track, 100vh sticky stage) ---- */
+/* ---- Intro orbit (510vh track for two paragraphs, 100vh sticky stage) ---- */
 
-export const ORBIT = {
-  radiusRatio: 0.68,
-  exitVh: 1,
-  exitRadius: 3,
-  copyStepVh: 2,
-  turns: 0.12,
-  spreadVh: 1.2,
-};
+/**
+ * The intro's timeline, in screens of scroll from the moment its stage pins
+ * (e = 0; it rises over the hero from e = −1). Paragraph i is composed at
+ * firstCopy + i × copyStepVh; the ring is flung outward from exitAfter past
+ * the last one, over exitVh, and the stage releases releaseIntoExit into
+ * the fling, so the images are still leaving as Works comes up beneath.
+ */
+export const ORBIT = { firstCopy: 1.0, copyStepVh: 1.75, exitAfter: 0.95, exitVh: 1, releaseIntoExit: 0.4, exitRadius: 1.9, turnsPerScreen: 0.075 };
 
-/** angle (rad), radiusScale, speedScale, sizeVh, verbatim from the reference. Slot 0 is the centre slot. */
+/**
+ * Six slots around one squircle path: u is the position along the path (0
+ * top centre, spaced by arc length, a sixth apart with a slight jitter), d
+ * the size on wide screens × vh, p the size on portrait screens ×
+ * min(vw, 0.5 vh).
+ */
 export const ORBIT_SLOTS = [
-  { angle: 0.35, radius: 0.9, speed: 0.92, size: 28 },
-  { angle: 1.25, radius: 1.1, speed: 1.1, size: 15 },
-  { angle: 2.1, radius: 0.92, speed: 0.9, size: 18 },
-  { angle: 3.05, radius: 1.12, speed: 1.15, size: 14 },
-  { angle: 3.95, radius: 0.88, speed: 0.95, size: 20 },
-  { angle: 4.75, radius: 1.05, speed: 1.08, size: 16 },
-  { angle: 5.65, radius: 1.15, speed: 0.85, size: 17 },
+  { u: 0.01, d: 0.24, p: 0.28 },
+  { u: 1 / 6 - 0.013, d: 0.19, p: 0.24 },
+  { u: 2 / 6 + 0.016, d: 0.22, p: 0.29 },
+  { u: 0.5 - 0.008, d: 0.18, p: 0.25 },
+  { u: 4 / 6 + 0.013, d: 0.23, p: 0.28 },
+  { u: 5 / 6 - 0.016, d: 0.2, p: 0.26 },
 ] as const;
 
-/** The section's length follows from the number of copy blocks, so adding one lengthens the track. */
+/** The section's length follows from the number of copy blocks, so adding one lengthens the track. For two: copyIn [1, 2.75], exitStart 3.7, 510vh. */
 export function introPhases(blocks: number) {
-  const copyIn = Array.from({ length: blocks }, (_, i) => 1 + i * ORBIT.copyStepVh);
-  const last = (copyIn[copyIn.length - 1] ?? 1) + 1 + ORBIT.exitVh;
-  return { copyIn, last, sectionVh: (last + 1) * 100 };
-}
-
-/** Scroll progress through the intro in screens: 0 when its stage pins, `height/vh − 1` when it releases. */
-export function introProgress(sso: number, heightVh: number) {
-  const e = clamp(sso - 1, 0, heightVh - 1);
-  return { e, exit: smoothstep(e, heightVh - 2, heightVh - 1) };
-}
-
-/** Where one orbiting image sits: spread out from the centre, turning, then flung outward on exit. */
-export function orbitItem(slot: number, e: number, exit: number, vw: number, vh: number) {
-  const cfg = ORBIT_SLOTS[slot];
-  const n = smoothstep(e, slot * 0.025, slot * 0.025 + ORBIT.spreadVh);
-  const angle = cfg.angle + e * ORBIT.turns * cfg.speed * PI2;
-  const r = ORBIT.radiusRatio * Math.min(vw, vh) * cfg.radius;
-  const l = r * n * (slot === 0 ? mix(1, 0, exit) : mix(1, ORBIT.exitRadius, exit));
-  return { x: Math.cos(angle) * l, y: Math.sin(angle) * l, scale: n, opacity: n };
+  const copyIn = Array.from({ length: blocks }, (_, i) => ORBIT.firstCopy + i * ORBIT.copyStepVh);
+  const exitStart = (copyIn[copyIn.length - 1] ?? ORBIT.firstCopy) + ORBIT.exitAfter;
+  const release = exitStart + ORBIT.releaseIntoExit;
+  return { copyIn, exitStart, sectionVh: Math.round((release + 1) * 100) };
 }
 
 /**
- * One line of an intro paragraph, on the copy timeline (1 unit = 1 screen of
- * scroll). Lines rise in from below their mask at `n − 0.5` and carry on up
- * and out at `n + 0.4`: one continuous upward conveyor.
+ * Progress through the intro in screens: −1 as its sheet starts to rise
+ * over the hero, 0 when its stage pins, `height/vh − 1` when it releases.
+ * The fling reads the unclamped value, so it finishes while the stage
+ * scrolls away.
+ */
+export function introProgress(sso: number, heightVh: number, exitStart: number) {
+  const raw = sso - 1;
+  return { e: clamp(raw, -1, heightVh - 1), exit: smoothstep(raw, exitStart, exitStart + ORBIT.exitVh) };
+}
+
+export interface OrbitPath {
+  portrait: boolean;
+  vh: number;
+  /** Each slot's size in px. */
+  sizes: number[];
+  /** Half the height of the copy at the centre, in px (0 if unknown): on portrait screens a study shows only once clear of it. */
+  clear: number;
+  /** The ring's vertical centre from the stage's centre, and its half height, in px. */
+  cy: number;
+  ry: number;
+  /** 513 points from the top centre, clockwise, with the cumulative length at each. */
+  xs: Float64Array;
+  ys: Float64Array;
+  cum: Float64Array;
+}
+
+const PATH_SAMPLES = 512;
+const sgnSqrt = (v: number) => Math.sign(v) * Math.sqrt(Math.abs(v));
+
+/**
+ * The ring for one screen: a squircle inside the safe box (clear of the
+ * header on portrait screens, of the caption below), inset by half the
+ * largest image, so every image stays whole on screen. Sampled once per
+ * measure, so the images can be spaced along it by arc length: evenly
+ * spaced angles crowd the squircle's flat sides. `clear` is half the height
+ * of the copy block, for the portrait fade.
+ */
+export function orbitPath(vw: number, vh: number, clear = 0): OrbitPath {
+  const portrait = vw < 0.8 * vh;
+  const sizes = ORBIT_SLOTS.map((s) => (portrait ? s.p * Math.min(vw, 0.5 * vh) : s.d * vh));
+  const big = Math.max(...sizes);
+  const padX = portrait ? 12 : Math.max(32, 0.04 * vw);
+  const padTop = portrait ? 96 : 40;
+  // Above the caption, with room for the 3% breathing (it sets on two lines on phones).
+  const padBot = portrait ? 88 : 72;
+  const rx = vw / 2 - big / 2 - padX;
+  const ry = (vh - padTop - padBot) / 2 - big / 2;
+  const cy = (padTop - padBot) / 2;
+  const xs = new Float64Array(PATH_SAMPLES + 1);
+  const ys = new Float64Array(PATH_SAMPLES + 1);
+  const cum = new Float64Array(PATH_SAMPLES + 1);
+  for (let i = 0; i <= PATH_SAMPLES; i++) {
+    const a = -Math.PI / 2 + (i / PATH_SAMPLES) * PI2;
+    xs[i] = rx * sgnSqrt(Math.cos(a));
+    ys[i] = cy + ry * sgnSqrt(Math.sin(a));
+    if (i) cum[i] = cum[i - 1] + Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]);
+  }
+  return { portrait, vh, sizes, clear, cy, ry, xs, ys, cum };
+}
+
+/** The point at `u` of the way along the path (any number; it wraps), in px from the stage's centre. */
+export function pathAt(path: OrbitPath, u: number): [number, number] {
+  const { xs, ys, cum } = path;
+  const s = (((u % 1) + 1) % 1) * cum[PATH_SAMPLES];
+  let lo = 0;
+  let hi = PATH_SAMPLES;
+  while (hi - lo > 1) {
+    const m = (lo + hi) >> 1;
+    if (cum[m] <= s) lo = m;
+    else hi = m;
+  }
+  const t = (s - cum[lo]) / (cum[hi] - cum[lo] || 1);
+  return [mix(xs[lo], xs[hi], t), mix(ys[lo], ys[hi], t)];
+}
+
+/**
+ * Where one study sits: travelling along the path at one speed for all, so
+ * neighbours never close up. It glides in from 1.8× the ring as the sheet
+ * rises (e −1 to 0), starting just before its own part of the sheet comes
+ * up over the bottom edge, so the top of the ring arrives first and the
+ * sheet is never blank. It breathes 3%, and is flung out to exitRadius ×
+ * the ring at the end. On portrait screens the copy fills the width, so a
+ * study fades in only once it is clear of the copy, above or below it: a
+ * ring tilting behind the text.
+ */
+export function orbitItem(path: OrbitPath, slot: number, e: number, exit: number) {
+  const [x0, y0] = pathAt(path, ORBIT_SLOTS[slot].u + e * ORBIT.turnsPerScreen);
+  const enter = 0.5 + y0 / path.vh - 1.25;
+  const arrive = ease.power3Out(clamp((e - enter) / 1.1));
+  const breathe = 1 + 0.03 * Math.sin(e * 1.7 + slot * 1.3);
+  const k = mix(1.8, 1, arrive) * breathe * (1 + (ORBIT.exitRadius - 1) * ease.power2In(exit));
+  const x = x0 * k;
+  const y = path.cy + (y0 - path.cy) * k;
+  let side = 1;
+  if (path.portrait) side = path.clear > 0 ? smoothstep(Math.abs(y) - path.sizes[slot] / 2 - path.clear, 4, 52) : smoothstep(Math.abs(y0 - path.cy) / path.ry, 0.45, 0.65);
+  return { x, y, opacity: arrive * side, imgScale: mix(1.18, 1, arrive), arrive };
+}
+
+/**
+ * One line of an intro paragraph composed at `n` on the timeline: the lines
+ * rise from their masks 0.05 apart (n − 0.65), hold, and leave upward 0.02
+ * apart (n + 0.85). Five lines stay composed for 0.8 screens, seven for
+ * 0.7; the next paragraph starts rising as this one leaves.
  */
 export function introLine(e: number, n: number, line: number) {
-  const inP = tween(e, n - 0.5 + line * 0.08, 0.45, ease.power3Out);
-  const outP = tween(e, n + 0.4 + line * 0.05, 0.3, ease.power2In);
+  const inP = tween(e, n - 0.65 + line * 0.05, 0.5, ease.power3Out);
+  const outP = tween(e, n + 0.85 + line * 0.02, 0.28, ease.power2In);
   return roll(inP, outP);
 }
 

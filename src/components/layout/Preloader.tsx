@@ -6,30 +6,40 @@ import { cssEase } from "@/lib/motion/math";
 import { OntarioOutline } from "./OntarioOutline";
 
 /*
- * The load sequence (docs/MOTION.md, "Load sequence").
+ * The load sequence, on every full page load.
  *
- * On every full page load a graphite screen is in place before first paint
- * and the outline of Ontario draws itself in five strokes (0.7s each, 0.14s
- * apart; CSS, so it starts before any script runs). The screen waits for
- * the drawing, the fonts and the opening picture, and for at least 0.6s,
- * then fades away over 0.6s. That moment is T₀: the document gets
- * data-loaded and data-revealed, the header fades in at T₀ + 1.6s and the
- * hero's name rises at T₀ + 1.5s (globals.css).
+ * A graphite screen is in place before first paint and the outline of
+ * Ontario draws itself (CSS, so it starts before any script runs): the
+ * mainland over 0.9s, the islands overlapping its end; the GTA dot pops at
+ * 0.95s and rings out once. The screen waits for the drawing, the fonts and
+ * the opening picture, and for at least 1.25s from navigation.
  *
- * The page is held at the top while the screen is up and while it fades (an
- * impatient wheel would otherwise scroll the hero away before its entrance
- * starts) and released at T₀, back at the top, or after 8s whatever
- * happens.
+ * Then, T₀: the page is put back at the top and the document gets
+ * data-loaded and data-revealed, so the page's own entrance (the hero, the
+ * header, an inner page's title) plays as the screen opens. The drawing
+ * grows 2.4× around the dot and fades (0.7s, accelerating), and from 0.25s
+ * an iris opens from the dot itself (1s, --e-sheet; a registered --hole
+ * radius in the screen's mask, globals.css). The hero picture settles from
+ * the same point. data-preloaded marks the end and removes the screen.
+ * Browsers without registered custom properties get a 0.6s fade instead.
+ *
+ * The page is held still while the screen is up (an impatient wheel would
+ * otherwise scroll the hero away before its entrance) and released at 70%
+ * of the iris, when it no longer looks held, or after 8s whatever happens.
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on only for visitors who allow motion and have JavaScript, and
- * releases the page after 8s whatever happens.
+ * sets every flag after 8s whatever happens, so the page can never be held.
  */
-export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else d.dataset.motion="";setTimeout(function(){if(!("loaded" in d.dataset))go()},8000)})()`;
+export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else d.dataset.motion="";setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
 
-const MIN_MS = 600;
+/** From navigation start: the drawing and the dot's pop are done by then. */
+const MIN_MS = 1250;
 /** Never hold the page for slow assets longer than this. */
 const ASSET_CAP_MS = 3500;
+const SHRINK_MS = 700;
+const IRIS_DELAY_MS = 250;
+const IRIS_MS = 1000;
 
 export function Preloader() {
   const ref = useRef<HTMLDivElement>(null);
@@ -41,29 +51,57 @@ export function Preloader() {
     engine.boot();
     engine.lock("preloader");
     const safety = window.setTimeout(() => engine.unlock("preloader"), 8000);
+    let release = 0;
     let cancelled = false;
     const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
-    const drawn = Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)));
+    // The ring around the dot rings out through the exit; only the drawing is waited for.
+    const drawing = el.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation && a.animationName === "dot-pulse"));
+    const drawn = Promise.all(drawing.map((a) => a.finished.catch(() => undefined)));
     const picture = document.querySelector<HTMLImageElement>("[data-hero-image] img");
     const assets = Promise.all([document.fonts?.ready, picture && !picture.complete ? picture.decode().catch(() => undefined) : undefined]);
 
     Promise.all([drawn, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
       if (cancelled) return;
-      const exit = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, delay: 100, easing: cssEase.power1Out, fill: "forwards" });
-      exit.finished
-        .catch(() => undefined)
-        .then(() => {
-          if (!cancelled) {
-            engine.scrollTo(0, true);
-            engine.unlock("preloader");
-          }
-          html.dataset.loaded = "";
-          html.dataset.revealed = "";
-        });
+      // The iris and the hero's settle open from the dot, wherever the drawing put it.
+      const dot = el.querySelector(".ontario__dot")?.getBoundingClientRect();
+      const x = dot ? dot.left + dot.width / 2 : window.innerWidth / 2;
+      const y = dot ? dot.top + dot.height / 2 : window.innerHeight / 2;
+      html.style.setProperty("--iris-x", `${x.toFixed(1)}px`);
+      html.style.setProperty("--iris-y", `${y.toFixed(1)}px`);
+      // Back at the top before anything shows (data-loaded is what scripts and tests wait for).
+      engine.scrollTo(0, true);
+      html.dataset.loaded = "";
+      html.dataset.revealed = "";
+      const done = () => {
+        html.dataset.preloaded = "";
+      };
+      const unlockAt = (ms: number) => {
+        release = window.setTimeout(() => {
+          if (!cancelled) engine.unlock("preloader");
+        }, ms);
+      };
+      if (!("registerProperty" in CSS)) {
+        const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, delay: 100, easing: cssEase.power1Out, fill: "forwards" });
+        unlockAt(100 + 0.7 * 600);
+        fade.finished.then(done, done);
+        return;
+      }
+      const inner = el.querySelector<HTMLElement>(".preloader__inner");
+      if (inner) {
+        const box = inner.getBoundingClientRect();
+        inner.style.transformOrigin = `${(x - box.left).toFixed(1)}px ${(y - box.top).toFixed(1)}px`;
+        inner.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(2.4)", opacity: 0 }], { duration: SHRINK_MS, easing: "cubic-bezier(0.7, 0, 0.84, 0)", fill: "forwards" });
+      }
+      // Just past the farthest corner, so the whole of the ease is seen.
+      const reach = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)) + 2;
+      const iris = el.animate([{ "--hole": "0px" }, { "--hole": `${Math.ceil(reach)}px` }], { duration: IRIS_MS, delay: IRIS_DELAY_MS, easing: cssEase.sheet, fill: "forwards" });
+      unlockAt(IRIS_DELAY_MS + 0.7 * IRIS_MS);
+      iris.finished.then(done, done);
     });
     return () => {
       cancelled = true;
       window.clearTimeout(safety);
+      window.clearTimeout(release);
       engine.unlock("preloader");
     };
   }, []);

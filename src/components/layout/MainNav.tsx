@@ -17,11 +17,15 @@ import { Logo } from "./Logo";
  * Header and menu, after the reference's navigation (docs/MOTION.md,
  * "Navigation").
  *
- * The top row (logo, main links with rolling labels, Contact) fades in 1.6s
- * after the preloader lifts. On screens 768px and wider, once the page has
- * scrolled past 80px the row steps up and out, one item after another, and
- * the menu button rises into the corner; above 80px it all comes back. On
- * phones the row stays, with the menu button always shown.
+ * The top row (logo, main links with rolling labels, Contact) and the menu
+ * button come in one after another as the preloader opens: from 0.9s on
+ * the homepage, where the iris and the name go first, from 0.3s elsewhere
+ * (data-entrance, fixed at the first render).
+ *
+ * On screens 768px and wider, once the page has scrolled past 80px the row
+ * steps up and out, one item after another, and the menu button rises into
+ * the corner; above 80px it all comes back. On phones the row stays, with
+ * the menu button always shown.
  *
  * The header reads the ground beneath it at the lower half of the button
  * (64px down): ivory type over the hero, the night ground, dark sections
@@ -58,6 +62,8 @@ export function MainNav({
   const [open, setOpen] = useState(false);
   const [shown, setShown] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
+  // Which entrance the header plays on a full load; it plays only once, so later navigations do not matter.
+  const [entrance] = useState(pathname === "/" ? "home" : "page");
   const headerRef = useRef<HTMLElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -220,7 +226,7 @@ export function MainNav({
 
   return (
     <>
-      <header ref={headerRef} data-tone={pathname === "/" ? "dark" : "light"} data-open={open ? "" : undefined} className="site-nav">
+      <header ref={headerRef} data-tone={pathname === "/" ? "dark" : "light"} data-entrance={entrance} data-open={open ? "" : undefined} className="site-nav">
         <div className="site-nav__bar mx-auto flex h-20 w-full max-w-site items-center justify-between gap-6 px-5 sm:px-8 lg:h-24 lg:px-12 xl:px-16">
           <div className="site-nav__item site-nav__item--logo" style={{ "--i": 0 } as CSSProperties}>
             <Link href="/" className="nav-intro relative block" aria-label={`${site.name} home`}>
@@ -256,24 +262,26 @@ export function MainNav({
         </div>
 
         <div className="site-nav__menu-slot">
-          <button
-            ref={buttonRef}
-            type="button"
-            aria-expanded={open}
-            aria-controls={`${baseId}-menu`}
-            onClick={toggle}
-            className="site-nav__menu-btn"
-          >
-            <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
-            <span aria-hidden="true" className="site-nav__icon site-nav__icon--open">
-              <span />
-              <span />
-            </span>
-            <span aria-hidden="true" className="site-nav__icon site-nav__icon--close">
-              <span />
-              <span />
-            </span>
-          </button>
+          <span className="nav-intro block" style={{ "--i": inline.length + 2 } as CSSProperties}>
+            <button
+              ref={buttonRef}
+              type="button"
+              aria-expanded={open}
+              aria-controls={`${baseId}-menu`}
+              onClick={toggle}
+              className="site-nav__menu-btn"
+            >
+              <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+              <span aria-hidden="true" className="site-nav__icon site-nav__icon--open">
+                <span />
+                <span />
+              </span>
+              <span aria-hidden="true" className="site-nav__icon site-nav__icon--close">
+                <span />
+                <span />
+              </span>
+            </button>
+          </span>
         </div>
       </header>
 

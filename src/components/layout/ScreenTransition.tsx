@@ -19,7 +19,8 @@ import { OntarioOutline } from "./OntarioOutline";
  * finish.
  * Out: everything fades away over 0.7s, focus moves to the new page's main
  * content, and the new page's own entrance starts (the document gets
- * data-revealed again).
+ * data-revealed again, and data-arrival="route", which hard loads never
+ * have, so the entrance runs on its shorter route timing).
  *
  * Each navigation has an id, and every timer and animation callback checks
  * it, so a late timer from an earlier click can never lift the veil over
@@ -90,6 +91,8 @@ export function ScreenTransition() {
 
   const reveal = useCallback((id: number, quick: boolean) => {
     if (navId.current !== id) return;
+    // The new page's entrance runs on its route timing (sooner than after the preloader), as the cover lifts.
+    document.documentElement.dataset.arrival = "route";
     document.documentElement.dataset.revealed = "";
     // Start keyboard and screen reader users at the new page's content, not on the link they left from.
     document.getElementById("main")?.focus({ preventScroll: true });

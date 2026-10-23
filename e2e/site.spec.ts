@@ -59,7 +59,7 @@ test.describe("accessibility", () => {
   test("respects reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const animation = await page.locator(".hero-heading-line > .split-line__inner").evaluate((el) => getComputedStyle(el).animationName);
+    const animation = await page.locator(".hero-heading-line .split-line__inner").evaluate((el) => getComputedStyle(el).animationName);
     expect(animation).toBe("none");
     await page.goto("/services/");
     const inner = await page.locator(".motion-rise").first().evaluate((el) => getComputedStyle(el).animationName);

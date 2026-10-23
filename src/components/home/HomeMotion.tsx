@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { ORDER, engine, hso, measureRange, setStyle, sso, type Frame, type MotionModule, type Range } from "@/lib/motion/engine";
 import {
-  ORBIT,
   contactReveal,
   headerGround,
   heroState,
@@ -11,6 +10,7 @@ import {
   introPhases,
   introProgress,
   orbitItem,
+  orbitPath,
   pageGround,
   servicesHeadingLine,
   servicesReveal,
@@ -22,6 +22,7 @@ import {
   worksElement,
   worksImageScale,
   worksT,
+  type OrbitPath,
 } from "@/lib/motion/home";
 import { clamp, damp, toHex } from "@/lib/motion/math";
 import { resplitIfNeeded, splitLines, unsplit } from "@/lib/motion/split";
@@ -110,12 +111,16 @@ function ground(shared: Shared): MotionModule | null {
   };
 }
 
-/* Hero: the name rises and the statement sinks, both fading, over the second half of the track. */
+/* Hero: the statement and the name leave upward through their masks while the picture recedes under the intro's sheet. */
 function hero(): MotionModule | null {
   const section = one("[data-home-hero]");
   const heading = one("[data-hero-heading]");
-  const sub = one("[data-hero-sub]");
-  if (!section || !heading || !sub) return null;
+  const image = one("[data-hero-image]");
+  const dim = one("[data-hero-dim]");
+  const fig = one(".hero-fig");
+  if (!section || !heading || !image || !dim || !fig) return null;
+  // The name first, then the two statement lines.
+  const [name, ...subs] = all("[data-hero-roll]", section);
   let r: Range;
   return {
     order: ORDER.hero,
@@ -124,27 +129,34 @@ function hero(): MotionModule | null {
     },
     update(f) {
       if (!f.tracks) {
-        clear(heading, "transform", "opacity");
-        clear(sub, "transform", "opacity");
+        clear(heading, "transform");
+        [name, ...subs].forEach((el) => el && clear(el, "transform"));
+        clear(fig, "opacity");
+        clear(image, "transform");
+        clear(dim, "opacity");
         return;
       }
-      const s = heroState(f.scroll, r.top, r.height, f.vh);
+      const s = heroState(f.scroll, r.top, f.vh);
       setStyle(heading, "transform", lift(s.headingY));
-      setStyle(heading, "opacity", num(s.opacity));
-      setStyle(sub, "transform", lift(s.subY));
-      setStyle(sub, "opacity", num(s.opacity));
+      if (name) setStyle(name, "transform", liftPercent(s.nameRoll));
+      subs.forEach((el, i) => setStyle(el, "transform", liftPercent(s.subRoll[i] ?? 0)));
+      setStyle(fig, "opacity", num(s.figOpacity));
+      setStyle(image, "transform", `translate3d(0, ${px(s.imageY)}, 0) scale(${num(s.imageScale)})`);
+      setStyle(dim, "opacity", num(s.dim));
     },
   };
 }
 
-/* Intro: six studies orbit the centre while two paragraphs pass through it. */
+/* Intro: six studies travel one squircle path around the centre while two paragraphs pass through it. */
 function intro(): MotionModule | null {
   const section = one("[data-intro]");
   if (!section) return null;
-  const items = all("[data-orbit-slot]", section);
+  const items = all("[data-orbit-slot]", section).map((el) => ({ el, slot: Number(el.dataset.orbitSlot), img: one("[data-orbit-img]", el) }));
   const copies = all("[data-intro-copy]", section);
-  const { copyIn, sectionVh } = introPhases(copies.length);
+  const caption = one("[data-intro-caption]", section);
+  const { copyIn, exitStart, sectionVh } = introPhases(copies.length);
   let r: Range;
+  let path: OrbitPath;
   let lines: HTMLElement[][] = copies.map(() => []);
   return {
     order: ORDER.intro,
@@ -155,15 +167,33 @@ function intro(): MotionModule | null {
         copies.forEach(unsplit);
         lines = copies.map(() => []);
       }
+      // The ring and the image sizes follow the screen; rebuilt only here, so a resize re-spaces the ring. Portrait screens keep the studies clear of the taller paragraph.
+      const clear = copies.reduce((m, c) => Math.max(m, c.offsetHeight / 2), 0);
+      path = orbitPath(f.vw, f.vh, clear);
+      for (const it of items) setStyle(it.el, "--size", f.tracks ? px(path.sizes[it.slot] ?? 0) : "");
     },
     update(f) {
-      // Without the tracks: a still ring, every study spread out, the paragraphs as text.
-      const { e, exit } = f.tracks ? introProgress(sso(r, f), sectionVh / 100) : { e: ORBIT.spreadVh + 0.25, exit: 0 };
-      for (const el of items) {
-        const o = orbitItem(Number(el.dataset.orbitSlot), e, exit, f.vw, f.vh);
-        setStyle(el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0) scale(${num(o.scale)})`);
-        setStyle(el, "opacity", num(o.opacity));
+      // Without the tracks the studies sit in a row under the paragraphs (globals.css), untouched.
+      if (!f.tracks) {
+        for (const it of items) {
+          clear(it.el, "transform", "opacity");
+          if (it.img) clear(it.img, "transform");
+        }
+        lines.forEach((ls) => ls.forEach((line) => clear(line, "transform", "opacity")));
+        if (caption) clear(caption, "opacity");
+        return;
       }
+      const { e, exit } = introProgress(sso(r, f), sectionVh / 100, exitStart);
+      let ring = 0;
+      for (const it of items) {
+        const o = orbitItem(path, it.slot, e, exit);
+        setStyle(it.el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0)`);
+        setStyle(it.el, "opacity", num(o.opacity));
+        if (it.img) setStyle(it.img, "transform", `scale(${num(o.imgScale)})`);
+        ring = Math.max(ring, o.arrive);
+      }
+      // The caption is there whenever any study is, and leaves with them.
+      if (caption) setStyle(caption, "opacity", num(Math.min(ring, 1 - exit)));
       // Display type never fades: each line only rolls through its mask.
       lines.forEach((ls, i) =>
         ls.forEach((line, j) => {
