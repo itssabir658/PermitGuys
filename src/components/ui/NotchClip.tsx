@@ -1,7 +1,8 @@
 /**
- * The notched sheet outline used to frame pictures on the homepage: a
- * drawing sheet with clipped corners and a title-block notch in its lower
- * edge. Referenced from CSS as clip-path: url(#notch-clip) (.notch-clip).
+ * The notched sheet outline used to frame pictures (the homepage, the
+ * service pages' plates): a drawing sheet with clipped corners and a
+ * title-block notch in its lower edge. Rendered once in the root layout and
+ * referenced from CSS as clip-path: url(#notch-clip) (.notch-clip).
  */
 export function NotchClipDefs() {
   return (

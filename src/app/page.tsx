@@ -6,7 +6,6 @@ import { Services } from "@/components/home/Services";
 import { Values } from "@/components/home/Values";
 import { Works } from "@/components/home/Works";
 import { JsonLd } from "@/components/ui/JsonLd";
-import { NotchClipDefs } from "@/components/ui/NotchClip";
 import { site } from "@/content/site";
 import { webPageSchema } from "@/lib/jsonld";
 import { getGoogleReviews } from "@/lib/reviews";
@@ -39,7 +38,6 @@ export default async function HomePage() {
       <Values />
       <Services />
       <Contact reviews={reviews} />
-      <NotchClipDefs />
       <HomeMotion />
       <JsonLd data={webPageSchema({ path: "/", name: `${site.name}: permit drawings and permit guidance in the GTA`, breadcrumb: false })} />
     </>

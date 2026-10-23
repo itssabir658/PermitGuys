@@ -11,7 +11,7 @@ export function FaqList({ faqs, className }: { faqs: Faq[]; className?: string }
   return (
     <div className={cn("border-t border-line", className)}>
       {faqs.map((faq) => (
-        <details key={faq.question} className="smooth group border-b border-line">
+        <details key={faq.question} className="smooth group row-rule">
           <summary className="flex cursor-pointer list-none items-start justify-between gap-8 py-7 text-left [&::-webkit-details-marker]:hidden">
             <h3 className="font-display text-display-sm text-ink">{faq.question}</h3>
             <span className="flex size-10 shrink-0 items-center justify-center rounded-full text-ink ring-1 ring-ink/15 transition-[transform,background-color,color] duration-500 ease-out-expo ring-inset group-open:rotate-45 group-open:bg-ink group-open:text-ivory">

@@ -64,12 +64,13 @@ function Field({
         {labels[id]}
         {optional ? <span className="font-normal text-ink-muted"> (optional)</span> : null}
       </label>
+      {children}
+      {/* Under the control, so the controls of a paired row line up whatever their hints say. */}
       {hint ? (
-        <p id={`${id}-hint`} className="mt-1 text-sm text-ink-muted">
+        <p id={`${id}-hint`} className="mt-2 text-sm text-ink-muted">
           {hint}
         </p>
       ) : null}
-      {children}
       <FieldError id={id} error={error} />
     </div>
   );
@@ -302,7 +303,8 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
       <input type="hidden" name="startedAt" defaultValue="" />
       <input type="hidden" name="attribution" defaultValue="" />
 
-      <div className="grid gap-7 sm:grid-cols-2">
+      {/* Paired fields: two columns where the form has the width (not in the narrower column beside the sidebar at lg). */}
+      <div className="grid items-start gap-7 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <Field id="name" error={errors.name}>
           <input
             id="name"

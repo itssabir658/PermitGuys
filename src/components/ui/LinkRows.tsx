@@ -15,7 +15,7 @@ export function LinkRows({ items, headingLevel = "h3" }: { items: LinkRow[]; hea
   return (
     <ul className="border-t border-line">
       {items.map((item) => (
-        <li key={item.href} className="border-b border-line">
+        <li key={item.href} className="row-rule">
           <Link
             href={item.href}
             className="group flex items-center gap-6 py-7"

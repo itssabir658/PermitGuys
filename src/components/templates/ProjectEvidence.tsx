@@ -7,17 +7,17 @@ import { paths } from "@/lib/routes";
 export function ProjectEvidence({ projects, context }: { projects: CaseStudy[]; context: string }) {
   if (projects.length === 0) {
     return (
-      <Placeholder block>
+      <Placeholder block className="max-w-(--measure-article)">
         approved {context} case studies. This block lists real projects automatically once they are added to src/content/projects.ts with approved: true.
       </Placeholder>
     );
   }
   return (
-    <ul className="divide-y divide-line border-y border-line">
+    <ul className="border-t border-line">
       {projects.map((p) => (
-        <li key={p.slug}>
-          <Link href={paths.project(p.slug)} className="block py-6 hover:text-brand-700">
-            <span className="font-display text-xl text-charcoal-900">{p.title}</span>
+        <li key={p.slug} className="row-rule">
+          <Link href={paths.project(p.slug)} className="group block py-6">
+            <span className="link-draw font-display text-xl text-charcoal-900">{p.title}</span>
             <span className="mt-1 block text-ink-muted">{p.summary}</span>
           </Link>
         </li>
