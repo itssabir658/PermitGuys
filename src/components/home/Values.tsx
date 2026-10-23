@@ -15,9 +15,12 @@ import { escapeHtml } from "@/lib/html";
  * and out as the next rises under it, like an odometer, on clean ivory
  * between two pictures. The text is set twice: ink on the page and ivory
  * clipped to the outline of every picture on screen, so the word turns
- * light exactly where it crosses one. Below 1024px the words are fitted a
- * little wider than the picture, so every one of them is split by its
- * edges (HomeMotion, values module).
+ * light exactly where it crosses one; a line of the description shows in
+ * one colour or the other, as its row is over a picture or not. Below
+ * 1024px the words are fitted a little wider than the picture, so every one
+ * of them is split by its edges. A word is never taller than about a sixth
+ * of the screen, and shrinks where it would print over the corner label
+ * (HomeMotion, values module).
  *
  * The pinned text is decoration over the per-value text, which stays in the
  * page for assistive technology (visually hidden on the tracks) and shows
@@ -51,7 +54,7 @@ function ValueText({ tone }: { tone: "ink" | "ivory" }) {
     <div className={`values-text ${tone === "ink" ? "text-ink" : "text-ivory"}`}>
       <div className="values-text__titles">
         {values.map((v, i) => (
-          <p key={v.title} data-values-title={i} className="split-line font-wordmark text-[clamp(3.25rem,1rem+9vw,10rem)] leading-[0.9] tracking-[-0.01em] uppercase">
+          <p key={v.title} data-values-title={i} className="split-line font-wordmark text-[length:min(clamp(3.25rem,1rem+9vw,10rem),17svh)] leading-[0.9] tracking-[-0.01em] uppercase">
             <span data-values-roll="" className="inline-block">
               {v.title}
             </span>

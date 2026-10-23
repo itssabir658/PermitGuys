@@ -21,6 +21,8 @@ import {
   valuesDescLine,
   valuesImage,
   valuesTitle,
+  valuesWordSize,
+  worksButton,
   worksLine,
   worksStudy,
   type OrbitPath,
@@ -43,9 +45,18 @@ const px = (n: number) => `${n.toFixed(2)}px`;
 const num = (n: number) => n.toFixed(4);
 const lift = (y: number) => `translate3d(0, ${px(y)}, 0)`;
 const liftPercent = (y: number) => `translate3d(0, ${y.toFixed(2)}%, 0)`;
+/** A masked line parked below its mask, hidden. */
+const PARKED = liftPercent(MASK);
 
 function clear(el: HTMLElement, ...props: string[]) {
   for (const p of props) setStyle(el, p, "");
+}
+
+/** The right edge of an element's text (not its box), in px from the screen's left. */
+function textRight(el: HTMLElement) {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  return range.getBoundingClientRect().right;
 }
 
 interface Shared {
@@ -236,6 +247,8 @@ function works(): MotionModule | null {
     return { eyebrow, button, title: one("[data-works-title]", item)!, link: one("a", item) };
   });
   const labels = all("[data-label-roll]", section);
+  // The corner label's block (its Container), in the same sticky screen as the stage.
+  const label = one("h2", section)?.parentElement ?? null;
   const n = items.length;
   let r: Range;
   /** Screens the stage stays pinned (the section's height − 1 screen), shared by the studies. */
@@ -244,8 +257,9 @@ function works(): MotionModule | null {
   let frameTop = 0;
   let frameH = 0;
   let titleLines: HTMLElement[][] = items.map(() => []);
-  // Keyboard: focusing a study's button scrolls to the middle of its moment, where it is composed.
+  // Keyboard: focusing a study's button scrolls to the middle of its moment, where it is composed. Only keyboard focus: a press focuses the link too, and must not move the page under the pointer.
   const onFocus = (event: FocusEvent) => {
+    if (!(event.target instanceof Element) || !event.target.matches(":focus-visible")) return;
     const i = items.findIndex((it) => it.button?.contains(event.target as Node));
     if (i >= 0 && r && engine.frame.tracks) engine.scrollTo(r.top + (i + 0.5) * (D / n) * engine.frame.vh);
   };
@@ -258,6 +272,8 @@ function works(): MotionModule | null {
       stageH = stage.offsetHeight;
       frameTop = frame.offsetTop;
       frameH = frame.offsetHeight;
+      // Where the label ends, so the text beside the frame keeps below it on short screens (globals.css, .works-items).
+      setStyle(stage, "--works-label-b", f.tracks && label ? px(label.offsetTop + label.offsetHeight) : "");
       if (f.tracks) titleLines = items.map((it, i) => resplitIfNeeded(it.title, titleLines[i]));
       else if (titleLines.some((l) => l.length)) {
         items.forEach((it) => unsplit(it.title));
@@ -273,6 +289,7 @@ function works(): MotionModule | null {
         }
         for (const it of items) {
           [it.eyebrow, it.button].forEach((el) => el && clear(el, "transform"));
+          if (it.button) clear(it.button, "opacity");
           if (it.link) clear(it.link, "pointerEvents");
         }
         return;
@@ -296,9 +313,13 @@ function works(): MotionModule | null {
         const L = titleLines[i].length;
         if (it.eyebrow) setStyle(it.eyebrow, "transform", liftPercent(worksLine(e, i, n, D, 0)));
         titleLines[i].forEach((line, j) => setStyle(line, "transform", liftPercent(worksLine(e, i, n, D, j + 1))));
-        // The button travels 1.3 × as far, so its focus ring clears the mask too; it takes the pointer only while it is in place.
+        // The button travels farther, so its focus ring clears the mask too, and its plate fades with how much of it shows; it takes the pointer only while it is in place.
         const by = worksLine(e, i, n, D, L + 1);
-        if (it.button) setStyle(it.button, "transform", liftPercent(by * 1.3));
+        if (it.button) {
+          const bt = worksButton(by);
+          setStyle(it.button, "transform", liftPercent(bt.y));
+          setStyle(it.button, "opacity", num(bt.opacity));
+        }
         if (it.link) setStyle(it.link, "pointerEvents", Math.abs(by) < 0.15 * MASK ? "auto" : "none");
       });
     },
@@ -323,6 +344,8 @@ function values(shared: Shared): MotionModule | null {
   const frames = outers.map((o) => one("[data-values-frame]", o)!);
   const images = outers.map((o) => one("[data-values-image]", o)!);
   const labels = all("[data-label-roll]", section);
+  // The corner label's block (its Container), in the same sticky screen as the stage.
+  const label = one("h2", section)?.parentElement ?? null;
   // The ink copy first, then the ivory one inside the mask.
   const copies = all(".values-text", stage).map((root) => ({ root, titles: all("[data-values-title]", root), rolls: all("[data-values-roll]", root), descs: all("[data-values-desc]", root) }));
   const n = outers.length;
@@ -331,20 +354,32 @@ function values(shared: Shared): MotionModule | null {
   let rFrames: Range[] = [];
   let stageH = 0;
   let lines: HTMLElement[][][] = copies.map((c) => c.descs.map(() => []));
+  /** The band each row of description lines takes up with its letters (every description starts at the top of one cell, so they share rows), in the stage's px. */
+  let rows: { top: number; bottom: number }[] = [];
 
-  /** Below 1024px each word is fitted a little wider than the picture (frame × 1.3, within the gutters), the same size in both copies, so the picture's edges split every word. */
+  /**
+   * The words' sizes, the same in both copies. Below 1024px each word is
+   * fitted a little wider than the picture (frame × 1.3, within the
+   * gutters), so the picture's edges split every word. On any screen a word
+   * whose cap line would come too close to the corner label shrinks until it
+   * clears it, below or beside (valuesWordSize): on short screens the
+   * centred word would otherwise print over the label's note.
+   */
   const fitTitles = (f: Frame, frameW: number) => {
     for (const c of copies) c.titles.forEach((t) => setStyle(t, "fontSize", ""));
     const ink = copies[0];
-    if (!ink || !f.tracks || f.vw >= 1024 || !frameW) return;
-    const gutter = parseFloat(getComputedStyle(ink.root).paddingLeft) || 0;
-    const target = Math.min(f.vw - 2 * gutter, frameW * 1.3);
+    if (!ink || !f.tracks || !frameW) return;
     // All reads first, then the writes.
-    const sizes = ink.rolls.map((el) => ({ w0: el.offsetWidth, base: parseFloat(getComputedStyle(el).fontSize) }));
-    sizes.forEach(({ w0, base }, i) => {
+    const gutter = parseFloat(getComputedStyle(ink.root).paddingLeft) || 0;
+    const words = ink.titles.map((t, i) => ({ w0: ink.rolls[i]?.offsetWidth ?? 0, base: parseFloat(getComputedStyle(t).fontSize), mid: t.offsetTop + t.offsetHeight / 2 }));
+    const box = label ? { bottom: label.offsetTop + label.offsetHeight, right: Math.max(0, ...labels.map(textRight)) } : null;
+    const target = Math.min(f.vw - 2 * gutter, frameW * 1.3);
+    words.forEach(({ w0, base, mid }, i) => {
       if (!w0 || !base) return;
-      const size = px(clamp((base * target) / w0, 0.85 * base, 1.9 * base));
-      for (const c of copies) if (c.titles[i]) setStyle(c.titles[i], "fontSize", size);
+      const fitted = f.vw < 1024 ? clamp((base * target) / w0, 0.85 * base, 1.9 * base) : base;
+      const size = box ? valuesWordSize(fitted, (w0 * fitted) / base, mid, f.vw, box) : fitted;
+      if (Math.abs(size - base) < 0.01) return;
+      for (const c of copies) if (c.titles[i]) setStyle(c.titles[i], "fontSize", px(size));
     });
   };
 
@@ -364,6 +399,14 @@ function values(shared: Shared): MotionModule | null {
         copies.forEach((c) => c.descs.forEach(unsplit));
         lines = copies.map((c) => c.descs.map(() => []));
       }
+      // Each line's mask (.split-line) is its row, and its letters take up about the middle two thirds of it; the longest description has every row.
+      const longest = (lines[0] ?? []).reduce<HTMLElement[]>((a, b) => (b.length > a.length ? b : a), []);
+      rows = longest.map((inner) => {
+        const row = inner.parentElement;
+        const mid = row ? row.offsetTop + row.offsetHeight / 2 : 0;
+        const half = row ? row.offsetHeight / 3 : 0;
+        return { top: mid - half, bottom: mid + half };
+      });
     },
     update(f) {
       if (!f.tracks) {
@@ -383,15 +426,9 @@ function values(shared: Shared): MotionModule | null {
         setStyle(img, "filter", `brightness(${num(st.brightness)})`);
       });
 
-      // Every word and description line from its own value's x, in both copies.
-      xs.forEach((x, i) => {
-        const y = liftPercent(valuesTitle(x, i, n));
-        for (const c of copies) if (c.rolls[i]) setStyle(c.rolls[i], "transform", y);
-      });
-      lines.forEach((c) => c.forEach((ls, i) => ls.forEach((line, k) => setStyle(line, "transform", liftPercent(valuesDescLine(xs[i], i, n, k))))));
-
-      // Clip the ivory copy to every picture on screen, as each is drawn right now, in the stage's own px.
+      // Every picture on screen, as it is drawn right now, in the stage's own px.
       const stageTop = Math.min(Math.max(rSection.top - f.scroll, 0), rSection.top + rSection.height - f.scroll - stageH);
+      const pics: { top: number; bottom: number }[] = [];
       let d = "";
       xs.forEach((x, i) => {
         const fr = rFrames[i];
@@ -401,9 +438,29 @@ function values(shared: Shared): MotionModule | null {
         const h = fr.height * scale;
         const cx = fr.left + fr.width / 2;
         const cy = fr.top - f.scroll + fr.height / 2 - stageTop;
+        pics.push({ top: cy - h / 2, bottom: cy + h / 2 });
         const [l, t, rr, b] = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2].map((v) => v.toFixed(2));
         d += `M${l} ${t}H${rr}V${b}H${l}Z`;
       });
+
+      // Every word and description line from its own value's x. A word rolls in both copies, so a picture's edges split it.
+      xs.forEach((x, i) => {
+        const y = liftPercent(valuesTitle(x, i, n));
+        for (const c of copies) if (c.rolls[i]) setStyle(c.rolls[i], "transform", y);
+      });
+      // A line of body text shows in one copy only: ivory while its letters are all over a picture, ink otherwise, the other copy parked below its mask. So a passing edge never cuts a line into two colours, nor cuts off its ivory letters.
+      const ivory = rows.map((row) => pics.some((p) => row.top >= p.top && row.bottom <= p.bottom));
+      const [inkLines, ivoryLines] = lines;
+      inkLines?.forEach((ls, i) =>
+        ls.forEach((line, k) => {
+          const y = liftPercent(valuesDescLine(xs[i], i, n, k));
+          const twin = ivoryLines?.[i]?.[k];
+          setStyle(line, "transform", ivory[k] ? PARKED : y);
+          if (twin) setStyle(twin, "transform", ivory[k] ? y : PARKED);
+        }),
+      );
+
+      // Clip the ivory copy to every picture on screen.
       setStyle(mask, "clipPath", d ? `path('${d}')` : "inset(50%)");
     },
   };

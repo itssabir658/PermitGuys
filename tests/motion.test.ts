@@ -7,7 +7,9 @@ import {
   ORBIT_EDGE_FADE,
   ORBIT_SLOTS,
   STONE,
+  VALUES_CAP,
   WORKS,
+  WORKS_BUTTON,
   contactReveal,
   headerGround,
   heroState,
@@ -26,6 +28,8 @@ import {
   valuesDescLine,
   valuesImage,
   valuesTitle,
+  valuesWordSize,
+  worksButton,
   worksLine,
   worksStudy,
 } from "@/lib/motion/home";
@@ -585,6 +589,50 @@ describe("homepage choreography", () => {
     }
     // The last study's lines stay through the release.
     for (const k of ks) expect(worksLine(D + 1, 2, 3, D, k)).toBe(0);
+  });
+
+  it("works button: rolls farther than a line, and its plate never shows as a bare sliver", () => {
+    expect(worksButton(0)).toEqual({ y: 0, opacity: 1 });
+    expect(worksButton(MASK)).toMatchObject({ y: MASK * WORKS_BUTTON, opacity: 0 });
+    expect(worksButton(-MASK).opacity).toBe(0);
+    // While no more than the plate's padding shows past the mask's edge (a third of it), the plate is invisible; it is whole a little before it lands.
+    const at = (shown: number) => worksButton(((1 - shown) * 100) / WORKS_BUTTON).opacity;
+    expect(at(0.33)).toBe(0);
+    expect(at(0.75)).toBe(1);
+    // It fades evenly both ways, and is all but opaque whenever it takes the pointer (|y| < 0.15 × MASK in HomeMotion).
+    let last = 1;
+    for (let y = 0; y <= MASK; y += 0.5) {
+      const o = worksButton(y).opacity;
+      expect(o).toBeLessThanOrEqual(last);
+      expect(worksButton(-y).opacity).toBeCloseTo(o);
+      if (y < 0.15 * MASK) expect(o).toBeGreaterThan(0.95);
+      last = o;
+    }
+    // With the line timing (two title lines, so the button is k 3): at the handover there is a moment when neither button shows at all.
+    const hidden = range(step - 0.3, step + 0.3, 0.002).filter((e) => [0, 1].every((i) => worksButton(worksLine(e, i, 3, D, 3)).opacity === 0)).length * 0.002;
+    expect(hidden).toBeGreaterThan(0.05);
+  });
+
+  it("values words keep clear of the corner label, below it or beside it, shrinking only as far as they must", () => {
+    // 1024×600: the label's block ends 204px down and its text 244px across; the words are centred on 194px, so only beside it will do.
+    const label = { bottom: 204, right: 244 };
+    const size = valuesWordSize(102, 648, 194, 1024, label);
+    expect(size).toBeCloseTo((102 * (1024 - 2 * (244 + 20))) / 648);
+    expect(((648 * size) / 102 - 1024) / -2).toBeCloseTo(244 + 20);
+    // A narrower word that already clears keeps its size.
+    expect(valuesWordSize(102, 450, 194, 1024, label)).toBe(102);
+    // 1440×900: the words sit low enough under the label at full size.
+    expect(valuesWordSize(145.6, 924, 373, 1440, { bottom: 204, right: 260 })).toBe(145.6);
+    // Just too close under it: a little smaller lifts the cap line clear, rather than shrinking to fit beside.
+    const near = valuesWordSize(108, 686, 255, 1024, label);
+    expect(near).toBeCloseTo((255 - 204 - 20) / VALUES_CAP);
+    expect(near).toBeGreaterThan(valuesWordSize(108, 686, 194, 1024, label));
+    expect(255 - VALUES_CAP * near).toBeCloseTo(204 + 20);
+    // On a phone a few px short of clear, the word gives up only a little.
+    expect(valuesWordSize(79.5, 350, 229, 375, { bottom: 186, right: 216 })).toBeCloseTo((229 - 186 - 20) / VALUES_CAP);
+    expect(valuesWordSize(79.5, 350, 229, 375, { bottom: 186, right: 216 })).toBeGreaterThan(0.9 * 79.5);
+    // Where neither is possible (a short phone), most of the word stays.
+    expect(valuesWordSize(60, 330, 150, 375, { bottom: 184, right: 216 })).toBe(36);
   });
 
   it("values: a word on screen all the way through, each held about 0.6 screens or more", () => {

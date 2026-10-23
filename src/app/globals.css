@@ -1347,14 +1347,15 @@
   scale: 1.14;
 }
 /*
- * The button's mask leaves room for its focus ring, only while it has focus
- * (it is then in place: focus scrolls to its study). Otherwise a margin
- * would show the dark plate as a bar above and below the row as it rolls.
+ * The button's mask leaves room for its focus ring, only while it has
+ * keyboard focus (it is then in place: focus scrolls to its study).
+ * Otherwise a margin would show the dark plate as a bar above and below the
+ * row as it rolls.
  */
 .works-item__button {
   overflow-clip-margin: 0px;
 }
-.works-item__button:focus-within {
+.works-item__button:has(:focus-visible) {
   overflow-clip-margin: 8px;
 }
 /*
@@ -1390,10 +1391,14 @@
 }
 /*
  * Landscape screens set the frame on the right, centred on the screen's
- * axis (702×562 at 1440×900; never wider than half the screen less 2rem,
- * so it clears the 11ch title on narrow landscape windows), and the text
- * on the label's left edge (the Container gutters), a little below the
- * centre.
+ * axis (702×562 at 1440×900; never wider than half the screen less 2rem),
+ * and the text on the label's left edge (the Container gutters), a little
+ * below the centre. The title and the label's note keep to the column the
+ * frame leaves (half the screen less the frame's 2rem, a 2rem gutter and a
+ * 1.5rem gap), so on narrow windows they wrap rather than run onto the
+ * picture. On short screens the text block sits lower, never closer than
+ * 2.5rem under the label (--works-label-b, its bottom in the stage, from
+ * HomeMotion), and the title is at most a tenth of the screen's height.
  */
 @media (min-width: 768px) and (min-aspect-ratio: 1/1) {
   .works-stage__frame {
@@ -1406,10 +1411,14 @@
   .works-items {
     top: calc(50% + 2rem);
     bottom: auto;
-    translate: 0 -50%;
+    translate: 0 max(-50%, calc(var(--works-label-b, 0px) + 0.5rem - 50svh));
   }
   .works-item__title {
-    max-width: 11ch;
+    max-width: min(11ch, calc(50vw - 5.5rem));
+    font-size: min(var(--text-display-xl), 10svh);
+  }
+  .works-note {
+    max-width: min(20rem, calc(50vw - 5.5rem));
   }
 }
 

@@ -300,6 +300,22 @@ export function worksLine(e: number, i: number, n: number, D: number, k: number)
   return roll(inP, outP);
 }
 
+/** How much farther than a line the button travels, so its focus ring clears the mask too. */
+export const WORKS_BUTTON = 1.3;
+
+/**
+ * A study's button, from its line's roll (worksLine): its yPercent, and its
+ * opacity. Being a block rather than display type, the dark plate fades
+ * with how much of it shows past the mask's edge: fully clear by the time
+ * its label is, and gone while only the plate's padding would show, so a
+ * sliver of it never reads as a bare bar (the label's capitals sit between
+ * 39% and 59% of its height).
+ */
+export function worksButton(y: number) {
+  const shown = clamp(1 - Math.abs(y * WORKS_BUTTON) / 100);
+  return { y: y * WORKS_BUTTON, opacity: smoothstep(shown, 0.36, 0.72) };
+}
+
 /*
  * ---- Values (400vh track: four 100vh blocks under one pinned 100vh stage) ----
  *
@@ -341,6 +357,26 @@ export function valuesDescLine(x: number, i: number, n: number, k: number) {
 /** The picture grows from 0.72 to full size as it reaches the centre and shrinks again after; it dims as dusk falls (`fade`, the page ground's). */
 export function valuesImage(x: number, fade: number) {
   return { scale: mix(0.72, 1, 1 - smoothstep(Math.abs(x), 0, 0.75)), brightness: mix(1, 0.5, fade) };
+}
+
+/** Where the wordmark face's cap line sits, in em above the middle of a word's line (line-height 0.9, in a 0.92em mask). */
+export const VALUES_CAP = 0.32;
+
+/**
+ * A pinned word's size in px, so it keeps clear of the section's corner
+ * label (px in the stage: the bottom of its block and the right edge of its
+ * text) by `gap` (1.25rem; about 1.5rem from the note's letters, under its
+ * last line's leading). The words are centred together on one line, `mid`,
+ * which does not move with their size, so a smaller word's cap line sits
+ * lower: a word clears the label either below it or beside it (centred on a
+ * screen `vw` wide). Returns `size` when it already clears, else the larger
+ * of the two sizes that do, and never less than 0.6 × `size` (a short
+ * phone, where neither is possible, keeps most of its word).
+ */
+export function valuesWordSize(size: number, width: number, mid: number, vw: number, label: { bottom: number; right: number }, gap = 20) {
+  const below = (mid - label.bottom - gap) / VALUES_CAP;
+  const beside = width > 0 ? (size * (vw - 2 * (label.right + gap))) / width : size;
+  return Math.max(0.6 * size, Math.min(size, Math.max(below, beside)));
 }
 
 /* ---- Page ground ---- */

@@ -19,9 +19,10 @@ import { paths } from "@/lib/routes";
  * handover the next picture wipes up from the bottom over the last, which
  * dims as it is covered, while the outgoing lines leave upward through
  * their masks and the incoming ones rise into place (HomeMotion, works
- * module). Landscape screens set the frame beside the text; portrait ones
- * stack them in bands, so type never sits on a picture. The page ground
- * turns to stone under the whole section (ground module).
+ * module). Landscape screens set the frame beside the text, which keeps
+ * below the label on short screens; portrait ones stack them in bands, so
+ * type never sits on a picture. The page ground turns to stone under the
+ * whole section (ground module).
  *
  * Without the tracks each panel shows its text beside its picture.
  */
@@ -53,7 +54,7 @@ export function Works() {
                 </span>
               </span>
             </h2>
-            <p className="mt-3 max-w-[36ch] text-[0.8125rem] leading-relaxed text-ink-muted sm:max-w-xs sm:text-[0.875rem]">
+            <p className="works-note mt-3 max-w-[36ch] text-[0.8125rem] leading-relaxed text-ink-muted sm:max-w-xs sm:text-[0.875rem]">
               <span className="split-line">
                 <span data-label-roll="" className="block">
                   {NOTE}
