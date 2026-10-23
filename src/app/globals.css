@@ -1330,10 +1330,94 @@
   overflow: hidden;
   background: var(--color-stone-300);
 }
+/*
+ * The pinned viewer (tracks only; the stage is hidden otherwise). The frame
+ * carries the notch and each shot its own wipe: two clip paths, never on
+ * one element. Shots are scaled 14% inside the frame, so the drift
+ * (HomeMotion, ±6% under that scale) never shows an edge.
+ */
+.works-shot {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-stone-300);
+  clip-path: inset(100% 0 0 0);
+}
+.works-shot img {
+  scale: 1.14;
+}
+/*
+ * The button's mask leaves room for its focus ring, only while it has focus
+ * (it is then in place: focus scrolls to its study). Otherwise a margin
+ * would show the dark plate as a bar above and below the row as it rolls.
+ */
+.works-item__button {
+  overflow-clip-margin: 0px;
+}
+.works-item__button:focus-within {
+  overflow-clip-margin: 8px;
+}
+/*
+ * Portrait screens stack bands: the label, the frame across the screen,
+ * then the text at the bottom, so type never sits on a picture. The frame
+ * keeps to the visible screen (svh), whatever a phone's toolbar does.
+ */
+.works-stage__frame {
+  --wg: 1.25rem;
+  --wt: 15rem;
+  --wb: 15rem;
+  position: absolute;
+  inset-inline: var(--wg);
+  top: var(--wt);
+  height: clamp(11rem, calc(100svh - var(--wt) - var(--wb)), 44rem);
+}
+.works-items {
+  position: absolute;
+  inset-inline: 0;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  display: grid;
+}
+.works-item {
+  grid-area: 1 / 1;
+  align-self: start;
+}
+@media (min-width: 640px) {
+  .works-stage__frame {
+    --wg: 2rem;
+    --wt: 14rem;
+    --wb: 17rem;
+  }
+}
+/*
+ * Landscape screens set the frame on the right, centred on the screen's
+ * axis (702×562 at 1440×900; never wider than half the screen less 2rem,
+ * so it clears the 11ch title on narrow landscape windows), and the text
+ * on the label's left edge (the Container gutters), a little below the
+ * centre.
+ */
+@media (min-width: 768px) and (min-aspect-ratio: 1/1) {
+  .works-stage__frame {
+    inset-inline: auto max(4rem, calc((100vw - 100rem) / 2 + 4rem));
+    inset-block: 0;
+    height: min(78svh, 54rem, calc((50vw - 2rem) * 1.25));
+    aspect-ratio: 4 / 5;
+    margin-block: auto;
+  }
+  .works-items {
+    top: calc(50% + 2rem);
+    bottom: auto;
+    translate: 0 -50%;
+  }
+  .works-item__title {
+    max-width: 11ch;
+  }
+}
 
 /* ---- Homepage: values (Values.tsx) ---- */
+/* Above the label layer, so a passing picture covers the label (the pinned words sit above both). */
 .values-outer {
   position: relative;
+  z-index: 1;
   display: grid;
   gap: 2rem;
   max-width: var(--container-site);
@@ -1353,15 +1437,40 @@
   max-width: 26rem;
   aspect-ratio: 3 / 4;
 }
+/*
+ * The pinned words (tracks only): all four words stacked in one grid cell,
+ * all four descriptions in another, so the block is as tall as the longest
+ * description and a word never shifts between values. The description
+ * stays inside the picture (--values-frame-w, set by HomeMotion).
+ */
 .values-text {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  align-content: center;
+  justify-items: center;
   padding-inline: 1.25rem;
   text-align: center;
+}
+.values-text__titles,
+.values-text__descs {
+  display: grid;
+}
+.values-text__titles > *,
+.values-text__descs > * {
+  grid-area: 1 / 1;
+}
+/* Each word is its own mask, as tall as its own line: fitted words differ in size, and a mask stretched to the largest would let a smaller hidden word show below it. */
+.values-text__titles > .split-line {
+  align-self: center;
+  overflow-clip-margin: 0.12em;
+}
+.values-text__descs {
+  margin-top: 2rem;
+  max-width: min(22rem, calc(var(--values-frame-w, 26rem) - 3rem));
+}
+[data-values-mask] .values-text__descs {
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.35);
 }
 
 /* ---- Homepage: services (Services.tsx) ---- */
@@ -1404,7 +1513,7 @@
 
 /* ---- Homepage: the tracks ---- */
 @media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
-  :root[data-motion] :is(.intro-copy, [data-services-heading]):not([data-split]) {
+  :root[data-motion] :is(.intro-copy, [data-services-heading], [data-works-title], [data-values-desc]):not([data-split]) {
     opacity: 0;
   }
   :root[data-motion] .intro-copy {
@@ -1417,38 +1526,21 @@
     transform: translateY(120%);
   }
 
+  /* Works: the panels only set the track's length; the stage shows the studies. Everything masked starts below its mask. */
   :root[data-motion] .works-panel {
     display: block;
     max-width: none;
-    height: 150vh;
+    height: 140vh;
     padding: 0;
   }
-  :root[data-motion] .works-panel__frame {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-bottom: 20svh;
-  }
-  :root[data-motion] .works-panel__image {
-    height: min(56svh, 90vw);
-    transform: translate3d(0, 100px, 0) scale(0.5);
-  }
-  :root[data-motion] .works-item {
-    position: absolute;
-    inset-inline: 0;
-    bottom: 1.75rem;
-    padding-inline: 1.25rem;
-  }
-  :root[data-motion] .works-item > * {
-    opacity: 0;
+  :root[data-motion] :is([data-works-roll], .works-item .split-line__inner, [data-label-roll]) {
+    transform: translateY(120%);
   }
 
   :root[data-motion] .values-outer {
     display: flex;
     max-width: none;
-    height: 110vh;
+    height: 100vh;
     align-items: center;
     justify-content: center;
     padding: 0;
@@ -1459,36 +1551,15 @@
     height: min(62svh, 40rem, 100vw);
   }
   :root[data-motion] [data-values-image] {
-    transform: scale(0.5);
+    transform: scale(0.72);
   }
-  :root[data-motion] .values-text > * {
-    opacity: 0;
+  :root[data-motion] :is([data-values-roll], .values-text__descs .split-line__inner) {
+    transform: translateY(120%);
   }
 
   :root[data-motion] [data-contact-reveal] {
     opacity: 0;
     transform: translateY(28px);
-  }
-}
-@media (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 640px) {
-  :root[data-motion] .works-item {
-    padding-inline: 2rem;
-  }
-}
-@media (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 1024px) {
-  :root[data-motion] .works-panel__frame {
-    justify-content: flex-end;
-    padding: 0 10vw 0 0;
-  }
-  :root[data-motion] .works-panel__image {
-    height: min(64svh, 44rem);
-  }
-  :root[data-motion] .works-item {
-    top: 50%;
-    bottom: auto;
-    max-width: 44vw;
-    padding-inline: 3rem;
-    translate: 0 -50%;
   }
 }
 /* Phones: Services becomes a 300vh track with the list pinned. */

@@ -7,6 +7,7 @@ import {
   ORBIT_EDGE_FADE,
   ORBIT_SLOTS,
   STONE,
+  WORKS,
   contactReveal,
   headerGround,
   heroState,
@@ -22,12 +23,11 @@ import {
   servicesHeadingLine,
   servicesReveal,
   servicesW,
-  valuesLine,
-  valuesText,
-  worksButtonLive,
-  worksElement,
-  worksImageScale,
-  worksT,
+  valuesDescLine,
+  valuesImage,
+  valuesTitle,
+  worksLine,
+  worksStudy,
 } from "@/lib/motion/home";
 import { clamp, cssEase, damp, ease, fit, fromOklab, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
 
@@ -126,8 +126,14 @@ describe("motion vocabulary", () => {
   it("every homepage masked line uses the shared travel", () => {
     expect(servicesHeadingLine(0, 0, 2).yPercent).toBe(MASK);
     expect(servicesHeadingLine(1, 1, 2).yPercent).toBe(0);
-    expect(valuesLine(0, 0, 3).yPercent).toBe(MASK);
-    expect(valuesLine(1, 2, 3).yPercent).toBe(0);
+    expect(valuesTitle(-1, 1, 4)).toBe(MASK);
+    expect(valuesTitle(0, 1, 4)).toBe(0);
+    expect(valuesTitle(1, 1, 4)).toBe(-MASK);
+    expect(valuesDescLine(-1, 2, 4, 1)).toBe(MASK);
+    expect(valuesDescLine(1, 2, 4, 1)).toBe(-MASK);
+    expect(worksLine(-1, 0, 3, 3.2, 0)).toBe(MASK);
+    expect(worksLine(0.5, 0, 3, 3.2, 2)).toBe(0);
+    expect(worksLine(2, 0, 3, 3.2, 2)).toBe(-MASK);
     expect(introLine(0, 1, 0)).toBe(MASK);
     expect(heroState(0, 0, VH).nameRoll).toBe(0);
     expect(heroState(VH, 0, VH).nameRoll).toBe(-MASK);
@@ -507,32 +513,139 @@ describe("homepage choreography", () => {
     expect(introLine(copyIn[1] - 0.4, copyIn[0], 4)).toBe(-MASK);
   });
 
-  it("works title peaks exactly when its panel's showScreenOffset is 1.25", () => {
-    expect(worksT(1.25)).toBe(0);
-    expect(worksElement(worksT(1.25), 0, 60).opacity).toBe(1);
-    // The falloff is symmetric about the peak.
-    for (const d of [0.2, 0.4, 0.5, 0.6, 0.9]) {
-      expect(worksElement(worksT(1.25 - d), 0, 60).opacity).toBeCloseTo(worksElement(worksT(1.25 + d), 0, 60).opacity);
+  /* Works at 1440×900: three 140vh panels, so the stage is pinned for D = 3.2 screens. */
+  const D = 3.2;
+  const step = D / 3;
+  const range = (from: number, to: number, by = 0.005) => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
+
+  it("works: one study in front at every moment, handed over by a wipe centred on its boundary", () => {
+    const studies = (e: number) => [0, 1, 2].map((i) => worksStudy(e, i, 3, D));
+    // The first picture has risen before the stage pins; the next ones wipe in at the boundaries, half-way exactly there.
+    expect(studies(-0.1)[0].inP).toBe(1);
+    expect(studies(WORKS.firstIn)[0].inP).toBe(0);
+    expect(studies(WORKS.firstIn + WORKS.firstInVh)[0].inP).toBe(1);
+    // It starts while the intro's fling is still leaving: before the stage is a screen's quarter from pinning.
+    expect(WORKS.firstIn).toBeLessThan(-0.75);
+    for (const b of [1, 2]) {
+      expect(studies(b * step)[b].inP).toBeCloseTo(0.5);
+      expect(studies(b * step)[b - 1].outP).toBeCloseTo(0.5);
+      expect(studies(b * step - WORKS.hand / 2)[b].inP).toBe(0);
+      expect(studies(b * step + WORKS.hand / 2)[b].inP).toBe(1);
     }
-    expect(worksElement(0.8, 0, 60).opacity).toBe(0);
+    // In the middle of its moment a study is whole and alone: those before are covered, those after not yet in.
+    for (const i of [0, 1, 2]) {
+      const s = studies((i + 0.5) * step);
+      expect(s[i]).toMatchObject({ inP: 1, outP: 0, live: true });
+      s.forEach((o, j) => (j < i ? expect(o.outP).toBe(1) : j > i ? expect(o.inP).toBe(0) : null));
+    }
+    // Exactly one study is live anywhere on the pinned track, and the last one never leaves.
+    for (const e of range(-0.1, D + 1)) {
+      if ([1, 2].some((b) => Math.abs(e - b * step) < 1e-6)) continue;
+      expect(studies(e).filter((s) => s.live)).toHaveLength(1);
+      expect(studies(e)[2].outP).toBe(0);
+    }
   });
 
-  it("works elements arrive downward and leave upward, deeper ones in tighter windows", () => {
-    expect(worksElement(-0.5, 0, 60).y).toBeGreaterThan(0);
-    expect(worksElement(0.5, 0, 60).y).toBeLessThan(0);
-    expect(worksElement(0.5, 2, 40).opacity).toBe(0);
-    expect(worksElement(0.5, 0, 60).opacity).toBeGreaterThan(0);
-    expect(worksImageScale(0)).toBe(1);
-    expect(worksImageScale(1)).toBe(0.5);
-    expect(worksButtonLive(0.1)).toBe(true);
-    expect(worksButtonLive(0.2)).toBe(false);
+  it("works pictures drift once across their whole time on screen, never jumping", () => {
+    for (const i of [0, 1, 2]) {
+      let last = worksStudy(-1, i, 3, D).drift;
+      for (const e of range(-1, D + 1, 0.01)) {
+        const d = worksStudy(e, i, 3, D).drift;
+        expect(d).toBeGreaterThanOrEqual(last);
+        expect(d - last).toBeLessThan(0.05);
+        last = d;
+      }
+      // Still while hidden, moving from the first frame of its wipe.
+      expect(worksStudy(i === 0 ? WORKS.firstIn : i * step - WORKS.hand / 2, i, 3, D).drift).toBe(0);
+    }
+    expect(worksStudy(step + WORKS.hand / 2, 0, 3, D).drift).toBe(1);
   });
 
-  it("values title enters over 0.2 of a screen and leaves by 0.4", () => {
-    expect(valuesText(-0.2).titleOpacity).toBe(0);
-    expect(valuesText(0).titleOpacity).toBe(1);
-    expect(valuesText(0.4).titleOpacity).toBe(0);
-    expect(valuesText(0.4).descY).toBe(-160);
+  it("works lines: in place before the stage pins, composed about 0.57 screens per study, and never two lines moving in one row", () => {
+    // Eyebrow, two title lines, button: k 0 to 3 (a third title line makes the button k 4).
+    const ks = [0, 1, 2, 3];
+    for (const k of ks) expect(worksLine(0.1, 0, 3, D, k)).toBe(0);
+    for (const i of [0, 1]) {
+      const composed = range(i * step - 0.4, (i + 1) * step, 0.002).filter((e) => ks.every((k) => worksLine(e, i, 3, D, k) === 0)).length * 0.002;
+      if (i > 0) expect(composed).toBeGreaterThan(0.55);
+      expect(composed).toBeLessThan(0.85);
+    }
+    for (const b of [1, 2]) {
+      for (const e of range(b * step - 0.3, b * step + 0.3, 0.002)) {
+        for (const k of [0, 1, 2, 3, 4]) {
+          // An incoming line on its way up: the outgoing line of its row, and of the row below (whose clip margin reaches into this one), have gone.
+          if (worksLine(e, b, 3, D, k) < MASK - 1e-9) {
+            expect(worksLine(e, b - 1, 3, D, k)).toBeCloseTo(-MASK);
+            expect(worksLine(e, b - 1, 3, D, k + 1)).toBeCloseTo(-MASK);
+          }
+        }
+      }
+      // ...yet some text is always on screen through the handover.
+      for (const e of range(b * step - 0.3, b * step + 0.3, 0.002)) expect([b - 1, b].some((i) => ks.some((k) => Math.abs(worksLine(e, i, 3, D, k)) < MASK - 1e-9))).toBe(true);
+    }
+    // The last study's lines stay through the release.
+    for (const k of ks) expect(worksLine(D + 1, 2, 3, D, k)).toBe(0);
+  });
+
+  it("values: a word on screen all the way through, each held about 0.6 screens or more", () => {
+    // x_i = e − i for the value blocks 100vh apart; e from the first word's arrival to the last one's exit.
+    const words = (e: number) => [0, 1, 2, 3].map((i) => valuesTitle(e - i, i, 4));
+    for (const e of range(-0.3, 3.3)) expect(words(e).some((y) => Math.abs(y) < MASK)).toBe(true);
+    // Never two words composed at once, and every word holds for 0.58 screens or more.
+    for (const e of range(-1, 4, 0.002)) expect(words(e).filter((y) => y === 0).length).toBeLessThanOrEqual(1);
+    for (const i of [0, 1, 2, 3]) {
+      const held = range(i - 1, i + 1, 0.002).filter((e) => valuesTitle(e - i, i, 4) === 0).length * 0.002;
+      expect(held).toBeGreaterThan(0.58);
+    }
+    // The first word rises as the stage comes up; the last has left by sso(services) 0.36, as dusk passes its middle.
+    expect(valuesTitle(-0.45, 0, 4)).toBe(MASK);
+    expect(valuesTitle(-0.17, 0, 4)).toBe(0);
+    expect(valuesTitle(0.2, 3, 4)).toBe(0);
+    expect(valuesTitle(0.36, 3, 4)).toBeCloseTo(-MASK);
+  });
+
+  it("values words roll like an odometer: the outgoing leads, and the incoming is always a full mask below it", () => {
+    for (const i of [0, 1, 2]) {
+      for (const x of range(0.3, 0.75, 0.001)) {
+        const out = valuesTitle(x, i, 4);
+        const inc = valuesTitle(x - 1, i + 1, 4);
+        expect(inc - out).toBeGreaterThanOrEqual(MASK - 1e-9);
+      }
+      // The swap is over in under 0.2 screens, centred on the handover between two pictures (x = 0.5).
+      expect(valuesTitle(0.42, i, 4)).toBe(0);
+      expect(valuesTitle(0.6 - 1, i + 1, 4)).toBe(0);
+      expect(valuesTitle(0.5, i, 4)).toBeLessThan(-MASK / 3);
+    }
+  });
+
+  it("values descriptions: each line is gone before the next value's line in the same row starts, and leaves before the word", () => {
+    for (const i of [0, 1, 2]) {
+      for (const x of range(0.3, 0.8, 0.001)) {
+        // A line of the next description on its way up: this one's line in that row, and in the row below (whose clip margin reaches into it), have gone.
+        for (const k of [0, 1, 2, 3, 4, 5]) {
+          if (valuesDescLine(x - 1, i + 1, 4, k) < MASK) for (const j of [k, k + 1]) expect(valuesDescLine(x, i, 4, j)).toBeCloseTo(-MASK);
+        }
+      }
+      // Gone by the middle of the word's roll, so it never lingers under the next word: all six lines of the longest description on a 360px phone.
+      for (const k of [0, 1, 2, 3, 4, 5]) expect(valuesDescLine(0.5, i, 4, k)).toBeCloseTo(-MASK);
+      // The lines start to leave before the word does, and have all gone when it has.
+      expect(valuesDescLine(0.4, i, 4, 0)).toBeLessThan(0);
+      expect(valuesTitle(0.4, i, 4)).toBe(0);
+      for (const k of [0, 1, 2, 3]) expect(valuesDescLine(0.58, i, 4, k)).toBe(-MASK);
+      // A four-line description is composed for half a screen (the first, rising as the stage comes up, for a third).
+      const held = range(-1, 1, 0.002).filter((x) => [0, 1, 2, 3].every((k) => valuesDescLine(x, i, 4, k) === 0)).length * 0.002;
+      expect(held).toBeGreaterThan(i === 0 ? 0.33 : 0.5);
+    }
+    // The last description leaves first of all, with dusk falling.
+    expect(valuesDescLine(0.32, 3, 4, 3)).toBe(-MASK);
+  });
+
+  it("values pictures grow to full size at their moment, never smaller than 0.72, and dim with dusk", () => {
+    expect(valuesImage(0, 0)).toEqual({ scale: 1, brightness: 1 });
+    expect(valuesImage(0.75, 0).scale).toBe(0.72);
+    expect(valuesImage(-2, 0).scale).toBe(0.72);
+    expect(valuesImage(0.3, 0).scale).toBeCloseTo(valuesImage(-0.3, 0).scale);
+    expect(valuesImage(0, 1).brightness).toBe(0.5);
   });
 
   it("page ground: cream, stone under Works, cream for Values, then night from the start of Services on", () => {

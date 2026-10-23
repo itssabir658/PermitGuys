@@ -4,18 +4,20 @@ import { plates, type Plate } from "@/content/imagery";
 import { escapeHtml } from "@/lib/html";
 
 /*
- * The practice's values, after the reference's Values section
- * (docs/MOTION.md, "Values"). The content is the "How we work" principles
- * from the About page.
+ * The practice's values. The content is the "How we work" principles from
+ * the About page.
  *
- * Tracks: each value has a 110vh block with its picture in the middle,
- * growing from half size to full size as it passes the top of the screen.
- * One title and description stay pinned in the centre and change to the
- * value whose picture is nearest; the title rises in over a fifth of a
- * screen and out over two fifths, the description's lines slide up from
- * their masks and leave at twice the title's speed. The text is set twice:
- * ink on the page and ivory clipped to the picture's live outline, so one
- * line of type turns light exactly where it crosses the image.
+ * Tracks: each value has a 100vh block with its picture in the middle,
+ * growing from 0.72 to full size as it reaches the centre of the screen.
+ * One word stays on screen the whole way through, pinned in the centre:
+ * all four words and descriptions are set, stacked in one place, and each
+ * rolls through its own mask at its value's moment, the outgoing word up
+ * and out as the next rises under it, like an odometer, on clean ivory
+ * between two pictures. The text is set twice: ink on the page and ivory
+ * clipped to the outline of every picture on screen, so the word turns
+ * light exactly where it crosses one. Below 1024px the words are fitted a
+ * little wider than the picture, so every one of them is split by its
+ * edges (HomeMotion, values module).
  *
  * The pinned text is decoration over the per-value text, which stays in the
  * page for assistive technology (visually hidden on the tracks) and shows
@@ -47,8 +49,20 @@ const values: { title: string; body: string; plate: Plate }[] = [
 function ValueText({ tone }: { tone: "ink" | "ivory" }) {
   return (
     <div className={`values-text ${tone === "ink" ? "text-ink" : "text-ivory"}`}>
-      <p data-values-title="" className="font-wordmark text-[clamp(3.25rem,1rem+9vw,10rem)] leading-[0.9] tracking-[-0.01em] uppercase" dangerouslySetInnerHTML={{ __html: escapeHtml(values[0].title) }} />
-      <p data-values-desc="" className="mt-8 max-w-[22rem] text-center text-[1.0625rem] leading-relaxed" dangerouslySetInnerHTML={{ __html: escapeHtml(values[0].body) }} />
+      <div className="values-text__titles">
+        {values.map((v, i) => (
+          <p key={v.title} data-values-title={i} className="split-line font-wordmark text-[clamp(3.25rem,1rem+9vw,10rem)] leading-[0.9] tracking-[-0.01em] uppercase">
+            <span data-values-roll="" className="inline-block">
+              {v.title}
+            </span>
+          </p>
+        ))}
+      </div>
+      <div className="values-text__descs">
+        {values.map((v, i) => (
+          <p key={v.title} data-values-desc={i} className="text-center text-[1.125rem] leading-relaxed" dangerouslySetInnerHTML={{ __html: escapeHtml(v.body) }} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -56,14 +70,24 @@ function ValueText({ tone }: { tone: "ink" | "ivory" }) {
 export function Values() {
   return (
     <section data-values="" aria-labelledby="values-heading" className="relative pb-20 tracks:pb-0">
-      {/* On the tracks: a screen-high sticky layer over the whole track, so the label stays in the corner and scrolls away with the last value. */}
-      <div className="relative z-20 tracks:pointer-events-none tracks:absolute tracks:inset-0">
+      {/* On the tracks: a screen-high sticky layer over the whole track, so the label stays in the corner and scrolls away with the last value. It sits under the pictures, so a passing picture covers it rather than the label printing on the picture. Label and note roll in with the stage. */}
+      <div className="relative z-0 tracks:pointer-events-none tracks:absolute tracks:inset-0">
         <div className="tracks:sticky tracks:top-0 tracks:h-svh">
           <Container className="pt-28 lg:pt-32">
             <h2 id="values-heading" className="text-label text-ink">
-              Our values
+              <span className="split-line">
+                <span data-label-roll="" className="block">
+                  Our values
+                </span>
+              </span>
             </h2>
-            <p className="mt-3 max-w-xs text-[0.875rem] leading-relaxed text-ink-muted">How we work on every project, whatever its size.</p>
+            <p className="mt-3 max-w-[16rem] text-[0.875rem] leading-relaxed text-ink-muted">
+              <span className="split-line">
+                <span data-label-roll="" className="block">
+                  How we work on every project, whatever its size.
+                </span>
+              </span>
+            </p>
           </Container>
         </div>
       </div>
@@ -71,18 +95,19 @@ export function Values() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 hidden tracks:block">
         <div data-values-stage="" className="sticky top-0 h-svh overflow-hidden">
           <ValueText tone="ink" />
-          <div data-values-mask="" className="absolute inset-0" style={{ clipPath: "inset(50% 50% 50% 50%)" }}>
+          <div data-values-mask="" className="absolute inset-0" style={{ clipPath: "inset(50%)" }}>
             <ValueText tone="ivory" />
           </div>
         </div>
       </div>
 
       {values.map((v, i) => (
-        <div key={v.title} data-values-outer={i} data-title={v.title} data-desc={v.body} className="values-outer">
+        <div key={v.title} data-values-outer={i} className="values-outer">
           <div data-values-frame="" className="values-frame">
             <div data-values-image="" className="absolute inset-0 overflow-hidden bg-stone-300">
               <Image src={v.plate.src} alt="" fill sizes="(min-width: 1024px) 34vw, 80vw" quality={80} className="object-cover" style={{ objectPosition: v.plate.focus }} />
-              <div aria-hidden="true" className="absolute inset-0 bg-black/40" />
+              {/* On the tracks only, a scrim shaped around the text keeps the ivory description legible on the pale plates; the still layout shows the pictures untouched. */}
+              <div aria-hidden="true" className="absolute inset-0 hidden tracks:block" style={{ background: "radial-gradient(70% 45% at 50% 52%, rgb(17 17 16 / 0.58), rgb(17 17 16 / 0.2) 100%)" }} />
             </div>
           </div>
           <div className="values-outer__text tracks:sr-only">

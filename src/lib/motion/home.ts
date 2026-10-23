@@ -1,4 +1,4 @@
-import { PI2, clamp, ease, fit, mix, mixColorNum, mixColorOklab, smoothstep, tween } from "./math";
+import { PI2, clamp, ease, mix, mixColorNum, mixColorOklab, smoothstep, tween } from "./math";
 
 /*
  * The homepage choreography as pure functions of scroll. Every input is
@@ -247,53 +247,100 @@ export function introLine(e: number, n: number, line: number) {
   return roll(inP, outP);
 }
 
-/* ---- Works (450vh track, 150vh panel per study) ---- */
+/* ---- Works (420vh track: three 140vh panels under one pinned 100vh stage) ---- */
 
-/** 0 at a study's moment: its panel centred on the screen. */
-export function worksT(ssoPanel: number) {
-  return ssoPanel - 1.25;
+/**
+ * The Works viewer's timeline. `e` is screens of scroll since the stage
+ * pinned (sso(section) − 1), `D` the length it stays pinned (the section's
+ * height in screens − 1: 3.2), shared by the n studies, so study i owns
+ * [i, i + 1] × D/n. Studies hand over in `hand` screens, centred on the
+ * boundary. A study's lines rise `stagger` apart and leave `outStagger`
+ * apart, top line first both ways (eyebrow, title lines, button).
+ *
+ * The first study arrives while the stage is still coming up under the
+ * intro's fling, so the two overlap: its picture rises from the bottom of
+ * the screen from `firstIn` (power3Out, an entrance) over `firstInVh`, and
+ * its lines from `firstLines`.
+ */
+export const WORKS = { hand: 0.3, stagger: 0.035, outStagger: 0.02, firstIn: -0.92, firstInVh: 0.6, firstLines: -0.3 };
+
+/**
+ * One study's picture: `inP` its wipe up over the picture before
+ * (power2InOut, scrubbed), `outP` the next one's wipe over it, as it dims
+ * to 0.72; `drift` runs 0 → 1 over the whole time it is on screen, for a
+ * slow parallax inside the frame. `live` is the study in front. The last
+ * study never leaves: it scrolls away with the stage.
+ */
+export function worksStudy(e: number, i: number, n: number, D: number) {
+  const step = D / n;
+  const a = i * step;
+  const b = a + step;
+  const H = WORKS.hand;
+  const inStart = i === 0 ? WORKS.firstIn : a - H / 2;
+  const inP = i === 0 ? tween(e, WORKS.firstIn, WORKS.firstInVh, ease.power3Out) : tween(e, a - H / 2, H, ease.power2InOut);
+  const outP = i === n - 1 ? 0 : tween(e, b - H / 2, H, ease.power2InOut);
+  return { inP, outP, live: inP > 0.5 && outP < 0.5, drift: clamp((e - inStart) / (b + H / 2 - inStart)) };
 }
 
-/** Symmetric proximity falloff; deeper elements (k) resolve in tighter windows. */
-export function worksFalloff(t: number, k: number) {
-  return 1 - smoothstep(Math.abs(t), 0.3 - k * 0.1, 0.7 - k * 0.1);
+/**
+ * One masked line of study i (k: 0 the eyebrow, then the title's lines, then
+ * the button), as a yPercent for roll(). The outgoing lines leave just
+ * before the wipe begins (power2In) and the incoming ones rise from about
+ * its midpoint (power3Out), so in every row, and in the clip margin each row shares with
+ * the next, one line has gone before the next one moves: two lines never
+ * print over each other. A study with two title lines stays fully composed
+ * for about 0.57 screens.
+ */
+export function worksLine(e: number, i: number, n: number, D: number, k: number) {
+  const step = D / n;
+  const a = i * step;
+  const b = a + step;
+  const inP = i === 0 ? tween(e, WORKS.firstLines + k * WORKS.stagger, 0.26, ease.power3Out) : tween(e, a - 0.03 + k * WORKS.stagger, 0.22, ease.power3Out);
+  const outP = i === n - 1 ? 0 : tween(e, b - 0.2 + k * WORKS.outStagger, 0.14, ease.power2In);
+  return roll(inP, outP);
 }
 
-/** Title (k 0, 60px), type (k 1, 60px), button (k 2, 40px): arriving items travel down into place, leaving ones carry on up. */
-export function worksElement(t: number, k: number, travel: number) {
-  const K = worksFalloff(t, k);
-  return { opacity: K, y: -Math.sign(t) * (1 - K) * travel };
+/*
+ * ---- Values (400vh track: four 100vh blocks under one pinned 100vh stage) ----
+ *
+ * x: screens of scroll since value i's block reached the top of the screen,
+ * so its picture is centred at x = 0 and the pictures either side are at
+ * ±1. At every handover (x = ±0.5) the word sits on clean ivory between two
+ * pictures.
+ */
+
+/**
+ * One value's word, as a yPercent for roll(): it rolls like an odometer.
+ * At each handover the outgoing word leads by 0.02 screens and both travel
+ * on the same scrubbed ease (power2InOut, 0.16 screens), so the incoming
+ * word is always at least a full mask (MASK %) below the outgoing one and
+ * the two never print over each other. The first word rises as the stage
+ * comes up (power3Out) and the last leaves as dusk falls (power2In); its x
+ * equals sso(services), the axis the page ground reads.
+ */
+export function valuesTitle(x: number, i: number, n: number) {
+  const inP = i === 0 ? tween(x, -0.45, 0.28, ease.power3Out) : tween(x, -0.56, 0.16, ease.power2InOut);
+  const outP = i === n - 1 ? tween(x, 0.2, 0.16, ease.power2In) : tween(x, 0.42, 0.16, ease.power2InOut);
+  return roll(inP, outP);
 }
 
-export function worksImageScale(t: number) {
-  return mix(0.5, 1, 1 - smoothstep(Math.abs(t), 0, 1));
+/**
+ * Line k of value i's description: the lines leave 0.012 apart, top first,
+ * and have all gone (six of them, as on the narrowest phones) by the time
+ * the word is half-way through its roll; the next value's lines rise 0.03
+ * apart from that moment. So the old description never lingers under a new
+ * word, and in no row (or the clip margin two rows share) do two lines ever
+ * move at once.
+ */
+export function valuesDescLine(x: number, i: number, n: number, k: number) {
+  const inP = i === 0 ? tween(x, -0.38 + 0.03 * k, 0.26, ease.power3Out) : tween(x, -0.5 + 0.03 * k, 0.2, ease.power3Out);
+  const outP = tween(x, (i === n - 1 ? 0.12 : 0.32) + 0.012 * k, 0.12, ease.power2In);
+  return roll(inP, outP);
 }
 
-/** The study's button only takes the pointer at its moment. */
-export function worksButtonLive(t: number) {
-  return Math.abs(t) < 0.15;
-}
-
-/* ---- Values (110vh per value) ---- */
-
-/** x: the value image's top above the top of the screen, in screens (0 when aligned). */
+/** The picture grows from 0.72 to full size as it reaches the centre and shrinks again after; it dims as dusk falls (`fade`, the page ground's). */
 export function valuesImage(x: number, fade: number) {
-  const c = 1 - smoothstep(Math.abs(x), 0, 1);
-  return { scale: mix(0.5, 1, c), brightness: mix(1, 0.5, fade) };
-}
-
-/** Title enters over 0.2 of a screen and leaves over 0.4; the description travels twice as far on the way out. */
-export function valuesText(x: number) {
-  const a = fit(x, -0.2, 0, 0, 1);
-  const b = fit(x, 0.3, 0.4, 0, 1);
-  const n = fit(x, 0, 0.4, 0, 1);
-  return { a, b, titleOpacity: a - b, titleY: 20 + (a * -20 + n * -80), descOpacity: 1 - b, descY: n * -160 };
-}
-
-/** One description line, scrubbed by the entry ramp `a` over a 0.6s, 0.1-staggered timeline. */
-export function valuesLine(a: number, line: number, lines: number) {
-  const total = 0.6 + Math.max(0, lines - 1) * 0.1;
-  return { yPercent: roll(tween(a * total, line * 0.1, 0.6, ease.power1Out), 0) };
+  return { scale: mix(0.72, 1, 1 - smoothstep(Math.abs(x), 0, 0.75)), brightness: mix(1, 0.5, fade) };
 }
 
 /* ---- Page ground ---- */

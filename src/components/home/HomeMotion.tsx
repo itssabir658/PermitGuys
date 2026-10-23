@@ -16,17 +16,17 @@ import {
   servicesHeadingLine,
   servicesReveal,
   servicesW,
+  MASK,
+  roll,
+  valuesDescLine,
   valuesImage,
-  valuesLine,
-  valuesText,
-  worksButtonLive,
-  worksElement,
-  worksImageScale,
-  worksT,
+  valuesTitle,
+  worksLine,
+  worksStudy,
   type OrbitPath,
 } from "@/lib/motion/home";
-import { clamp, damp, toHex } from "@/lib/motion/math";
-import { resplitIfNeeded, splitLines, unsplit } from "@/lib/motion/split";
+import { clamp, damp, ease, mix, toHex, tween } from "@/lib/motion/math";
+import { resplitIfNeeded, unsplit } from "@/lib/motion/split";
 
 /*
  * Drives the homepage from the scroll engine (docs/MOTION.md). Renders
@@ -208,53 +208,98 @@ function intro(): MotionModule | null {
   };
 }
 
-/* Works: each study's text resolves at its panel's moment, nested title → type → button. */
+/*
+ * A section label (its heading and note, each one mask) rolls in over 0.3
+ * screens from `from` (the section's showScreenOffset) as its stage comes
+ * up, and leaves with the released stage.
+ */
+function labelRoll(labels: HTMLElement[], r: Range, f: Frame, from: number) {
+  const y = roll(tween(sso(r, f), from, 0.3, ease.power3Out), 0);
+  for (const el of labels) setStyle(el, "transform", liftPercent(y));
+}
+
+/*
+ * Works: a pinned viewer. One frame holds the three pictures; at each
+ * handover the next wipes up from the bottom over the last, which dims as
+ * it is covered, and the lines roll through their masks: eyebrow, title
+ * lines, button. The first picture rises from the bottom of the screen
+ * while the stage is still arriving, so it overlaps the intro's fling.
+ */
 function works(): MotionModule | null {
   const section = one("[data-works]");
-  if (!section) return null;
-  const panels = all("[data-works-panel]", section);
-  const images = panels.map((p) => one("[data-works-image]", p)).filter((el): el is HTMLElement => Boolean(el));
-  const parts = all("[data-works-item]", section).map((item) => ({
-    title: one("[data-works-title]", item)!,
-    type: one("[data-works-type]", item)!,
-    button: one("[data-works-button]", item)!,
-  }));
-  let ranges: Range[] = [];
-  // Keyboard: focusing a study's button scrolls to its moment, where it is visible.
+  const stage = section && one("[data-works-stage]", section);
+  const frame = section && one("[data-works-frame]", section);
+  if (!section || !stage || !frame) return null;
+  const shots = all("[data-works-shot]", section).map((el) => ({ el, img: one("img", el) }));
+  const items = all("[data-works-item]", section).map((item) => {
+    const [eyebrow, button] = all("[data-works-roll]", item);
+    return { eyebrow, button, title: one("[data-works-title]", item)!, link: one("a", item) };
+  });
+  const labels = all("[data-label-roll]", section);
+  const n = items.length;
+  let r: Range;
+  /** Screens the stage stays pinned (the section's height − 1 screen), shared by the studies. */
+  let D = 1;
+  let stageH = 0;
+  let frameTop = 0;
+  let frameH = 0;
+  let titleLines: HTMLElement[][] = items.map(() => []);
+  // Keyboard: focusing a study's button scrolls to the middle of its moment, where it is composed.
   const onFocus = (event: FocusEvent) => {
-    const i = parts.findIndex((p) => p.button.contains(event.target as Node));
-    if (i >= 0 && ranges[i] && engine.frame.tracks) engine.scrollTo(ranges[i].top + 0.25 * engine.frame.vh);
+    const i = items.findIndex((it) => it.button?.contains(event.target as Node));
+    if (i >= 0 && r && engine.frame.tracks) engine.scrollTo(r.top + (i + 0.5) * (D / n) * engine.frame.vh);
   };
   section.addEventListener("focusin", onFocus);
-  const apply = (el: HTMLElement, s: { opacity: number; y: number }) => {
-    setStyle(el, "opacity", num(s.opacity));
-    setStyle(el, "transform", lift(s.y));
-  };
   return {
     order: ORDER.works,
-    measure() {
-      ranges = panels.map(measureRange);
+    measure(f) {
+      r = measureRange(section);
+      D = Math.max(0.5, r.height / f.vh - 1);
+      stageH = stage.offsetHeight;
+      frameTop = frame.offsetTop;
+      frameH = frame.offsetHeight;
+      if (f.tracks) titleLines = items.map((it, i) => resplitIfNeeded(it.title, titleLines[i]));
+      else if (titleLines.some((l) => l.length)) {
+        items.forEach((it) => unsplit(it.title));
+        titleLines = items.map(() => []);
+      }
     },
     update(f) {
       if (!f.tracks) {
-        for (const p of parts) {
-          clear(p.title, "opacity", "transform");
-          clear(p.type, "opacity", "transform");
-          clear(p.button, "opacity", "transform", "pointerEvents");
+        labels.forEach((el) => clear(el, "transform"));
+        for (const s of shots) {
+          clear(s.el, "clipPath");
+          if (s.img) clear(s.img, "transform", "filter");
         }
-        images.forEach((img) => clear(img, "transform"));
+        for (const it of items) {
+          [it.eyebrow, it.button].forEach((el) => el && clear(el, "transform"));
+          if (it.link) clear(it.link, "pointerEvents");
+        }
         return;
       }
-      ranges.forEach((r, i) => {
-        const t = worksT(sso(r, f));
-        const p = parts[i];
-        if (p) {
-          apply(p.title, worksElement(t, 0, 60));
-          apply(p.type, worksElement(t, 1, 60));
-          apply(p.button, worksElement(t, 2, 40));
-          setStyle(p.button, "pointerEvents", worksButtonLive(t) ? "auto" : "none");
+      // With the first picture, under the end of the intro's fling.
+      labelRoll(labels, r, f, 0.3);
+      const e = sso(r, f) - 1;
+      // Where the frame is on the screen: the stage rides with the section until it pins, and after it releases.
+      const top = Math.min(Math.max(r.top - f.scroll, 0), r.top + r.height - f.scroll - stageH) + frameTop;
+      // A wipe rises from the frame's bottom edge, or from the screen's while that edge is still below it: `run` is the share of the frame above the bottom of the screen.
+      const run = frameH > 0 ? clamp((Math.min(f.vh, top + frameH) - top) / frameH) : 1;
+      shots.forEach((s, i) => {
+        const st = worksStudy(e, i, n, D);
+        setStyle(s.el, "clipPath", `inset(${((1 - st.inP) * run * 100).toFixed(2)}% 0 0 0)`);
+        if (s.img) {
+          setStyle(s.img, "transform", liftPercent(mix(6, -6, st.drift)));
+          setStyle(s.img, "filter", `brightness(${num(mix(1, 0.72, st.outP))})`);
         }
-        if (images[i]) setStyle(images[i], "transform", `translate3d(0, 100px, 0) scale(${num(worksImageScale(t))})`);
+      });
+      items.forEach((it, i) => {
+        const L = titleLines[i].length;
+        if (it.eyebrow) setStyle(it.eyebrow, "transform", liftPercent(worksLine(e, i, n, D, 0)));
+        titleLines[i].forEach((line, j) => setStyle(line, "transform", liftPercent(worksLine(e, i, n, D, j + 1))));
+        // The button travels 1.3 × as far, so its focus ring clears the mask too; it takes the pointer only while it is in place.
+        const by = worksLine(e, i, n, D, L + 1);
+        if (it.button) setStyle(it.button, "transform", liftPercent(by * 1.3));
+        if (it.link) setStyle(it.link, "pointerEvents", Math.abs(by) < 0.15 * MASK ? "auto" : "none");
       });
     },
     destroy() {
@@ -263,31 +308,44 @@ function works(): MotionModule | null {
   };
 }
 
-/* Values: pictures grow at their moment; one pinned title and description, ivory where they cross the picture. */
+/*
+ * Values: a word on screen all the way through. Every word and description
+ * is set (twice: ink, and ivory clipped to the pictures), stacked, and each
+ * rolls through its own mask at its value's moment, an odometer between
+ * two pictures; the pictures grow at their moment.
+ */
 function values(shared: Shared): MotionModule | null {
   const section = one("[data-values]");
+  const stage = section && one("[data-values-stage]", section);
   const mask = section && one("[data-values-mask]", section);
-  if (!section || !mask) return null;
+  if (!section || !stage || !mask) return null;
   const outers = all("[data-values-outer]", section);
   const frames = outers.map((o) => one("[data-values-frame]", o)!);
   const images = outers.map((o) => one("[data-values-image]", o)!);
-  const titles = all("[data-values-title]", section);
-  const descs = all("[data-values-desc]", section);
-  const data = outers.map((o) => ({ title: o.dataset.title ?? "", desc: o.dataset.desc ?? "" }));
+  const labels = all("[data-label-roll]", section);
+  // The ink copy first, then the ivory one inside the mask.
+  const copies = all(".values-text", stage).map((root) => ({ root, titles: all("[data-values-title]", root), rolls: all("[data-values-roll]", root), descs: all("[data-values-desc]", root) }));
+  const n = outers.length;
   let rSection: Range;
   let rOuters: Range[] = [];
   let rFrames: Range[] = [];
-  let active = 0;
-  let lines: HTMLElement[][] = descs.map(() => []);
+  let stageH = 0;
+  let lines: HTMLElement[][][] = copies.map((c) => c.descs.map(() => []));
 
-  const show = (i: number, f: Frame) => {
-    active = i;
-    for (const t of titles) t.textContent = data[i].title;
-    for (const d of descs) {
-      d.dataset.splitText = data[i].desc;
-      if (!f.tracks) d.textContent = data[i].desc;
-    }
-    lines = f.tracks ? descs.map(splitLines) : descs.map(() => []);
+  /** Below 1024px each word is fitted a little wider than the picture (frame × 1.3, within the gutters), the same size in both copies, so the picture's edges split every word. */
+  const fitTitles = (f: Frame, frameW: number) => {
+    for (const c of copies) c.titles.forEach((t) => setStyle(t, "fontSize", ""));
+    const ink = copies[0];
+    if (!ink || !f.tracks || f.vw >= 1024 || !frameW) return;
+    const gutter = parseFloat(getComputedStyle(ink.root).paddingLeft) || 0;
+    const target = Math.min(f.vw - 2 * gutter, frameW * 1.3);
+    // All reads first, then the writes.
+    const sizes = ink.rolls.map((el) => ({ w0: el.offsetWidth, base: parseFloat(getComputedStyle(el).fontSize) }));
+    sizes.forEach(({ w0, base }, i) => {
+      if (!w0 || !base) return;
+      const size = px(clamp((base * target) / w0, 0.85 * base, 1.9 * base));
+      for (const c of copies) if (c.titles[i]) setStyle(c.titles[i], "fontSize", size);
+    });
   };
 
   return {
@@ -296,23 +354,28 @@ function values(shared: Shared): MotionModule | null {
       rSection = measureRange(section);
       rOuters = outers.map(measureRange);
       rFrames = frames.map(measureRange);
-      if (f.tracks) lines = descs.map((d, i) => resplitIfNeeded(d, lines[i]));
-      else if (lines.some((l) => l.length)) {
-        descs.forEach(unsplit);
-        lines = descs.map(() => []);
+      stageH = stage.offsetHeight;
+      const frameW = rFrames[0]?.width ?? 0;
+      setStyle(stage, "--values-frame-w", f.tracks && frameW ? px(frameW) : "");
+      fitTitles(f, frameW);
+      // Split every description once here, never in a frame.
+      if (f.tracks) lines = copies.map((c, ci) => c.descs.map((d, i) => resplitIfNeeded(d, lines[ci]?.[i] ?? [])));
+      else if (lines.some((c) => c.some((l) => l.length))) {
+        copies.forEach((c) => c.descs.forEach(unsplit));
+        lines = copies.map((c) => c.descs.map(() => []));
       }
     },
     update(f) {
       if (!f.tracks) {
+        labels.forEach((el) => clear(el, "transform"));
         images.forEach((img) => clear(img, "transform", "filter"));
+        copies.forEach((c) => c.rolls.forEach((el) => clear(el, "transform")));
+        lines.forEach((c) => c.forEach((ls) => ls.forEach((line) => clear(line, "transform"))));
         return;
       }
+      // As the stage pins, with the first word.
+      labelRoll(labels, rSection, f, 0.62);
       const xs = rOuters.map((r) => (f.scroll - r.top) / f.vh);
-      let s = 0;
-      xs.forEach((x, i) => {
-        if (Math.abs(x) < Math.abs(xs[s])) s = i;
-      });
-      if (s !== active) show(s, f);
 
       images.forEach((img, i) => {
         const st = valuesImage(xs[i], shared.fade);
@@ -320,26 +383,28 @@ function values(shared: Shared): MotionModule | null {
         setStyle(img, "filter", `brightness(${num(st.brightness)})`);
       });
 
-      const tx = valuesText(xs[s]);
-      for (const t of titles) {
-        setStyle(t, "opacity", num(clamp(tx.titleOpacity)));
-        setStyle(t, "transform", lift(tx.titleY));
-      }
-      descs.forEach((d, k) => {
-        setStyle(d, "opacity", num(tx.descOpacity));
-        setStyle(d, "transform", lift(tx.descY));
-        lines[k].forEach((line, j) => setStyle(line, "transform", liftPercent(valuesLine(tx.a, j, lines[k].length).yPercent)));
+      // Every word and description line from its own value's x, in both copies.
+      xs.forEach((x, i) => {
+        const y = liftPercent(valuesTitle(x, i, n));
+        for (const c of copies) if (c.rolls[i]) setStyle(c.rolls[i], "transform", y);
       });
+      lines.forEach((c) => c.forEach((ls, i) => ls.forEach((line, k) => setStyle(line, "transform", liftPercent(valuesDescLine(xs[i], i, n, k))))));
 
-      // Clip the ivory copy to the active picture's outline, as it is drawn right now.
-      const fr = rFrames[s];
-      const scale = valuesImage(xs[s], 0).scale;
-      const w = fr.width * scale;
-      const h = fr.height * scale;
-      const cx = fr.left + fr.width / 2;
-      const cy = fr.top - f.scroll + fr.height / 2;
-      const stageTop = Math.min(Math.max(rSection.top - f.scroll, 0), rSection.top + rSection.height - f.scroll - f.vh);
-      setStyle(mask, "clipPath", `inset(${px(cy - h / 2 - stageTop)} ${px(f.vw - (cx + w / 2))} ${px(stageTop + f.vh - (cy + h / 2))} ${px(cx - w / 2)})`);
+      // Clip the ivory copy to every picture on screen, as each is drawn right now, in the stage's own px.
+      const stageTop = Math.min(Math.max(rSection.top - f.scroll, 0), rSection.top + rSection.height - f.scroll - stageH);
+      let d = "";
+      xs.forEach((x, i) => {
+        const fr = rFrames[i];
+        if (!fr || Math.abs(x) >= 1.2) return;
+        const scale = valuesImage(x, 0).scale;
+        const w = fr.width * scale;
+        const h = fr.height * scale;
+        const cx = fr.left + fr.width / 2;
+        const cy = fr.top - f.scroll + fr.height / 2 - stageTop;
+        const [l, t, rr, b] = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2].map((v) => v.toFixed(2));
+        d += `M${l} ${t}H${rr}V${b}H${l}Z`;
+      });
+      setStyle(mask, "clipPath", d ? `path('${d}')` : "inset(50%)");
     },
   };
 }
