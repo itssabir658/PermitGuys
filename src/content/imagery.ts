@@ -198,6 +198,19 @@ export const plates = {
 export type PlateKey = keyof typeof plates;
 
 /**
+ * The homepage hero's planes, cut from the terrace rendering at its own size
+ * and crops (docs/IMAGES.md, "The hero's layers"). The sky is the rendering
+ * with the house, the pine and the garden taken out and the sky rebuilt
+ * behind them; the matte is the alpha of what stands in front of the name
+ * (the house, the pine, the trees on the left and the ground), which masks
+ * the rendering itself. Both have a tall crop, as the rendering does.
+ */
+export const heroLayers = {
+  sky: { src: "/images/projects/contemporary-house-terrace-sky.jpg", tall: "/images/projects/contemporary-house-terrace-tall-sky.jpg" },
+  matte: { src: "/images/projects/contemporary-house-terrace-matte.webp", tall: "/images/projects/contemporary-house-terrace-tall-matte.webp" },
+};
+
+/**
  * The client projects, as shown on the projects page. Each has one or two
  * views (never more), and its id is the anchor there: a description of the
  * house, never an address.

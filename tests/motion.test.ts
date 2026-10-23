@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CREAM,
+  HERO_DEPTH,
   MASK,
   NIGHT,
   ORBIT,
@@ -189,7 +192,7 @@ describe("motion vocabulary", () => {
 describe("homepage choreography", () => {
   it("hero: nothing has moved at the top, and the first scroll already moves the statement and the picture", () => {
     const top = heroState(0, 0, VH);
-    expect(top).toEqual({ nameRoll: 0, headingY: -0, subRoll: [0, 0], figOpacity: 1, imageScale: 1, imageY: -0, dim: 0 });
+    expect(top).toEqual({ nameRoll: 0, headingY: -0, subRoll: [0, 0], figOpacity: 1, imageScale: 1, imageY: -0, skyScale: 1, skyY: -0, dim: 0 });
     // Before the track starts, the same.
     expect(heroState(-500, 0, VH)).toEqual(top);
     const notch = heroState(0.05 * VH, 0, VH);
@@ -225,6 +228,34 @@ describe("homepage choreography", () => {
     const mid = heroState(0.75 * VH, 0, VH);
     expect(mid.imageScale).toBeCloseTo(1.04);
     expect(mid.dim).toBeCloseTo(0.225);
+  });
+
+  it("hero: the sky recedes less than the house, and neither plane's edge ever shows", () => {
+    const pinned = heroState(1.5 * VH, 0, VH);
+    expect(pinned.skyScale).toBeCloseTo(1.03);
+    expect(pinned.skyY).toBeCloseTo(-0.015 * VH);
+    for (let s = 0; s <= 2.5; s += 0.05) {
+      const h = heroState(s * VH, 0, VH);
+      // The house moves more than the sky, so the sky slides behind the roof.
+      expect(h.imageScale).toBeGreaterThanOrEqual(h.skyScale);
+      expect(h.imageY).toBeLessThanOrEqual(h.skyY);
+      // Grown about the centre, each plane's bottom edge stays below the stage's as it drifts up.
+      expect(((h.imageScale - 1) / 2) * VH + h.imageY).toBeGreaterThanOrEqual(-1e-9);
+      expect(((h.skyScale - 1) / 2) * VH + h.skyY).toBeGreaterThanOrEqual(-1e-9);
+    }
+  });
+
+  it("hero: the planes move with the pointer only inside the stylesheet's overscan, and the name keeps clear of the roof's sway", () => {
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    const depth = css.match(/:root\[data-motion\] \.hero-stage \{\s*--z: ([\d.]+);\s*--sway: ([\d.]+)cqw;\s*--sway-y: ([\d.]+)cqh;/);
+    expect(depth).not.toBeNull();
+    const [z, sway, swayY] = [Number(depth![1]), Number(depth![2]), Number(depth![3])];
+    expect(sway / 100).toBeCloseTo(HERO_DEPTH.nearX);
+    expect(swayY / 100).toBeCloseTo(HERO_DEPTH.nearY);
+    for (const amount of [HERO_DEPTH.nearX, HERO_DEPTH.nearY, HERO_DEPTH.farX, HERO_DEPTH.farY]) expect(amount).toBeLessThanOrEqual((z - 1) / 2);
+    // The sky moves the other way, and less.
+    expect(HERO_DEPTH.farX).toBeLessThan(HERO_DEPTH.nearX);
+    expect(HERO_DEPTH.farY).toBeLessThan(HERO_DEPTH.nearY);
   });
 
   it("intro track follows from the number of paragraphs, releasing 0.4 screen into the fling", () => {

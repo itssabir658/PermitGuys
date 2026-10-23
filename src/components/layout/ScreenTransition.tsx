@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
+import { openingAssets } from "@/lib/motion/opening";
 import { OntarioOutline } from "./OntarioOutline";
 
 /*
@@ -17,8 +18,8 @@ import { OntarioOutline } from "./OntarioOutline";
  * and the GTA dot pops as the last stroke closes, so the drawing comes up
  * with the sheet. The next page is requested only once the drawing is done
  * (about 0.85s), so React's commit never freezes a line half drawn.
- * Hold: two frames, and the new page's opening picture decoded (0.9s at
- * most).
+ * Hold: two frames, and the new page's opening pictures decoded (0.9s at
+ * most; openingAssets).
  * Out: the sheet leaves through the top (0.6s, power2.inOut, which gets
  * going sooner than the cover's ease) as the dimming clears (0.3s), so the
  * new page is never seen through a grey veil. The drawing stays on the
@@ -146,11 +147,9 @@ const frames = (n: number) => new Promise<void>((resolve) => {
 });
 const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
-/** The new page is ready to be shown: laid out, and its opening picture decoded (not waited for past the cap). */
+/** The new page is ready to be shown: laid out, and its opening pictures decoded (not waited for past the cap). */
 function arrived() {
-  const picture = document.querySelector<HTMLImageElement>("main img[fetchpriority=high], [data-hero-image] img");
-  const decoded = picture ? picture.decode().catch(() => undefined) : undefined;
-  return Promise.race([Promise.all([frames(2), decoded]), wait(HOLD_CAP_MS)]);
+  return Promise.race([Promise.all([frames(2), ...openingAssets()]), wait(HOLD_CAP_MS)]);
 }
 
 export function ScreenTransition() {

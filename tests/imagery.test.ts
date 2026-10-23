@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PROJECT_NOTE, STUDY_NOTE, clientProjects, coverWidth, coverWidthByHeight, plateForService, plateNote, plates, projectOf, type Plate } from "@/content/imagery";
+import { PROJECT_NOTE, STUDY_NOTE, clientProjects, coverWidth, coverWidthByHeight, heroLayers, plateForService, plateNote, plates, projectOf, type Plate } from "@/content/imagery";
 import { getServices } from "@/lib/content";
 
 const all: Plate[] = Object.values(plates);
@@ -21,11 +21,34 @@ function jpegSize(src: string) {
   throw new Error(`${src}: no frame header`);
 }
 
+/** Width and height from a lossless WebP's header (VP8L), or an extended one's canvas (VP8X). */
+function webpSize(src: string) {
+  const buf = readFileSync(join(process.cwd(), "public", src));
+  if (buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WEBP") throw new Error(`${src}: not a WebP`);
+  const chunk = buf.toString("ascii", 12, 16);
+  if (chunk === "VP8L") {
+    const bits = buf.readUInt32LE(21);
+    return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
+  }
+  if (chunk === "VP8X") return { width: buf.readUIntLE(24, 3) + 1, height: buf.readUIntLE(27, 3) + 1 };
+  throw new Error(`${src}: unexpected ${chunk} chunk`);
+}
+
 describe("imagery", () => {
   it("every picture is on disk at the size it declares, tall crops included", () => {
     for (const p of all) {
       expect(jpegSize(p.src), p.src).toEqual({ width: p.width, height: p.height });
       if (p.tall) expect(jpegSize(p.tall.src), p.tall.src).toEqual({ width: p.tall.width, height: p.tall.height });
+    }
+  });
+
+  it("cuts the hero's planes from its picture at the picture's own size, for each crop", () => {
+    const { terrace } = plates;
+    const sizes = { src: { width: terrace.width, height: terrace.height }, tall: { width: terrace.tall!.width, height: terrace.tall!.height } };
+    for (const crop of ["src", "tall"] as const) {
+      expect(jpegSize(heroLayers.sky[crop]), heroLayers.sky[crop]).toEqual(sizes[crop]);
+      expect(webpSize(heroLayers.matte[crop]), heroLayers.matte[crop]).toEqual(sizes[crop]);
+      for (const path of [heroLayers.sky[crop], heroLayers.matte[crop]]) expect(path).not.toMatch(/\d/);
     }
   });
 

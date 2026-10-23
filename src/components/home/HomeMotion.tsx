@@ -10,6 +10,7 @@ import {
   contactPicture,
   contactRise,
   headerGround,
+  HERO_DEPTH,
   heroState,
   introCopy,
   introLine,
@@ -172,38 +173,80 @@ function ground(shared: Shared): MotionModule | null {
   };
 }
 
-/* Hero: the statement and the name leave upward through their masks while the picture recedes under the intro's sheet. */
+/*
+ * Hero: three planes. Under a fine pointer the house moves against the
+ * pointer and the sky with it, the name holding still between them; on the
+ * way out the statement and the name leave upward through their masks while
+ * the house and the sky recede under the intro's sheet, each at its own
+ * depth. The stylesheet gives the planes room to move (--z, read here) only
+ * for fine pointers on the tracks, so elsewhere they never follow it.
+ */
 function hero(): MotionModule | null {
   const section = one("[data-home-hero]");
+  const stage = one("[data-hero-stage]");
   const heading = one("[data-hero-heading]");
-  const image = one("[data-hero-image]");
-  const dim = one("[data-hero-dim]");
+  const near = one('[data-hero-layer="near"]');
+  const far = one('[data-hero-layer="far"]');
   const fig = one(".hero-fig");
-  if (!section || !heading || !image || !dim || !fig) return null;
+  if (!section || !stage || !heading || !near || !far || !fig) return null;
+  const dims = all("[data-hero-dim]", section);
   // The name first, then the two statement lines.
   const [name, ...subs] = all("[data-hero-roll]", section);
   let r: Range;
+  let z = 1;
+  let w = 0;
+  let h = 0;
+  // Where the pointer is (−1 to 1 across the window, 0 once it leaves) and where the planes have got to on their way to it.
+  const aim = { x: 0, y: 0 };
+  const at = { x: 0, y: 0 };
+  const onMove = (e: PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    aim.x = clamp((e.clientX / window.innerWidth) * 2 - 1, -1, 1);
+    aim.y = clamp((e.clientY / window.innerHeight) * 2 - 1, -1, 1);
+  };
+  const onOut = (e: MouseEvent) => {
+    if (!e.relatedTarget) aim.x = aim.y = 0;
+  };
+  window.addEventListener("pointermove", onMove, { passive: true });
+  document.addEventListener("mouseout", onOut);
   return {
     order: ORDER.hero,
     measure() {
       r = measureRange(section);
+      z = parseFloat(getComputedStyle(stage).getPropertyValue("--z")) || 1;
+      w = stage.clientWidth;
+      h = stage.clientHeight;
     },
     update(f) {
       if (!f.tracks) {
         clear(heading, "transform");
         [name, ...subs].forEach((el) => el && clear(el, "transform"));
         clear(fig, "opacity");
-        clear(image, "transform");
-        clear(dim, "opacity");
+        clear(near, "transform");
+        clear(far, "transform");
+        dims.forEach((el) => clear(el, "opacity"));
+        at.x = at.y = 0;
         return;
       }
       const s = heroState(f.scroll, r.top, f.vh);
+      // The planes follow the pointer while the stage is on screen; once the intro covers it they hold where they are.
+      if (f.scroll < r.top + r.height) {
+        const k = 1 - Math.exp(-f.dt * HERO_DEPTH.rate);
+        const depth = z > 1 ? 1 : 0;
+        at.x += (aim.x * depth - at.x) * k;
+        at.y += (aim.y * depth - at.y) * k;
+      }
       setStyle(heading, "transform", lift(s.headingY));
       if (name) setStyle(name, "transform", liftPercent(s.nameRoll));
       subs.forEach((el, i) => setStyle(el, "transform", liftPercent(s.subRoll[i] ?? 0)));
       setStyle(fig, "opacity", num(s.figOpacity));
-      setStyle(image, "transform", `translate3d(0, ${px(s.imageY)}, 0) scale(${num(s.imageScale)})`);
-      setStyle(dim, "opacity", num(s.dim));
+      setStyle(near, "transform", `translate3d(${px(-at.x * HERO_DEPTH.nearX * w)}, ${px(s.imageY - at.y * HERO_DEPTH.nearY * h)}, 0) scale(${num(z * s.imageScale)})`);
+      setStyle(far, "transform", `translate3d(${px(at.x * HERO_DEPTH.farX * w)}, ${px(s.skyY + at.y * HERO_DEPTH.farY * h)}, 0) scale(${num(z * s.skyScale)})`);
+      dims.forEach((el) => setStyle(el, "opacity", num(s.dim)));
+    },
+    destroy() {
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("mouseout", onOut);
     },
   };
 }

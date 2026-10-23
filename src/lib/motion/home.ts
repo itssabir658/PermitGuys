@@ -47,7 +47,10 @@ export function roll(inP: number, outP: number) {
  * since the sheet arrives at its edge (0.02 → 0.37); the name follows,
  * gone by 0.72, before the sheet reaches it, lifting 0.08 screen as it
  * goes. The caption fades by 0.3. The picture recedes under the sheet the
- * whole time: it drifts up, grows 8% and darkens.
+ * whole time, each plane at its own depth: the house drifts up 0.04 screen,
+ * grows 8% and darkens, the sky drifts 0.015 screen and grows 3%, so the
+ * sky slides behind the roof. Each plane's growth covers its drift, so no
+ * edge ever shows.
  */
 export function heroState(scroll: number, top: number, vh: number) {
   const s = Math.max(0, (scroll - top) / vh);
@@ -60,9 +63,23 @@ export function heroState(scroll: number, top: number, vh: number) {
     figOpacity: 1 - tween(s, 0, 0.3),
     imageScale: 1 + 0.08 * pic,
     imageY: -0.04 * vh * pic,
+    skyScale: 1 + 0.03 * pic,
+    skyY: -0.015 * vh * pic,
     dim: 0.45 * pic,
   };
 }
+
+/**
+ * The hero's depth under a fine pointer (HomeMotion, hero module): at full
+ * deflection the house (the near plane) moves against the pointer by these
+ * fractions of the stage's width and height, and the sky with it, while the
+ * name holds still between them. The planes follow at `rate` (an
+ * exponential approach, per second) and settle back when the pointer leaves
+ * the window. Keep nearX and nearY in step with --sway and --sway-y in
+ * globals.css, which keep the roof's wedge under R to T as the house moves,
+ * and the overscan there (--z, 1.04) at least 1 + 2 × each amount.
+ */
+export const HERO_DEPTH = { nearX: 0.015, nearY: 0.008, farX: 0.009, farY: 0.005, rate: 5 };
 
 /* ---- Intro orbit (510vh track for two paragraphs, 100vh sticky stage) ---- */
 

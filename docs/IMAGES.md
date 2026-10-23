@@ -21,7 +21,7 @@ Preparation:
 
 - Each file was converted from its embedded colour profile (several were Adobe RGB) to sRGB.
 - Each was resized to between 2800 and 3800px wide, stripped of metadata and saved as a progressive JPEG at quality 84.
-- The hero also has a tall crop of its picture for narrow portrait screens (the plate's `tall`).
+- The hero also has a tall crop of its picture for narrow portrait screens (the plate's `tall`), and is split into planes (below).
 - next/image serves resized AVIF and WebP copies.
 
 Where they appear:
@@ -30,6 +30,14 @@ Where they appear:
 - The bands on the services, how it works, about and service areas pages.
 - The custom home permits page.
 - All of them on the projects page, where `clientProjects` lists each project and its views. The anchors there are linked from Selected projects, and every service page links to the page from "Examples of our work" until it has approved case studies.
+
+### The hero's layers
+
+The homepage hero stands the name behind the house, so the terrace rendering is used in planes (`heroLayers` in `src/content/imagery.ts`), each at the picture's own size and with its own tall crop:
+
+- **The matte** (`contemporary-house-terrace-matte.webp`, `-tall-matte.webp`): what stands in front of the name (the house, the pine, the trees on the left and the ground) as an 8-bit alpha, saved as lossless WebP. The roofline and the walls were traced as polygons on edges fitted to the picture, so the roof's edge is crisp; the pine's and the trees' needles were keyed against the sky by brightness and hardened, so thin needles do not wash out. It masks the rendering itself (a CSS mask), so the house in front is the original picture.
+- **The sky** (`contemporary-house-terrace-sky.jpg`, `-tall-sky.jpg`): the rendering with everything the matte keeps taken out and the sky rebuilt into the gap from the sky around it (a push-pull fill), with the distant trees on the right and the birds kept. Only a narrow band of the rebuilt part ever shows, where the house uncovers it as it moves, and no ghost of the roof is left in it.
+- **The geometry** the stylesheet places the name by was measured on the same picture: the roof's peak (1639.8, 456.4), the chimney's edge (x 900) and the roof's slopes either side of the peak (0.4728 and 0.1854), in the picture's pixels (`globals.css`, "Hero"). A different hero picture needs its own matte, sky and numbers.
 
 ### The story drawing
 
