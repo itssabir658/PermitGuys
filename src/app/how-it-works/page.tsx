@@ -88,7 +88,8 @@ export default function HowItWorksPage() {
           />
         </ArticleSection>
       </ArticleLayout>
-      <CtaPanel />
+      {/* This page is the panel's usual second action, so it offers the services instead. */}
+      <CtaPanel secondary={{ href: paths.services, label: "Explore services" }} />
     </>
   );
 }

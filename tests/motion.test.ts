@@ -10,7 +10,10 @@ import {
   VALUES_CAP,
   WORKS,
   WORKS_BUTTON,
-  contactReveal,
+  SERVICES_LEAD,
+  SERVICES_WIPE,
+  contactCard,
+  contactLetter,
   headerGround,
   heroState,
   introCopy,
@@ -21,10 +24,18 @@ import {
   orbitPath,
   pageGround,
   pathAt,
+  riseInset,
   roll,
-  servicesHeadingLine,
+  servicesHandover,
+  servicesHeading,
+  servicesIndex,
+  servicesLead,
   servicesReveal,
-  servicesW,
+  servicesRow,
+  swapK,
+  swapLayer,
+  swapSettle,
+  swapTo,
   valuesDescLine,
   valuesImage,
   valuesTitle,
@@ -32,7 +43,9 @@ import {
   worksButton,
   worksLine,
   worksStudy,
+  type SwapLayer,
 } from "@/lib/motion/home";
+import { footerDot, footerDraw, footerLift, footerProgress, footerStroke } from "@/lib/motion/footer";
 import { clamp, cssEase, damp, ease, fit, fromOklab, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
 
 /* The homepage choreography, measured at 1440×900. */
@@ -128,8 +141,12 @@ describe("motion vocabulary", () => {
   });
 
   it("every homepage masked line uses the shared travel", () => {
-    expect(servicesHeadingLine(0, 0, 2).yPercent).toBe(MASK);
-    expect(servicesHeadingLine(1, 1, 2).yPercent).toBe(0);
+    expect(servicesHeading(0, 0)).toBe(MASK);
+    expect(servicesHeading(1, 1)).toBe(0);
+    expect(servicesRow(0, 0).y).toBe(MASK);
+    expect(servicesRow(1.04, 6).y).toBe(0);
+    expect(contactLetter(0, 0)).toBe(MASK);
+    expect(contactLetter(1, 6)).toBe(0);
     expect(valuesTitle(-1, 1, 4)).toBe(MASK);
     expect(valuesTitle(0, 1, 4)).toBe(0);
     expect(valuesTitle(1, 1, 4)).toBe(-MASK);
@@ -705,11 +722,15 @@ describe("homepage choreography", () => {
     // Works' last 0.35 screen hands back to cream, finished as its bottom reaches the top.
     expect(pageGround(4, -0.35, -10).color).toBe(STONE);
     expect(pageGround(5, 0, -10).color).toBe(CREAM);
-    // Dusk falls over the first content of Services (sso 0.25 → 0.55) and stays night after it.
-    expect(pageGround(10, 6, 0.25)).toEqual({ fade: 0, color: CREAM });
-    expect(pageGround(10, 6, 0.55)).toEqual({ fade: 1, color: NIGHT });
+    // Dusk falls quickly as Services comes up (sso 0.24 → 0.46) and stays night after it.
+    expect(pageGround(10, 6, 0.24)).toEqual({ fade: 0, color: CREAM });
+    expect(pageGround(10, 6, 0.46)).toEqual({ fade: 1, color: NIGHT });
     expect(pageGround(10, 6, 4).color).toBe(NIGHT);
-    expect(pageGround(10, 6, 0.4).fade).toBeCloseTo(0.5);
+    expect(pageGround(10, 6, 0.35).fade).toBeCloseTo(0.5);
+    // The last Values word has gone just as the dusk passes its middle.
+    expect(valuesTitle(0.36, 3, 4)).toBeCloseTo(-MASK);
+    expect(pageGround(10, 6, 0.36).fade).toBeGreaterThan(0.5);
+    expect(pageGround(10, 6, 0.3).fade).toBeLessThan(0.3);
   });
 
   it("the stone ground changes only in two short windows", () => {
@@ -720,7 +741,7 @@ describe("homepage choreography", () => {
 
   it("the header reads the ground until Contact's ivory reaches it, then ivory, never the night behind Contact", () => {
     const night = pageGround(10, 6, 4);
-    const dusk = pageGround(10, 6, 0.4);
+    const dusk = pageGround(10, 6, 0.35);
     // Over Services the header sits on the ground, light on dark once the dusk is past half.
     expect(headerGround(night, 400)).toEqual({ night: true, color: NIGHT });
     expect(headerGround(dusk, 900)).toEqual({ night: dusk.fade > 0.5, color: dusk.color });
@@ -732,15 +753,186 @@ describe("homepage choreography", () => {
     expect(headerGround(night, -5000).color).toBe(CREAM);
   });
 
-  it("services frame wipes up and settles from a zoom; items stagger 0.04 of a screen", () => {
-    expect(servicesReveal(0)).toEqual({ r: 0, inset: 100, scale: 1.15 });
-    expect(servicesReveal(1)).toEqual({ r: 1, inset: 0, scale: 1 });
-    expect(servicesW(0.24, 1)).toBe(0);
-    expect(servicesW(0.84, 1)).toBe(1);
+  it("services picture: its sheet rises from the bottom of the screen as the frame shows, and settles from a zoom", () => {
+    expect(servicesReveal(0)).toEqual({ r: 0, scale: 1.2, y: 6 });
+    expect(servicesReveal(0.52)).toEqual({ r: 1, scale: 1, y: 0 });
+    // An entrance: most of it early, the last of it settling slowly.
+    expect(servicesReveal(0.27).r).toBeGreaterThan(0.9);
+    for (const x of range(0, 0.6, 0.01)) expect(servicesReveal(x + 0.01).r).toBeGreaterThanOrEqual(servicesReveal(x).r);
+    // While the frame's bottom edge is below the screen, the sheet's edge starts at the bottom of the screen and rises to the frame's top.
+    const h = 558;
+    for (const top of [100, 500, 800, 899]) {
+      const edge = (p: number) => top + (riseInset(p, top, h, VH) / 100) * h;
+      expect(edge(0)).toBeCloseTo(Math.min(VH, top + h));
+      expect(edge(1)).toBeCloseTo(top);
+      for (const p of range(0, 0.95, 0.05)) expect(edge(p + 0.05)).toBeLessThan(edge(p));
+    }
+    // A frame wholly below the screen, or wholly on it.
+    expect(riseInset(0, 1000, h, VH)).toBe(0);
+    expect(riseInset(0.25, 100, h, VH)).toBeCloseTo(75);
   });
 
-  it("contact pieces rise 28px and fade in between 0.08 and 0.42", () => {
-    expect(contactReveal(0.08)).toEqual({ opacity: 0, y: 28 });
-    expect(contactReveal(0.42)).toEqual({ opacity: 1, y: 0 });
+  it("services heading: its lines rise only once the dusk is past half, so ivory type never sits on a pale ground", () => {
+    for (const s of range(0, 1.2, 0.01)) {
+      if (servicesHeading(s, 0) < MASK) expect(pageGround(10, 6, s).fade).toBeGreaterThan(0.5);
+    }
+    for (const j of [0, 1, 2]) expect(servicesHeading(0.82, j)).toBe(0);
+    // Line by line, 0.06 apart.
+    expect(servicesHeading(0.6, 1)).toBeGreaterThan(servicesHeading(0.6, 0));
+  });
+
+  it("services rows: a quick cascade, all seven whole the moment the stage pins, and never faded", () => {
+    for (let i = 0; i < 7; i++) expect(servicesRow(0.98, i)).toEqual({ t: 1, y: 0, meta: 1 });
+    expect(servicesRow(0.44, 0)).toEqual({ t: 0, y: MASK, meta: 0 });
+    for (const s of range(0.4, 1.1, 0.01)) {
+      for (let i = 1; i < 7; i++) {
+        // Each row a step behind the one above it: 0.04 of a screen.
+        expect(servicesRow(s, i).y).toBeGreaterThanOrEqual(servicesRow(s, i - 1).y);
+        expect(servicesRow(s, i).t).toBeCloseTo(servicesRow(s - 0.04, i - 1).t, 9);
+      }
+      // The number and tag follow the label: they start once it is most of the way up.
+      for (let i = 0; i < 7; i++) if (servicesRow(s, i).meta > 0) expect(servicesRow(s, i).t).toBeGreaterThan(0.7);
+    }
+  });
+
+  it("services lead: the stage rides 0.3 screen ahead through the dusk and settles into the pin", () => {
+    expect(servicesLead(-2)).toBe(SERVICES_LEAD);
+    expect(servicesLead(0.4)).toBe(SERVICES_LEAD);
+    expect(servicesLead(1)).toBe(0);
+    expect(servicesLead(3)).toBe(0);
+    // On the screen the stage only ever rises (its top at (1 − s − lead) screens), slowing to a stop as it pins.
+    const at = (s: number) => 1 - s - servicesLead(s);
+    for (const s of range(-0.5, 1.2, 0.01)) expect(at(s + 0.01)).toBeLessThanOrEqual(at(s) + 1e-12);
+    const speed = (s: number) => (at(s - 0.001) - at(s + 0.001)) / 0.002;
+    expect(speed(0.2)).toBeCloseTo(1, 5);
+    expect(speed(0.7)).toBeCloseTo(0.5, 2);
+    expect(speed(0.999)).toBeLessThan(0.01);
+  });
+
+  it("services index: the two-screen hold is shared evenly between the rows", () => {
+    const top = 14.8 * VH;
+    const height = 3 * VH;
+    expect(servicesIndex(top - VH, top, height, VH, 7)).toBe(0);
+    expect(servicesIndex(top + 2 * VH, top, height, VH, 7)).toBe(6);
+    expect(servicesIndex(top + 5 * VH, top, height, VH, 7)).toBe(6);
+    for (let k = 0; k < 7; k++) expect(servicesIndex(top + ((k + 0.5) / 7) * 2 * VH, top, height, VH, 7)).toBe(k);
+  });
+
+  it("services swap: the new picture's sheet rises over the last, which darkens under it", () => {
+    const start = [{ i: 0, from: 1, t0: 0, dir: 1 as const }];
+    const stack = swapTo(start, 3, 10);
+    expect(stack.map((l) => l.i)).toEqual([0, 3]);
+    expect(swapK(stack[1], 10)).toBe(0);
+    expect(swapK(stack[1], 10 + SERVICES_WIPE)).toBe(1);
+    expect(swapK(stack[1], 10 + SERVICES_WIPE / 2)).toBeGreaterThan(0.9);
+    // Once it is up, the picture under it goes.
+    expect(swapSettle(stack, 10.3).map((l) => l.i)).toEqual([0, 3]);
+    expect(swapSettle(stack, 10 + SERVICES_WIPE).map((l) => l.i)).toEqual([3]);
+    expect(swapLayer(0, 0)).toEqual({ clip: 100, scale: 1.08, brightness: 1 });
+    expect(swapLayer(1, 1)).toEqual({ clip: 0, scale: 1, brightness: 0.7 });
+    // Asking for the picture already in front changes nothing.
+    expect(swapTo(stack, 3, 10.2)).toEqual(stack);
+    // Reduced motion: at once.
+    expect(swapSettle(swapTo(start, 2, 5, true), 5, true).map((l) => l.i)).toEqual([2]);
+  });
+
+  it("services swap: a new row mid-wipe never cuts; the sheet under it keeps rising, and going back slides it down again", () => {
+    const start = [{ i: 0, from: 1, t0: 0, dir: 1 as const }];
+    const mid = swapTo(swapTo(start, 1, 10), 2, 10.15);
+    expect(mid.map((l) => l.i)).toEqual([0, 1, 2]);
+    // The interrupted sheet carries on, on its own clock.
+    expect(swapK(mid[1], 10.3)).toBeGreaterThan(swapK(mid[1], 10.15));
+    expect(swapSettle(mid, 10.15 + SERVICES_WIPE).map((l) => l.i)).toEqual([2]);
+    // A hover onto row 1 and straight back to row 0: row 1's sheet slides back down from where it was, uncovering row 0.
+    const there = swapTo(start, 1, 10);
+    const back = swapTo(there, 0, 10.2);
+    expect(back.map((l) => l.i)).toEqual([0, 1]);
+    expect(swapK(back[1], 10.2)).toBeCloseTo(swapK(there[1], 10.2));
+    expect(swapK(back[1], 10.5)).toBeLessThan(swapK(back[1], 10.2));
+    expect(swapSettle(back, 10.2 + SERVICES_WIPE).map((l) => l.i)).toEqual([0]);
+    // Whatever the sequence, the bottom of the stack is a whole picture, so the frame never shows through.
+    let st: SwapLayer[] = start;
+    let t = 20;
+    for (const target of [1, 2, 1, 4, 0, 0, 6, 5, 6, 3, 2, 2, 1]) {
+      t += 0.05 + (target % 3) * 0.12;
+      st = swapSettle(swapTo(st, target, t), t);
+      expect(st[0].dir).toBe(1);
+      expect(swapK(st[0], t)).toBe(1);
+      // In front: the topmost sheet still rising (any above it are sliding back down).
+      expect(st.filter((l) => l.dir > 0).pop()?.i).toBe(target);
+    }
+  });
+
+  it("services to contact: Services sinks 0.35 screen behind the rising sheet and dims to 0.45", () => {
+    expect(servicesHandover(0)).toEqual({ lift: 0, opacity: 1 });
+    expect(servicesHandover(1).lift).toBe(0.35);
+    expect(servicesHandover(1).opacity).toBeCloseTo(0.45);
+    expect(servicesHandover(-1)).toEqual({ lift: 0, opacity: 1 });
+    expect(servicesHandover(3).lift).toBe(0.35);
+  });
+
+  it("contact: the word is cut in letter by letter, left to right, without fading", () => {
+    for (let i = 0; i < 7; i++) {
+      expect(contactLetter(0.04 + i * 0.03, i)).toBe(MASK);
+      expect(contactLetter(0.56, i)).toBe(0);
+    }
+    for (const s of range(0, 0.6, 0.01)) for (let i = 1; i < 7; i++) expect(contactLetter(s, i)).toBeGreaterThanOrEqual(contactLetter(s, i - 1));
+  });
+
+  it("contact cards rise 48px, the block fading in over the first 40%, the right card a beat behind", () => {
+    expect(contactCard(0.06, 0)).toEqual({ t: 0, y: 48, opacity: 0, scale: 1.12 });
+    expect(contactCard(0.44, 0)).toEqual({ t: 1, y: 0, opacity: 1, scale: 1 });
+    expect(contactCard(0.5, 1)).toEqual({ t: 1, y: 0, opacity: 1, scale: 1 });
+    for (const s of range(0, 0.6, 0.01)) expect(contactCard(s, 1).t).toBeCloseTo(contactCard(s - 0.06, 0).t, 9);
+    // Opaque once its picture's sheet is 40% up.
+    const at = range(0.06, 0.44, 0.001).find((s) => contactCard(s, 0).opacity === 1)!;
+    expect(contactCard(at, 0).t).toBeCloseTo(0.4, 2);
+  });
+});
+
+describe("footer", () => {
+  const range = (from: number, to: number, by: number) => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
+  // At 1440×900: a footer 1000px tall at the end of the page.
+  const top = 20000;
+  const height = 1000;
+  const end = top + height;
+
+  it("comes up 0 → 1 from its top at the bottom of the screen until it fills it, or until the page ends", () => {
+    expect(footerProgress(top - VH, VH, top, height, end)).toBe(0);
+    expect(footerProgress(top, VH, top, height, end)).toBe(1);
+    // A short footer at the end of the page: 1 at the last scroll position.
+    expect(footerProgress(top + 700 - VH, VH, top, 700, top + 700)).toBe(1);
+    expect(footerProgress(top + 350 - VH, VH, top, 700, top + 700)).toBeCloseTo(0.5);
+    // A short page whose footer is on screen at the top still reaches 1 at its end.
+    expect(footerProgress(200, VH, 600, 500, 1100)).toBe(1);
+    expect(footerProgress(0, VH, 600, 500, 1100)).toBeCloseTo(0.6);
+  });
+
+  it("its content rises out from under the sheet above, in place at 1 and never more than 0.3 screen", () => {
+    expect(footerLift(0, 756, VH)).toBeCloseTo(-0.3 * 756);
+    expect(footerLift(1, 756, VH)).toBeCloseTo(0);
+    expect(footerLift(0, 1600, 844)).toBeCloseTo(-0.3 * 844);
+    expect(footerLift(2, 1600, 844)).toBeCloseTo(0);
+  });
+
+  it("the outline draws while it is on screen, mainland first, the GTA dot landing last", () => {
+    // Outline 360px tall, its top 112px into the footer.
+    const mt = top + 112;
+    expect(footerDraw(mt - VH, VH, mt, 360, end)).toBe(0);
+    expect(footerDraw(mt + 360 + 0.3 * VH - VH, VH, mt, 360, end)).toBeCloseTo(1);
+    // On a phone, where the footer is taller than the screen, it is drawn before it leaves the top.
+    const phone = footerDraw(mt + 360 - 844 + 0.3 * 844, 844, mt, 360, top + 1600);
+    expect(phone).toBe(1);
+    // Near the end of a short page it is drawn by the last scroll position.
+    expect(footerDraw(end - VH, VH, end - 300, 360, end)).toBe(1);
+    for (let i = 0; i < 5; i++) {
+      expect(footerStroke(0, i)).toBe(1);
+      expect(footerStroke(1, i)).toBe(0);
+      if (i) for (const d of range(0, 1, 0.02)) expect(footerStroke(d, i)).toBeGreaterThanOrEqual(footerStroke(d, i - 1));
+    }
+    expect(footerDot(0.7)).toBe(0);
+    expect(footerDot(0.9)).toBe(1);
+    // The dot lands after the mainland is drawn.
+    expect(footerStroke(0.7, 0)).toBeLessThan(0.05);
   });
 });

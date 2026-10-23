@@ -56,7 +56,8 @@ export default async function ContactPage() {
       />
       <Container className="pt-10 pb-24 sm:pb-32 lg:pt-14 lg:pb-40">
         <div className="grid gap-20 lg:grid-cols-12 lg:gap-8">
-          <div data-reveal="" className="lg:col-span-7">
+          {/* data-inquiry: this page closes on its own form, so the footer's call to action stands down (globals.css). */}
+          <div data-reveal="" data-inquiry="" className="lg:col-span-7">
             <InquiryForm directContact={directContact} />
           </div>
           <div data-reveal="" className="space-y-16 lg:col-span-4 lg:col-start-9">

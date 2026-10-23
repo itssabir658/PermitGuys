@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { ORDER, engine, hso, measureRange, setStyle, sso, type Frame, type MotionModule, type Range } from "@/lib/motion/engine";
 import {
-  contactReveal,
+  contactCard,
+  contactLetter,
   headerGround,
   heroState,
   introCopy,
@@ -13,9 +14,17 @@ import {
   orbitItem,
   orbitPath,
   pageGround,
-  servicesHeadingLine,
+  riseInset,
+  servicesHandover,
+  servicesHeading,
+  servicesIndex,
+  servicesLead,
   servicesReveal,
-  servicesW,
+  servicesRow,
+  swapK,
+  swapLayer,
+  swapSettle,
+  swapTo,
   MASK,
   roll,
   valuesDescLine,
@@ -26,8 +35,9 @@ import {
   worksLine,
   worksStudy,
   type OrbitPath,
+  type SwapLayer,
 } from "@/lib/motion/home";
-import { clamp, damp, ease, mix, toHex, tween } from "@/lib/motion/math";
+import { clamp, ease, mix, toHex, tween } from "@/lib/motion/math";
 import { resplitIfNeeded, unsplit } from "@/lib/motion/split";
 
 /*
@@ -466,76 +476,176 @@ function values(shared: Shared): MotionModule | null {
   };
 }
 
-/* Services: the frame wipes in and settles; the strip follows the hovered, focused or scrolled-to service. */
+/*
+ * Services. On the pinned track (phones from 620px tall, wider screens
+ * from 720px; globals.css) the whole composition comes up through the dusk
+ * and holds for two screens. The stage rides 0.3 screen ahead of its track
+ * until the dusk is over and settles into the pin (servicesLead), so its
+ * picture follows close under the last Values picture: the picture's sheet
+ * wipes up from the bottom of the screen as the frame comes into view,
+ * then, once the ground is past half night, the heading's lines and
+ * the rows rise out of their masks, each row's rule drawing across; it is
+ * whole as the stage pins. While it holds, scrolling walks the rows. The
+ * frame shows the row hovered (with a fine pointer), else the one focused,
+ * else the one scrolling has reached; the latest of a hover and a scroll
+ * wins, so a pointer resting on the list never freezes the walk. Each new
+ * picture wipes up over the last, which darkens under it (swapTo).
+ *
+ * On wide screens too short to pin, the section flows, starting close
+ * under the last Values picture: the heading rises with the track as it
+ * does when pinned, each row arrives from its own place, and the picture
+ * follows the row crossing the middle of the screen. Without the tracks
+ * everything is still and the picture follows a hover or focus at once.
+ */
 function services(): MotionModule[] {
   const section = one("[data-services]");
   const track = section && one("[data-services-track]", section);
+  const stage = section && one("[data-services-stage]", section);
   const frameCol = section && one("[data-services-frame]", section);
+  const box = section && one("[data-services-box]", section);
   const reveal = section && one("[data-services-reveal]", section);
   const zoom = section && one("[data-services-zoom]", section);
-  const strip = section && one("[data-services-strip]", section);
   const heading = section && one("[data-services-heading]", section);
-  const body = section && one("[data-services-body]", section);
-  if (!section || !track || !frameCol || !reveal || !zoom || !strip || !heading || !body) return [];
-  const items = all("[data-service-index]", section);
-  const desktop = matchMedia("(min-width: 768px)");
-  const phoneTrack = matchMedia("(max-width: 767px) and (min-height: 700px)");
-  let target = 0;
-  let pos = 0;
-  let shown = -1;
-  let rTrack: Range, rFrame: Range, rHeading: Range, rBody: Range;
+  const list = section && one("[data-services-body]", section);
+  if (!section || !track || !stage || !frameCol || !box || !reveal || !zoom || !heading || !list) return [];
+  const pics = all("[data-services-pic]", section);
+  const rows = all("[data-service-index]", section).map((li) => ({
+    li,
+    inner: one(".services-item__label .split-line__inner", li),
+    meta: all("[data-services-meta]", li),
+    rules: all("[data-services-rule]", li),
+  }));
+  const eyebrow = one("[data-services-roll]", section);
+  const caption = one("[data-services-caption]", section);
+  const more = one("[data-services-all]", section);
+  const n = rows.length;
+  const deskTrack = matchMedia("(min-width: 768px) and (min-height: 720px)");
+  const phoneTrack = matchMedia("(max-width: 767px) and (min-height: 620px)");
+  const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
+  let pinned = false;
+  let rTrack: Range, rCol: Range, rMore: Range | null = null;
+  let rRows: Range[] = [];
+  let stageH = 0;
+  let boxTop = 0;
+  let boxH = 0;
   let headLines: HTMLElement[] = [];
+  let hoverIdx: number | null = null;
+  let focusIdx: number | null = null;
+  let scrollIdx = 0;
+  let target = 0;
+  let shown = -1;
+  let stack: SwapLayer[] = [{ i: 0, from: 1, t0: 0, dir: 1 }];
 
-  const listeners = items.map((li, i) => {
-    const enter = () => {
-      if (desktop.matches) target = i;
-    };
-    const focus = () => {
-      target = i;
-    };
-    li.addEventListener("pointerenter", enter);
-    li.addEventListener("focusin", focus);
-    return () => {
-      li.removeEventListener("pointerenter", enter);
-      li.removeEventListener("focusin", focus);
-    };
-  });
+  // Where the stage is on the screen: it rides with the track until it pins, and after it releases.
+  const stageTop = (f: Frame) => Math.min(Math.max(rTrack.top - f.scroll, 0), rTrack.top + rTrack.height - f.scroll - stageH);
+
+  const rowOf = (node: EventTarget | null) => (node instanceof Node ? rows.findIndex((r) => r.li.contains(node)) : -1);
+  const onEnter = (event: PointerEvent) => {
+    const i = rowOf(event.target);
+    if (i >= 0 && finePointer.matches) hoverIdx = i;
+  };
+  const onLeave = () => {
+    hoverIdx = null;
+  };
+  const onFocusIn = (event: FocusEvent) => {
+    const i = rowOf(event.target);
+    if (i < 0) return;
+    focusIdx = i;
+    // Keyboard focus arriving from outside the list while the stage is not pinned: bring the stage to the row's place in the hold, where the list is whole. Only keyboard focus: a press must not move the page under the pointer.
+    const f = engine.frame;
+    const hold = rTrack ? rTrack.height - f.vh : 0;
+    const from = event.relatedTarget instanceof Node && list.contains(event.relatedTarget);
+    if (pinned && !from && hold > 0 && event.target instanceof Element && event.target.matches(":focus-visible") && (f.scroll < rTrack.top || f.scroll > rTrack.top + hold)) {
+      engine.scrollTo(rTrack.top + ((i + 0.5) / n) * hold);
+    }
+  };
+  const onFocusOut = (event: FocusEvent) => {
+    if (!(event.relatedTarget instanceof Node && list.contains(event.relatedTarget))) focusIdx = null;
+  };
+  list.addEventListener("pointerover", onEnter);
+  list.addEventListener("pointerleave", onLeave);
+  list.addEventListener("focusin", onFocusIn);
+  list.addEventListener("focusout", onFocusOut);
 
   const image: MotionModule = {
     order: ORDER.servicesImage,
-    measure() {
+    measure(f) {
+      pinned = f.tracks && (phoneTrack.matches || deskTrack.matches);
+      if (pinned) section.dataset.servicesPinned = "";
+      else delete section.dataset.servicesPinned;
       rTrack = measureRange(track);
-      rFrame = measureRange(frameCol);
+      rCol = measureRange(frameCol);
+      rRows = rows.map((r) => measureRange(r.li));
+      stageH = stage.offsetHeight;
+      boxH = box.offsetHeight;
+      // The frame's place in the stage (the stage may be stuck, so from the rects rather than the offsets).
+      boxTop = box.getBoundingClientRect().top - stage.getBoundingClientRect().top;
     },
     update(f) {
-      const phone = f.tracks && phoneTrack.matches;
-      const rv = f.tracks ? servicesReveal(phone ? sso(rTrack, f) : sso(rFrame, f)) : { inset: 0, scale: 1 };
-      setStyle(reveal, "clipPath", `inset(0 0 ${rv.inset.toFixed(2)}% 0)`);
-      setStyle(zoom, "transform", `scale(${num(rv.scale)})`);
-      if (phone) {
-        // On phones the row comes from how far the pinned list has been scrolled.
-        const p = clamp((f.scroll - rTrack.top) / Math.max(1, rTrack.height - f.vh));
-        target = Math.min(items.length - 1, Math.floor(p * items.length));
-        pos = target;
-      } else if (f.reduced) pos = target;
-      else pos = damp(pos, target, 12, f.dt);
-      setStyle(strip, "transform", `translate3d(0, ${(-pos * 100).toFixed(3)}%, 0)`);
+      // The row the frame shows.
+      const reached = pinned ? servicesIndex(f.scroll, rTrack.top, rTrack.height, f.vh, n) : f.tracks ? rRows.reduce((k, r, i) => (r.top < f.scroll + 0.5 * f.vh ? i : k), 0) : scrollIdx;
+      // Scrolling to a new row takes over from a resting pointer.
+      if (reached !== scrollIdx) {
+        scrollIdx = reached;
+        hoverIdx = null;
+      }
+      const next = hoverIdx ?? focusIdx ?? (f.tracks ? scrollIdx : target);
+      if (next !== target) {
+        target = next;
+        stack = swapTo(stack, target, f.time, f.reduced);
+      }
       if (shown !== target) {
-        items[shown]?.removeAttribute("data-active");
-        items[target]?.setAttribute("data-active", "");
+        rows[shown]?.li.removeAttribute("data-active");
+        rows[target]?.li.setAttribute("data-active", "");
         shown = target;
       }
+      stack = swapSettle(stack, f.time, f.reduced);
+      const ks = stack.map((l) => swapK(l, f.time, f.reduced));
+      pics.forEach((el, i) => {
+        const z = stack.findIndex((l) => l.i === i);
+        if (z < 0) {
+          setStyle(el, "visibility", "hidden");
+          clear(el, "zIndex", "clipPath", "transform", "filter");
+          return;
+        }
+        const ly = swapLayer(ks[z], ks[z + 1] ?? 0);
+        setStyle(el, "visibility", "visible");
+        setStyle(el, "zIndex", String(z + 1));
+        setStyle(el, "clipPath", ly.clip > 0.005 ? `inset(${ly.clip.toFixed(2)}% 0 0 0)` : "");
+        setStyle(el, "transform", ly.scale > 1.00005 ? `scale(${num(ly.scale)})` : "");
+        setStyle(el, "filter", ly.brightness < 0.9995 ? `brightness(${num(ly.brightness)})` : "");
+      });
+
+      if (!f.tracks) {
+        clear(stage, "transform");
+        clear(reveal, "clipPath");
+        clear(zoom, "transform");
+        if (caption) clear(caption, "opacity");
+        return;
+      }
+      // The stage's lead over its track as it comes up (px).
+      const lead = pinned ? servicesLead(sso(rTrack, f)) * f.vh : 0;
+      setStyle(stage, "transform", lead > 0.05 ? `translate3d(0, ${(-lead).toFixed(2)}px, 0)` : "");
+      // The frame's top on the screen; the sheet rises from the bottom of the screen until the frame's own bottom edge is in view.
+      const top = pinned ? stageTop(f) + boxTop - lead : rCol.top - f.scroll;
+      const rv = servicesReveal((f.vh - top) / f.vh);
+      setStyle(reveal, "clipPath", `inset(${riseInset(rv.r, top, boxH, f.vh).toFixed(2)}% 0 0 0)`);
+      setStyle(zoom, "transform", `translate3d(0, ${rv.y.toFixed(2)}%, 0) scale(${num(rv.scale)})`);
+      if (caption) setStyle(caption, "opacity", num(rv.r));
     },
     destroy() {
-      listeners.forEach((off) => off());
+      list.removeEventListener("pointerover", onEnter);
+      list.removeEventListener("pointerleave", onLeave);
+      list.removeEventListener("focusin", onFocusIn);
+      list.removeEventListener("focusout", onFocusOut);
+      delete section.dataset.servicesPinned;
     },
   };
 
-  const list: MotionModule = {
+  const copy: MotionModule = {
     order: ORDER.services,
     measure(f) {
-      rHeading = measureRange(heading);
-      rBody = measureRange(body);
+      rMore = more ? measureRange(more) : null;
       if (f.tracks) headLines = resplitIfNeeded(heading, headLines);
       else if (headLines.length) {
         unsplit(heading);
@@ -543,40 +653,146 @@ function services(): MotionModule[] {
       }
     },
     update(f) {
-      // On the phone track the heading and rows are pinned, so they are simply shown.
-      const phone = phoneTrack.matches;
-      if (!f.tracks || phone) items.forEach((li) => clear(li, "opacity", "transform"));
-      if (!f.tracks) return;
-      const w0 = phone ? 1 : servicesW(sso(rHeading, f), 0);
-      headLines.forEach((line, j) => setStyle(line, "transform", liftPercent(servicesHeadingLine(w0, j, headLines.length).yPercent)));
-      if (phone) return;
-      const x = sso(rBody, f);
-      items.forEach((li, i) => {
-        const W = servicesW(x, i + 1);
-        setStyle(li, "opacity", num(W));
-        setStyle(li, "transform", lift((1 - W) * 40));
+      if (!f.tracks) {
+        if (eyebrow) clear(eyebrow, "transform");
+        for (const r of rows) {
+          if (r.inner) clear(r.inner, "transform");
+          r.rules.forEach((el) => clear(el, "transform"));
+          r.meta.forEach((el) => clear(el, "opacity"));
+        }
+        if (more) clear(more, "opacity");
+        return;
+      }
+      // Whatever holds focus is in place, whatever the scroll.
+      const focused = document.activeElement;
+      const show = (r: (typeof rows)[number], t: number, y: number, meta: number) => {
+        const held = focused instanceof Node && r.li.contains(focused);
+        if (r.inner) setStyle(r.inner, "transform", liftPercent(held ? 0 : y));
+        r.rules.forEach((el) => setStyle(el, "transform", `scaleX(${num(held ? 1 : t)})`));
+        r.meta.forEach((el) => setStyle(el, "opacity", num(held ? 1 : meta)));
+      };
+      // The eyebrow and the heading from the track, as the ground passes night.
+      const s = sso(rTrack, f);
+      if (eyebrow) setStyle(eyebrow, "transform", liftPercent(roll(tween(s, 0.34, 0.3, ease.power3Out), 0)));
+      headLines.forEach((line, j) => setStyle(line, "transform", liftPercent(servicesHeading(s, j))));
+      if (pinned) {
+        // The rows from the track too, so the composition is whole as the stage pins.
+        rows.forEach((r, i) => {
+          const st = servicesRow(s, i);
+          show(r, st.t, st.y, st.meta);
+        });
+        if (more) setStyle(more, "opacity", num(servicesRow(s, n - 1).meta));
+        return;
+      }
+      // Flowing: each row from its own place.
+      rows.forEach((r, i) => {
+        const t = tween(sso(rRows[i], f), 0.06, 0.22, ease.power3Out);
+        show(r, t, roll(t, 0), t);
       });
+      if (more && rMore) setStyle(more, "opacity", num(tween(sso(rMore, f), 0.06, 0.22)));
     },
   };
-  return [image, list];
+  return [image, copy];
 }
 
-/* Contact: each piece rises 28px into place over its own stretch of scroll. */
+/*
+ * Services to Contact: Contact's ivory sheet rises over Services, which
+ * lags behind the scroll by up to 0.35 screen and dims as it is covered,
+ * so it sinks into the night. Contact starts to rise only after the
+ * Services stage has released, so this never moves a pinned stage.
+ */
+function handover(): MotionModule | null {
+  const inner = one("[data-services-inner]");
+  const contact = one("[data-contact]");
+  if (!inner || !contact) return null;
+  let r: Range;
+  return {
+    order: ORDER.handover,
+    measure() {
+      r = measureRange(contact);
+    },
+    update(f) {
+      const x = f.tracks ? clamp(sso(r, f)) : 0;
+      if (x <= 0) return clear(inner, "transform", "opacity");
+      const h = servicesHandover(x);
+      setStyle(inner, "transform", lift(h.lift * f.vh));
+      setStyle(inner, "opacity", num(h.opacity));
+    },
+  };
+}
+
+/*
+ * Contact: the word cut in letter by letter, each rising from its own mask
+ * as the word comes up; then the cards rise and their blocks fade in (the
+ * right one a beat behind on wide screens) while each picture's sheet
+ * wipes up from the bottom and settles.
+ *
+ * Each letter is a box of its own, which loses the face's kerning between
+ * letters (14px between T and A at 1440 wide): measure() sets the word as
+ * one run, out of sight, and gives each letter back the difference, in em,
+ * so it holds at every size.
+ */
 function contact(): MotionModule | null {
-  const els = all("[data-contact-reveal]");
-  if (!els.length) return null;
-  let ranges: Range[] = [];
+  const section = one("[data-contact]");
+  const heading = section && one("[data-contact-heading]", section);
+  if (!section || !heading) return null;
+  const masks = all(".contact-letter", heading);
+  const letters = all("[data-contact-letter]", heading);
+  const cards = all("[data-contact-card]", section).map((el) => ({ el, pic: one(".contact-pic", el), wipe: one("[data-contact-wipe]", el), img: one("[data-contact-wipe] img", el) }));
+  const wide = matchMedia("(min-width: 768px)");
+  let rHeading: Range;
+  let rCards: Range[] = [];
+  let rPics: (Range | null)[] = [];
+
+  const kern = () => {
+    const word = letters.map((l) => l.textContent ?? "").join("");
+    const probe = document.createElement("span");
+    probe.textContent = word;
+    probe.style.cssText = "position:absolute;left:0;top:0;white-space:nowrap;visibility:hidden;pointer-events:none";
+    heading.append(probe);
+    // All reads, then the writes.
+    const text = probe.firstChild;
+    const range = document.createRange();
+    const xs = letters.map((_, i) => {
+      if (!(text instanceof Text)) return 0;
+      range.setStart(text, i);
+      range.setEnd(text, i + 1);
+      return range.getBoundingClientRect().left;
+    });
+    const widths = masks.map((m) => m.getBoundingClientRect().width);
+    const size = parseFloat(getComputedStyle(heading).fontSize) || 1;
+    probe.remove();
+    masks.forEach((m, i) => setStyle(m, "marginLeft", i && text instanceof Text ? `${((xs[i] - xs[i - 1] - widths[i - 1]) / size).toFixed(4)}em` : ""));
+  };
+
   return {
     order: ORDER.contact,
     measure() {
-      ranges = els.map(measureRange);
+      kern();
+      rHeading = measureRange(heading);
+      rCards = cards.map((c) => measureRange(c.el));
+      rPics = cards.map((c) => (c.pic ? measureRange(c.pic) : null));
     },
     update(f) {
-      els.forEach((el, i) => {
-        if (!f.tracks) return clear(el, "opacity", "transform");
-        const c = contactReveal(sso(ranges[i], f));
-        setStyle(el, "opacity", num(c.opacity));
-        setStyle(el, "transform", lift(c.y));
+      if (!f.tracks) {
+        letters.forEach((el) => clear(el, "transform"));
+        for (const c of cards) {
+          clear(c.el, "transform", "opacity");
+          if (c.wipe) clear(c.wipe, "clipPath");
+          if (c.img) clear(c.img, "transform");
+        }
+        return;
+      }
+      const sh = sso(rHeading, f);
+      letters.forEach((el, i) => setStyle(el, "transform", liftPercent(contactLetter(sh, i))));
+      cards.forEach((c, k) => {
+        const st = contactCard(sso(rCards[k], f), wide.matches ? k % 2 : 0);
+        // Written out even at rest: the tracks' initial state in globals.css holds the cards down until now.
+        setStyle(c.el, "transform", st.y > 0.005 ? lift(st.y) : "none");
+        setStyle(c.el, "opacity", num(st.opacity));
+        const pic = rPics[k];
+        if (c.wipe && pic) setStyle(c.wipe, "clipPath", `inset(${riseInset(st.t, pic.top - f.scroll + st.y, pic.height, f.vh).toFixed(2)}% 0 0 0)`);
+        if (c.img) setStyle(c.img, "transform", `scale(${num(st.scale)})`);
       });
     },
   };
@@ -585,7 +801,7 @@ function contact(): MotionModule | null {
 export function HomeMotion() {
   useEffect(() => {
     const shared: Shared = { fade: 0 };
-    const modules = [ground(shared), hero(), intro(), works(), values(shared), ...services(), contact()].filter((m): m is MotionModule => Boolean(m));
+    const modules = [ground(shared), hero(), intro(), works(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
     const offs = modules.map((m) => engine.register(m));
     return () => offs.forEach((off) => off());
   }, []);

@@ -1100,6 +1100,12 @@
   --lb-wipe: var(--color-stone-200);
   --lb-shine: var(--color-brand-500);
 }
+/* On paper, the quieter second action: an outline that fills with ink from the left, its label turning ivory as the fill passes. */
+.link-button--outline {
+  --lb-bg: transparent;
+  --lb-fg: var(--color-ink);
+  --lb-wipe: var(--color-ink);
+}
 .link-button__plate,
 .link-button__icon {
   position: relative;
@@ -1166,9 +1172,73 @@
   transition: background-position 0.8s ease;
 }
 
+.link-button--outline :is(.link-button__plate, .link-button__icon) {
+  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.25);
+}
+.link-button--outline .link-button__face--side {
+  color: var(--color-ivory);
+}
+.link-button--outline .link-button__label {
+  background: linear-gradient(90deg, var(--color-ivory) 50%, var(--color-ink) 50%) 100% 0 / 200% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  transition: background-position 0.35s var(--e-ui);
+}
+.link-button--outline:is(:hover, :focus-visible) .link-button__label {
+  background-position: 0 0;
+  transition: background-position 0.35s var(--e-ui);
+}
+
 /* The notched sheet outline for framed pictures (NotchClip.tsx). */
 .notch-clip {
   clip-path: url(#notch-clip);
+}
+
+/* ---- Footer (SiteFooter.tsx; drawn by MotionRoot, footer module) ---- */
+/* The content rises out from under the sheet above: the footer's top edge clips it. */
+.site-footer {
+  overflow: clip;
+}
+/* A page that closes on paper (the homepage's Contact, a CtaPanel, the contact form) has already asked: the footer does not ask again. */
+body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
+  display: none;
+}
+/* Ivory at 35%; the GTA dot is the footer's one red. */
+.site-footer__map {
+  display: block;
+  width: min(100%, 15rem);
+  height: auto;
+  aspect-ratio: 892 / 1000;
+  overflow: visible;
+  color: rgb(244 241 235 / 0.35);
+}
+@media (min-width: 1024px) {
+  .site-footer__map {
+    width: 20rem;
+  }
+}
+.site-footer__region {
+  display: flex;
+  gap: 0.75rem;
+}
+.site-footer__region span + span::before {
+  content: "";
+  display: inline-block;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin-right: 0.75rem;
+  border-radius: 9999px;
+  background: currentColor;
+  vertical-align: 0.12em;
+}
+/* On the tracks the outline waits undrawn until the footer comes up (with reduced motion and on the still layout it is simply there). */
+@media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] .site-footer__map .ontario__stroke path {
+    stroke-dashoffset: 1;
+  }
+  :root[data-motion] .site-footer__map .ontario__dot {
+    transform: scale(0);
+  }
 }
 
 /* ---- Homepage: hero (Hero.tsx) ---- */
@@ -1499,9 +1569,13 @@
     display: block;
   }
 }
+/* As wide as the picture and set to the right, so the caption starts under the picture's left edge. */
 .services-frame-pin {
   position: sticky;
   top: 15svh;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
 }
 .services-frame {
   position: relative;
@@ -1512,12 +1586,77 @@
   overflow: hidden;
   background: var(--color-charcoal-800);
 }
+/* Each row's rule is an element of its own, so drawing it across (HomeMotion) touches nothing else. */
+.services-item {
+  position: relative;
+}
+.services-item__rule {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: rgb(244 241 235 / 0.15);
+  transform-origin: left center;
+  pointer-events: none;
+}
+.services-item__rule--top {
+  top: 0;
+  bottom: auto;
+}
+/* The number column holds the active row's dot: the section's one red. */
+.services-item__num {
+  position: relative;
+}
+.services-item__num::before {
+  content: "";
+  position: absolute;
+  right: calc(100% + 0.5rem);
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 9999px;
+  background: var(--color-brand-400);
+  transform: scale(0);
+  transition: transform 0.3s var(--e-ui);
+}
+.services-item[data-active] .services-item__num::before {
+  transform: scale(1);
+}
+/*
+ * Every label at full strength at rest. Others dim only when one row is
+ * singled out: hovered or focused, or, on the pinned track, the row the
+ * picture shows (data-active, which there also follows the pointer and
+ * focus, and is the only rule, so a resting pointer never dims the row
+ * scrolled to).
+ */
 .services-item__label {
-  opacity: 0.4;
+  opacity: 1;
   transition: opacity 0.3s var(--e-ui);
 }
-.services-item:is(:hover, :focus-within, [data-active]) .services-item__label {
-  opacity: 1;
+[data-services]:not([data-services-pinned]) .services-list:has(.services-item:is(:hover, :focus-within)) .services-item:not(:hover, :focus-within) .services-item__label,
+[data-services-pinned] .services-item:not([data-active]) .services-item__label {
+  opacity: 0.5;
+}
+
+/* ---- Homepage: contact (Contact.tsx) ---- */
+/* The word fits the narrowest phones (it sets about 5em wide), and never wraps between its letters. */
+.contact-heading {
+  font-size: min(clamp(4rem, 1rem + 14vw, 15rem), calc((100vw - 2.5rem) / 5));
+}
+.contact-heading__word {
+  display: block;
+  white-space: nowrap;
+}
+/* One mask per letter (HomeMotion sets the face's kerning back between them). */
+.contact-letter {
+  display: inline-block;
+  overflow: clip;
+  overflow-clip-margin: 0.06em;
+  vertical-align: top;
+}
+[data-contact-letter] {
+  display: inline-block;
 }
 
 /* ---- Homepage: the tracks ---- */
@@ -1566,13 +1705,46 @@
     transform: translateY(120%);
   }
 
-  :root[data-motion] [data-contact-reveal] {
+  /* Services: only the pictures exist (the empty frame is never seen filling in), and everything masked starts below its mask. */
+  :root[data-motion] .services-frame {
+    background: transparent;
+  }
+  :root[data-motion] :is([data-services-roll], .services-item__label .split-line__inner) {
+    transform: translateY(120%);
+  }
+  :root[data-motion] [data-services-reveal] {
+    clip-path: inset(100% 0 0 0);
+  }
+  :root[data-motion] :is([data-services-meta], [data-services-all], [data-services-caption]) {
     opacity: 0;
-    transform: translateY(28px);
+  }
+  :root[data-motion] .services-item__rule {
+    transform: scaleX(0);
+  }
+
+  /* Contact: the letters wait below their masks, the cards below their places. */
+  :root[data-motion] [data-contact-letter] {
+    transform: translateY(120%);
+  }
+  :root[data-motion] [data-contact-card] {
+    opacity: 0;
+    transform: translateY(48px);
+  }
+  :root[data-motion] .contact-pic {
+    background: transparent;
+  }
+  :root[data-motion] [data-contact-wipe] {
+    clip-path: inset(100% 0 0 0);
   }
 }
-/* Phones: Services becomes a 300vh track with the list pinned. */
-@media (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 700px) {
+/*
+ * Wide screens tall enough to hold it (720px): Services becomes a 300vh
+ * track with the whole composition pinned for two screens, the picture
+ * beside the list, centred. The heading, the rows and the spacing are
+ * capped by the screen's height (they bind below about 860px), so the
+ * eyebrow to the 'All services' link fits in about 700px at 720.
+ */
+@media (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 720px) {
   :root[data-motion] .services-track {
     height: 300vh;
   }
@@ -1581,33 +1753,121 @@
     top: 0;
     display: flex;
     height: 100svh;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
   }
   :root[data-motion] .services-grid {
-    gap: 1.25rem;
-    padding-block: 4.75rem 1.25rem;
-  }
-  :root[data-motion] .services-frame-col {
-    display: block;
-    order: -1;
+    width: 100%;
+    align-items: center;
+    padding-block: min(5.5rem, 11svh) min(2rem, 3svh);
   }
   :root[data-motion] .services-frame-pin {
     position: static;
   }
   :root[data-motion] .services-frame {
-    width: 100%;
-    height: 22svh;
-    aspect-ratio: auto;
+    height: min(62svh, 40rem);
+  }
+  :root[data-motion] .services-heading {
+    max-width: 20ch;
+    font-size: min(var(--text-display-lg), 6.5svh);
   }
   :root[data-motion] .services-list {
-    margin-top: 1.25rem;
+    margin-top: min(2rem, 3.5svh);
+  }
+  :root[data-motion] .services-item a {
+    padding-block: min(0.7rem, 1.4svh);
+  }
+  :root[data-motion] .services-item__label {
+    font-size: min(clamp(1.35rem, 0.9rem + 1.1vw, 2.1rem), 3.6svh);
+  }
+  :root[data-motion] .services-all {
+    margin-top: min(2rem, 2.5svh);
+  }
+}
+/*
+ * Wide screens too short to pin: the section flows, but starts close under
+ * the last Values picture, so its picture comes up through the dusk with
+ * the heading straight after it, not a screen of empty ground later.
+ */
+@media (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 500px) and (max-height: 719.98px) {
+  :root[data-motion] .services-grid {
+    padding-top: 2.5rem;
+  }
+}
+/*
+ * Phones from 620px tall: the same 300vh track, stacked. The picture takes
+ * whatever height the heading and the list leave (at least 6.5rem, at most
+ * a quarter of the screen), so the list is never cut off below or the
+ * picture tucked under the header; the eyebrow goes (the heading names the
+ * section) and the caption sits at the foot of the stage.
+ */
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) {
+  :root[data-motion] .services-track {
+    height: 300vh;
+  }
+  :root[data-motion] .services-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+  }
+  :root[data-motion] .services-grid {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    gap: 1rem;
+    padding-block: 5.5rem 1rem;
+  }
+  :root[data-motion] :is(.services-frame-col, .services-frame-pin) {
+    display: contents;
+  }
+  :root[data-motion] .services-frame {
+    order: -1;
+    width: 100%;
+    flex: 1 1 0;
+    min-height: 6.5rem;
+    max-height: 26svh;
+    aspect-ratio: auto;
+  }
+  :root[data-motion] .services-caption {
+    order: 3;
+    margin-top: auto;
+  }
+  :root[data-motion] .services-eyebrow {
+    display: none;
+  }
+  :root[data-motion] .services-heading {
+    margin-top: 0;
+  }
+  :root[data-motion] .services-list {
+    margin-top: 1rem;
   }
   :root[data-motion] .services-item a {
     padding-block: 0.4rem;
   }
   :root[data-motion] .services-item__label {
-    font-size: 1.25rem;
+    font-size: clamp(1.05rem, 0.9rem + 0.9vw, 1.25rem);
+  }
+  :root[data-motion] .services-all {
+    margin-top: 0.75rem;
+  }
+}
+/*
+ * Short phones (620 to 720px tall): the stage needs about 700px as above,
+ * so it tightens to fit: closer under the header, smaller gaps and heading,
+ * and a picture that may shrink to 4.5rem. The rows keep their 44px.
+ */
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) and (max-height: 719.98px) {
+  :root[data-motion] .services-grid {
+    gap: 0.75rem;
+    padding-block: 4.5rem 0.75rem;
+  }
+  :root[data-motion] .services-frame {
+    min-height: 4.5rem;
+  }
+  :root[data-motion] .services-heading {
+    font-size: 1.5rem;
+  }
+  :root[data-motion] .services-list {
+    margin-top: 0.5rem;
   }
 }
 

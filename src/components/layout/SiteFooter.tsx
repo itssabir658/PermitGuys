@@ -8,33 +8,55 @@ import { Placeholder } from "@/components/ui/Placeholder";
 import { RollText } from "@/components/ui/RollText";
 import { paths } from "@/lib/routes";
 import { Logo } from "./Logo";
+import { OntarioOutline } from "./OntarioOutline";
 
+/** "Greater Toronto Area, Ontario" → ["Ontario", "Greater Toronto Area"], as the preloader names the place. */
+const [area, province = "Ontario"] = site.region.split(", ");
+
+/*
+ * The one dark band at the foot of every page. Pages close on paper (the
+ * homepage's Contact, an inner page's CtaPanel, the contact form), so the
+ * footer's own call to action shows only where none of those is on the
+ * page (data-footer-cta, globals.css). In its place the Ontario outline
+ * with the Greater Toronto Area marked draws itself as the footer comes up
+ * (MotionRoot, footer module), a bookend to the preloader's drawing, and
+ * the footer's content rises out from under the sheet above it.
+ */
 export function SiteFooter() {
   const { contact } = site;
   return (
-    <footer data-tone="dark" className="bg-charcoal-900 text-ivory">
-      <Container className="pt-20 pb-10 sm:pt-28">
+    <footer data-tone="dark" data-site-footer="" className="site-footer bg-charcoal-900 text-ivory">
+      <Container className="site-footer__inner pt-20 pb-10 sm:pt-28">
         <div className="grid gap-16 lg:grid-cols-12 lg:gap-8">
-          <div className="lg:col-span-6">
-            <p className="text-label text-charcoal-300">Have a project in mind?</p>
-            <Link href={paths.contact} className="group mt-8 inline-flex items-center gap-6 font-display text-display-lg font-light">
-              <span className="link-rule pb-2">Start a conversation</span>
-              <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-transform duration-700 ease-out-expo group-hover:rotate-[-45deg]">
-                <ArrowRight className="size-5" />
-              </span>
-            </Link>
-            <address className="mt-12 grid gap-2 text-[0.9375rem] not-italic text-charcoal-300">
+          <div className="lg:col-span-5">
+            <div data-footer-cta="" className="mb-16">
+              <p className="text-label text-charcoal-300">Have a project in mind?</p>
+              <Link href={paths.contact} className="group mt-8 inline-flex items-center gap-6 font-display text-[clamp(1.9rem,1rem+2.3vw,3.6rem)] leading-[1.04] font-light tracking-[-0.036em]">
+                <span className="link-rule pb-2 whitespace-nowrap">Start a conversation</span>
+                <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-transform duration-700 ease-out-expo group-hover:rotate-[-45deg]">
+                  <ArrowRight className="size-5" />
+                </span>
+              </Link>
+            </div>
+            <div className="site-footer__place">
+              <OntarioOutline className="site-footer__map" />
+              <p className="site-footer__region mt-6 text-label text-charcoal-300">
+                <span>{province}</span>
+                <span>{area}</span>
+              </p>
+            </div>
+            <address className="mt-10 grid gap-2 text-[0.875rem] not-italic text-charcoal-300">
               <p>{contact.phone ? <PhoneLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>phone number</Placeholder>}</p>
               <p>{contact.email ? <EmailLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>email address</Placeholder>}</p>
               <p>{contact.address ?? <Placeholder onDark>business address, if it will be published</Placeholder>}</p>
               {contact.hours ? <p>{contact.hours}</p> : null}
             </address>
           </div>
-          <nav aria-label="Footer" className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:col-span-6">
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7 lg:gap-x-6">
             {footerNav.map((col) => (
               <div key={col.heading}>
                 <h2 className="text-label text-charcoal-300">{col.heading}</h2>
-                <ul className="mt-6 space-y-3 text-[0.9375rem]">
+                <ul className="mt-6 space-y-3 text-[0.9375rem] lg:text-[0.875rem]">
                   {col.links.map((link) => (
                     <li key={link.href}>
                       <Link href={link.href} className="text-ivory/80 transition-colors hover:text-ivory">

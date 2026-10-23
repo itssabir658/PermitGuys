@@ -1,77 +1,114 @@
 # Homepage motion
 
-The homepage follows the Studio Foundry motion specification Sebra supplied (MOTION-SPEC.md, 22 October 2026), built in the order its checklist sets: the scroll engine first, then the sticky tracks, then the signature moments. The content is PermitGuys': confirmed business facts only, and every picture is a rendered study captioned as one.
+How the site moves, as built. Code comments point here by section name. The choreography is pure functions of scroll in `src/lib/motion/home.ts` (and `footer.ts`), unit tested in `tests/motion.test.ts`; the components that drive them are `HomeMotion.tsx` (homepage), `MotionRoot.tsx` (every page), `Preloader.tsx`, `ScreenTransition.tsx` and `MainNav.tsx`.
 
-Code comments point here by section name.
+The Studio Foundry motion specification Sebra supplied (MOTION-SPEC.md, 22 October 2026) was the early reference for the engine and the section order. The site has since moved away from it in most details (see "Where this differs from the spec"); this file describes the site, not the spec.
+
+## Motion vocabulary
+
+One set of rules for the whole site (`home.ts` header; the CSS side is in `globals.css`, `:root`):
+
+- **Sheets.** A section hands over by a sheet rising from the bottom edge over a layer that recedes: it grows 8% at most, darkens, or dims to 0.72. Timed sheets use `--e-sheet` over 0.6 to 1.0s; scrubbed wipes take about 0.3 screens.
+- **Masks.** Display type never fades. Each line rises from its own mask (`MASK`, 120%) and leaves upward through it (`roll()`). Masked lines take 0.9 to 1.2s timed, or 0.24 to 0.34 screens scrubbed, 0.03 to 0.06 screens apart. Only small labels, captions and blocks may fade.
+- **Eases.** Entrances `power3Out`, exits `power2In`, no overshoot. Hover and tone changes take 0.3s on `--e-ui`.
+- **Rhythm.** Each beat holds 0.6 to 0.8 screens fully composed and hands over in about 0.3. The next section's first element starts entering before the last one leaves, so no frame is empty for more than 0.15 screens.
+- **Materials.** The ivory sheet over the hero, stone under Works, ivory for Values, dusk into the night Services (an OKLab blend), the ivory Contact sheet and the charcoal footer.
 
 ## Scroll engine
 
-- **Lenis 1.3.27** (`src/lib/motion/engine.ts`) with the spec's settings: `duration 1.2`, the exponential ease-out, vertical wheel smoothing, native touch scrolling. With reduced motion: `duration 0`, linear, no wheel smoothing.
-- **One frame loop** runs everything in a fixed order: Lenis, frame callbacks (roll links), the page's modules by `order` (ground, hero, intro, works, values, services, contact, parallax), then the header. `dt` is clamped to 50ms, so a tab left in the background does not jump when it comes back.
-- **Progress values** as in the spec: `sso` (showScreenOffset, 0 when an element's top meets the bottom of the screen, 1 at the top), `hso` (hideScreenOffset) and `screenRatio`. Ranges are measured from the `offsetTop` chain, so transforms never feed back into them, and are re-measured on resize, font load, body resize and route change.
-- **Maths** (`src/lib/motion/math.ts`): `fit`, `smoothstep`, `mix`, colour mixing, the frame-rate independent `damp` (λ 12 closes about 95% of a gap in 250ms), and the GSAP eases as plain functions. All choreography is pure functions of scroll in `src/lib/motion/home.ts`, unit tested in `tests/motion.test.ts`.
-- **Tracks mode.** The pinned tracks run only when motion is allowed and the screen is at least 500px tall (`(prefers-reduced-motion: no-preference) and (min-height: 500px)`, the `tracks:` Tailwind variant and `TRACKS_QUERY`). Otherwise every section falls back to a still, ordinary layout with all content shown. A head script sets `data-motion` before first paint, so the server HTML never flashes the wrong layout, and an 8 second failsafe reveals the page if scripts never run.
+- **Lenis 1.3.27** (`src/lib/motion/engine.ts`): duration 1.2 on an exponential ease-out, vertical wheel smoothing, native touch scrolling. With reduced motion: duration 0, linear, no wheel smoothing.
+- **One frame loop** runs everything in a fixed order: Lenis, frame callbacks (roll links), then the modules by `ORDER`: ground, hero, intro, works, values, the Services picture, the Services copy, the Services to Contact handover, contact, the footer, parallax, and the header last. `dt` is clamped to 50ms, so a tab left in the background does not jump when it comes back.
+- **Progress values.** `sso` (0 when an element's top meets the bottom of the screen, 1 at the top) and `hso` (−1 when its bottom meets the bottom of the screen, 0 at the top). Ranges come from the `offsetTop` chain, so transforms never feed back into them, and are re-measured on resize, font load, body resize and route change. The screen unit is `100lvh`, so a phone's toolbar does not change the timeline.
+- **Writes.** `setStyle` writes only when a value changes, and the modules write transforms, opacity and clip-path, so a frame never invalidates more than the elements that move. The one custom property written per frame (`--ground`, on the phone header bar) is registered as not inherited.
+- **Keeping the place.** After a resize or rotation the engine puts the reader back at the same point of the same section.
+- **Tracks.** The pinned, scrubbed layouts run only when motion is allowed, JavaScript runs and the screen is at least 500px tall (`TRACKS_QUERY`, the `tracks:` Tailwind variant). Otherwise every section shows a still, ordinary layout with all content visible (see "Reduced motion and still layouts").
 
 ## Load sequence
 
 | Time | What happens |
 |---|---|
-| 0 | Preloader: the outline of Ontario draws in five strokes (0.7s each, 0.14s apart), then the GTA dot appears. This replaces the reference's arch logo, at Sebra's request. |
-| ≥ 0.6s | The preloader waits for its drawing, the fonts and the hero picture (capped at 3.5s), and at least 0.6s. |
-| +0.1s | It fades out over 0.6s (power1.out). |
-| T₀ + 1.5s | The hero name rises out of its mask (0.9s, power1.out). The picture and header sit still until then, the spec's characteristic pause. |
-| T₀ + 1.6s | Header items fade down into place (0.8s, 0.06s apart). |
-| T₀ + 2.0s | The statement's two lines rise (0.7s, 0.05s apart). |
+| Before first paint | The head script (`motionScript`) sets `data-motion` for visitors who allow motion, and sets every flag after 8s whatever happens, so the page can never be held. A graphite screen is in place. |
+| 0 to about 1.35s | The outline of Ontario draws itself in CSS (the mainland over 0.9s, the islands overlapping its end). The GTA dot pops at 0.95s and rings out once. |
+| At least 1.25s from navigation | The screen waits for the strokes, the fonts and the opening picture (capped at 3.5s). |
+| T₀ | The page is put back at the top, and the document gets `data-loaded` and `data-revealed`. The drawing grows 2.4 times around the dot and fades (0.7s, accelerating). From 0.25s an iris opens from the dot itself (1s, `--e-sheet`, a registered `--hole` radius in the screen's mask). |
+| T₀ + 0.45s | The hero picture has been settling from 112% around the same point (1.8s). The name rises out of its mask (1.2s). |
+| T₀ + 0.85s | The statement's two lines rise, 0.09s apart; the caption fades in at 1.15s. |
+| T₀ + 0.9s | The header's row comes in item by item (from 0.3s on other pages). |
+| End of the iris | `data-preloaded` is set and the screen is removed. Scrolling is released at 70% of the iris (or 8s after navigation). |
 
-Scroll is reset to the top on load (`history.scrollRestoration = "manual"`), as the reference does.
+Browsers without registered custom properties get a 0.6s fade instead of the iris. After a page transition the hero entrance runs sooner, as the cover lifts (`data-arrival="route"`, which hard loads never have). The hero's CSS entrance moves each line's inner span and the scroll moves the span around it, so neither overrides the other.
 
 ## Sections (scroll map at 1440×900)
 
+Positions are in screens. The page scrolls 19.6 screens at 1440×900 and 21.0 at 390×844.
+
 | Section | Track | Behaviour |
 |---|---|---|
-| Hero (`Hero.tsx`) | 0–2 screens, sticky stage | From half a screen of scroll to the end of the track the name rises and the statement sinks by half a screen each, both fading to 0 exactly at 1,800px. |
-| Intro orbit (`Intro.tsx`) | 2–8 screens (600vh, computed from the paragraph count) | Six studies spread from the centre and circle it on six of the reference's seven orbit slots (its angles, radii and speeds) (0.12 turns per screen, radius 0.68 × the shorter side). The two paragraphs rise through the middle line by line, one after the other. Over the last screen the ring is flung out to three times its radius. |
-| Works (`Works.tsx`) | 8–12.5 screens, a 150vh panel per study | Each study resolves when its panel's `sso` is 1.25: title, type and button in nested windows (`K = 1 − smoothstep(|t|, 0.3 − 0.1k, 0.7 − 0.1k)`), arriving downward and leaving upward; the picture grows from half size. The button only takes clicks within `|t| < 0.15`, and keyboard focus scrolls its study into place. The page ground takes a faint wash of each study's colour. |
-| Values (`Values.tsx`) | 12.5–16.9 screens, 110vh per value | Four values (Clarity, Candour, Ownership, Integrity). Each picture scales from 0.5 to 1 as it reaches the top; the large title and its description sit in a pinned layer drawn twice, ink over the page and ivory inside a mask that tracks the picture, so the words change colour where they cross it. Text swaps as the nearest picture changes. |
-| Colour buffer | 16.9–17.4 screens | The page ground fades from cream to night (`smoothstep(sso, 0.4, 1)`) and snaps back to cream once Services has passed. |
-| Services (`Services.tsx`) | 17.4 screens on | The picture wipes up from the bottom while settling from a 1.15 zoom; the heading's lines rise and the rows follow on a scroll-distance stagger (0.04 of a screen each). On wide screens, pointer or focus on a row slides the picture strip to that row's study, damped at λ 12. On phones the section becomes a 300vh pinned track and the active row follows the scroll. |
-| Contact (`Contact.tsx`) | after Services | The heading and two cards each rise 28px and fade in between 0.08 and 0.42 of a screen after entering, and sink back on the way up. |
+| Hero (`Hero.tsx`) | 0 to 2.5 (250vh, pinned 1.5 screens) | From half a screen the intro's ivory sheet rises over it. The statement leaves upward through its masks first (0.02 to 0.37), then the name (gone by 0.72, lifting 0.08 screen), before the sheet reaches them. The caption fades by 0.3. The picture recedes under the sheet the whole time: it drifts up, grows 8% and darkens (`heroState`). |
+| Intro (`Intro.tsx`) | 1.5 to 6.6 (510vh for two paragraphs, `introPhases`) | An ivory sheet whose top sits a screen up, inside the hero's track. Six studies travel one squircle path (`orbitPath`), spaced by arc length so they never crowd, at 0.075 turns per screen. Each glides in from 1.8 times the ring as its part of the sheet comes up, settling from 118%, and breathes 3%. The two paragraphs rise line by line through the middle (`introLine`), 1.75 screens apart. At the end the ring is flung out to 1.9 times its radius over one screen, and the stage releases 0.4 screen into the fling. On portrait screens a study shows only once it is clear of the copy (`introCopy`, a ring tilting behind the text), and a study flung down dissolves before it reaches the stage's lower edge (`ORBIT_EDGE_FADE`). |
+| Works (`Works.tsx`) | 6.6 to 10.8 (420vh: three 140vh panels under one pinned stage) | One notched frame holds the three studies. The first picture rises from the bottom of the screen while the stage is still coming up under the intro's fling. At each handover (0.3 screens) the next picture wipes up from the bottom over the last, which dims to 0.72. The outgoing lines (eyebrow, title lines, button) leave upward just before the wipe and the incoming ones rise from about its midpoint, so two lines never print over each other. The button travels 1.3 times as far, so its focus ring clears the mask; its plate fades with how much of it shows (`worksButton`), and it takes the pointer only while in place. Keyboard focus on a button scrolls to its study. On short landscape screens the text keeps below the corner label (`--works-label-b`). The ground turns to stone under the section. |
+| Values (`Values.tsx`) | 10.8 to 14.8 (400vh: four 100vh blocks under one pinned stage) | Each picture grows from 0.72 to full size as it reaches the centre. The words are stacked in one cell and roll like an odometer: the outgoing word leads by 0.02 screens and both travel on one ease over 0.16 screens, so they never print over each other, and each word holds 0.58 screens or more. Every word and description is set twice: ink over the ground, and ivory inside a mask clipped to the union of the pictures on screen, so a picture's edge splits a word into two colours. A description line shows in one copy only (ivory while its letters are all over a picture, ink otherwise), so a passing edge never cuts a line. Below 1024px each word is fitted a little wider than its picture, and on any screen a word that would come too close to the corner label shrinks until it clears it (`valuesWordSize`). The pictures dim to half brightness as dusk falls. |
+| Dusk | Services sso 0.24 to 0.46 | The ground turns from cream to night quickly, blended in OKLab so the middle stays warm. The last Values word has left by sso 0.36; the two sections' pictures fill the screen between the last word and the Services heading. |
+| Services (`Services.tsx`) | 14.8 to 18.0 (300vh track, pinned two screens) | See below. |
+| Contact (`Contact.tsx`) | 18.0 to 19.5 | An ivory sheet that rises over Services. See below. |
+| Footer (`SiteFooter.tsx`) | 19.5 to the end | See "The footer". |
 
-Every scrubbed value is a pure function of scroll position, so scrolling back up reverses everything exactly.
+Every scrubbed value is a pure function of scroll position, so scrolling back up reverses everything exactly. The Services picture swaps are timed rather than scrubbed, and run back the same way.
 
-Measured page lengths: 21.3 screens at 1440×900 (19,199px) and 24.6 screens at 390×844, against the reference's 19.45. The difference is content: four values instead of three, seven services instead of five.
+Each pinned section's label (its heading and note) rolls in through its mask as the stage comes up: Works from sso 0.3, Values from 0.62.
+
+### Services
+
+- **Pinned everywhere it fits.** Wide screens 720px or taller and phones 620px or taller get the 300vh track with the whole composition pinned for two screens. The stage's sizes are capped by the screen's height, so the eyebrow to the "All services" link fits in about 700px at 720 tall. Phones stack the picture above the heading and list; between 620 and 720px tall they tighten (smaller gaps and heading, a picture of at least 4.5rem; the rows keep their 44px).
+- **Entrance.** The stage rides 0.3 screen ahead of its track until sso 0.4, so the picture follows close under the last Values picture, then settles into the pin on `power2In`, its speed reaching 0 as it pins (`servicesLead`). The picture's sheet wipes up from the bottom of the screen as the frame comes into view and the picture settles from 120% (`servicesReveal`, `riseInset`). Once the ground is past half night the eyebrow (sso 0.34), the heading's lines (from 0.36, 0.06 apart) and the rows (from 0.44, 0.04 apart) rise out of their masks, each row's rule drawing across and its number and tag fading in just behind. The seventh row is in place at sso 0.98, so the composition is whole for the whole hold. Only transforms, opacity and clip-path are written.
+- **Hold.** Scrolling walks the rows: the hold is shared evenly between them (`servicesIndex`). The frame shows the row hovered (with a fine pointer), else the one focused, else the one reached by scrolling; a new scroll position takes over from a resting pointer. Each new picture wipes up over the last (0.7s), which darkens under it. The pictures are stacked layers (`swapTo`, `swapSettle`): a quick run over the rows never cuts from one picture to another, and going back to a picture still in the stack slides the sheets above it back down. The active row's number carries a small red dot; the other labels dim to half only while one row is singled out.
+- **Keyboard.** Tabbing into the list from outside while the stage is not pinned scrolls to that row's place in the hold, where the list is whole. Focus inside the list never moves the page.
+- **Wide screens too short to pin** (under 720px tall): the section flows, starting close under Values. The heading rises with the track as above, each row arrives from its own place, and the picture follows the row crossing the middle of the screen.
+
+### Services to Contact
+
+Contact's ivory sheet rises over Services, which lags behind the scroll by up to 0.35 screen and dims to 0.45 as it is covered (`servicesHandover`). The Services stage has released about 0.2 screen before (at 1440×900), so this never moves a pinned stage. The header turns back to ink as the sheet reaches it.
+
+- **CONTACT** is cut in letter by letter, each rising from its own mask, 0.03 screens apart (`contactLetter`). Screen readers get the word once. Each letter is a box of its own, which loses the face's kerning between them, so the kerning is measured from the plain word and set back as margins.
+- **Cards** rise 48px, one column a step behind the other on wide screens, their pictures wiping up from the bottom and settling from 112% (`contactCard`).
+
+### The footer
+
+On every page the footer's content rises out from under the sheet above it, lagging by up to 0.3 of its height (or of a screen) and in place once it is all on screen or the page ends (`footerProgress`, `footerLift`). The Ontario outline draws itself stroke by stroke as it comes into view, the GTA dot landing last (`footerDraw`, `footerStroke`, `footerDot`): a bookend to the preloader. The footer's own call to action stands down on pages that already close on one (the homepage's Contact, an inner page's `CtaPanel`, the contact form).
 
 ## Navigation and page transitions
 
-- **Navigation** (`MainNav.tsx`): past 80px of scroll on screens 768px and wider, the top row lifts away item by item (0.04s apart) and the menu button rises into the corner; it all comes back at the top. Phones keep the logo and menu button. The header switches between light and dark over dark sections and the night ground.
-- **Menu**: opens as a FLIP from the button's own rectangle (0.5s, power3.out), rows rising 0.03s apart from 0.15s; closes back into the button. Escape, an outside click and navigation close it; focus is trapped while it is open and returned to the button.
-- **Roll links**: header, menu and footer links roll their characters (0.4s, 0.02s apart, power1.inOut) on hover and keyboard focus, and roll back from wherever they have got to. Each word rolls in its own mask so long labels can wrap.
-- **Link buttons** (`LinkButton.tsx`): the plate and icon round their corners, a wipe crosses the plate, the arrow cube turns 90° and a shine passes over the label.
-- **Page transitions** (`ScreenTransition.tsx`): on an in-site link, the page dims (0.5s from 0.2s), a graphite panel unfolds in 3D (`rotateX/rotateY 90° → 0`, 0.7s) and scales up to cover from 0.35s, and the outline of Ontario draws on it, as Sebra asked. The next page loads underneath, holds briefly, and the cover fades away (0.7s). With reduced motion it is a 0.3s crossfade.
-- **Parallax** (`MotionRoot.tsx`): pictures marked `data-parallax` on other pages sit at 120% and drift with `screenRatio`, as the spec's shared utility.
+- **Header** (`MainNav.tsx`): past 80px of scroll on screens 768px and wider, the top row steps up and out item by item and the menu button rises into the corner; it all comes back above 80px. Phones keep the logo and the menu button. The header reads the ground 64px down: ivory type over the hero, the night ground, dark sections and the footer, ink elsewhere. A dark section counts only until the next one begins, so a sheet sliding over it turns the header at once. On the homepage the phone header bar takes the ground's colour (`headerGround`), ivory as soon as Contact's sheet reaches it.
+- **Menu**: unfolds from the button's own outline (0.5s), the links rising one after another. Escape, an outside click and navigation close it. Focus is trapped while it is open and returned to the button.
+- **Roll links**: header, menu and footer links roll their characters (0.4s, 0.02s apart) on hover and keyboard focus, and roll back from wherever they have got to.
+- **Link buttons** (`LinkButton.tsx`): the plate and icon round their corners, a wipe crosses the plate, the arrow cube turns and a shine passes over the label. The outline variant (`link-button--outline`) fills with ink on hover and focus.
+- **Page transitions** (`ScreenTransition.tsx`): on an in-site link, a graphite panel at the centre unfolds in 3D (90° on both axes to flat, 0.7s) while a dim underlay fades in; from 0.35s it scales up to cover the screen, and the Ontario outline draws over it from 0.2s. The next page loads underneath and the cover fades away (0.7s); focus moves to the new page's main content and its entrance runs on the route timing (`data-arrival="route"`). Each navigation has an id, so a late timer from an earlier click can never lift the cover over the wrong page. With reduced motion it is a 0.3s crossfade.
+- **Inner pages** (`InteractionEffects.tsx`, `reveal.ts`): the page header enters in order once the preloader or transition clears; below it headings rise line by line, and rows, rules and blocks follow one another in reading order (60ms apart, at most 480ms) as they reach the bottom 8% of the screen. Anything that takes focus or the pointer shows at once.
+- **Parallax** (`MotionRoot.tsx`): pictures marked `data-parallax` sit at 120% and drift through a tenth of their height as they cross the screen.
 
-## Reduced motion
+## Reduced motion and still layouts
 
-With `prefers-reduced-motion: reduce`: Lenis duration 0 and no wheel smoothing; the preloader is skipped; the hero, intro, works, values, services and contact show their still layouts with everything visible; the services picture follows the row instantly; roll links and parallax are off; page transitions are a 0.3s crossfade; and CSS durations collapse to 0.01ms.
+With `prefers-reduced-motion: reduce`: Lenis duration 0 and no wheel smoothing; no preloader; every homepage section shows its still layout with all content visible; the Services picture follows a hover or focus at once; the Contact letters, cards and footer outline are simply there; roll links, parallax and the inner-page reveals are off; page transitions are a 0.3s crossfade; CSS durations collapse to 0.01ms.
+
+Screens under 500px tall (a phone on its side) and visitors without JavaScript get the same still layouts, with motion otherwise allowed. Every split line or letter keeps its text for screen readers once.
 
 ## Where this differs from the spec
 
-- **No WebGL layer.** The spec's own advice is to build the complete DOM version first, and its shaders were never captured, so nothing of them is guessed. The `homeCard` FLIP between the works card and its page belongs to that layer and is not built either.
-- **Colours** are PermitGuys' ivory (`#f4f1eb`) and graphite (`#191918`) rather than the reference's `#F3F0EC` and `#1A1A1A`, and the works tints are PermitGuys' own.
-- **Section lengths** follow the content (four values, seven services), so the scroll map is longer than the reference's.
-- **The preloader drawing** is Ontario's outline, not the arch logo, and the transition panel carries the same outline.
+- **Choreography.** The spec's section behaviours were replaced section by section: the hero is covered by the intro's sheet rather than fading, the orbit is one squircle path rather than seven orbit slots, Works is one pinned viewer with wipes rather than resolving panels, Values is an odometer with a union mask, Services pins on every size, and Contact is a sheet with letters cut in. Display type never fades.
+- **No WebGL layer.** Its shaders were never captured, so nothing of them is guessed. The `homeCard` FLIP between a works card and its page belongs to that layer and is not built either.
+- **Colours** are PermitGuys' ivory (`#f4f1eb`), stone and graphite (`#191918`), and the ground goes through dusk into night for Services.
+- **The preloader** draws Ontario's outline and opens with an iris from the GTA dot rather than the arch logo; the transition panel and the footer carry the same outline.
 - **Link button corners** use a CSS `clip-path` rounding rather than the reference's hand-built path morph.
-- **Other pages** keep their existing reveal-on-scroll behaviour; the spec's section-description scrub, contact-page intro and works index were not part of this work.
-- **Short screens** (under 500px tall, such as a phone on its side) get the still layout rather than the reference's short-landscape variant.
+- **Short screens** get the still layout rather than the reference's short-landscape variant.
 
 ## What could not be verified
 
-- **The screen recording.** Only a still frame of Sebra's video arrived, so this follows the written spec, not the recording. Anything in the video the spec does not describe is not here.
-- **The live reference site** cannot be opened from the build environment.
-- **Real device feel.** Checked in headless Chromium at 1440×900, 820×1180, 390×844 and 844×390, with frame captures and 25fps recordings; not yet on a physical phone or in Safari.
-- **Line counts** depend on the fonts actually loaded; the line splitting re-runs whenever a block's width changes.
+- **Real devices.** Checked in headless Chromium at 1440×900, 1280×720, 1280×680, 1024×720, 820×1180, 390×844, 375×700, 360×740, 360×620, 320 wide and 844×390, with frame captures, wheel recordings forward and back, and traces at four times CPU throttle; not on a physical phone or in Safari or Firefox (the iris needs registered custom properties; others get the fade).
+- **Frame cost.** Through the dusk at four times CPU throttle most frames take 17 to 33ms of main thread, with peaks near 50ms where the Values odometer, the dusk and the Services entrance overlap; unthrottled frames stay near 10ms. Not measured on a low-end phone.
+- **Line counts** depend on the fonts actually loaded; line splitting re-runs whenever a block's width changes.
+- **The reference.** Only a still frame of Sebra's video arrived and the live reference site cannot be opened from the build environment.
 
 ## Checks
 
-- `tests/motion.test.ts`: the spec's numeric parity checks (hero gone at 1,800px with 450px travel, a 600vh intro for two paragraphs, 0.6 base turns and a ×3 exit radius, works peak at `sso` 1.25, ground colours either side of the buffer, damping at λ 12) plus the window maths of every section.
-- `e2e/site.spec.ts`: reduced motion, the menu at every width, the page transition and its reduced-motion crossfade, axe on every main page, and no sideways scrolling.
+- `tests/motion.test.ts`: the windows and handovers of every section (masks never overlap, holds, the dusk against the last Values word and the Services heading, the Services lead and its stop at the pin, row cascade, swap stack, the Contact letters and cards, the footer), plus the orbit geometry.
+- `e2e/site.spec.ts`: reduced motion, the menu at every width, the page transition and its reduced-motion crossfade, the phone header over Contact, axe on every main page, and no sideways scrolling.

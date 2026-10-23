@@ -388,13 +388,15 @@ export const NIGHT = 0x191918;
 /**
  * The page ground, one material per section: cream, stone under Works (in
  * as Works rises over the top half of the screen, out over its last 0.35
- * screen), cream again for Values, then dusk falls over the first content
- * of Services (sso 0.25 → 0.55), blended in OKLab so the middle stays warm.
+ * screen), cream again for Values, then dusk falls quickly as Services
+ * comes up (sso 0.24 → 0.46), blended in OKLab so the middle stays warm:
+ * after the last Values word has gone and before the Services heading
+ * rises, while the two sections' pictures fill the screen between them.
  * It stays night under Contact's own ivory and the footer.
  */
 export function pageGround(ssoWorks: number, hsoWorks: number, ssoServices: number) {
   const stone = smoothstep(ssoWorks, 0.55, 0.95) * (1 - smoothstep(hsoWorks, -0.35, 0));
-  const fade = smoothstep(ssoServices, 0.25, 0.55);
+  const fade = smoothstep(ssoServices, 0.24, 0.46);
   return { fade, color: mixColorOklab(mixColorNum(CREAM, STONE, stone), NIGHT, fade) };
 }
 
@@ -410,28 +412,144 @@ export function headerGround(ground: { fade: number; color: number }, contactTop
   return { night: ground.fade > 0.5 && !onContact, color: onContact ? CREAM : ground.color };
 }
 
-/* ---- Services ---- */
+/* ---- Services (300vh track: a stage pinned for two screens; phones from 620px tall, wider screens from 720px) ---- */
 
-/** The image frame wipes up from the bottom and settles from a slight zoom. */
-export function servicesReveal(ssoFrame: number) {
-  const r = smoothstep(ssoFrame, 0.1, 0.55);
-  return { r, inset: (1 - r) * 100, scale: mix(1.15, 1, r) };
+/**
+ * A wipe that rises from a frame's bottom edge, or from the bottom of the
+ * screen while that edge is still below it, as the inset from the frame's
+ * top in %. `p` runs the wipe 0 → 1; `top` and `height` are the frame's on
+ * the screen, in px. Until a frame is all on screen only the part above
+ * the bottom of the screen is wiped, so the rising edge is always seen.
+ */
+export function riseInset(p: number, top: number, height: number, vh: number) {
+  const run = height > 0 ? clamp((Math.min(vh, top + height) - top) / height) : 1;
+  return (1 - p) * run * 100;
 }
 
-/** A scroll-distance stagger: each item's window starts 0.04 of a screen after the last. */
-export function servicesW(x: number, k: number) {
-  return smoothstep(x, 0.2 + k * 0.04, 0.8 + k * 0.04);
+/**
+ * The Services picture as it comes up: `rise` is how far the frame's top
+ * has risen above the bottom of the screen, in screens. Its sheet wipes up
+ * from the bottom (riseInset) from the moment it shows, while the picture
+ * settles from 1.2 and 6% low; over in half a screen, an entrance ease, so
+ * the last of it settles slowly. With the stage's lead (servicesLead) it
+ * starts while the last Values picture is still centred, just below it.
+ */
+export function servicesReveal(rise: number) {
+  const r = tween(rise, 0.02, 0.5, ease.power3Out);
+  return { r, scale: mix(1.2, 1, r), y: (1 - r) * 6 };
 }
 
-/** One heading line, on a 1s, 0.1-staggered timeline scrubbed by W(sso, 0). */
-export function servicesHeadingLine(w: number, line: number, lines: number) {
-  const total = 1 + Math.max(0, lines - 1) * 0.1;
-  return { yPercent: roll(tween(w * total, line * 0.1, 1, ease.power3Out), 0) };
+/**
+ * How far the stage rides above its place in the track as it comes up, in
+ * screens: 0.3 until sso 0.4, so the picture follows close under the last
+ * Values picture and the heading is in the middle of the screen as the
+ * dusk ends; then it eases back to its place on power2In, which brings the
+ * stage's speed to 0 just as it pins (0.3 × 2 / 0.6 = one screen per
+ * screen), so it settles into the hold rather than stopping dead.
+ */
+export const SERVICES_LEAD = 0.3;
+export function servicesLead(s: number) {
+  const u = clamp((s - 0.4) / 0.6);
+  return SERVICES_LEAD * (1 - u * u);
+}
+
+/** Heading line j rises from its mask from sso 0.36 of the track, 0.06 apart: as the ground passes night 0.5, so ivory type never sits on a pale ground. */
+export function servicesHeading(s: number, j: number) {
+  return roll(tween(s, 0.36 + j * 0.06, 0.34, ease.power3Out), 0);
+}
+
+/**
+ * Row i of the list, from the track's sso: its label rises from its mask
+ * (`y`, a yPercent) and its rule draws across (`t`), 0.04 apart; its number
+ * and tag fade in just behind (`meta`). The seventh row is in place at sso
+ * 0.98, as the stage pins, so the composition is whole for all of the hold.
+ */
+export function servicesRow(s: number, i: number) {
+  const t = tween(s, 0.44 + i * 0.04, 0.3, ease.power3Out);
+  return { t, y: roll(t, 0), meta: tween(s, 0.52 + i * 0.04, 0.2) };
+}
+
+/** On the pinned track, the row that scrolling has reached: the hold is shared out evenly between the n rows. */
+export function servicesIndex(scroll: number, top: number, height: number, vh: number, n: number) {
+  return Math.min(n - 1, Math.floor(clamp((scroll - top) / Math.max(1, height - vh)) * n));
+}
+
+/** Seconds a picture takes to wipe up over the last one. */
+export const SERVICES_WIPE = 0.7;
+
+/**
+ * One picture in the Services frame's stack (bottom first): `from` is how
+ * far its sheet had risen when it last changed direction at `t0` (seconds),
+ * `dir` 1 while it rises over the pictures below, −1 while it slides back
+ * down off them.
+ */
+export interface SwapLayer {
+  i: number;
+  from: number;
+  t0: number;
+  dir: 1 | -1;
+}
+
+/** How far a layer's sheet has risen, 0–1, at `time`: SERVICES_WIPE seconds from its last change, on an entrance ease; `instant` (reduced motion) jumps to the end. */
+export function swapK(layer: SwapLayer, time: number, instant = false) {
+  const e = instant ? 1 : tween(time - layer.t0, 0, SERVICES_WIPE, ease.power3Out);
+  return layer.dir > 0 ? mix(layer.from, 1, e) : layer.from * (1 - e);
+}
+
+/**
+ * The stack once the frame is asked to show picture `target`. A new
+ * picture's sheet rises from the bottom over whatever is showing, and every
+ * sheet already rising keeps rising on its own clock underneath, so a quick
+ * run over the rows never cuts from one picture to another. Asked for a
+ * picture still in the stack, the sheets above it slide back down from
+ * wherever they are, uncovering it (a hover onto a row and straight back).
+ */
+export function swapTo(stack: SwapLayer[], target: number, time: number, instant = false): SwapLayer[] {
+  const at = stack.findIndex((l) => l.i === target);
+  if (at < 0) return [...stack, { i: target, from: 0, t0: time, dir: 1 }];
+  return stack.map((l, j) => {
+    const want: 1 | -1 = j > at ? -1 : 1;
+    return j < at || l.dir === want ? l : { ...l, from: swapK(l, time, instant), t0: time, dir: want };
+  });
+}
+
+/** Drops the sheets that have slid back down, and every picture under one that is fully up: the bottom of the stack is always a whole picture. */
+export function swapSettle(stack: SwapLayer[], time: number, instant = false): SwapLayer[] {
+  const live = stack.filter((l) => l.dir > 0 || swapK(l, time, instant) > 0);
+  let base = 0;
+  live.forEach((l, j) => {
+    if (l.dir > 0 && swapK(l, time, instant) >= 1) base = j;
+  });
+  return base ? live.slice(base) : live;
+}
+
+/** How one layer is drawn: its sheet's inset from the top (%), its settle from 1.08, and its darkening to 0.7 as the sheet above it (kAbove) rises over it. */
+export function swapLayer(k: number, kAbove: number) {
+  return { clip: (1 - k) * 100, scale: 1.08 - 0.08 * k, brightness: 1 - 0.3 * kAbove };
+}
+
+/* ---- Services to Contact: the ivory sheet ---- */
+
+/** As Contact's sheet rises over it (x, Contact's sso, 0 → 1), Services lags 0.35 screen behind the scroll and dims to 0.45: it recedes into the night. */
+export function servicesHandover(x: number) {
+  const c = clamp(x);
+  return { lift: 0.35 * c, opacity: 1 - 0.55 * c };
 }
 
 /* ---- Contact ---- */
 
-export function contactReveal(sso: number) {
-  const o = smoothstep(sso, 0.08, 0.42);
-  return { opacity: o, y: (1 - o) * 28 };
+/** Letter i of the wordmark, from the heading's own sso: each rises from its own mask, 0.03 apart, the last in place as the word's top passes 44% of the screen. */
+export function contactLetter(s: number, i: number) {
+  return roll(tween(s, 0.04 + i * 0.03, 0.34, ease.power3Out), 0);
+}
+
+/**
+ * A card, from its own sso: it rises 48px and its block fades in over the
+ * first 40% (a block may fade; its type never does on its own), while its
+ * picture's sheet wipes up as `t` runs (riseInset) and settles from 1.12.
+ * `col` staggers the right-hand card 0.06 behind.
+ */
+export function contactCard(s: number, col: number) {
+  const t = tween(s, 0.06 + col * 0.06, 0.38, ease.power3Out);
+  return { t, y: (1 - t) * 48, opacity: Math.min(1, t * 2.5), scale: mix(1.12, 1, t) };
 }

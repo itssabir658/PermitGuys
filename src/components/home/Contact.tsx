@@ -11,43 +11,63 @@ import type { ReviewSummary } from "@/lib/reviews";
 const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZone: "UTC" });
 
 /**
- * Closing section, after the reference's Contact (docs/MOTION.md,
- * "Contact"): the word set large, then two cards with pictures in the
- * notched sheet outline. Each piece rises 28px and fades in over its own
- * stretch of scroll (from 0.08 to 0.42 of a screen after it enters), and
- * sinks back on the way up. The section brings its own ivory: on the tracks
- * the page ground stays night beneath it.
+ * The close: the word set large, then two cards with pictures in the
+ * notched sheet outline.
+ *
+ * The section is an ivory sheet that rises over Services as it recedes
+ * into the night (the handover module), the page's second sheet after the
+ * intro's: the page opens and closes with one gesture. On the tracks the
+ * word is cut in letter by letter, each rising from its own mask; then the
+ * cards rise and their blocks fade in, the right one a beat behind on wide
+ * screens, as each picture's sheet wipes up and settles (HomeMotion,
+ * contact module). The section brings its own ivory: the page ground stays
+ * night beneath it.
+ *
+ * The letters are decoration; the heading's text is the visually hidden
+ * word. Splitting a word into boxes loses the face's kerning between them,
+ * so HomeMotion measures the word as one run and sets it back.
  */
 export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
   const { contact } = site;
   return (
-    <section data-contact="" aria-labelledby="contact-heading" className="relative bg-ivory pt-28 pb-24 lg:pt-40 lg:pb-32">
+    <section data-contact="" aria-labelledby="contact-heading" className="relative z-[1] bg-ivory pt-28 pb-16 lg:pt-40 lg:pb-20">
       <Container>
-        <h2 id="contact-heading" data-contact-reveal="" className="font-wordmark text-[clamp(4rem,1rem+14vw,15rem)] leading-[0.85] tracking-[-0.01em] text-ink uppercase">
-          Contact
+        <h2 id="contact-heading" data-contact-heading="" className="contact-heading font-wordmark leading-[0.85] tracking-[-0.01em] text-ink uppercase">
+          <span className="sr-only">Contact</span>
+          <span aria-hidden="true" className="contact-heading__word">
+            {"Contact".split("").map((c, i) => (
+              <span key={i} className="contact-letter">
+                <span data-contact-letter="">{c}</span>
+              </span>
+            ))}
+          </span>
         </h2>
 
         <div className="mt-14 grid gap-6 md:grid-cols-2 lg:mt-20 lg:gap-8">
-          <article data-contact-reveal="" className="grid content-start gap-8 bg-stone-100 p-5 sm:p-6 lg:p-8">
-            <div className="notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
-              <Image src={plates.infill.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover object-[64%_62%]" />
+          <article data-contact-card="" className="grid grid-rows-[auto_1fr] gap-8 bg-stone-100 p-5 sm:p-6 lg:p-8">
+            <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
+              <div data-contact-wipe="" className="absolute inset-0">
+                <Image src={plates.infill.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover object-[64%_62%]" />
+              </div>
             </div>
-            <div>
+            <div className="flex flex-col">
               <h3 className="font-display text-display-md font-light text-ink">Start a project</h3>
               <p className="mt-4 max-w-md leading-relaxed text-ink-muted">
                 Tell us what you are planning and where. We will review the details and explain how we can help with drawings and the permit process.
               </p>
-              <div className="mt-8">
+              <div className="mt-auto border-t border-line pt-6">
                 <LinkButton href={paths.contact}>Get in touch</LinkButton>
               </div>
             </div>
           </article>
 
-          <article data-contact-reveal="" className="grid content-start gap-8 bg-stone-100 p-5 sm:p-6 lg:p-8">
-            <div className="notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
-              <Image src={plates.deck.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover" style={{ objectPosition: plates.deck.focus }} />
+          <article data-contact-card="" className="grid grid-rows-[auto_1fr] gap-8 bg-stone-100 p-5 sm:p-6 lg:p-8">
+            <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
+              <div data-contact-wipe="" className="absolute inset-0">
+                <Image src={plates.deck.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover" style={{ objectPosition: plates.deck.focus }} />
+              </div>
             </div>
-            <div>
+            <div className="flex flex-col">
               <h3 className="font-display text-display-md font-light text-ink">Call or visit</h3>
               <address className="mt-4 grid gap-1.5 leading-relaxed text-ink-muted not-italic">
                 {contact.address ? <span>{contact.address}</span> : null}
@@ -86,7 +106,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
             </div>
           </article>
         </div>
-        <p className="mt-8 text-label text-ink-muted">Images are rendered studies for illustration, not client projects.</p>
+        <p className="mt-6 text-label text-ink-muted">Images are rendered studies for illustration, not client projects.</p>
       </Container>
     </section>
   );
