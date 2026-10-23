@@ -16,17 +16,22 @@ export function LinkRows({ items, headingLevel = "h3" }: { items: LinkRow[]; hea
     <ul className="border-t border-line">
       {items.map((item) => (
         <li key={item.href} className="row-rule">
-          <Link
-            href={item.href}
-            className="group flex items-center gap-6 py-7"
-          >
+          <Link href={item.href} data-cube-host="" className="group flex items-center gap-6 py-7">
             <span className="min-w-0 flex-1">
               {item.meta ? <span className="mb-3 block text-label text-ink-muted">{item.meta}</span> : null}
               <H className="font-display text-display-sm font-light text-ink"><span className="link-draw">{item.title}</span></H>
               {item.description ? <span className="mt-2 block leading-relaxed text-ink-muted">{item.description}</span> : null}
             </span>
-            <span aria-hidden="true" className="hidden size-12 shrink-0 items-center justify-center rounded-full text-ink ring-1 ring-ink/15 transition-colors duration-500 ease-out-expo ring-inset group-hover:bg-ink group-hover:text-ivory sm:flex">
-              <ArrowRight className="size-4 -rotate-45 transition-transform duration-500 ease-out-expo group-hover:rotate-0" />
+            {/* The link button's icon cell: a square that turns a quarter on its cube to the ink face. */}
+            <span aria-hidden="true" className="link-cube hidden shrink-0 text-ink sm:block">
+              <span className="link-button__cube">
+                <span className="link-button__face">
+                  <ArrowRight className="size-4 -rotate-45" />
+                </span>
+                <span className="link-button__face link-button__face--side">
+                  <ArrowRight className="size-4" />
+                </span>
+              </span>
             </span>
           </Link>
         </li>

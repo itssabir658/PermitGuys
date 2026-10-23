@@ -46,7 +46,7 @@ export function CtaPanel({
             <div data-row="" className="mt-12 flex flex-wrap gap-4">
               <LinkButton href={href}>{primaryLabel}</LinkButton>
               {secondary ? (
-                <LinkButton href={secondary.href} className="link-button--outline">
+                <LinkButton href={secondary.href} tone="outline">
                   {secondary.label}
                 </LinkButton>
               ) : null}

@@ -35,10 +35,10 @@ export default function NotFound() {
             <p className="motion-rise mt-8 max-w-xl text-lede text-pretty text-ink-muted">The link may be out of date, or the page may have moved. These are good places to continue.</p>
             <div className="motion-rise-delay mt-10 flex flex-wrap gap-3">
               <LinkButton href={paths.home}>Go to the homepage</LinkButton>
-              <LinkButton href={paths.services} tone="light">
+              <LinkButton href={paths.services} tone="outline">
                 Explore services
               </LinkButton>
-              <LinkButton href={paths.guides} tone="light">
+              <LinkButton href={paths.guides} tone="outline">
                 Read permit guides
               </LinkButton>
             </div>

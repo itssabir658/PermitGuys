@@ -29,7 +29,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | `SectionHeading`, `Section` | Section heading and the band around it. Tones: `ivory`, `stone`, `dark`. |
 | `PageHeader` | Opening block of every inner page: breadcrumbs, a large light H1, an optional aside, a closing rule. Index pages follow it with a wide study band (`PlateBand`). |
 | `Plate` | Every image. Mask reveal, optional scroll drift, and a mono "Fig. NN" caption that always carries the study note (see `docs/IMAGES.md`). |
-| `ButtonLink` | Pill buttons with the arrow in a round cell. `primary` (ink), `light` (on photographs and dark grounds), `secondary`, `ghost-light`. `ArrowLink` for quieter links. One primary per block. |
+| `LinkButton` | The call to action: a square-cornered mono label plate and a square arrow cell. Tones `dark` (ink, the default), `light` (ivory, on photographs and dark grounds), `outline` (the quieter second action on paper) and `ghost` (the same on dark grounds). `LinkButtonFace` and `linkButtonClass` give a `<button>` or an outside link the same face. `ArrowLink` for quieter text links. One dark or light button per block. |
 | `ServiceIndex` | Numbered service rows. On a fine pointer a preview image follows the cursor and the other rows dim. |
 | `IndexList`, `LinkRows`, `FaqList`, `StepList` | Hairline lists for services, links, questions and process steps on inner pages. |
 | `RatingCard`, `Reviews`, `ReviewReel` | Google rating and reviews. Data comes only from `src/lib/reviews.ts`. |

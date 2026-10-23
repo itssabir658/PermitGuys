@@ -156,9 +156,57 @@ test.describe("interactive pieces", () => {
       const veil = document.querySelector<HTMLElement>(".screen-veil")!;
       new MutationObserver(() => veil.dataset.phase !== "idle" && document.documentElement.setAttribute("data-test-covered", "")).observe(veil, { attributes: true });
     });
+    const projectType = page.locator("select[name=projectType]");
+    await expect(projectType).not.toHaveValue("");
+    const preset = await projectType.inputValue();
     await page.locator("footer").getByRole("link", { name: "Contact", exact: true }).click();
     await expect(page).toHaveURL(/\/contact\/$/);
     await expect(page.locator("html")).not.toHaveAttribute("data-test-covered");
+    // The form keeps the service it was opened with.
+    await expect(projectType).toHaveValue(preset);
+  });
+
+  test("Back returns to the scroll position the reader left", async ({ page }) => {
+    await page.goto("/services/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(1500);
+    // Clicked in place: a test click would first scroll the footer into view.
+    await page.locator("footer").getByRole("link", { name: "About", exact: true }).evaluate((a: HTMLElement) => a.click());
+    await expect(page).toHaveURL(/\/about\/$/);
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/services\/$/);
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(1500);
+  });
+
+  test("an On this page link glides to its section and moves focus there", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "The index shows on wide screens");
+    await page.goto("/permit-guides/permit-costs-and-timelines/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.getByRole("navigation", { name: "On this page" }).getByRole("link").nth(2).click();
+    await expect(page).toHaveURL(/#what-helps-keep-an-application-moving$/);
+    const section = page.locator("#what-helps-keep-an-application-moving");
+    await expect(section).toBeFocused();
+    // Level with the sticky index (8rem down), not under the header.
+    await expect.poll(() => section.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(128);
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
+  });
+
+  test("a menu link to the page showing closes the menu and returns to the top", async ({ page }, info) => {
+    test.skip(info.project.name === "desktop", "The menu button shows at the top on smaller screens");
+    await page.goto("/services/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    const button = page.getByRole("button", { name: "Open menu" });
+    await button.click();
+    await page.getByRole("navigation", { name: "Site menu" }).getByRole("link", { name: "Services" }).click();
+    await expect(page.locator(".site-nav__menu-btn")).toHaveAttribute("aria-expanded", "false");
+    await expect(page).toHaveURL(/\/services\/$/);
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
   });
 
   test("on phones the collapsed header bar over Contact is ivory, not the night behind it", async ({ page }, info) => {

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLink } from "@/components/ui/ButtonLink";
+import { ArrowLink } from "@/components/ui/ArrowLink";
 import { Container } from "@/components/ui/Container";
 import { plateForService } from "@/content/imagery";
 import { otherWork } from "@/content/other-work";

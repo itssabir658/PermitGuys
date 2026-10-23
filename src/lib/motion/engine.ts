@@ -30,7 +30,13 @@ import Lenis from "lenis";
  * When the layout changes under the reader (a resize, a rotation, the
  * tracks turning on or off, content above growing), the engine puts them
  * back at the same point of the same section, since tracks are sized in
- * screens and pixel offsets mean nothing after a resize.
+ * screens and pixel offsets mean nothing after a resize. Going back to a
+ * page (`restore`) puts them back at the pixel they left from, once the new
+ * page has been measured, so its tracks exist before the scroll is set.
+ *
+ * In-page links glide (`glideTo`: 1.1s on the same exponential ease as the
+ * wheel, instant with reduced motion), and wait for the page to be released
+ * first (`afterUnlock`), since releasing it cancels any glide under way.
  */
 
 export interface Frame {
@@ -65,6 +71,10 @@ type Callback = (frame: Frame) => void;
 /** Keep in step with the `tracks` custom variant in globals.css. */
 export const TRACKS_QUERY = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
+
+/** expo.out, the wheel's ease: in-page links glide on it too. */
+const expoOut = (n: number) => Math.min(1, 1.001 - Math.pow(2, -10 * n));
+const GLIDE_S = 1.1;
 
 /** Element geometry in document coordinates, from its layout position (our transforms never affect it). */
 export interface Range {
@@ -147,6 +157,10 @@ class Engine {
   private keepPlace = false;
   /** The screen at the last measure, as `vw×vh tracks`. */
   private view = "";
+  /** Where the next measure puts the reader (a page gone back to). */
+  private pendingRestore: number | null = null;
+  /** Run once the page is released (a glide asked for while the menu was still closing). */
+  private unlocked: (() => void)[] = [];
 
   boot() {
     if (this.booted || typeof window === "undefined") return;
@@ -161,7 +175,7 @@ class Engine {
       touchInertiaExponent: 2,
       duration: reduced ? 0 : 1.2,
       // expo.out; with a duration set, Lenis glides by time rather than by its default lerp.
-      easing: reduced ? (n) => n : (n) => Math.min(1, 1.001 - Math.pow(2, -10 * n)),
+      easing: reduced ? (n) => n : expoOut,
     });
     if (this.locks.size) this.lenis.stop();
     const probe = document.createElement("div");
@@ -230,21 +244,32 @@ class Engine {
     this.view = view;
     // Update the scroll limit without cutting short a glide in progress.
     this.lenis?.dimensions.resize();
+    // A page gone back to: the reader returns to the pixel they left from (it wins over the reading anchor).
+    const restore = this.pendingRestore;
+    this.pendingRestore = null;
+    if (restore != null) this.jump(restore);
     f.scroll = this.lenis ? this.lenis.scroll : window.scrollY;
     for (const m of this.modules) m.measure?.(f);
     this.sections = [...document.querySelectorAll<HTMLElement>("main > :not(script), body > footer")].map(measureRange);
     // After a resize or rotation: the same point of the same section, wherever it now is.
-    const r = keep && this.sections[keep.i];
-    if (keep && r && r.height > 0) {
-      const y = Math.max(0, Math.round(r.top + keep.p * r.height));
-      if (this.lenis) {
-        this.lenis.scrollTo(y, { immediate: true, force: true });
-        f.scroll = this.lenis.scroll;
-      } else {
-        window.scrollTo({ top: y, behavior: "instant" });
-        f.scroll = window.scrollY;
-      }
+    const r = restore == null && keep && this.sections[keep.i];
+    if (keep && r && r.height > 0) this.jump(Math.max(0, Math.round(r.top + keep.p * r.height)));
+  }
+
+  private jump(y: number) {
+    if (this.lenis) {
+      this.lenis.scrollTo(y, { immediate: true, force: true });
+      this.frame.scroll = this.lenis.scroll;
+    } else {
+      window.scrollTo({ top: y, behavior: "instant" });
+      this.frame.scroll = window.scrollY;
     }
+  }
+
+  /** Put the reader back at `y` once the page now showing has been measured (going back to a page). */
+  restore(y: number) {
+    this.requestMeasure();
+    this.pendingRestore = Math.max(0, y);
   }
 
   /** Re-read layout at the start of the next frame (new page content, fonts). The reading position is not kept: the page is a new one. */
@@ -288,6 +313,15 @@ class Engine {
     window.removeEventListener("keydown", this.blockKeys, { capture: true });
     window.removeEventListener("wheel", this.blockPanels, { capture: true });
     window.removeEventListener("touchmove", this.blockPanels, { capture: true });
+    const waiting = this.unlocked;
+    this.unlocked = [];
+    waiting.forEach((cb) => cb());
+  }
+
+  /** Run `cb` now, or as soon as the page is released (Lenis cancels any glide when it starts again). */
+  afterUnlock(cb: () => void) {
+    if (this.locks.size) this.unlocked.push(cb);
+    else cb();
   }
 
   get locked() {
@@ -314,6 +348,24 @@ class Engine {
   scrollTo(target: number, immediate = false) {
     if (this.lenis) this.lenis.scrollTo(target, { immediate, force: true });
     else window.scrollTo({ top: target, behavior: immediate ? "instant" : "smooth" });
+  }
+
+  /**
+   * Glide to a point, or to an element (its scroll-margin and the root's
+   * scroll-padding respected, as the browser would), then call `done`.
+   * Instant with reduced motion. Call it through `afterUnlock`.
+   */
+  glideTo(target: number | HTMLElement, done?: () => void) {
+    const immediate = matchMedia(REDUCED_QUERY).matches;
+    if (this.lenis) {
+      // A native scroll this very frame (a keyboard jump, the scrollbar) has not reached Lenis yet: start from where the page is.
+      if (!this.lenis.isScrolling && Math.abs(this.lenis.scroll - window.scrollY) > 1) this.jump(window.scrollY);
+      this.lenis.scrollTo(target, { duration: GLIDE_S, easing: expoOut, immediate, onComplete: () => done?.() });
+      return;
+    }
+    if (typeof target === "number") window.scrollTo({ top: target, behavior: immediate ? "instant" : "smooth" });
+    else target.scrollIntoView({ behavior: immediate ? "instant" : "smooth" });
+    done?.();
   }
 }
 

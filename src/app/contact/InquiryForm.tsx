@@ -4,6 +4,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { cn } from "@/components/ui/cn";
+import { LinkButtonFace, linkButtonClass } from "@/components/ui/LinkButton";
 import { track } from "@/lib/analytics";
 import { ATTRIBUTION_STORAGE_KEY, sanitizeAttribution } from "@/lib/inquiry/attribution";
 import { HONEYPOT_FIELD } from "@/lib/inquiry/protection";
@@ -351,7 +352,8 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
         </Field>
         <fieldset aria-describedby={errors.preferredContact ? "preferredContact-error" : undefined}>
           <legend className="text-label text-ink-muted">{labels.preferredContact}</legend>
-          <div className="mt-2 flex gap-3">
+          {/* A square segmented pair: the two options share their middle rule. */}
+          <div className="mt-2 flex">
             {(
               [
                 ["email", "Email"],
@@ -361,7 +363,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
               <label
                 key={value}
                 htmlFor={`preferredContact-${value}`}
-                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-full px-5 text-base text-ink ring-1 ring-ink/20 transition-colors duration-500 ring-inset has-[:checked]:bg-ink has-[:checked]:text-ivory has-[:checked]:ring-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500"
+                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 px-5 text-base text-ink ring-1 ring-ink/20 transition-colors duration-300 ring-inset not-first:-ml-px has-[:checked]:bg-ink has-[:checked]:text-ivory has-[:checked]:ring-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500"
               >
                 <input
                   id={`preferredContact-${value}`}
@@ -475,15 +477,9 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-        <button
-          type="submit"
-          disabled={pending}
-          className="group inline-flex min-h-13 items-center justify-center gap-4 rounded-full bg-ink py-1.5 pr-1.5 pl-8 text-[0.9375rem] font-medium text-ivory transition-colors duration-500 hover:bg-charcoal-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-wait disabled:opacity-70"
-        >
-          {pending ? "Sending…" : "Send inquiry"}
-          <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-full bg-brand-500 text-white">
-            {pending ? <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" /> : <span className="size-1.5 rounded-full bg-white transition-transform duration-500 group-hover:scale-[2]" />}
-          </span>
+        {/* The site's link button, as a submit: while sending, the arrow's face shows a spinner. */}
+        <button type="submit" disabled={pending} className={linkButtonClass("dark", "self-start sm:self-auto disabled:cursor-wait disabled:opacity-70")}>
+          <LinkButtonFace front={pending ? <span className="size-4 animate-spin rounded-full border-2 border-ivory/40 border-t-ivory motion-reduce:animate-none" /> : undefined}>{pending ? "Sending…" : "Send inquiry"}</LinkButtonFace>
         </button>
         <p role="status" aria-live="polite" className="text-sm text-ink-muted">
           {pending ? "Sending your inquiry. Please keep this page open." : ""}

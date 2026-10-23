@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ExternalIcon } from "./Icons";
+import { LinkButtonFace, linkButtonClass } from "./LinkButton";
 import { cn } from "./cn";
 
 /*
@@ -77,17 +78,12 @@ export function MapCard({ query, label, note, className, onLight }: { query: str
             </div>
             <div className="flex flex-wrap gap-2">
               {loaded ? null : (
-                <button
-                  type="button"
-                  onClick={() => setLoaded(true)}
-                  className="inline-flex min-h-11 items-center rounded-full bg-ivory px-5 text-[0.9375rem] font-medium whitespace-nowrap text-ink transition-colors hover:bg-white"
-                >
-                  Show the map
+                <button type="button" onClick={() => setLoaded(true)} className={linkButtonClass("light", "whitespace-nowrap")}>
+                  <LinkButtonFace>Show the map</LinkButtonFace>
                 </button>
               )}
-              <a href={mapsLink(query)} className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-[0.9375rem] font-medium whitespace-nowrap text-ivory ring-1 ring-ivory/30 transition-colors ring-inset hover:ring-ivory">
-                Open in Google Maps
-                <ExternalIcon />
+              <a href={mapsLink(query)} className={linkButtonClass("ghost", "whitespace-nowrap")}>
+                <LinkButtonFace icon={<ExternalIcon />}>Open in Google Maps</LinkButtonFace>
               </a>
             </div>
           </div>

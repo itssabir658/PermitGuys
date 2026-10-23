@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { engine } from "@/lib/motion/engine";
 import { REVEAL_SETTLE, ROW_SELECTOR, readingOrder, revealDelay } from "@/lib/motion/reveal";
 import { resplitIfNeeded, splitLines } from "@/lib/motion/split";
 
@@ -25,8 +26,11 @@ interface Arrival {
  *   arrive together follow one another in reading order, and anything
  *   already in the first screen waits for the page header's entrance
  *   (data-revealed). Content is visible by default, so it stays readable
- *   without JavaScript, for crawlers and in print. Skipped for visitors who
- *   prefer reduced motion.
+ *   without JavaScript, for crawlers and in print. Anything the reader has
+ *   passed without it coming in (a glide or a jump past it) is shown, so
+ *   nothing above them is ever left blank. Skipped for visitors who prefer
+ *   reduced motion, and on a page gone back to (data-returning), which
+ *   comes back as it was left.
  * - Section tracking: the "On this page" index marks the section being read.
  */
 export function InteractionEffects() {
@@ -36,7 +40,7 @@ export function InteractionEffects() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const root = document.documentElement;
     const headings = [...document.querySelectorAll<HTMLElement>("[data-reveal-lines]")];
-    if (!("IntersectionObserver" in window) || !("ResizeObserver" in window)) {
+    if (!("IntersectionObserver" in window) || !("ResizeObserver" in window) || "returning" in root.dataset) {
       // Never leave a heading waiting for a split that will not come.
       headings.forEach((el) => el.removeAttribute("data-reveal-lines"));
       return;
@@ -106,6 +110,20 @@ export function InteractionEffects() {
     document.addEventListener("focusin", uncover, true);
     document.addEventListener("pointerover", uncover, { passive: true });
 
+    // An observer never reports a piece that went from below the screen to above it without crossing it (a glide or a
+    // jump to a section further down): every tenth frame, whatever hidden piece is wholly above the screen is shown.
+    let tick = 0;
+    const offSweep = engine.onFrame(() => {
+      if (++tick % 10) return;
+      for (const el of document.querySelectorAll<HTMLElement>('[data-reveal="hidden"]')) {
+        if (el.getBoundingClientRect().bottom >= 0) continue;
+        observer.unobserve(el);
+        waiting = waiting.filter((arrival) => arrival.el !== el);
+        el.style.setProperty("--o", "0");
+        el.dataset.reveal = "shown";
+      }
+    });
+
     document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => {
       if (hide(el)) observer.observe(el);
     });
@@ -162,6 +180,7 @@ export function InteractionEffects() {
     return () => {
       alive = false;
       cancelAnimationFrame(frame);
+      offSweep();
       document.removeEventListener("focusin", uncover, true);
       document.removeEventListener("pointerover", uncover);
       observer.disconnect();

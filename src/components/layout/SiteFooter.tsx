@@ -31,10 +31,18 @@ export function SiteFooter() {
           <div className="min-w-0 lg:col-span-5">
             <div data-footer-cta="" className="mb-16">
               <p className="text-label text-charcoal-300">Have a project in mind?</p>
-              <Link href={paths.contact} className="group mt-8 inline-flex items-center gap-5 font-display text-[clamp(1.75rem,0.25rem+2.75vw,3.6rem)] leading-[1.04] font-light tracking-[-0.036em] sm:gap-6">
+              <Link href={paths.contact} data-cube-host="" className="group mt-8 inline-flex items-center gap-5 font-display text-[clamp(1.75rem,0.25rem+2.75vw,3.6rem)] leading-[1.04] font-light tracking-[-0.036em] sm:gap-6">
                 <span className="link-rule pb-2 sm:whitespace-nowrap">Start a conversation</span>
-                <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-transform duration-700 ease-out-expo group-hover:rotate-[-45deg] sm:size-14">
-                  <ArrowRight className="size-5" />
+                {/* The site's one red fill: a square that turns a quarter on its cube, as the link buttons' icon cells do. */}
+                <span aria-hidden="true" className="link-cube site-footer__cta-cell shrink-0">
+                  <span className="link-button__cube">
+                    <span className="link-button__face">
+                      <ArrowRight className="size-5" />
+                    </span>
+                    <span className="link-button__face link-button__face--side">
+                      <ArrowRight className="size-5" />
+                    </span>
+                  </span>
                 </span>
               </Link>
             </div>

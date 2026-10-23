@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLink } from "@/components/ui/ArrowLink";
 import { CtaPanel } from "@/components/ui/CtaPanel";
 import { Figure } from "@/components/ui/Figure";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -54,12 +55,8 @@ export default function ProjectsPage() {
                 We only publish projects with our clients&apos; permission. In the meantime, our services and permit guides explain how we approach each type of project.
               </p>
               <div data-row="" className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
-                <Link href={paths.services} className="border-b border-brand-500/60 pb-1 font-medium text-charcoal-900 hover:border-brand-600">
-                  Explore services
-                </Link>
-                <Link href={paths.guides} className="border-b border-brand-500/60 pb-1 font-medium text-charcoal-900 hover:border-brand-600">
-                  Read permit guides
-                </Link>
+                <ArrowLink href={paths.services}>Explore services</ArrowLink>
+                <ArrowLink href={paths.guides}>Read permit guides</ArrowLink>
               </div>
             </div>
             <div className="lg:col-span-7">

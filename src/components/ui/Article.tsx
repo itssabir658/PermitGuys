@@ -36,10 +36,14 @@ export function ArticleLayout({ toc, children }: { toc: TocItem[]; children: Rea
   );
 }
 
-/** One article section: the heading rises line by line, the intro follows it, then the body row by row. */
+/**
+ * One article section: the heading rises line by line, the intro follows it, then the body row by row. An "On this page"
+ * link glides here and then moves focus to the section (ScreenTransition), so it can take focus; with the root's
+ * scroll-padding its heading lands level with the sticky index (8rem down).
+ */
 export function ArticleSection({ id, title, children, intro }: { id: string; title: string; children: ReactNode; intro?: ReactNode }) {
   return (
-    <section aria-labelledby={`${id}-heading`} id={id} className="scroll-mt-28">
+    <section aria-labelledby={`${id}-heading`} id={id} tabIndex={-1} className="scroll-mt-8 focus:outline-none">
       <h2 id={`${id}-heading`} data-reveal-lines="" className="font-display text-display-md font-light text-balance text-ink">
         {title}
       </h2>

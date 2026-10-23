@@ -181,6 +181,12 @@
     outline: 2px solid var(--color-brand-500);
     outline-offset: 3px;
   }
+  /* On dark grounds the ring is brand-300 (8:1 on graphite; brand-500 would be about 3:1). */
+  [data-tone="dark"] :focus-visible,
+  .site-menu :focus-visible,
+  :root[data-ground="night"] [data-services] :focus-visible {
+    outline-color: var(--color-brand-300);
+  }
 
   @media (prefers-reduced-motion: no-preference) {
     html {
@@ -727,6 +733,13 @@
 }
 
 /* ---- Page transition (ScreenTransition.tsx) ---- */
+/*
+ * At rest the veil is the finished cover: the sheet over the whole screen
+ * and the outline drawn on it. A forward navigation animates its way there
+ * (the sheet rising, the outline drawing) and away (the sheet leaving
+ * through the top); back and forward and reduced motion fade the whole veil.
+ * Hidden while idle.
+ */
 .screen-veil {
   position: fixed;
   inset: 0;
@@ -736,38 +749,26 @@
   pointer-events: none;
   visibility: hidden;
 }
-.screen-veil:is([data-phase="cover"], [data-phase="return"], [data-phase="reveal"]) {
+.screen-veil:not([data-phase="idle"]) {
   visibility: visible;
 }
-.screen-veil:is([data-phase="cover"], [data-phase="return"]) {
+.screen-veil:is([data-phase="cover"], [data-phase="return"], [data-phase="back"]) {
   pointer-events: auto;
 }
 .screen-veil__underlay {
   position: absolute;
   inset: 0;
-  background: rgb(17 17 16 / 0.7);
-  opacity: 0;
+  background: rgb(17 17 16 / 0.45);
 }
-/* A square big enough to cover any screen once flat, unfolding in 3D from the centre. */
-.screen-veil__scaler {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 150vmax;
-  height: 150vmax;
-  transform: translate(-50%, -50%) scale(0);
-  perspective: 1600px;
-}
+/* The drawing sheet: the outline is drawn on it, so it comes up with the sheet and leaves with it. */
 .screen-veil__panel {
   position: absolute;
   inset: 0;
+  display: grid;
+  place-items: center;
   background: var(--color-charcoal-950);
-  transform: rotateX(90deg) rotateY(90deg);
 }
 .screen-veil__mark {
-  position: absolute;
-  inset: 0;
-  place-content: center;
   gap: 1.75rem;
 }
 .screen-veil__map {
@@ -775,57 +776,14 @@
   aspect-ratio: 892 / 1000;
   overflow: visible;
 }
-.screen-veil .ontario__stroke path {
-  stroke-dashoffset: 1;
-}
-.screen-veil .ontario__dot {
-  transform: scale(0);
-}
-.screen-veil__label {
-  opacity: 0;
-}
-.screen-veil[data-phase="cover"] .ontario__stroke path {
-  animation: ontario-draw 0.7s var(--e-inout-2) calc(0.2s + var(--i) * 0.14s) both;
-}
-.screen-veil[data-phase="cover"] .ontario__dot {
-  animation: dot-in 0.45s var(--e-out-strong) 1.05s both;
-}
-.screen-veil[data-phase="cover"] .screen-veil__label {
-  animation: fade-in 0.5s var(--e-out) 0.4s both;
-}
-/* Lifting, or brought back over the page by a click during the lift: the mark stays drawn. */
-.screen-veil:is([data-phase="return"], [data-phase="reveal"]) .ontario__stroke path {
-  stroke-dashoffset: 0;
-}
-.screen-veil:is([data-phase="return"], [data-phase="reveal"]) .ontario__dot {
-  transform: none;
-}
-.screen-veil:is([data-phase="return"], [data-phase="reveal"]) .screen-veil__label {
-  opacity: 1;
-}
-/* Reduced motion: the panel is simply there, and the whole screen crossfades. */
-@media (prefers-reduced-motion: reduce) {
-  .screen-veil__scaler {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  .screen-veil__panel {
-    transform: none;
-  }
-  .screen-veil__underlay,
-  .screen-veil__label {
-    opacity: 1;
-  }
-  .screen-veil .ontario__stroke path {
-    stroke-dashoffset: 0;
-    animation: none;
-  }
-  .screen-veil .ontario__dot {
-    transform: none;
-    animation: none;
-  }
+/* The tapped link answers at once, before the sheet has covered it. */
+[data-pressed] {
+  opacity: 0.55;
+  transition: opacity 0.12s var(--e-ui);
 }
 
 /* ---- Header and menu (MainNav.tsx) ---- */
+/* Every part of the header changes tone together, over 0.3s. */
 .site-nav {
   position: fixed;
   inset-inline: 0;
@@ -833,7 +791,7 @@
   z-index: 50;
   color: var(--color-ink);
   pointer-events: none;
-  transition: color 0.5s var(--e-ui);
+  transition: color 0.3s var(--e-ui);
 }
 .site-nav :is(a, button) {
   pointer-events: auto;
@@ -844,54 +802,96 @@
 .site-nav__bar {
   position: relative;
   transition:
-    background-color 0.5s var(--e-ui),
-    backdrop-filter 0.5s var(--e-ui);
+    background-color 0.3s var(--e-ui),
+    backdrop-filter 0.3s var(--e-ui),
+    box-shadow 0.3s var(--e-ui);
 }
-.site-nav__logo--light,
-.site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo--dark {
-  display: none;
+/*
+ * Both logos share one cell. Only the ivory one (on top) fades; the ink one
+ * under it is shown at once on the way to ink and leaves only once the
+ * ivory one is whole, so the red "permit" never thins or doubles mid-fade.
+ */
+.site-nav__logo-stack {
+  display: grid;
+}
+.site-nav__logo {
+  grid-area: 1 / 1;
+}
+.site-nav__logo--light {
+  opacity: 0;
+  transition: opacity 0.3s var(--e-ui);
 }
 .site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo--light {
-  display: block;
+  opacity: 1;
 }
-/* Over a dark ground the Contact button turns ivory. */
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo--dark {
+  opacity: 0;
+  transition: opacity 0s linear 0.3s;
+}
+/* Over a dark ground the Contact button turns ivory, as the light link button. */
 .site-nav[data-tone="dark"] .site-nav__cta {
   --lb-bg: var(--color-ivory);
   --lb-fg: var(--color-ink);
-  --lb-wipe: var(--color-stone-200);
-  --lb-shine: var(--color-brand-500);
+  --lb-wipe: var(--color-stone-300);
+  --lb-shine: var(--color-charcoal-600);
 }
 
-/* The row steps up and out past 80px (wide screens), one item after another, and comes back above it. */
+/*
+ * The row steps up and out past 80px (wide screens) from the right, Contact
+ * first (--o, 30ms apart, 0.28s on power2.in), and comes back above it from
+ * the left (--i, 40ms apart, 0.5s on power3.out) once the menu button has
+ * dropped away.
+ */
 .site-nav__item {
   transition:
-    opacity 0.6s var(--e-out),
-    transform 0.6s var(--e-out),
+    opacity 0.5s var(--e-out-strong),
+    transform 0.5s var(--e-out-strong),
     visibility 0s;
-  transition-delay: calc(var(--i, 0) * 40ms), calc(var(--i, 0) * 40ms), 0s;
+  transition-delay: calc(0.12s + var(--i, 0) * 40ms), calc(0.12s + var(--i, 0) * 40ms), 0s;
 }
 @media (min-width: 768px) {
   .site-nav[data-collapsed] .site-nav__item,
   .site-nav[data-open] .site-nav__item:not(.site-nav__item--logo) {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateY(-10px);
     visibility: hidden;
     transition:
-      opacity 0.4s var(--e-in),
-      transform 0.4s var(--e-in),
+      opacity 0.28s var(--e-exit),
+      transform 0.28s var(--e-exit),
       visibility 0s linear;
-    transition-delay: calc(var(--i, 0) * 40ms), calc(var(--i, 0) * 40ms), calc(0.4s + var(--i, 0) * 40ms);
+    transition-delay: calc(var(--o, 0) * 30ms), calc(var(--o, 0) * 30ms), calc(0.28s + var(--o, 0) * 30ms);
   }
 }
-/* Phones keep the row, on a ground of its own once the page has scrolled. */
+/* Phones keep the row, on a ground of its own once the page has scrolled, with a hairline under it on light grounds. */
 @media (max-width: 767px) {
   .site-nav[data-collapsed]:not([data-open]) .site-nav__bar {
     /* The homepage writes the colour under the header here (stone under Works, dusk over Services, ivory over Contact). */
     background: color-mix(in srgb, var(--ground, var(--color-ivory)) 88%, transparent);
     backdrop-filter: blur(14px);
+    box-shadow: inset 0 -1px rgb(23 23 22 / 0.08);
   }
   .site-nav[data-collapsed][data-tone="dark"]:not([data-open]) .site-nav__bar {
     background: rgb(25 25 24 / 0.88);
+    box-shadow: none;
+  }
+  /* Over the homepage's picture: a shade that fades into the picture, not a slab across it. */
+  .site-nav[data-over-hero][data-collapsed]:not([data-open]) .site-nav__bar {
+    background: linear-gradient(rgb(17 17 16 / 0.55), rgb(17 17 16 / 0));
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+}
+/*
+ * Without JavaScript nothing reads the ground or opens the menu: the header
+ * stays at the top of the page, over the ground it was set for, and scrolls
+ * away with it; the menu button, which could not open anything, is left out.
+ */
+@media (scripting: none) {
+  .site-nav {
+    position: absolute;
+  }
+  .site-nav__menu-slot {
+    display: none;
   }
 }
 
@@ -937,6 +937,7 @@
     right: 4rem;
   }
 }
+/* A hairline in its own colour keeps the button's edge on any ground, even its own. It rises into the corner once Contact has gone. */
 .site-nav__menu-btn {
   position: relative;
   display: block;
@@ -944,30 +945,37 @@
   height: 2.75rem;
   background: var(--color-ink);
   color: var(--color-ivory);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent);
   transition:
-    transform 0.5s var(--e-out),
-    background-color 0.4s var(--e-ui),
-    color 0.4s var(--e-ui),
+    transform 0.5s var(--e-out-strong) 0.18s,
+    background-color 0.3s var(--e-ui),
+    color 0.3s var(--e-ui),
+    box-shadow 0.3s var(--e-ui),
     visibility 0s;
 }
 .site-nav:is([data-tone="dark"], [data-open]) .site-nav__menu-btn {
   background: var(--color-ivory);
   color: var(--color-ink);
 }
-/* The slot clips the button's step in and out, and would clip a ring drawn outside it: the focus ring sits inside the square. */
+/* The slot clips the button's step in and out, and would clip a ring drawn outside it: the focus ring sits inside the square, in the red that reads on the button's own colour. */
 .site-nav__menu-btn:focus-visible {
+  outline-color: var(--color-brand-300);
   outline-offset: -4px;
 }
-/* Wide screens at the top of the page: the button waits below its slot, out of sight. */
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__menu-btn:focus-visible {
+  outline-color: var(--color-brand-500);
+}
+/* Wide screens at the top of the page: the button drops below its slot, out of sight, before the row comes back. */
 @media (min-width: 768px) {
   .site-nav:not([data-collapsed], [data-open]) .site-nav__menu-btn {
     transform: translateY(200%);
     visibility: hidden;
     transition:
-      transform 0.4s var(--e-in),
-      background-color 0.4s var(--e-ui),
-      color 0.4s var(--e-ui),
-      visibility 0s linear 0.4s;
+      transform 0.2s var(--e-exit),
+      background-color 0.3s var(--e-ui),
+      color 0.3s var(--e-ui),
+      box-shadow 0.3s var(--e-ui),
+      visibility 0s linear 0.2s;
   }
 }
 .site-nav__icon {
@@ -1010,11 +1018,10 @@
   transition-delay: 0.2s;
 }
 
+/* Phones: the whole screen. Wider: a panel in the corner, over a light scrim that shows the page is behind it (and closes it when clicked). */
 .site-menu {
   position: fixed;
-  top: 0.75rem;
-  right: 0.75rem;
-  left: 0.75rem;
+  inset: 0;
   z-index: 40;
   color: var(--color-ivory);
   visibility: hidden;
@@ -1022,9 +1029,20 @@
 .site-menu[data-shown] {
   visibility: visible;
 }
+.site-menu::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgb(17 17 16 / 0.3);
+  opacity: 0;
+  transition: opacity 0.4s var(--e-ui);
+}
+.site-menu[data-open]::before {
+  opacity: 1;
+}
 @media (min-width: 768px) {
   .site-menu {
-    left: auto;
+    inset: 0.75rem 0.75rem auto auto;
     width: min(46rem, calc(100vw - 1.5rem));
   }
 }
@@ -1034,21 +1052,44 @@
   background: var(--color-charcoal-950);
   transform-origin: 0 0;
 }
-/* The content scrolls inside the panel on short screens; the background stays put behind it. */
+/*
+ * The content scrolls inside the panel on short screens; the background
+ * stays put behind it. Its top edge fades out under the logo and the close
+ * button, so nothing scrolls under them. On phones it fills the screen, the
+ * call to action at its foot.
+ */
 .site-menu__content {
   position: relative;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 2.5rem;
-  max-height: calc(100svh - 1.5rem);
+  min-height: 100svh;
+  max-height: 100svh;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 5.5rem 1.5rem 2rem;
+  padding: 6.5rem 1.5rem 2rem;
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 4.5rem, #000 6rem);
+}
+.site-menu__aside {
+  margin-top: auto;
+}
+/* A short phone (320x568) keeps the call to action on screen and drops the line about the studio. */
+@media (max-width: 767px) and (max-height: 640px) {
+  .site-menu__blurb {
+    display: none;
+  }
 }
 @media (min-width: 768px) {
   .site-menu__content {
+    display: grid;
     grid-template-columns: 1.35fr 1fr;
     gap: 2rem;
+    min-height: 0;
+    max-height: calc(100svh - 1.5rem);
     padding: 6.5rem 2.5rem 2.5rem;
+  }
+  .site-menu__aside {
+    margin-top: 0;
   }
 }
 
@@ -1078,10 +1119,18 @@
 }
 
 /* ---- Link button (LinkButton.tsx) ---- */
+/*
+ * Hover and keyboard focus: a darker sheet of the plate's own colour wipes
+ * across the label (0.45s, --e-sheet) and leaves forwards, through the far
+ * edge (the origin flips only while the wipe is empty or full, so the flip
+ * is never seen); a highlight passes over the label (0.6s); just after, the
+ * icon cell turns a quarter on its cube to a face whose arrow is the
+ * button's one red; both cells round their corners by 2px.
+ */
 .link-button {
   --lb-bg: var(--color-ink);
   --lb-fg: var(--color-ivory);
-  --lb-wipe: var(--color-brand-500);
+  --lb-wipe: var(--color-charcoal-700);
   --lb-shine: #fff;
   --lb-h: 2.75rem;
   display: inline-flex;
@@ -1094,17 +1143,32 @@
   text-transform: uppercase;
   color: var(--lb-fg);
 }
+.link-button:focus-visible {
+  outline-offset: 4px;
+}
 .link-button--light {
   --lb-bg: var(--color-ivory);
   --lb-fg: var(--color-ink);
-  --lb-wipe: var(--color-stone-200);
-  --lb-shine: var(--color-brand-500);
+  --lb-wipe: var(--color-stone-300);
+  --lb-shine: var(--color-charcoal-600);
 }
-/* On paper, the quieter second action: an outline that fills with ink from the left, its label turning ivory as the fill passes. */
+/* On paper, the quieter second action: an ink ring that fills with ink, the label turning ivory as the fill passes. */
 .link-button--outline {
   --lb-bg: transparent;
   --lb-fg: var(--color-ink);
   --lb-wipe: var(--color-ink);
+  --lb-shine: var(--color-ink);
+  --lb-over: var(--color-ivory);
+  --lb-ring: rgb(23 23 22 / 0.25);
+}
+/* The same on dark grounds, in ivory. */
+.link-button--ghost {
+  --lb-bg: transparent;
+  --lb-fg: var(--color-ivory);
+  --lb-wipe: var(--color-ivory);
+  --lb-shine: var(--color-ivory);
+  --lb-over: var(--color-ink);
+  --lb-ring: rgb(244 241 235 / 0.3);
 }
 .link-button__plate,
 .link-button__icon {
@@ -1112,7 +1176,10 @@
   overflow: hidden;
   background: var(--lb-bg);
   clip-path: inset(0 round 0);
-  transition: clip-path 0.35s var(--e-cubic-out);
+  transition: clip-path 0.3s var(--e-ui);
+}
+.link-button:is(.link-button--outline, .link-button--ghost) :is(.link-button__plate, .link-button__icon) {
+  box-shadow: inset 0 0 0 1px var(--lb-ring);
 }
 .link-button__plate {
   display: inline-flex;
@@ -1125,7 +1192,10 @@
   background: var(--lb-wipe);
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 0.35s var(--e-ui);
+  transition: transform 0.45s var(--e-sheet);
+}
+.link-button:not(:hover, :focus-visible) .link-button__wipe {
+  transform-origin: right center;
 }
 .link-button__label {
   position: relative;
@@ -1133,6 +1203,44 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+/*
+ * The outline tones' second label, in the fill's opposite colour, shown
+ * where the fill is. Two clips, as the wipe flips its origin: on the way in
+ * the outer one opens from the left while the inner one is open; on the way
+ * out the inner one closes towards the right, and only then does the outer
+ * one shut (unseen) for the next time.
+ */
+.link-button__over {
+  display: none;
+}
+.link-button:is(.link-button--outline, .link-button--ghost) .link-button__over {
+  position: absolute;
+  inset: 0;
+  display: block;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0s linear 0.45s;
+}
+.link-button__label--over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: 1.25rem;
+  background: none;
+  -webkit-text-fill-color: var(--lb-over);
+  color: var(--lb-over);
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path 0.45s var(--e-sheet);
+}
+.link-button:is(.link-button--outline, .link-button--ghost):is(:hover, :focus-visible) :is(.link-button__over, .link-button__label--over) {
+  clip-path: inset(0);
+}
+.link-button:is(.link-button--outline, .link-button--ghost):is(:hover, :focus-visible) .link-button__over {
+  transition: clip-path 0.45s var(--e-sheet);
+}
+.link-button:is(.link-button--outline, .link-button--ghost):is(:hover, :focus-visible) .link-button__label--over {
+  transition: none;
 }
 .link-button__icon {
   width: var(--lb-h);
@@ -1143,7 +1251,7 @@
   inset: 0;
   transform-style: preserve-3d;
   transform: translateZ(calc(var(--lb-h) / -2));
-  transition: transform 0.4s var(--e-ui);
+  transition: transform 0.45s var(--e-out-strong) 0.06s;
 }
 .link-button__face {
   position: absolute;
@@ -1156,37 +1264,44 @@
 }
 .link-button__face--side {
   background: var(--lb-wipe);
+  color: var(--color-brand-400);
   transform: rotateY(-90deg) translateZ(calc(var(--lb-h) / 2));
 }
 .link-button:is(:hover, :focus-visible) :is(.link-button__plate, .link-button__icon) {
-  clip-path: inset(0 round 0.55rem);
+  clip-path: inset(0 round 2px);
 }
 .link-button:is(:hover, :focus-visible) .link-button__wipe {
   transform: scaleX(1);
 }
-.link-button:is(:hover, :focus-visible) .link-button__cube {
+:is(.link-button, [data-cube-host]):is(:hover, :focus-visible) .link-button__cube {
   transform: translateZ(calc(var(--lb-h) / -2)) rotateY(90deg);
 }
 .link-button:is(:hover, :focus-visible) .link-button__label {
   background-position: 0 0;
-  transition: background-position 0.8s ease;
+  transition: background-position 0.6s var(--e-ui);
 }
-
-.link-button--outline :is(.link-button__plate, .link-button__icon) {
-  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.25);
+/* A link button's icon cell on its own (LinkRows, the footer's call to action): the cube turns as its link is hovered or focused. */
+.link-cube {
+  --lb-h: 2.75rem;
+  --lb-bg: transparent;
+  --lb-wipe: var(--color-ink);
+  position: relative;
+  width: var(--lb-h);
+  height: var(--lb-h);
+  overflow: hidden;
+  perspective: 12rem;
+  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.15);
 }
-.link-button--outline .link-button__face--side {
-  color: var(--color-ivory);
+/* The footer's call to action keeps the site's one red fill, and turns to a deeper red. */
+.site-footer__cta-cell {
+  --lb-h: 3.5rem;
+  --lb-bg: var(--color-brand-500);
+  --lb-wipe: var(--color-brand-600);
+  color: #fff;
+  box-shadow: none;
 }
-.link-button--outline .link-button__label {
-  background: linear-gradient(90deg, var(--color-ivory) 50%, var(--color-ink) 50%) 100% 0 / 200% 100% no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  transition: background-position 0.35s var(--e-ui);
-}
-.link-button--outline:is(:hover, :focus-visible) .link-button__label {
-  background-position: 0 0;
-  transition: background-position 0.35s var(--e-ui);
+.site-footer__cta-cell .link-button__face--side {
+  color: #fff;
 }
 
 /* The notched sheet outline for framed pictures (NotchClip.tsx). */
@@ -1906,6 +2021,17 @@ body:has(.not-found__map) .site-footer__place {
   }
 }
 
+/*
+ * Gone back to (Back or Forward, ScreenTransition sets data-returning): the
+ * page comes back where it was left, as it was, so its entrance does not
+ * play again (until the next navigation, which happens under the cover).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion][data-returning] :is([data-hero-image] img, .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
+    animation: none;
+  }
+}
+
 /* Reduced motion: transitions and animations end at once (the scroll engine also stands still). */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1915,5 +2041,34 @@ body:has(.not-found__map) .site-footer__place {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Print: the page as a document. The fixed chrome (header, menu, preloader,
+ * transition) is left out, everything the motion moves or hides is put back
+ * in place, and the footer keeps its graphite ground so its ivory type
+ * prints.
+ */
+@media print {
+  .site-nav,
+  .site-menu,
+  .preloader,
+  .screen-veil {
+    display: none !important;
+  }
+  .site-footer {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .site-footer__inner,
+  [data-parallax] {
+    transform: none !important;
+  }
+  .site-footer__map .ontario__stroke path {
+    stroke-dashoffset: 0 !important;
+  }
+  .site-footer__map .ontario__dot {
+    transform: none !important;
   }
 }
