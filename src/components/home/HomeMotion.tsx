@@ -21,7 +21,6 @@ import {
   worksElement,
   worksImageScale,
   worksT,
-  worksTint,
 } from "@/lib/motion/home";
 import { clamp, damp, toHex } from "@/lib/motion/math";
 import { resplitIfNeeded, splitLines, unsplit } from "@/lib/motion/split";
@@ -51,40 +50,57 @@ interface Shared {
   fade: number;
 }
 
-/* The page ground: cream, a faint wash of each study's colour, night through Services, then cream again. */
+/*
+ * The page ground, one material per section (pageGround): cream, stone under
+ * Works, cream for Values, dusk over the start of Services, night from there
+ * on (Contact brings its own ivory, the footer its own charcoal). Published
+ * as --ground too, so the phone header bar always matches it. The still
+ * layout keeps the stylesheet's grounds: ivory, then Services' own charcoal.
+ */
 function ground(shared: Shared): MotionModule | null {
-  const buffer = one("[data-color-buffer]");
+  const works = one("[data-works]");
   const services = one("[data-services]");
-  if (!buffer || !services) return null;
-  const panels = all("[data-works-panel]");
-  const tints = panels.map((p) => parseInt((p.dataset.tint ?? "#f4f1eb").slice(1), 16));
+  const contact = one("[data-contact]");
+  if (!works || !services || !contact) return null;
   const html = document.documentElement;
-  let rb: Range, rs: Range;
-  let rp: Range[] = [];
+  let rWorks: Range, rServices: Range, rContact: Range;
   let night = false;
+  const setNight = (isNight: boolean) => {
+    if (isNight === night) return;
+    night = isNight;
+    if (night) html.dataset.ground = "night";
+    else delete html.dataset.ground;
+  };
   return {
     order: ORDER.ground,
     measure() {
-      rb = measureRange(buffer);
-      rs = measureRange(services);
-      rp = panels.map(measureRange);
+      rWorks = measureRange(works);
+      rServices = measureRange(services);
+      rContact = measureRange(contact);
     },
     update(f) {
-      const g = pageGround(sso(rb, f), hso(rs, f));
-      shared.fade = g.fade;
-      const color = g.fade === 0 && g.back === 0 ? worksTint(g.color, rp.map((r, i) => ({ t: worksT(sso(r, f)), color: tints[i] }))) : g.color;
-      setStyle(document.body, "backgroundColor", toHex(color));
-      // On the tracks Services shows the page ground through itself until the ground snaps back to cream; the still layout keeps its own dark ground.
-      setStyle(services, "backgroundColor", f.tracks && g.back === 0 ? "transparent" : "");
-      const isNight = g.fade > 0.5 && g.back < 0.5;
-      if (isNight !== night) {
-        night = isNight;
-        if (night) html.dataset.ground = "night";
-        else delete html.dataset.ground;
+      if (!f.tracks) {
+        setStyle(document.body, "backgroundColor", "");
+        setStyle(html, "--ground", "");
+        setStyle(services, "backgroundColor", "");
+        shared.fade = 0;
+        setNight(false);
+        return;
       }
+      const g = pageGround(sso(rWorks, f), hso(rWorks, f), sso(rServices, f));
+      shared.fade = g.fade;
+      const color = toHex(g.color);
+      setStyle(document.body, "backgroundColor", color);
+      setStyle(html, "--ground", color);
+      // On the tracks Services shows the night ground through itself.
+      setStyle(services, "backgroundColor", "transparent");
+      // Night until Contact's ivory reaches the header.
+      setNight(g.fade > 0.5 && rContact.top - f.scroll > 64);
     },
     destroy() {
-      document.body.style.backgroundColor = "";
+      setStyle(document.body, "backgroundColor", "");
+      setStyle(html, "--ground", "");
+      setStyle(services, "backgroundColor", "");
       delete html.dataset.ground;
     },
   };
@@ -144,11 +160,11 @@ function intro(): MotionModule | null {
         setStyle(el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0) scale(${num(o.scale)})`);
         setStyle(el, "opacity", num(o.opacity));
       }
+      // Display type never fades: each line only rolls through its mask.
       lines.forEach((ls, i) =>
         ls.forEach((line, j) => {
-          const s = introLine(e, copyIn[i], j);
-          setStyle(line, "transform", liftPercent(s.yPercent));
-          setStyle(line, "opacity", num(s.opacity));
+          setStyle(line, "transform", liftPercent(introLine(e, copyIn[i], j)));
+          setStyle(line, "opacity", "1");
         }),
       );
     },

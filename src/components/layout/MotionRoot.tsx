@@ -12,7 +12,8 @@ import { clamp, ease, fit } from "@/lib/motion/math";
  *     tenth of their height as they cross the screen ("slow": 110%, half
  *     the drift);
  *   - roll links: [data-roll] labels roll their characters on hover and
- *     keyboard focus, and roll back from wherever they have got to.
+ *     keyboard focus, and roll back from wherever they have got to (the
+ *     bottom row of characters is built on first use, see RollText).
  * Renders nothing.
  */
 
@@ -30,19 +31,32 @@ function rollLinks() {
   const rolls = new Map<HTMLElement, Roll>();
   const hostOf = (target: EventTarget | null) => (target instanceof Element ? target.closest<HTMLElement>("a, button") : null);
   const labelsOf = (host: HTMLElement) => [...host.querySelectorAll<HTMLElement>("[data-roll]")];
+  // The bottom copy: each word's top row, cloned under it (out of sight until it rolls in).
+  const bottomRows = (roll: HTMLElement) => {
+    for (const top of roll.querySelectorAll<HTMLElement>("[data-roll-top]")) {
+      if (top.nextElementSibling?.hasAttribute("data-roll-bottom")) continue;
+      const bottom = top.cloneNode(true) as HTMLElement;
+      bottom.removeAttribute("data-roll-top");
+      bottom.setAttribute("data-roll-bottom", "");
+      bottom.classList.add("roll__row--bottom");
+      top.after(bottom);
+    }
+  };
 
   const set = (host: HTMLElement | null, dir: 1 | -1) => {
     if (!host || engine.frame.reduced) return;
     for (const roll of labelsOf(host)) {
       const state = rolls.get(roll);
       if (state) state.dir = dir;
-      else if (dir === 1)
+      else if (dir === 1) {
+        bottomRows(roll);
         rolls.set(roll, {
           time: 0,
           dir,
           top: [...roll.querySelectorAll<HTMLElement>("[data-roll-top] > *")],
           bottom: [...roll.querySelectorAll<HTMLElement>("[data-roll-bottom] > *")],
         });
+      }
     }
   };
   const over = (e: Event) => {

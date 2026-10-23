@@ -18,15 +18,15 @@ import { paths } from "@/lib/routes";
  * in the stage and resolve as its panel reaches the middle of the screen:
  * arriving ones travel down into place, leaving ones carry on up, each
  * element in a tighter window than the last. Pictures grow from half size
- * to full size at their moment. The page ground takes a faint wash of each
- * study's colour (`tint`) as it passes.
+ * to full size at their moment. The page ground turns to stone under the
+ * whole section (HomeMotion, ground module).
  *
  * Without the tracks each panel shows its text beside its picture.
  */
-const studies: { plate: Plate; service: string; tag: string; tint: string }[] = [
-  { plate: plates.addition, service: "residential-additions", tag: "Residential", tint: "#e9e4d8" },
-  { plate: plates.basement, service: "legal-basement-permits", tag: "Residential", tint: "#e5e2d9" },
-  { plate: plates.commercial, service: "commercial-permits", tag: "Commercial", tint: "#e8ddd5" },
+const studies: { plate: Plate; service: string; tag: string }[] = [
+  { plate: plates.addition, service: "residential-additions", tag: "Residential" },
+  { plate: plates.basement, service: "legal-basement-permits", tag: "Residential" },
+  { plate: plates.commercial, service: "commercial-permits", tag: "Commercial" },
 ];
 
 const NOTE = "Rendered studies of the kinds of project we draw. None of them is a client project; case studies will appear here as clients approve them.";
@@ -83,7 +83,7 @@ export function Works() {
       </div>
 
       {items.map((s, i) => (
-        <div key={s.href} data-works-panel={i} data-tint={s.tint} className="works-panel">
+        <div key={s.href} data-works-panel={i} className="works-panel">
           <div className="works-panel__text tracks:hidden">
             <p className="text-label text-ink-muted">
               {s.tag} · Rendered study

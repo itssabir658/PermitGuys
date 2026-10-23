@@ -1,15 +1,43 @@
-import { PI2, clamp, ease, fit, mix, mixColorNum, smoothstep, tween } from "./math";
+import { PI2, clamp, ease, fit, mix, mixColorNum, mixColorOklab, smoothstep, tween } from "./math";
 
 /*
- * The homepage choreography as pure functions of scroll, ported from the
- * Studio Foundry motion spec (docs/MOTION.md). Every input is measured in
- * viewport heights of scroll unless it says px, so 1 means one screen.
+ * The homepage choreography as pure functions of scroll. Every input is
+ * measured in viewport heights of scroll unless it says px, so 1 means one
+ * screen.
  *
  *   sso  showScreenOffset: 0 when an element's top meets the bottom of the
  *        screen, 1 when it meets the top.
  *   hso  hideScreenOffset: −1 when its bottom meets the bottom of the
  *        screen, 0 when it meets the top.
+ *
+ * One motion vocabulary for the whole site (the CSS side is in globals.css,
+ * :root):
+ *   - Sheets: a section hands over by a sheet rising from the bottom edge
+ *     over a layer that recedes (scales up 8% at most, darkens, or dims to
+ *     0.72). Timed sheets use --e-sheet (cssEase.sheet) over 0.6–1.0s;
+ *     scrubbed wipes use power2InOut over about 0.3 screens.
+ *   - Masks: display type never fades. Each line rises from its own mask at
+ *     MASK % and leaves upward through it: roll(). Masked lines take
+ *     0.9–1.2s timed, or 0.24–0.3 screens scrubbed, 0.06–0.09s apart
+ *     (0.03–0.05 screens scrubbed). Only small labels, captions and blocks
+ *     may fade (labels over 0.7s).
+ *   - Eases: entrances power3Out, exits power2In, no overshoot. Hover and
+ *     tone changes take 0.3s with --e-ui.
+ *   - Rhythm: each beat holds 0.6–0.8 screens fully composed and hands over
+ *     in about 0.3; the next section's first element starts entering before
+ *     the last one leaves, so no frame is empty for more than 0.15 screens.
+ *   - Materials: ivory hero sheet, stone Works, ivory Values, dusk into the
+ *     night Services (an OKLab blend), the ivory Contact and the charcoal
+ *     footer (pageGround).
  */
+
+/** % travel of a masked line: clears the .16em overflow-clip-margin at line-height 0.85 and above. */
+export const MASK = 120;
+
+/** A masked line's yPercent: rises from MASK % as `inP` runs 0 → 1, then leaves upward to −MASK % as `outP` runs 0 → 1. */
+export function roll(inP: number, outP: number) {
+  return outP > 0 ? -MASK * outP : MASK * (1 - inP);
+}
 
 /* ---- Hero (200vh track, 100vh sticky stage) ---- */
 
@@ -73,8 +101,7 @@ export function orbitItem(slot: number, e: number, exit: number, vw: number, vh:
 export function introLine(e: number, n: number, line: number) {
   const inP = tween(e, n - 0.5 + line * 0.08, 0.45, ease.power3Out);
   const outP = tween(e, n + 0.4 + line * 0.05, 0.3, ease.power2In);
-  const yPercent = outP > 0 ? -120 * outP : 120 * (1 - inP);
-  return { yPercent, opacity: inP * (1 - outP) };
+  return roll(inP, outP);
 }
 
 /* ---- Works (450vh track, 150vh panel per study) ---- */
@@ -123,30 +150,26 @@ export function valuesText(x: number) {
 /** One description line, scrubbed by the entry ramp `a` over a 0.6s, 0.1-staggered timeline. */
 export function valuesLine(a: number, line: number, lines: number) {
   const total = 0.6 + Math.max(0, lines - 1) * 0.1;
-  return { yPercent: 100 * (1 - tween(a * total, line * 0.1, 0.6, ease.power1Out)) };
+  return { yPercent: roll(tween(a * total, line * 0.1, 0.6, ease.power1Out), 0) };
 }
 
-/* ---- Colour buffer (50vh spacer) ---- */
+/* ---- Page ground ---- */
 
 export const CREAM = 0xf4f1eb;
+export const STONE = 0xece7df;
 export const NIGHT = 0x191918;
 
 /**
- * The page ground: cream until the buffer is 0.4 of a screen in, night by
- * the time it reaches the top, then back to cream the instant the services
- * section's bottom edge clears the bottom of the screen.
+ * The page ground, one material per section: cream, stone under Works (in
+ * as Works rises over the top half of the screen, out over its last 0.35
+ * screen), cream again for Values, then dusk falls over the first content
+ * of Services (sso 0.25 → 0.55), blended in OKLab so the middle stays warm.
+ * It stays night under Contact's own ivory and the footer.
  */
-export function pageGround(ssoBuffer: number, hsoServices: number) {
-  const fade = smoothstep(ssoBuffer, 0.4, 1);
-  const back = smoothstep(hsoServices, -1, -0.99);
-  return { fade, back, color: mixColorNum(mixColorNum(CREAM, NIGHT, fade), CREAM, back) };
-}
-
-/** A faint wash of each study's own colour as its panel passes. */
-export function worksTint(base: number, panels: { t: number; color: number }[], strength = 0.6) {
-  let color = base;
-  for (const p of panels) color = mixColorNum(color, p.color, (1 - smoothstep(Math.abs(p.t), 0, 1)) * strength);
-  return color;
+export function pageGround(ssoWorks: number, hsoWorks: number, ssoServices: number) {
+  const stone = smoothstep(ssoWorks, 0.55, 0.95) * (1 - smoothstep(hsoWorks, -0.35, 0));
+  const fade = smoothstep(ssoServices, 0.25, 0.55);
+  return { fade, color: mixColorOklab(mixColorNum(CREAM, STONE, stone), NIGHT, fade) };
 }
 
 /* ---- Services ---- */
@@ -165,7 +188,7 @@ export function servicesW(x: number, k: number) {
 /** One heading line, on a 1s, 0.1-staggered timeline scrubbed by W(sso, 0). */
 export function servicesHeadingLine(w: number, line: number, lines: number) {
   const total = 1 + Math.max(0, lines - 1) * 0.1;
-  return { yPercent: 120 * (1 - tween(w * total, line * 0.1, 1, ease.power3Out)) };
+  return { yPercent: roll(tween(w * total, line * 0.1, 1, ease.power3Out), 0) };
 }
 
 /* ---- Contact ---- */

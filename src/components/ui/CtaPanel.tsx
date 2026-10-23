@@ -25,7 +25,7 @@ export function CtaPanel({
   id?: string;
 }) {
   return (
-    <section aria-labelledby={id} className="bg-charcoal-950 text-ivory">
+    <section aria-labelledby={id} data-tone="dark" className="bg-charcoal-950 text-ivory">
       <Container className="py-24 sm:py-32 lg:py-40">
         <div className="grid gap-16 lg:grid-cols-12 lg:gap-8">
           <div data-reveal="" className="lg:col-span-7">

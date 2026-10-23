@@ -137,6 +137,30 @@ test.describe("interactive pieces", () => {
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
   });
 
+  test("after a header click the next page starts at its content and the row still collapses", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "Desktop navigation");
+    await page.goto("/services/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Process" }).click();
+    await expect(page).toHaveURL(/\/how-it-works\/$/);
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
+    await expect(page.locator("main")).toBeFocused();
+    await page.evaluate(() => window.scrollTo(0, 1200));
+    await expect(page.locator(".site-nav")).toHaveAttribute("data-collapsed", "");
+  });
+
+  test("a link that only changes the query swaps the page without a cover", async ({ page }) => {
+    await page.goto("/contact/?service=deck-permits");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.evaluate(() => {
+      const veil = document.querySelector<HTMLElement>(".screen-veil")!;
+      new MutationObserver(() => veil.dataset.phase !== "idle" && document.documentElement.setAttribute("data-test-covered", "")).observe(veil, { attributes: true });
+    });
+    await page.locator("footer").getByRole("link", { name: "Contact", exact: true }).click();
+    await expect(page).toHaveURL(/\/contact\/$/);
+    await expect(page.locator("html")).not.toHaveAttribute("data-test-covered");
+  });
+
   test("the transition and intro stay out of the way with reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");

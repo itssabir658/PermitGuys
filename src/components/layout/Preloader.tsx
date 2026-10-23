@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
 import { OntarioOutline } from "./OntarioOutline";
 
@@ -14,6 +15,10 @@ import { OntarioOutline } from "./OntarioOutline";
  * then fades away over 0.6s. That moment is T₀: the document gets
  * data-loaded and data-revealed, the header fades in at T₀ + 1.6s and the
  * hero's name rises at T₀ + 1.5s (globals.css).
+ *
+ * The page is held at the top while the screen is up (an impatient wheel
+ * would otherwise scroll the whole hero entrance away unseen) and released
+ * as the screen starts to leave, or after 8s whatever happens.
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on only for visitors who allow motion and have JavaScript, and
@@ -32,6 +37,9 @@ export function Preloader() {
     const html = document.documentElement;
     const el = ref.current;
     if (!el || "loaded" in html.dataset) return;
+    engine.boot();
+    engine.lock("preloader");
+    const safety = window.setTimeout(() => engine.unlock("preloader"), 8000);
     let cancelled = false;
     const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
     const drawn = Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)));
@@ -40,6 +48,8 @@ export function Preloader() {
 
     Promise.all([drawn, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
       if (cancelled) return;
+      engine.scrollTo(0, true);
+      engine.unlock("preloader");
       const exit = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, delay: 100, easing: cssEase.power1Out, fill: "forwards" });
       exit.finished
         .catch(() => undefined)
@@ -50,6 +60,8 @@ export function Preloader() {
     });
     return () => {
       cancelled = true;
+      window.clearTimeout(safety);
+      engine.unlock("preloader");
     };
   }, []);
 

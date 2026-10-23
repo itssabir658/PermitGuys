@@ -94,9 +94,18 @@
 }
 
 /*
- * The reference's motion vocabulary (docs/MOTION.md, "Motion design
- * system"): power eases, out on entrances and in on exits. No bounce, no
- * overshoot. 0.6s is the house duration; 0.9–1s only for the largest type.
+ * One motion vocabulary for the whole site (the scroll side is at the top
+ * of src/lib/motion/home.ts):
+ *   - Entrances: --e-out-strong (power3.out).
+ *   - Exits: --e-exit (power2.in).
+ *   - Full-surface sheets: --e-sheet, 0.6–1.0s.
+ *   - Scrubbed wipes: power2.inOut over 0.3 screens.
+ *   - Masked display lines: 0.9–1.2s timed, or 0.24–0.3 screens scrubbed,
+ *     0.06–0.09s apart (0.03–0.05 screens scrubbed).
+ *   - Small labels: 0.7s.
+ *   - Hover and tone: 0.3s --e-ui.
+ * No overshoot. Display type never fades: it rises from its own mask and
+ * leaves upward through it; only small labels, captions and blocks fade.
  */
 :root {
   --e-out-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* power1.out */
@@ -107,24 +116,35 @@
   --e-inout-2: cubic-bezier(0.65, 0, 0.35, 1); /* power2.inOut */
   --e-in: cubic-bezier(0.55, 0.09, 0.68, 0.53); /* power1.in, power2.in */
   --e-ui: cubic-bezier(0.4, 0, 0.2, 1);
+  --e-exit: cubic-bezier(0.32, 0, 0.67, 0); /* power2.in */
+  --e-sheet: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 @layer base {
+  /* The engine keeps the reading position itself on resize, so the browser's scroll anchoring is off. */
   html {
     -webkit-text-size-adjust: 100%;
     scroll-padding-top: 6rem;
+    overflow-anchor: none;
   }
 
-  /* Lenis smooth scroll (src/lib/motion/engine.ts). Stopped keeps programmatic scrolling, unlike clip. */
-  html.lenis,
-  html.lenis body {
-    height: auto;
-  }
-  html.lenis.lenis-stopped {
-    overflow: hidden;
-  }
-  .lenis [data-lenis-prevent] {
+  /*
+   * Lenis smooth scroll (src/lib/motion/engine.ts). No selector may name
+   * the lenis* classes: Lenis rewrites them on <html> at the start and end
+   * of every gesture, and each rewrite would restyle the whole document.
+   * The engine holds the page still without touching overflow, so a
+   * classic scrollbar never disappears and nothing shifts sideways.
+   */
+  [data-lenis-prevent] {
     overscroll-behavior: contain;
+  }
+
+  /* No orphans: headings wrap in balanced lines, paragraphs avoid a lone last word (Chrome balances only up to six lines). */
+  :where(h1, h2, h3, figcaption) {
+    text-wrap: balance;
+  }
+  :where(p, dd, li) {
+    text-wrap: pretty;
   }
 
   body {
@@ -518,10 +538,10 @@
   pointer-events: none;
   visibility: hidden;
 }
-.screen-veil:is([data-phase="cover"], [data-phase="reveal"]) {
+.screen-veil:is([data-phase="cover"], [data-phase="return"], [data-phase="reveal"]) {
   visibility: visible;
 }
-.screen-veil[data-phase="cover"] {
+.screen-veil:is([data-phase="cover"], [data-phase="return"]) {
   pointer-events: auto;
 }
 .screen-veil__underlay {
@@ -575,13 +595,14 @@
 .screen-veil[data-phase="cover"] .screen-veil__label {
   animation: fade-in 0.5s var(--e-out) 0.4s both;
 }
-.screen-veil[data-phase="reveal"] .ontario__stroke path {
+/* Lifting, or brought back over the page by a click during the lift: the mark stays drawn. */
+.screen-veil:is([data-phase="return"], [data-phase="reveal"]) .ontario__stroke path {
   stroke-dashoffset: 0;
 }
-.screen-veil[data-phase="reveal"] .ontario__dot {
+.screen-veil:is([data-phase="return"], [data-phase="reveal"]) .ontario__dot {
   transform: none;
 }
-.screen-veil[data-phase="reveal"] .screen-veil__label {
+.screen-veil:is([data-phase="return"], [data-phase="reveal"]) .screen-veil__label {
   opacity: 1;
 }
 /* Reduced motion: the panel is simply there, and the whole screen crossfades. */
@@ -667,7 +688,8 @@
 /* Phones keep the row, on a ground of its own once the page has scrolled. */
 @media (max-width: 767px) {
   .site-nav[data-collapsed]:not([data-open]) .site-nav__bar {
-    background: rgb(244 241 235 / 0.88);
+    /* The homepage publishes its live page ground (stone under Works, dusk over Services). */
+    background: color-mix(in srgb, var(--ground, var(--color-ivory)) 88%, transparent);
     backdrop-filter: blur(14px);
   }
   .site-nav[data-collapsed][data-tone="dark"]:not([data-open]) .site-nav__bar {
@@ -1094,7 +1116,6 @@
     translate: 0 -50%;
   }
   :root[data-motion] .intro-copy .split-line__inner {
-    opacity: 0;
     transform: translateY(120%);
   }
 

@@ -24,10 +24,10 @@ export const metadata = pageMetadata({
 export const revalidate = 86400;
 
 /**
- * Follows the Studio Foundry homepage section by section, with its motion
- * (docs/MOTION.md): hero, intro orbit, works, values, the colour buffer that
- * turns the page to night, services, contact. HomeMotion drives all of it
- * from the scroll engine.
+ * The homepage, section by section: hero, intro orbit, works, values,
+ * services, contact. HomeMotion drives all of it from the scroll engine,
+ * including the page ground (stone under Works, dusk falling over the start
+ * of Services).
  */
 export default async function HomePage() {
   const reviews = await getGoogleReviews();
@@ -37,8 +37,6 @@ export default async function HomePage() {
       <Intro />
       <Works />
       <Values />
-      {/* Empty on purpose: scrolling through it turns the page ground from cream to night. */}
-      <div data-color-buffer="" aria-hidden="true" className="h-[50vh]" />
       <Services />
       <Contact reviews={reviews} />
       <NotchClipDefs />

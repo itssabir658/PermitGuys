@@ -15,12 +15,13 @@ const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZon
  * "Contact"): the word set large, then two cards with pictures in the
  * notched sheet outline. Each piece rises 28px and fades in over its own
  * stretch of scroll (from 0.08 to 0.42 of a screen after it enters), and
- * sinks back on the way up.
+ * sinks back on the way up. The section brings its own ivory: on the tracks
+ * the page ground stays night beneath it.
  */
 export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
   const { contact } = site;
   return (
-    <section data-contact="" aria-labelledby="contact-heading" className="relative pt-28 pb-24 lg:pt-40 lg:pb-32">
+    <section data-contact="" aria-labelledby="contact-heading" className="relative bg-ivory pt-28 pb-24 lg:pt-40 lg:pb-32">
       <Container>
         <h2 id="contact-heading" data-contact-reveal="" className="font-wordmark text-[clamp(4rem,1rem+14vw,15rem)] leading-[0.85] tracking-[-0.01em] text-ink uppercase">
           Contact

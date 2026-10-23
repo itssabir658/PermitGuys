@@ -23,8 +23,13 @@ import { Logo } from "./Logo";
  * the menu button rises into the corner; above 80px it all comes back. On
  * phones the row stays, with the menu button always shown.
  *
- * The header reads the ground beneath it: ivory type over the hero, the
- * night ground and the footer, ink elsewhere.
+ * The header reads the ground beneath it at the lower half of the button
+ * (64px down): ivory type over the hero, the night ground, dark sections
+ * and the footer, ink elsewhere. A dark section counts only until the next
+ * section begins, so a sheet sliding over it turns the header at once.
+ *
+ * The row is held open only while someone is tabbing through it; a mouse
+ * click leaves no hold, so the row still collapses on the next page.
  *
  * The menu unfolds from the button itself: its panel grows from the
  * button's outline to full size (0.5s), then the links rise in one after
@@ -68,27 +73,53 @@ export function MainNav({
   // Tone and the 80px collapse, as part of the frame loop (after the page modules).
   useEffect(() => {
     const header = headerRef.current;
-    if (!header) return;
+    const bar = header?.querySelector<HTMLElement>(".site-nav__bar");
+    if (!header || !bar) return;
     let darkRanges: Range[] = [];
     let tone = header.dataset.tone;
     let collapsed = false;
+    // Keyboard focus in the row holds it open; mouse focus (a clicked link) does not.
+    let kbdInBar = false;
+    const fin = (e: FocusEvent) => {
+      kbdInBar = e.target instanceof Element && e.target.matches(":focus-visible");
+    };
+    const fout = () => {
+      kbdInBar = false;
+    };
+    bar.addEventListener("focusin", fin);
+    bar.addEventListener("focusout", fout);
     return engine.register({
       order: ORDER.nav,
       measure() {
-        darkRanges = [...document.querySelectorAll<HTMLElement>("[data-tone='dark']")].filter((el) => !header.contains(el)).map(measureRange);
+        darkRanges = [...document.querySelectorAll<HTMLElement>("[data-tone='dark']")]
+          .filter((el) => !header.contains(el))
+          .map((el) => {
+            const r = measureRange(el);
+            // A dark section ends where the next one starts, even if that one slides up over it.
+            const next = el.nextElementSibling;
+            if (next instanceof HTMLElement && next.offsetParent) {
+              const top = measureRange(next).top;
+              if (top > r.top) r.height = Math.min(r.height, top - r.top);
+            }
+            return r;
+          });
       },
       update(f) {
-        const y = f.scroll + 40;
+        // The lower half of the button (26–70px from the top).
+        const y = f.scroll + 64;
         const dark = document.documentElement.dataset.ground === "night" || darkRanges.some((r) => y >= r.top && y < r.top + r.height);
         const next = dark ? "dark" : "light";
         if (next !== tone) header.dataset.tone = tone = next;
-        // Keep the row while keyboard focus is in it.
-        const isCollapsed = f.scroll > 80 && !header.querySelector(".site-nav__bar")?.contains(document.activeElement);
+        const isCollapsed = f.scroll > 80 && !kbdInBar;
         if (isCollapsed !== collapsed) {
           collapsed = isCollapsed;
           if (collapsed) header.dataset.collapsed = "";
           else delete header.dataset.collapsed;
         }
+      },
+      destroy() {
+        bar.removeEventListener("focusin", fin);
+        bar.removeEventListener("focusout", fout);
       },
     });
   }, []);
@@ -114,7 +145,7 @@ export function MainNav({
     const cancelAll = () => [bg, ...items].forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
 
     if (open) {
-      engine.stop();
+      engine.lock("menu");
       cancelAll();
       if (!reduced) {
         bg.animate([{ transform: fromButton() }, { transform: "none" }], { duration: 500, easing: cssEase.power3Out, fill: "both" });
@@ -126,7 +157,7 @@ export function MainNav({
       return () => cancelAnimationFrame(focus);
     }
 
-    engine.start();
+    engine.unlock("menu");
     if (!shown) return;
     if (reduced) {
       const hide = requestAnimationFrame(() => setShown(false));

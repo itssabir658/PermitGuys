@@ -10,7 +10,7 @@ const tones: Record<Tone, string> = {
   dark: "bg-charcoal-950 text-ivory",
 };
 
-/** Vertical rhythm and background tone for page sections. Content rises into view (data-reveal). */
+/** Vertical rhythm and background tone for page sections. Content rises into view (data-reveal). A dark section turns the header ivory (data-tone). */
 export function Section({
   children,
   tone = "paper",
@@ -29,7 +29,7 @@ export function Section({
   narrow?: boolean;
 }) {
   return (
-    <section id={id} aria-labelledby={labelledBy} className={cn(tones[tone], "py-20 sm:py-28 lg:py-36", className)}>
+    <section id={id} aria-labelledby={labelledBy} data-tone={tone === "dark" ? "dark" : undefined} className={cn(tones[tone], "py-20 sm:py-28 lg:py-36", className)}>
       <Container narrow={narrow}>
         {bordered ? <div aria-hidden="true" data-reveal="" data-reveal-type="rule" className={cn("mb-16 h-px lg:mb-24", tone === "dark" ? "bg-ivory/15" : "bg-line")} /> : null}
         <div data-reveal="">{children}</div>
