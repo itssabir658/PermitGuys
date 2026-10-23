@@ -4,7 +4,7 @@ import { CtaPanel } from "@/components/ui/CtaPanel";
 import { DirectAnswer } from "@/components/ui/DirectAnswer";
 import { FaqList } from "@/components/ui/FaqList";
 import { Plate } from "@/components/ui/Plate";
-import { plateForService } from "@/content/imagery";
+import { coverWidth, plateForService } from "@/content/imagery";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StepList } from "@/components/ui/StepList";
@@ -28,6 +28,7 @@ const toc = [
 export function ServiceTemplate({ service }: { service: Service }) {
   const path = paths.service(service.slug);
   const projects = getProjectsForService(service.slug);
+  const plate = plateForService(service.slug);
   return (
     <>
       <PageHeader
@@ -39,7 +40,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
         title={service.name}
         aside={
           <Plate
-            plate={plateForService(service.slug)}
+            plate={plate}
             reveal={false}
             priority
             fig="01"
@@ -48,7 +49,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
             stackCaption
             aspect="aspect-[3/2] md:aspect-[16/10] lg:aspect-[4/5]"
             frameClassName="motion-unveil"
-            sizes="(min-width: 1024px) 33vw, 100vw"
+            sizes={`(min-width: 1024px) ${coverWidth(plate, 4 / 5, "33vw", 1.1)}, (min-width: 768px) ${coverWidth(plate, 16 / 10, "100vw", 1.1)}, ${coverWidth(plate, 3 / 2, "100vw", 1.1)}`}
           />
         }
       >
@@ -99,7 +100,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
         </ArticleSection>
 
         <ArticleSection id="projects" title="Examples of our work">
-          <ProjectEvidence projects={projects} context={service.navLabel.toLowerCase()} />
+          <ProjectEvidence projects={projects} context={service.navLabel.toLowerCase()} renderings />
         </ArticleSection>
 
         <ArticleSection id="faq" title="Common questions">

@@ -39,7 +39,7 @@ scripts/check-site.mjs    Crawler: status codes, links, headings, metadata, 404s
 | `/services/`, `/services/[slug]/` (7) | `content/services.ts` | `ServiceTemplate` |
 | `/permit-guides/`, `/permit-guides/[slug]/` (4) | `content/guides.ts` | `GuideTemplate` |
 | `/service-areas/`, `/service-areas/[slug]/` | `content/locations.ts` (confirmed only; none yet) | `LocationTemplate` |
-| `/projects/`, `/projects/[slug]/` | `content/projects.ts` (approved only; none yet) | `CaseStudyTemplate` |
+| `/projects/`, `/projects/[slug]/` | `content/imagery.ts` (client renderings) and `content/projects.ts` (approved case studies only; none yet) | `app/projects/page.tsx`, `CaseStudyTemplate` |
 | `/about/`, `/how-it-works/`, `/contact/`, `/privacy-policy/` | page files | page-specific |
 | `/sitemap.xml`, `/robots.txt`, `/llms.txt` | generated from content | |
 

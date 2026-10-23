@@ -44,7 +44,7 @@ import {
   valuesWordSize,
   worksButton,
   worksLine,
-  worksStudy,
+  worksShot,
   type SwapLayer,
 } from "@/lib/motion/home";
 import { footerDot, footerDraw, footerLift, footerProgress, footerStroke } from "@/lib/motion/footer";
@@ -246,7 +246,7 @@ describe("homepage choreography", () => {
     // Equal steps of u are equal lengths of path, on the flat sides and round the corners alike.
     const step = (u: number) => Math.hypot(pathAt(p, u + 0.01)[0] - pathAt(p, u)[0], pathAt(p, u + 0.01)[1] - pathAt(p, u)[1]);
     for (const u of [0, 0.1, 0.125, 0.2, 0.37, 0.6, 0.875]) expect(step(u)).toBeCloseTo(step(0.05), 0);
-    // Portrait phones size the studies from the width.
+    // Portrait phones size the pictures from the width.
     const phone = orbitPath(390, 844);
     expect(phone.portrait).toBe(true);
     expect(phone.sizes.map(Math.round)).toEqual([109, 94, 113, 98, 109, 101]);
@@ -261,7 +261,7 @@ describe("homepage choreography", () => {
     [390, 844, 20, 104],
     [360, 740, 30, 104],
   ] as const) {
-    it(`orbit at ${vw}×${vh}: every study whole on screen and apart from its neighbours, the whole way round`, () => {
+    it(`orbit at ${vw}×${vh}: every picture whole on screen and apart from its neighbours, the whole way round`, () => {
       const p = orbitPath(vw, vh, clear);
       for (let e = 0.5; e <= 4.1; e += 0.02) {
         const items = ORBIT_SLOTS.map((_, slot) => ({ ...orbitItem(p, slot, e, 0), size: p.sizes[slot] }));
@@ -281,16 +281,16 @@ describe("homepage choreography", () => {
     });
   }
 
-  it("orbit: studies glide in from beyond the ring as the sheet uncovers their place, top ones first, never as specks", () => {
+  it("orbit: pictures glide in from beyond the ring as the sheet uncovers their place, top ones first, never as specks", () => {
     const p = orbitPath(VW, VH);
     const before = orbitItem(p, 0, -1, 0);
-    // At e = −1 (the sheet still under the hero) the top centre study has only begun: near 1.8× the ring, its image still zoomed.
+    // At e = −1 (the sheet still under the hero) the top centre picture has only begun: near 1.8× the ring, its image still zoomed.
     expect(before.arrive).toBeGreaterThan(0);
     expect(before.arrive).toBeLessThan(0.35);
     expect(before.imgScale).toBeCloseTo(1.18 - 0.18 * before.arrive, 6);
     const [, y0] = pathAt(p, ORBIT_SLOTS[0].u - ORBIT.turnsPerScreen);
     expect((before.y - p.cy) / (y0 - p.cy)).toBeCloseTo((1.8 - 0.8 * before.arrive) * (1 + 0.03 * Math.sin(-1.7)), 6);
-    // The bottom centre study starts later: the sheet uncovers the top of the ring first.
+    // The bottom centre picture starts later: the sheet uncovers the top of the ring first.
     expect(orbitItem(p, 3, -1, 0).opacity).toBe(0);
     expect(orbitItem(p, 0, -0.6, 0).arrive).toBeGreaterThan(orbitItem(p, 3, -0.6, 0).arrive + 0.3);
     for (const [vw, vh] of [
@@ -306,7 +306,7 @@ describe("homepage choreography", () => {
         for (let slot = 0; slot < 6; slot++) {
           const o = orbitItem(q, slot, e, 0);
           const half = q.sizes[slot] / 2;
-          // A study wholly in view is already more than half way in.
+          // A picture wholly in view is already more than half way in.
           if (o.y + half < uncovered && o.y - half > -vh / 2 && Math.abs(o.x) + half < vw / 2) expect(o.arrive).toBeGreaterThan(0.5);
         }
       }
@@ -320,7 +320,7 @@ describe("homepage choreography", () => {
     }
   });
 
-  it("orbit: one speed for every study, and the fling takes the ring out to 1.9×", () => {
+  it("orbit: one speed for every picture, and the fling takes the ring out to 1.9×", () => {
     const p = orbitPath(VW, VH);
     // Travel from e 1 to e 3 is the same length of path for every slot: 0.15 of the way round.
     const len = (slot: number) => {
@@ -343,7 +343,7 @@ describe("homepage choreography", () => {
     expect((flung.y - p.cy) / (settled.y - p.cy)).toBeCloseTo(ORBIT.exitRadius);
   });
 
-  it("orbit on portrait phones: studies fade out before they reach the copy, and show above and below it", () => {
+  it("orbit on portrait phones: pictures fade out before they reach the copy, and show above and below it", () => {
     const clear = 104;
     const p = orbitPath(390, 844, clear);
     expect(p.clear).toBe(clear);
@@ -360,7 +360,7 @@ describe("homepage choreography", () => {
         if (edge > clear + 52) expect(o.opacity).toBeCloseTo(o.arrive, 6);
         if (o.opacity > 0.9) now++;
       }
-      // At least two studies are always whole, above and below the copy.
+      // At least two pictures are always whole, above and below the copy.
       expect(now).toBeGreaterThanOrEqual(2);
       shown += now;
     }
@@ -397,7 +397,7 @@ describe("homepage choreography", () => {
       if (copyIn.some((n) => Array.from({ length: 7 }, (_, j) => introLine(e, n, j)).every((y) => y === 0))) expect(c).toBe(1);
       // Through the handover the centre is never bare.
       if (e > copyIn[0] && e < copyIn[1]) expect(c).toBe(1);
-      // Whole before the first line is a third out of its mask, so the studies have gone before any text can be read.
+      // Whole before the first line is a third out of its mask, so the pictures have gone before any text can be read.
       if (e < copyIn[0] && introLine(e, copyIn[0], 0) < MASK * (2 / 3)) expect(c).toBe(1);
       // And it holds until the last paragraph's lines are at least half way out of their masks.
       if (e > copyIn[1] && ys.some((y) => y > -MASK / 2 && y <= 0)) expect(c).toBe(1);
@@ -423,7 +423,7 @@ describe("homepage choreography", () => {
         const copy = introCopy(e, copyIn);
         for (let slot = 0; slot < 6; slot++) {
           const o = orbitItem(p, slot, e, 0, copy);
-          // Over the copy's band a study shows only as much as the copy has gone.
+          // Over the copy's band a picture shows only as much as the copy has gone.
           if (Math.abs(o.y) - p.sizes[slot] / 2 < p.clear + 4) expect(o.opacity).toBeLessThanOrEqual(o.arrive * (1 - copy) + 1e-9);
         }
       }
@@ -452,7 +452,7 @@ describe("homepage choreography", () => {
     }
   });
 
-  it("orbit fling: a study is gone before it reaches the stage's bottom edge, which crosses mid-screen once the stage releases", () => {
+  it("orbit fling: a picture is gone before it reaches the stage's bottom edge, which crosses mid-screen once the stage releases", () => {
     const { sectionVh, exitStart } = introPhases(2);
     for (const [vw, vh] of [
       [1440, 900],
@@ -473,10 +473,10 @@ describe("homepage choreography", () => {
           if (bottom > vh / 2 - 10 && bottom < vh / 2) faded++;
         }
       }
-      // And it is the lower studies that meet it, at every size.
+      // And it is the lower pictures that meet it, at every size.
       expect(faded).toBeGreaterThan(0);
     }
-    // The upper studies are flung out whole: no edge fade on the top centre one.
+    // The upper pictures are flung out whole: no edge fade on the top centre one.
     const p = orbitPath(VW, VH);
     expect(orbitItem(p, 0, 0, 0.6, 0).opacity).toBeCloseTo(1);
   });
@@ -496,7 +496,7 @@ describe("homepage choreography", () => {
         expect(o.y + half).toBeLessThan(744 / 2 - 60);
       }
     }
-    // The sheet still rises a screen (lvh) at a time: a study wholly in the part it has uncovered is already more than half way in, and one still a third of a screen under it has not started.
+    // The sheet still rises a screen (lvh) at a time: a picture wholly in the part it has uncovered is already more than half way in, and one still a third of a screen under it has not started.
     for (let e = -1; e <= 0; e += 0.01) {
       // The screen's bottom edge, in the stage's coordinates: the stage's top is −e screens down the screen.
       const uncovered = (1 + e) * 844 - 744 / 2;
@@ -542,50 +542,50 @@ describe("homepage choreography", () => {
   const step = D / 3;
   const range = (from: number, to: number, by = 0.005) => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
 
-  it("works: one study in front at every moment, handed over by a wipe centred on its boundary", () => {
-    const studies = (e: number) => [0, 1, 2].map((i) => worksStudy(e, i, 3, D));
+  it("works: one project in front at every moment, handed over by a wipe centred on its boundary", () => {
+    const shots = (e: number) => [0, 1, 2].map((i) => worksShot(e, i, 3, D));
     // The first picture has risen before the stage pins; the next ones wipe in at the boundaries, half-way exactly there.
-    expect(studies(-0.1)[0].inP).toBe(1);
-    expect(studies(WORKS.firstIn)[0].inP).toBe(0);
-    expect(studies(WORKS.firstIn + WORKS.firstInVh)[0].inP).toBe(1);
+    expect(shots(-0.1)[0].inP).toBe(1);
+    expect(shots(WORKS.firstIn)[0].inP).toBe(0);
+    expect(shots(WORKS.firstIn + WORKS.firstInVh)[0].inP).toBe(1);
     // It starts while the intro's fling is still leaving: before the stage is a screen's quarter from pinning.
     expect(WORKS.firstIn).toBeLessThan(-0.75);
     for (const b of [1, 2]) {
-      expect(studies(b * step)[b].inP).toBeCloseTo(0.5);
-      expect(studies(b * step)[b - 1].outP).toBeCloseTo(0.5);
-      expect(studies(b * step - WORKS.hand / 2)[b].inP).toBe(0);
-      expect(studies(b * step + WORKS.hand / 2)[b].inP).toBe(1);
+      expect(shots(b * step)[b].inP).toBeCloseTo(0.5);
+      expect(shots(b * step)[b - 1].outP).toBeCloseTo(0.5);
+      expect(shots(b * step - WORKS.hand / 2)[b].inP).toBe(0);
+      expect(shots(b * step + WORKS.hand / 2)[b].inP).toBe(1);
     }
-    // In the middle of its moment a study is whole and alone: those before are covered, those after not yet in.
+    // In the middle of its moment a project is whole and alone: those before are covered, those after not yet in.
     for (const i of [0, 1, 2]) {
-      const s = studies((i + 0.5) * step);
+      const s = shots((i + 0.5) * step);
       expect(s[i]).toMatchObject({ inP: 1, outP: 0, live: true });
       s.forEach((o, j) => (j < i ? expect(o.outP).toBe(1) : j > i ? expect(o.inP).toBe(0) : null));
     }
-    // Exactly one study is live anywhere on the pinned track, and the last one never leaves.
+    // Exactly one project is live anywhere on the pinned track, and the last one never leaves.
     for (const e of range(-0.1, D + 1)) {
       if ([1, 2].some((b) => Math.abs(e - b * step) < 1e-6)) continue;
-      expect(studies(e).filter((s) => s.live)).toHaveLength(1);
-      expect(studies(e)[2].outP).toBe(0);
+      expect(shots(e).filter((s) => s.live)).toHaveLength(1);
+      expect(shots(e)[2].outP).toBe(0);
     }
   });
 
   it("works pictures drift once across their whole time on screen, never jumping", () => {
     for (const i of [0, 1, 2]) {
-      let last = worksStudy(-1, i, 3, D).drift;
+      let last = worksShot(-1, i, 3, D).drift;
       for (const e of range(-1, D + 1, 0.01)) {
-        const d = worksStudy(e, i, 3, D).drift;
+        const d = worksShot(e, i, 3, D).drift;
         expect(d).toBeGreaterThanOrEqual(last);
         expect(d - last).toBeLessThan(0.05);
         last = d;
       }
       // Still while hidden, moving from the first frame of its wipe.
-      expect(worksStudy(i === 0 ? WORKS.firstIn : i * step - WORKS.hand / 2, i, 3, D).drift).toBe(0);
+      expect(worksShot(i === 0 ? WORKS.firstIn : i * step - WORKS.hand / 2, i, 3, D).drift).toBe(0);
     }
-    expect(worksStudy(step + WORKS.hand / 2, 0, 3, D).drift).toBe(1);
+    expect(worksShot(step + WORKS.hand / 2, 0, 3, D).drift).toBe(1);
   });
 
-  it("works lines: in place before the stage pins, composed about 0.57 screens per study, and never two lines moving in one row", () => {
+  it("works lines: in place before the stage pins, composed about 0.57 screens per project, and never two lines moving in one row", () => {
     // Eyebrow, two title lines, button: k 0 to 3 (a third title line makes the button k 4).
     const ks = [0, 1, 2, 3];
     for (const k of ks) expect(worksLine(0.1, 0, 3, D, k)).toBe(0);
@@ -607,7 +607,7 @@ describe("homepage choreography", () => {
       // ...yet some text is always on screen through the handover.
       for (const e of range(b * step - 0.3, b * step + 0.3, 0.002)) expect([b - 1, b].some((i) => ks.some((k) => Math.abs(worksLine(e, i, 3, D, k)) < MASK - 1e-9))).toBe(true);
     }
-    // The last study's lines stay through the release.
+    // The last project's lines stay through the release.
     for (const k of ks) expect(worksLine(D + 1, 2, 3, D, k)).toBe(0);
   });
 

@@ -336,7 +336,7 @@
  *
  * The first screen enters once the preloader or the page transition lifts
  * (data-revealed): the breadcrumb fades in, the eyebrow and then each line
- * of the title rise out of their own masks, the lead follows, a study plate
+ * of the title rise out of their own masks, the lead follows, a picture plate
  * unveils upward from its bottom edge while its picture settles from 1.14,
  * and the header rule draws across. Everything has settled by about 1.75s.
  *
@@ -394,7 +394,7 @@
     animation: plate-in var(--unveil-duration, 1.3s) var(--unveil-ease, var(--e-sheet)) var(--unveil-delay, 0.15s) both;
   }
   /*
-   * A study band starts below the fold, so only its top shows: an entrance
+   * A picture band starts below the fold, so only its top shows: an entrance
    * ease brings its rising edge over the fold while the title is still
    * landing, instead of after it. Set on the figure, so its caption keeps
    * the same delay.
@@ -407,7 +407,7 @@
   :root[data-motion] .motion-unveil img {
     animation: plate-zoom 1.9s var(--ease-out-expo) var(--unveil-delay, 0.15s) both;
   }
-  /* The study caption is a small label: it fades in once its picture is mostly up. */
+  /* The plate's caption is a small label: it fades in once its picture is mostly up. */
   :root[data-motion] figure:has(.motion-unveil) > figcaption {
     animation: fade-in 0.8s var(--e-out) calc(var(--unveil-delay, 0.15s) + 0.7s) both;
   }
@@ -1463,7 +1463,7 @@ body:has(.not-found__map) .site-footer__place {
     text-wrap: balance;
   }
 }
-/* Inside the ring on wider screens (HomeMotion, orbitPath: not portrait), the copy is sized by both sides of the screen, so its five lines clear the studies. */
+/* Inside the ring on wider screens (HomeMotion, orbitPath: not portrait), the copy is sized by both sides of the screen, so its five lines clear the pictures. */
 @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-aspect-ratio: 4/5) {
   :root[data-motion] .intro-copy {
     font-size: clamp(1.65rem, min(3.2vw, 5.1vh), 3.4rem);
@@ -1471,7 +1471,7 @@ body:has(.not-found__map) .site-footer__place {
 }
 /*
  * The still intro (reduced motion, short screens, no JavaScript, print): the
- * paragraphs, then the studies as a quiet row beneath them, clear of the
+ * paragraphs, then the pictures as a quiet row beneath them, clear of the
  * copy. The same rules twice: a media query cannot be combined with the
  * missing data-motion in one selector.
  */
@@ -1567,7 +1567,7 @@ body:has(.not-found__map) .site-footer__place {
 }
 /*
  * The button's mask leaves room for its focus ring, only while it has
- * keyboard focus (it is then in place: focus scrolls to its study).
+ * keyboard focus (it is then in place: focus scrolls to its project).
  * Otherwise a margin would show the dark plate as a bar above and below the
  * row as it rolls.
  */
@@ -1735,6 +1735,11 @@ body:has(.not-found__map) .site-footer__place {
   overflow: hidden;
   background: var(--color-charcoal-800);
 }
+/* The caption carries both notes and shows the one for the kind of picture in the frame (data-kind, set with the picture). */
+.services-caption[data-kind="study"] [data-note="project"],
+.services-caption[data-kind="project"] [data-note="study"] {
+  display: none;
+}
 /* Each row's rule is an element of its own, so drawing it across (HomeMotion) touches nothing else. */
 .services-item {
   position: relative;
@@ -1838,7 +1843,7 @@ body:has(.not-found__map) .site-footer__place {
     transform: translateY(120%);
   }
 
-  /* Works: the panels only set the track's length; the stage shows the studies. Everything masked starts below its mask. */
+  /* Works: the panels only set the track's length; the stage shows the projects. Everything masked starts below its mask. */
   :root[data-motion] .works-panel {
     display: block;
     max-width: none;
@@ -2098,7 +2103,7 @@ body:has(.not-found__map) .site-footer__place {
     position: relative !important;
     top: auto !important;
   }
-  /* A study or a value stays on one sheet with its picture, a section's label and note stay with its first one, and the Contact wordmark with its cards. */
+  /* A project or a value stays on one sheet with its picture, a section's label and note stay with its first one, and the Contact wordmark with its cards. */
   .works-panel,
   .values-outer,
   :is([data-works], [data-values]) h2 + p,

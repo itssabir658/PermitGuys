@@ -90,7 +90,7 @@ export function SiteFooter() {
               </Link>
             </p>
             <p className="text-xs leading-relaxed">
-              Information on this website is general guidance, not legal or code advice. Permit requirements are set by your municipality, which decides whether a permit is issued. Images are rendered studies, not client projects.
+              Information on this website is general guidance, not legal or code advice. Permit requirements are set by your municipality, which decides whether a permit is issued. Images are renderings of client projects, except those captioned as rendered studies.
             </p>
           </div>
         </div>

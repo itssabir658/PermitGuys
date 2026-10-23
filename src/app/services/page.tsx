@@ -46,7 +46,7 @@ export default function ServicesPage() {
         title="Permit drawings and permit guidance, from first question to municipal review."
         lead="We prepare the drawings and documentation a building permit application needs, and help you understand each step. Choose a service to see what it involves."
       />
-      <PlateBand plate={plates.infill} />
+      <PlateBand plate={plates.farmhouse} />
       {groups.map((g, i) => (
         <Section key={g.id} labelledBy={`${g.id}-heading`} bordered={i > 0} first={i === 0}>
           <div className="grid gap-10 lg:grid-cols-12">

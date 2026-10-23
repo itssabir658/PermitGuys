@@ -211,7 +211,7 @@ export const ORBIT_EDGE_FADE = 44;
  *
  * The stage clips at its bottom edge, and once it releases that edge is a
  * line across the middle of the screen with ivory on both sides; the fling
- * carries the lower studies down onto it. They dissolve before they reach
+ * carries the lower pictures down onto it. They dissolve before they reach
  * it, so none is ever cut by an edge nobody can see. At rest the ring keeps
  * clear of that band, so this changes nothing until the fling.
  */
@@ -252,12 +252,12 @@ export function introLine(e: number, n: number, line: number) {
 /**
  * The Works viewer's timeline. `e` is screens of scroll since the stage
  * pinned (sso(section) − 1), `D` the length it stays pinned (the section's
- * height in screens − 1: 3.2), shared by the n studies, so study i owns
- * [i, i + 1] × D/n. Studies hand over in `hand` screens, centred on the
- * boundary. A study's lines rise `stagger` apart and leave `outStagger`
+ * height in screens − 1: 3.2), shared by the n projects, so project i owns
+ * [i, i + 1] × D/n. Projects hand over in `hand` screens, centred on the
+ * boundary. A project's lines rise `stagger` apart and leave `outStagger`
  * apart, top line first both ways (eyebrow, title lines, button).
  *
- * The first study arrives while the stage is still coming up under the
+ * The first project arrives while the stage is still coming up under the
  * intro's fling, so the two overlap: its picture rises from the bottom of
  * the screen from `firstIn` (power3Out, an entrance) over `firstInVh`, and
  * its lines from `firstLines`.
@@ -265,13 +265,13 @@ export function introLine(e: number, n: number, line: number) {
 export const WORKS = { hand: 0.3, stagger: 0.035, outStagger: 0.02, firstIn: -0.92, firstInVh: 0.6, firstLines: -0.3 };
 
 /**
- * One study's picture: `inP` its wipe up over the picture before
+ * One project's picture: `inP` its wipe up over the picture before
  * (power2InOut, scrubbed), `outP` the next one's wipe over it, as it dims
  * to 0.72; `drift` runs 0 → 1 over the whole time it is on screen, for a
- * slow parallax inside the frame. `live` is the study in front. The last
- * study never leaves: it scrolls away with the stage.
+ * slow parallax inside the frame. `live` is the project in front. The last
+ * project never leaves: it scrolls away with the stage.
  */
-export function worksStudy(e: number, i: number, n: number, D: number) {
+export function worksShot(e: number, i: number, n: number, D: number) {
   const step = D / n;
   const a = i * step;
   const b = a + step;

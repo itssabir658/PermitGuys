@@ -5,7 +5,7 @@ import { expectNoHorizontalOverflow, sitemapPaths, watchConsole } from "./helper
 test.describe("every page", () => {
   test("loads without errors or sideways scrolling", async ({ page }) => {
     const console = watchConsole(page);
-    const paths = [...(await sitemapPaths(page)), "/projects/"];
+    const paths = [...new Set([...(await sitemapPaths(page)), "/projects/"])];
     expect(paths.length).toBeGreaterThan(15);
     for (const path of paths) {
       const res = await page.goto(path);
@@ -335,10 +335,46 @@ test.describe("interactive pieces", () => {
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
   });
 
-  test("study images say they are not client projects", async ({ page }) => {
+  test("every picture says what it is: a rendering of a client project, or a rendered study", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("[aria-labelledby=works-heading]")).toContainText("None of them is a client project");
-    await expect(page.getByText("Rendered study for illustration, not a client project.").first()).toBeAttached();
+    await expect(page.locator("[aria-labelledby=works-heading]")).toContainText("Renderings from client projects");
+    await page.goto("/services/custom-home-permits/");
+    await expect(page.locator("header figcaption")).toContainText("Rendering of a client project.");
+    await expect(page.locator("#projects").getByRole("link", { name: "See client renderings" })).toHaveAttribute("href", "/projects/");
+    await page.goto("/services/deck-permits/");
+    await expect(page.locator("header figcaption")).toContainText("Rendered study for illustration, not a client project.");
+    await page.goto("/projects/");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Selected projects.");
+    await expect(page.getByText("They show the designs, not finished buildings.")).toBeVisible();
+    const projects = page.locator("article[id]");
+    await expect(projects).toHaveCount(9);
+    for (const project of await projects.all()) {
+      await expect(project).toContainText("Client project");
+      expect(await project.locator("figure").count()).toBeGreaterThanOrEqual(1);
+      expect(await project.locator("figure").count()).toBeLessThanOrEqual(2);
+    }
+  });
+
+  test("the services caption follows the picture: a client rendering for custom homes, a study elsewhere", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "The frame shows beside the list from md; one width is enough");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const caption = page.locator("[data-services-caption]");
+    await expect(caption).toHaveText(/^rendered study for illustration, not a client project\.$/i, { useInnerText: true });
+    await page.locator("#services").getByRole("link", { name: /custom home/i }).focus();
+    await expect(caption).toHaveText(/^rendering of a client project\.$/i, { useInnerText: true });
+    await page.locator("#services").getByRole("link", { name: /deck permit/i }).focus();
+    await expect(caption).toHaveText(/^rendered study for illustration, not a client project\.$/i, { useInnerText: true });
+  });
+
+  test("a project link on the homepage lands on that project's renderings", async ({ page }) => {
+    await page.goto("/projects/#stone-house");
+    const project = page.locator("#stone-house");
+    await expect(project).toBeInViewport();
+    await expect(project.getByRole("heading", { level: 3 })).toHaveText("Stone house with three gables");
+    await page.goto("/");
+    const href = await page.locator("[aria-labelledby=works-heading]").getByRole("link", { name: /view the project/i }).first().getAttribute("href");
+    expect(href).toMatch(/^\/projects\/#[a-z-]+$/);
   });
 
   test("the map loads from Google only when asked", async ({ page }) => {

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
-import { plates, type Plate } from "@/content/imagery";
+import { coverWidth, plates, type Plate } from "@/content/imagery";
 import { escapeHtml } from "@/lib/html";
 import { introPhases } from "@/lib/motion/home";
 
@@ -10,14 +10,14 @@ const copy = [
   "We prepare permit drawings and application documents, and support you through the municipality’s review, from a deck in the backyard to a tenant fit-out on a main street.",
 ];
 
-/** Orbit slots 0 to 5, clockwise from the top centre (ORBIT_SLOTS). */
-const studies: Plate[] = [plates.detail, plates.deck, plates.front, plates.aerial, plates.storefront, plates.basement];
+/** Orbit slots 0 to 5, clockwise from the top centre (ORBIT_SLOTS): six client projects, none of them shown again before Values. */
+const renderings: Plate[] = [plates.redBrick, plates.greenBatten, plates.farmhouse, plates.narrow, plates.brick, plates.whiteBatten];
 
 /**
  * The introduction: an ivory sheet that rises over the pinned hero (its
  * flow top sits a screen up, inside the hero's track, from 0.5 to 1.5
  * screens) and then pins for the length of the copy (510vh for two
- * paragraphs; introPhases). Six rendered studies glide in from beyond the
+ * paragraphs; introPhases). Six client renderings glide in from beyond the
  * frame as the sheet rises and travel one squircle path, spaced by its arc
  * length so they never crowd, while the paragraphs rise through their
  * masks at the centre one after the other. At the end the ring is flung
@@ -26,8 +26,9 @@ const studies: Plate[] = [plates.detail, plates.deck, plates.front, plates.aeria
  *
  * The images are decoration here, so they are hidden from assistive
  * technology; the paragraphs are the content. Without the tracks the
- * paragraphs stand one above the other, with the studies as a quiet row
- * beneath them.
+ * paragraphs stand one above the other, with the pictures as a quiet row
+ * beneath them. The tiles are square, so each picture is fetched as wide as
+ * it is drawn at the tile's height.
  */
 export function Intro() {
   const { sectionVh } = introPhases(copy.length);
@@ -43,9 +44,18 @@ export function Intro() {
       </h2>
       <div data-intro-stage="" className="relative isolate flex flex-col overflow-hidden tracks:sticky tracks:top-0 tracks:h-svh tracks:bg-ivory tracks:shadow-[0_-2rem_3rem_-1.5rem_rgb(0_0_0/0.4)]">
         <ul aria-hidden="true" className="intro-orbit order-2">
-          {studies.map((plate, i) => (
+          {renderings.map((plate, i) => (
             <li key={plate.src} data-orbit-slot={i} className="intro-orbit__item">
-              <Image data-orbit-img="" src={plate.src} alt="" fill sizes="(max-width: 767px) 34vw, 26vh" quality={75} className="object-cover" style={{ objectPosition: plate.focus }} />
+              <Image
+                data-orbit-img=""
+                src={plate.src}
+                alt=""
+                fill
+                sizes={`(max-width: 767px) ${coverWidth(plate, 1, "34vw")}, ${coverWidth(plate, 1, "26vh")}`}
+                quality={75}
+                className="object-cover"
+                style={{ objectPosition: plate.focus }}
+              />
             </li>
           ))}
         </ul>
@@ -62,7 +72,7 @@ export function Intro() {
         </div>
 
         <p data-intro-caption="" className="absolute inset-x-0 bottom-6 z-10 px-5 text-center text-label text-ink-muted lg:bottom-8">
-          Rendered studies for illustration, not client projects.
+          Renderings of client projects.
         </p>
       </div>
     </section>

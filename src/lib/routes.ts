@@ -16,6 +16,8 @@ export const paths = {
   serviceArea: (slug: string) => r(`/service-areas/${slug}/`),
   projects: r("/projects/"),
   project: (slug: string) => r(`/projects/${slug}/`),
+  /** A client project's renderings, on the projects page. */
+  projectRenderings: (id: string) => r(`/projects/#${id}`),
   guides: r("/permit-guides/"),
   guide: (slug: string) => r(`/permit-guides/${slug}/`),
   contact: r("/contact/"),

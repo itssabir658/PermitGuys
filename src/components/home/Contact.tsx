@@ -3,12 +3,17 @@ import { Container } from "@/components/ui/Container";
 import { EmailLink, PhoneLink } from "@/components/ui/ContactLinks";
 import { ExternalIcon } from "@/components/ui/Icons";
 import { LinkButton } from "@/components/ui/LinkButton";
-import { plates } from "@/content/imagery";
+import { coverWidth, plates, type Plate } from "@/content/imagery";
 import { site } from "@/content/site";
 import { paths } from "@/lib/routes";
 import type { ReviewSummary } from "@/lib/reviews";
 
 const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZone: "UTC" });
+
+/* The cards' pictures: a whole house beside the first card's invitation, an entrance beside the address. */
+const start = plates.greenBatten;
+const visit = plates.narrow;
+const cardSizes = (plate: Plate) => `(min-width: 768px) ${coverWidth(plate, 1.6, "45vw")}, ${coverWidth(plate, 1.6, "90vw")}`;
 
 /**
  * The close: the word set large, then two cards with pictures in the
@@ -52,7 +57,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
           <article data-contact-card="" className="grid gap-8 bg-stone-100 p-5 sm:p-6 md:row-span-3 md:grid-rows-subgrid lg:p-8">
             <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
               <div data-contact-wipe="" className="absolute inset-0">
-                <Image src={plates.infill.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover object-[64%_62%]" />
+                <Image src={start.src} alt="" fill sizes={cardSizes(start)} quality={75} className="object-cover" style={{ objectPosition: start.focus }} />
               </div>
             </div>
             <div>
@@ -69,7 +74,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
           <article data-contact-card="" className="grid gap-8 bg-stone-100 p-5 sm:p-6 md:row-span-3 md:grid-rows-subgrid lg:p-8">
             <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
               <div data-contact-wipe="" className="absolute inset-0">
-                <Image src={plates.deck.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover" style={{ objectPosition: plates.deck.focus }} />
+                <Image src={visit.src} alt="" fill sizes={cardSizes(visit)} quality={75} className="object-cover" style={{ objectPosition: visit.focus }} />
               </div>
             </div>
             <div>
@@ -111,7 +116,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
             </dl>
           </article>
         </div>
-        <p className="mt-6 text-label text-ink-muted">Images are rendered studies for illustration, not client projects.</p>
+        <p className="mt-6 text-label text-ink-muted">Images are renderings of client projects, except those captioned as rendered studies.</p>
       </Container>
     </section>
   );

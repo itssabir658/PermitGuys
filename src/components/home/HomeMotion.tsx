@@ -35,7 +35,7 @@ import {
   valuesWordSize,
   worksButton,
   worksLine,
-  worksStudy,
+  worksShot,
   type OrbitPath,
   type SwapLayer,
 } from "@/lib/motion/home";
@@ -176,7 +176,7 @@ function hero(): MotionModule | null {
   };
 }
 
-/* Intro: six studies travel one squircle path around the centre while two paragraphs pass through it. */
+/* Intro: six pictures travel one squircle path around the centre while two paragraphs pass through it. */
 function intro(): MotionModule | null {
   const section = one("[data-intro]");
   if (!section) return null;
@@ -197,13 +197,13 @@ function intro(): MotionModule | null {
         copies.forEach(unsplit);
         lines = copies.map(() => []);
       }
-      // The ring and the image sizes follow the stage (100svh, so a phone's toolbar does not push the ring under the header or the caption); rebuilt only here, so a resize re-spaces the ring. Portrait screens keep the studies clear of the taller paragraph.
+      // The ring and the image sizes follow the stage (100svh, so a phone's toolbar does not push the ring under the header or the caption); rebuilt only here, so a resize re-spaces the ring. Portrait screens keep the pictures clear of the taller paragraph.
       const copyHalf = copies.reduce((m, c) => Math.max(m, c.offsetHeight / 2), 0);
       path = orbitPath(f.vw, (f.tracks && stage?.offsetHeight) || f.vh, copyHalf, f.vh);
       for (const it of items) setStyle(it.el, "--size", f.tracks ? px(path.sizes[it.slot] ?? 0) : "");
     },
     update(f) {
-      // Without the tracks the studies sit in a row under the paragraphs (globals.css), untouched.
+      // Without the tracks the pictures sit in a row under the paragraphs (globals.css), untouched.
       if (!f.tracks) {
         for (const it of items) {
           clear(it.el, "transform", "opacity");
@@ -223,7 +223,7 @@ function intro(): MotionModule | null {
         if (it.img) setStyle(it.img, "transform", `scale(${num(o.imgScale)})`);
         ring = Math.max(ring, o.arrive);
       }
-      // The caption is there whenever any study is, and leaves with them.
+      // The caption is there whenever any picture is, and leaves with them.
       if (caption) setStyle(caption, "opacity", num(Math.min(ring, 1 - exit)));
       // Display type never fades: each line only rolls through its mask.
       lines.forEach((ls, i) =>
@@ -268,13 +268,13 @@ function works(): MotionModule | null {
   const label = one("h2", section)?.parentElement ?? null;
   const n = items.length;
   let r: Range;
-  /** Screens the stage stays pinned (the section's height − 1 screen), shared by the studies. */
+  /** Screens the stage stays pinned (the section's height − 1 screen), shared by the projects. */
   let D = 1;
   let stageH = 0;
   let frameTop = 0;
   let frameH = 0;
   let titleLines: HTMLElement[][] = items.map(() => []);
-  // Keyboard: focusing a study's button scrolls to the middle of its moment, where it is composed. Only keyboard focus: a press focuses the link too, and must not move the page under the pointer.
+  // Keyboard: focusing a project's button scrolls to the middle of its moment, where it is composed. Only keyboard focus: a press focuses the link too, and must not move the page under the pointer.
   const onFocus = (event: FocusEvent) => {
     if (!(event.target instanceof Element) || !event.target.matches(":focus-visible")) return;
     const i = items.findIndex((it) => it.button?.contains(event.target as Node));
@@ -319,7 +319,7 @@ function works(): MotionModule | null {
       // A wipe rises from the frame's bottom edge, or from the screen's while that edge is still below it: `run` is the share of the frame above the bottom of the screen.
       const run = frameH > 0 ? clamp((Math.min(f.vh, top + frameH) - top) / frameH) : 1;
       shots.forEach((s, i) => {
-        const st = worksStudy(e, i, n, D);
+        const st = worksShot(e, i, n, D);
         setStyle(s.el, "clipPath", `inset(${((1 - st.inP) * run * 100).toFixed(2)}% 0 0 0)`);
         if (s.img) {
           setStyle(s.img, "transform", liftPercent(mix(6, -6, st.drift)));
@@ -614,6 +614,9 @@ function services(): MotionModule[] {
       if (shown !== target) {
         rows[shown]?.li.removeAttribute("data-active");
         rows[target]?.li.setAttribute("data-active", "");
+        // The caption names the kind of the picture arriving: a client rendering or a study.
+        const kind = pics[target]?.dataset.kind;
+        if (caption && kind) caption.dataset.kind = kind;
         shown = target;
       }
       stack = swapSettle(stack, f.time, f.reduced);

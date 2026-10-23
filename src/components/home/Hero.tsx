@@ -1,14 +1,22 @@
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import type { CSSProperties } from "react";
-import { STUDY_NOTE, plates } from "@/content/imagery";
+import { coverWidthByHeight, plateNote, plates } from "@/content/imagery";
 
 const sub = ["Clarity in every detail.", "Confidence in every permit."];
 
+const plate = plates.terrace;
+/** Phones held upright get the tall crop (cut around the umbrella, 55% across); every wider screen the whole picture. Keep in step with the img's object-position variant. */
+const TALL = "(max-aspect-ratio: 3/5)";
+/** The picture grows 8% as the page scrolls (heroState). */
+const GROW = 1.08;
+
 /**
- * Opening: a full-bleed study under a graded veil (darker at the top for the
- * header and at the bottom for the statement, open across the glazing), the
- * name set very large across the middle and the statement at the bottom
- * left.
+ * Opening: a full-bleed client rendering under a graded veil (darker at the
+ * top for the header and at the bottom for the statement, open across the
+ * glazing), the name set very large across the middle and the statement at
+ * the bottom left. Phones held upright get a tall crop of the same picture,
+ * so they fetch the slice they show (art direction: one <picture>, so only
+ * one file ever loads, and the preloader still finds its <img>).
  *
  * Load: the preloader's iris opens from the GTA dot onto the picture, which
  * settles from 112% around that point; the name rises out of its mask at
@@ -24,13 +32,34 @@ const sub = ["Clarity in every detail.", "Confidence in every permit."];
  * around it, so neither overrides the other.
  * Short screens, reduced motion and no JavaScript get the still opening.
  */
+function HeroPicture() {
+  const tall = plate.tall!;
+  const common = { alt: plate.alt, fill: true, quality: 80, fetchPriority: "high", loading: "eager" } as const;
+  const {
+    props: { srcSet: tallSet, sizes: tallSizes },
+  } = getImageProps({ ...common, src: tall.src, sizes: coverWidthByHeight({ ...plate, ...tall }, "100vh", GROW) });
+  const {
+    props: { style, ...img },
+  } = getImageProps({
+    ...common,
+    src: plate.src,
+    sizes: `(max-aspect-ratio: ${plate.width}/${plate.height}) ${coverWidthByHeight(plate, "100vh", GROW)}, ${GROW * 100}vw`,
+  });
+  return (
+    <picture>
+      <source media={TALL} srcSet={tallSet} sizes={tallSizes} />
+      {/* eslint-disable-next-line jsx-a11y/alt-text -- the props come from next/image (getImageProps), alt included */}
+      <img {...img} style={{ ...style, objectFit: "cover" }} className="object-[55%_60%] [@media(max-aspect-ratio:3/5)]:object-[50%_60%]" />
+    </picture>
+  );
+}
+
 export function Hero() {
-  const plate = plates.infill;
   return (
     <section data-home-hero="" data-tone="dark" aria-labelledby="hero-heading" className="relative h-svh min-h-[34rem] tracks:h-[250vh]">
       <div className="sticky top-0 isolate h-svh min-h-[34rem] overflow-hidden bg-charcoal-950 text-ivory">
         <div data-hero-image="" className="absolute inset-0 -z-10">
-          <Image src={plate.src} alt={plate.alt} fill priority quality={85} sizes="100vw" className="object-cover object-[72%_58%] sm:object-[64%_62%]" />
+          <HeroPicture />
           <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,rgb(0_0_0/0.55)_0%,rgb(0_0_0/0.28)_38%,rgb(0_0_0/0.32)_62%,rgb(0_0_0/0.7)_100%)]" />
           <div data-hero-dim="" aria-hidden="true" className="absolute inset-0 bg-black opacity-0" />
         </div>
@@ -60,7 +89,7 @@ export function Hero() {
             ))}
           </p>
           <p className="hero-fig max-w-xs text-label text-ivory/70 lg:text-right">
-            Fig. 01 — {plate.caption}. {STUDY_NOTE}
+            Fig. 01 — {plate.caption}. {plateNote(plate)}
           </p>
         </div>
       </div>

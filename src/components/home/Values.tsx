@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Container } from "@/components/ui/Container";
-import { plates, type Plate } from "@/content/imagery";
+import { coverWidth, plates, type Plate } from "@/content/imagery";
 import { escapeHtml } from "@/lib/html";
 
 /*
@@ -30,22 +30,22 @@ const values: { title: string; body: string; plate: Plate }[] = [
   {
     title: "Clarity",
     body: "Before drawing anything, we look at what you want to build against the zoning and Building Code considerations we can identify for your lot.",
-    plate: plates.detail,
+    plate: plates.prairieCorner,
   },
   {
     title: "Candour",
     body: "Some projects also need an engineer, a survey or a planning approval. When yours does, we flag it at the start.",
-    plate: plates.aerial,
+    plate: plates.farmhouse,
   },
   {
     title: "Ownership",
     body: "You, PermitGuys, other consultants or the municipality: who carries each step is written down, so nothing is assumed.",
-    plate: plates.front,
+    plate: plates.redBrick,
   },
   {
     title: "Integrity",
     body: "We describe what your municipality asks for, not rules of thumb, and we never promise an approval or a date. That decision is the city’s.",
-    plate: plates.storefront,
+    plate: plates.brick,
   },
 ];
 
@@ -108,8 +108,16 @@ export function Values() {
         <div key={v.title} data-values-outer={i} className="values-outer">
           <div data-values-frame="" className="values-frame">
             <div data-values-image="" className="absolute inset-0 overflow-hidden bg-stone-300">
-              <Image src={v.plate.src} alt="" fill sizes="(min-width: 1024px) 34vw, 80vw" quality={80} className="object-cover" style={{ objectPosition: v.plate.focus }} />
-              {/* On the tracks only, a scrim shaped around the text keeps the ivory description legible on the pale plates; the still layout shows the pictures untouched. */}
+              <Image
+                src={v.plate.src}
+                alt=""
+                fill
+                sizes={`(min-width: 1024px) ${coverWidth(v.plate, 3 / 4, "26rem")}, ${coverWidth(v.plate, 3 / 4, "80vw")}`}
+                quality={80}
+                className="object-cover"
+                style={{ objectPosition: v.plate.focus }}
+              />
+              {/* On the tracks only, a scrim shaped around the text keeps the ivory description legible on bright skies and pale walls; the still layout shows the pictures untouched. */}
               <div aria-hidden="true" className="absolute inset-0 hidden tracks:block" style={{ background: "radial-gradient(70% 45% at 50% 52%, rgb(17 17 16 / 0.58), rgb(17 17 16 / 0.2) 100%)" }} />
             </div>
           </div>

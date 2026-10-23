@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLink } from "@/components/ui/ArrowLink";
 import { Container } from "@/components/ui/Container";
-import { plateForService } from "@/content/imagery";
+import { PROJECT_NOTE, STUDY_NOTE, coverWidth, coverWidthByHeight, plateForService } from "@/content/imagery";
 import { otherWork } from "@/content/other-work";
 import { escapeHtml } from "@/lib/html";
 import { getServices } from "@/lib/content";
@@ -33,6 +33,15 @@ const LEAD = "Permit drawings and guidance for every kind of project.";
  *
  * Without the tracks the list and picture simply sit side by side, the
  * picture following the hovered or focused row.
+ *
+ * Custom homes show a client rendering, the other services rendered studies
+ * (no client rendering shows those kinds of project), so the caption under
+ * the frame names the kind of the picture shown (data-kind, set with the
+ * picture).
+ *
+ * The frame is portrait beside the list (at most 70% of the screen's height
+ * and 44rem) and a wide band on phones, so each picture is fetched as wide
+ * as it is drawn at that height, or across the phone.
  */
 export function Services() {
   // Homes first, then businesses and landlords.
@@ -91,12 +100,12 @@ export function Services() {
                         {services.map((s, i) => {
                           const plate = plateForService(s.slug);
                           return (
-                            <div key={s.slug} data-services-pic={i} className="absolute inset-0" style={i ? { visibility: "hidden" } : undefined}>
+                            <div key={s.slug} data-services-pic={i} data-kind={plate.kind} className="absolute inset-0" style={i ? { visibility: "hidden" } : undefined}>
                               <Image
                                 src={plate.src}
                                 alt=""
                                 fill
-                                sizes="(min-width: 768px) 36vw, 92vw"
+                                sizes={`(max-width: 767px) ${coverWidth(plate, 1.6, "100vw")}, (min-height: 1006px) ${coverWidthByHeight(plate, "44rem")}, ${coverWidthByHeight(plate, "70vh")}`}
                                 quality={75}
                                 loading={i ? "eager" : undefined}
                                 fetchPriority={i ? "low" : undefined}
@@ -109,8 +118,9 @@ export function Services() {
                       </div>
                     </div>
                   </div>
-                  <p data-services-caption="" className="services-caption mt-4 text-label text-charcoal-300">
-                    Rendered studies, not client projects.
+                  <p data-services-caption="" data-kind={plateForService(services[0].slug).kind} className="services-caption mt-4 text-label text-charcoal-300">
+                    <span data-note="study">{STUDY_NOTE}</span>
+                    <span data-note="project">{PROJECT_NOTE}</span>
                   </p>
                 </div>
               </div>

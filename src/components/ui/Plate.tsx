@@ -1,12 +1,15 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
-import { STUDY_NOTE, type Plate as PlateData } from "@/content/imagery";
+import { plateNote, type Plate as PlateData } from "@/content/imagery";
 import { cn } from "./cn";
 
 /**
- * An image set as a plate: a fixed crop that unveils upwards as it scrolls
- * into view, with optional slow drift, and a mono caption in the manner of
- * a numbered figure. Captions always state that renders are studies.
+ * An image set as a plate: a fixed crop (or the picture's own proportions,
+ * aspect="natural") that unveils upwards as it scrolls into view, with
+ * optional slow drift, and a mono caption in the manner of a numbered
+ * figure. The caption carries the plate's note, client rendering or study;
+ * note={false} leaves it to the page, where one line says it for every
+ * picture.
  *
  * In the first screen, pass reveal={false} and frameClassName="motion-unveil"
  * so the plate unveils with the page header instead (globals.css, "Inner
@@ -31,9 +34,11 @@ export function Plate({
   focus,
   notch,
   stackCaption,
+  note = true,
+  label,
 }: {
   plate: PlateData;
-  /** Aspect ratio utility for the crop. */
+  /** Aspect ratio utility for the crop, or "natural" for the picture's own proportions. */
   aspect?: string;
   className?: string;
   frameClassName?: string;
@@ -52,15 +57,20 @@ export function Plate({
   focus?: string;
   /** Frame the picture as a notched drawing sheet. */
   notch?: boolean;
-  /** Set the caption's label and study note one above the other, for narrow plates. */
+  /** Set the caption's label and note one above the other, for narrow plates. */
   stackCaption?: boolean;
+  /** Show the plate's note in the caption. */
+  note?: boolean;
+  /** Caption text in place of the plate's own. */
+  label?: string;
 }) {
+  const natural = aspect === "natural";
   const frame = (
     <div
       data-reveal={reveal ? "" : undefined}
       data-reveal-type={reveal ? "mask" : undefined}
-      style={delay ? ({ "--d": delay } as CSSProperties) : undefined}
-      className={cn("grain relative overflow-hidden bg-stone-300", aspect, frameClassName)}
+      style={{ ...(delay ? ({ "--d": delay } as CSSProperties) : {}), ...(natural ? { aspectRatio: `${plate.width} / ${plate.height}` } : {}) }}
+      className={cn("grain relative overflow-hidden bg-stone-300", !natural && aspect, frameClassName)}
     >
       <div data-parallax={drift === "slow" ? "slow" : drift ? "" : undefined} className="absolute inset-0">
         <Image
@@ -90,9 +100,9 @@ export function Plate({
           <span>
             {fig ? <span className={onDark ? "text-ivory" : "text-ink"}>Fig. {fig}</span> : null}
             {fig ? <span aria-hidden="true"> — </span> : null}
-            {plate.caption}
+            {label ?? plate.caption}
           </span>
-          <span>{STUDY_NOTE}</span>
+          {note ? <span>{plateNote(plate)}</span> : null}
         </figcaption>
       ) : null}
     </figure>

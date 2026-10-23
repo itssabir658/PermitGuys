@@ -12,7 +12,7 @@ const tones: Record<Tone, string> = {
 
 /**
  * Vertical rhythm and background tone for page sections. `first` is for the
- * section right under the page header (or its study band), so the header to
+ * section right under the page header (or its picture band), so the header to
  * body handover matches the article pages. Content comes in row by row as it
  * is reached (data-reveal-type="rows"). A dark section turns the header ivory
  * (data-tone). Draw the `bordered` rule only between sections of one tone:

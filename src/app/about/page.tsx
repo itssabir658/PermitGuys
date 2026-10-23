@@ -32,7 +32,7 @@ export default function AboutPage() {
         title="Permit drawings, prepared with the review in mind."
         lead="PermitGuys is a building permit consulting and permit drawing service for homeowners and property owners in the Greater Toronto Area."
       />
-      <PlateBand plate={plates.detail} />
+      <PlateBand plate={plates.terrace} />
       <ArticleLayout toc={toc}>
         <ArticleSection id="what-we-do" title="What we do">
           <div className="prose-pg">

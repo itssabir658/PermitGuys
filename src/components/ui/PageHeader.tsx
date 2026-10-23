@@ -13,7 +13,7 @@ import { Eyebrow } from "./Eyebrow";
  * lines rise out of their masks (InteractionEffects splits the title), the
  * lead follows at 0.4s, an aside plate unveils upward and the closing rule
  * draws across. On short laptop screens (at most 800px, then 700px tall)
- * the spacing tightens in two steps, so a study band below shows a real
+ * the spacing tightens in two steps, so a picture band below shows a real
  * part of itself at the fold rather than a sliver.
  */
 export function PageHeader({

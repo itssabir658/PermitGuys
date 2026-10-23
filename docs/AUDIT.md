@@ -11,7 +11,7 @@ Date: 2026-10-19. Scope: technical SEO, structured data, AEO and GEO; the projec
 | Structured data | `ProfessionalService` (a LocalBusiness type) used with no confirmed address; no `WebPage` entities; entities not linked by `@id`; guide reviewer modelled on `Article` instead of the page. | Fixed |
 | Metadata | No Open Graph or Twitter image anywhere. | Fixed: generated share images (site default, one per service, one per guide) |
 | Metadata | Homepage description 184 characters. | Shortened to 158 |
-| Indexing | Empty `/projects/` placeholder page was indexable and in the sitemap. | Now `noindex` and left out of the sitemap until a case study is approved |
+| Indexing | Empty `/projects/` placeholder page was indexable and in the sitemap. | Now `noindex` and left out of the sitemap until a case study is approved. (2026-10-23: indexed again, as it now shows client renderings.) |
 | Redirects | No redirects for the old permitguys.ca WordPress URLs. | Added for the known URLs (see §5 for the rest) |
 | Performance | The display font loaded its optical-size axis: a 132 KB preloaded font. | Removed the axis (59 KB). Lighthouse mobile LCP on a service page went from about 2.9 to 3.0 s to about 2.1 to 2.4 s, two runs each |
 | Inquiry form | Municipality optional; no preferred contact method; no error summary; failed deliveries lost the consent tick; no spam protection beyond a honeypot; no rate limit, duplicate guard, attribution or analytics hooks; webhook only. | Rebuilt (see §2) |
