@@ -418,6 +418,36 @@ test.describe("interactive pieces", () => {
     expect(await story.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(3 * (page.viewportSize()?.height ?? 900));
   });
 
+  test("contact closes on the firm's title block, drawn in as it comes up and whole at the end of the page", async ({ page }, info) => {
+    await page.goto("/");
+    const contact = page.locator("[aria-labelledby=contact-heading]");
+    await expect(contact.getByRole("heading", { level: 2 })).toHaveText("Let’s talk about your project.");
+    await expect(contact.getByRole("link", { name: "Start a project" })).toHaveAttribute("href", "/contact/");
+    await expect(contact.locator("figcaption")).toHaveText("Rendering of a client project.");
+    const block = contact.locator("[data-contact-block]");
+    await expect(block.locator("dt")).toHaveText(["Office", "Hours", "Phone and email", "Google rating", "Credentials"]);
+    // The firm's mark joins the block from 768px wide; on phones the footer's logo follows straight after.
+    await expect(block.locator(".contact-block__mark")).toBeVisible({ visible: info.project.name !== "mobile" });
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    const clip = () => block.evaluate((el) => getComputedStyle(el).clipPath);
+    // As the sheet rises, the block is not drawn yet.
+    const y = await page.evaluate(() => {
+      let top = 0;
+      for (let n = document.querySelector<HTMLElement>("[data-contact]"); n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop;
+      const y = Math.round(top - 0.8 * window.innerHeight);
+      window.scrollTo(0, y);
+      return y;
+    });
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(y);
+    await expect.poll(clip).not.toBe("none");
+    // At the end of the page it is drawn, and every cell it shows is in place.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect.poll(clip).toBe("none");
+    for (const cell of await block.locator("[data-contact-cell]").all()) {
+      if (await cell.isVisible()) await expect.poll(() => cell.evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+    }
+  });
+
   test("a project link on the homepage lands on that project's renderings", async ({ page }) => {
     await page.goto("/projects/#stone-house");
     const project = page.locator("#stone-house");

@@ -3,120 +3,149 @@ import { Container } from "@/components/ui/Container";
 import { EmailLink, PhoneLink } from "@/components/ui/ContactLinks";
 import { ExternalIcon } from "@/components/ui/Icons";
 import { LinkButton } from "@/components/ui/LinkButton";
-import { coverWidth, plates, type Plate } from "@/content/imagery";
+import { coverWidth, plateNote, plates } from "@/content/imagery";
 import { site } from "@/content/site";
+import { escapeHtml } from "@/lib/html";
 import { paths } from "@/lib/routes";
 import type { ReviewSummary } from "@/lib/reviews";
 
 const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZone: "UTC" });
 
-/* The cards' pictures: a whole house beside the first card's invitation, a porch and its steps beside the address (the narrow house is the story's). */
-const start = plates.greenBatten;
-const visit = plates.whiteBatten;
-const cardSizes = (plate: Plate) => `(min-width: 768px) ${coverWidth(plate, 1.6, "45vw")}, ${coverWidth(plate, 1.6, "90vw")}`;
+/* The close's one picture: a whole house in daylight, on the ivory sheet. */
+const plate = plates.greenBatten;
+const HEADING = "Let’s talk about your project.";
+/** A value set as lines: the address at its first comma (street, then town), the hours by sentence. */
+const lines = (text: string, at: RegExp) => text.split(at).filter(Boolean);
+const BODY = "Tell us what you are planning and where. We will review the details and explain how we can take it from the first idea to drawings ready for the building permit.";
 
 /**
- * The close: the word set large, then two cards with pictures in the
- * notched sheet outline.
+ * The close: an invitation beside one picture, then the firm's details set
+ * as the title block of a drawing sheet, as the story's sheet is issued
+ * with one (Story.tsx): the firm, its office, hours, phone and email, its
+ * Google rating and credentials, each in a ruled cell.
  *
  * The section is an ivory sheet that rises over Services as it recedes
  * into the night (the handover module), the page's second sheet after the
  * intro's: the page opens and closes with one gesture. On the tracks the
- * word is cut in letter by letter, each rising from its own mask; then the
- * cards rise and their blocks fade in, the right one a beat behind on wide
- * screens, as each picture's sheet wipes up and settles (HomeMotion,
- * contact module). The section brings its own ivory: the page ground stays
- * night beneath it.
- *
- * The letters are decoration; the heading's text is the visually hidden
- * word. Splitting a word into boxes loses the face's kerning between them,
- * so the stylesheet sets it back (measured against the word as one run),
- * and HomeMotion re-measures and refines it.
- *
- * From md the two cards share three rows through subgrid (picture, text,
- * foot), so 'Get in touch' sits on the same rule as the rating and
- * credentials whatever the text above them.
+ * label, the heading and the paragraph rise line by line from their masks
+ * and the actions follow; the picture's sheet wipes up and settles; the
+ * title block is drawn in from the left, and its cells come in after it,
+ * left to right (HomeMotion, contact module). The section brings its own
+ * ivory: the page ground stays night beneath it.
  */
 export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
   const { contact } = site;
   return (
-    <section data-contact="" aria-labelledby="contact-heading" className="relative z-[1] bg-ivory pt-28 pb-16 lg:pt-40 lg:pb-20">
-      <Container>
-        <h2 id="contact-heading" data-contact-heading="" className="contact-heading font-wordmark leading-[0.85] tracking-[-0.01em] text-ink uppercase">
-          <span className="sr-only">Contact</span>
-          <span aria-hidden="true" className="contact-heading__word">
-            {"Contact".split("").map((c, i) => (
-              <span key={i} className="contact-letter">
-                <span data-contact-letter="">{c}</span>
-              </span>
-            ))}
-          </span>
-        </h2>
-
-        <div className="mt-14 grid gap-6 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] lg:mt-20 lg:gap-8">
-          <article data-contact-card="" className="grid gap-8 bg-stone-100 p-5 sm:p-6 md:row-span-3 md:grid-rows-subgrid lg:p-8">
-            <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
-              <div data-contact-wipe="" className="absolute inset-0">
-                <Image src={start.src} alt="" fill sizes={cardSizes(start)} quality={75} className="object-cover" style={{ objectPosition: start.focus }} />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-display text-display-md font-light text-ink">Start a project</h3>
-              <p className="mt-4 max-w-md leading-relaxed text-ink-muted">
-                Tell us what you are planning and where. We will review the details and explain how we can help with drawings and the permit process.
+    <section data-contact="" aria-labelledby="contact-heading" className="contact relative z-[1] bg-ivory">
+      <Container className="contact-grid">
+        <div className="contact-intro">
+          <p className="split-line text-label text-ink-muted">
+            <span data-contact-roll="" className="block">
+              Contact
+            </span>
+          </p>
+          <h2
+            id="contact-heading"
+            data-contact-heading=""
+            className="contact-heading mt-5 max-w-[14ch] font-display text-display-lg font-light text-ink"
+            dangerouslySetInnerHTML={{ __html: escapeHtml(HEADING) }}
+          />
+          <p data-contact-body="" className="contact-body mt-6 max-w-[34rem] leading-relaxed text-ink-muted" dangerouslySetInnerHTML={{ __html: escapeHtml(BODY) }} />
+          <div data-contact-actions="" className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-4">
+            <LinkButton href={paths.contact}>Start a project</LinkButton>
+            {contact.phone ? (
+              <p className="text-ink-muted">
+                or call <PhoneLink location="home-contact" className="link-rule text-ink" />
               </p>
-            </div>
-            <div className="border-t border-line pt-6">
-              <LinkButton href={paths.contact}>Get in touch</LinkButton>
-            </div>
-          </article>
+            ) : null}
+          </div>
+        </div>
 
-          <article data-contact-card="" className="grid gap-8 bg-stone-100 p-5 sm:p-6 md:row-span-3 md:grid-rows-subgrid lg:p-8">
-            <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
-              <div data-contact-wipe="" className="absolute inset-0">
-                <Image src={visit.src} alt="" fill sizes={cardSizes(visit)} quality={75} className="object-cover" style={{ objectPosition: visit.focus }} />
-              </div>
+        <figure className="contact-figure">
+          <div data-contact-pic="" className="contact-pic notch-clip">
+            <div data-contact-wipe="" className="absolute inset-0">
+              <Image
+                src={plate.src}
+                alt={plate.alt}
+                fill
+                sizes={`(min-width: 1024px) ${coverWidth(plate, 1.5, "min(36vw, 36rem)")}, (min-width: 768px) ${coverWidth(plate, 1.5, "40vw")}, ${coverWidth(plate, 1.5, "92vw")}`}
+                quality={80}
+                className="object-cover"
+                style={{ objectPosition: plate.focus }}
+              />
             </div>
-            <div>
-              <h3 className="font-display text-display-md font-light text-ink">Call or visit</h3>
-              <address className="mt-4 grid gap-1.5 leading-relaxed text-ink-muted not-italic">
-                {contact.address ? <span>{contact.address}</span> : null}
-                {contact.hours ? <span>{contact.hours}</span> : null}
-                {contact.phone ? <PhoneLink location="home-contact" className="link-rule w-fit text-ink" /> : null}
-                {contact.email ? <EmailLink location="home-contact" className="link-rule w-fit text-ink" /> : null}
-              </address>
-            </div>
-            <dl className="grid gap-6 border-t border-line pt-6 sm:grid-cols-2">
-              {reviews ? (
-                <div>
-                  <dt className="text-label text-ink-muted">Google rating</dt>
-                  <dd className="mt-2">
-                    <a href={reviews.url} className="group inline-flex items-center gap-1.5 text-ink">
-                      <span className="link-rule">
-                        {reviews.rating.toFixed(1)} out of 5 from {reviews.count} reviews
-                      </span>
-                      <ExternalIcon className="size-3" />
-                    </a>
-                  </dd>
-                  {reviews.source === "profile" && reviews.asOf ? (
-                    <dd className="mt-1 text-[0.8125rem] text-ink-muted">From our Google Business Profile on {dateFormat.format(new Date(reviews.asOf))}.</dd>
-                  ) : null}
-                </div>
-              ) : null}
-              {site.credentials.length ? (
-                <div>
-                  <dt className="text-label text-ink-muted">Credentials</dt>
-                  {site.credentials.map((c) => (
-                    <dd key={c} className="mt-2 text-ink">
-                      {c}
-                    </dd>
-                  ))}
-                </div>
+          </div>
+          <figcaption data-contact-caption="" className="mt-3 text-label text-ink-muted">
+            {plateNote(plate)}
+          </figcaption>
+        </figure>
+
+        <div data-contact-block="" className="contact-block">
+          <div data-contact-cell="" aria-hidden="true" className="contact-block__cell contact-block__mark">
+            <p className="font-wordmark text-[1.125rem] leading-none tracking-[-0.01em] text-ink uppercase">{site.name}</p>
+            <p className="contact-block__label mt-2">Architects</p>
+          </div>
+          {contact.address ? (
+            <dl data-contact-cell="" className="contact-block__cell">
+              <dt className="contact-block__label">Office</dt>
+              <dd className="contact-block__value">
+                {lines(contact.address, /(?<=^[^,]*),\s+/).map((l) => (
+                  <span key={l} className="block">
+                    {l}
+                  </span>
+                ))}
+              </dd>
+            </dl>
+          ) : null}
+          {contact.hours ? (
+            <dl data-contact-cell="" className="contact-block__cell">
+              <dt className="contact-block__label">Hours</dt>
+              <dd className="contact-block__value">
+                {lines(contact.hours, /(?<=\.)\s+/).map((l) => (
+                  <span key={l} className="block">
+                    {l}
+                  </span>
+                ))}
+              </dd>
+            </dl>
+          ) : null}
+          {contact.phone || contact.email ? (
+            <dl data-contact-cell="" className="contact-block__cell">
+              <dt className="contact-block__label">Phone and email</dt>
+              <dd className="contact-block__value grid justify-items-start gap-0.5">
+                <PhoneLink location="home-contact-block" className="link-rule" />
+                <EmailLink location="home-contact-block" className="link-rule" />
+              </dd>
+            </dl>
+          ) : null}
+          {reviews ? (
+            <dl data-contact-cell="" className="contact-block__cell">
+              <dt className="contact-block__label">Google rating</dt>
+              <dd className="contact-block__value">
+                {/* Inline, so a rating that wraps is underlined line by line, the icon after its last word. */}
+                <a href={reviews.url} className="group">
+                  <span className="link-rule">
+                    {reviews.rating.toFixed(1)} out of 5 from {reviews.count} reviews
+                  </span>
+                  <ExternalIcon className="ml-1.5 inline-block size-3 align-[-0.05em]" />
+                </a>
+              </dd>
+              {reviews.source === "profile" && reviews.asOf ? (
+                <dd className="contact-block__note">From our Google Business Profile on {dateFormat.format(new Date(reviews.asOf))}.</dd>
               ) : null}
             </dl>
-          </article>
+          ) : null}
+          {site.credentials.length ? (
+            <dl data-contact-cell="" className="contact-block__cell">
+              <dt className="contact-block__label">Credentials</dt>
+              {site.credentials.map((c) => (
+                <dd key={c} className="contact-block__value">
+                  {c}
+                </dd>
+              ))}
+            </dl>
+          ) : null}
         </div>
-        <p className="mt-6 text-label text-ink-muted">Images are renderings of client projects, except those captioned as rendered studies.</p>
       </Container>
     </section>
   );

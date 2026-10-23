@@ -16,7 +16,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | `brand-400` | `#EE352F` | The logo red. Dots, rules and small marks only. |
 | `brand-500` … `brand-700` | `#C2352C` … `#8F271F` | Red text on light grounds, if ever needed. Use `brand-300` on dark. |
 
-- **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels and metadata, and Playfair Display Black only for the wordmark display type: the hero name, the Values words and CONTACT (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
+- **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels and metadata, and Playfair Display Black only for the wordmark display type: the hero name, the Values words and the firm's mark in a title block (the story's sheet and Contact) (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
 - **Scale:** `text-hero` (fluid up to 8.5rem), `text-display-2xl` … `text-display-sm`, `text-lede`, `text-label` (mono, uppercase, tracked).
 - **Easing:** `ease-out-expo` for reveals and hovers, `ease-in-out-quint` for masks and the menu panel. Durations sit between 0.5s and 1.4s.
 - **Width:** content runs to `max-w-site` (100rem) on a 12-column grid; long copy stays at `max-w-prose`.
@@ -46,7 +46,7 @@ The full choreography, scroll map and checks are in [MOTION.md](MOTION.md).
 4. **Selected projects** (`Works.tsx`): one pinned, notched frame on a stone ground; renderings of three client projects, labelled as renderings, wipe up over one another, each leading to its renderings on the projects page. Approved case studies are listed above them when they exist.
 5. **Our values** (`Values.tsx`): four values; the words roll like an odometer between the pictures and change colour where they cross them.
 6. **Services** (`Services.tsx`): the ground turns to night; a numbered list beside one notched frame, pinned while scrolling walks the rows and the picture follows the active row (or the one hovered or focused). "All services" closes the list.
-7. **Contact** (`Contact.tsx`): an ivory sheet over Services; the word CONTACT cut in letter by letter, then two cards of equal height that share their rows, so their foot rules line up: start a project, and call or visit (address, hours, phone, email, Google rating, credentials).
+7. **Contact** (`Contact.tsx`): an ivory sheet over Services, under one screen tall on desktop: "Let's talk about your project.", a short paragraph, "Start a project" and the phone number, beside one client rendering; then the firm's details as a drawing's title block, ruled in ink: the firm's mark, office, hours, phone and email, Google rating and credentials.
 
 The footer is the page's one charcoal band. Process, service areas and guides live on their own pages; the footer carries the confirmed contact details and the Ontario outline with the Greater Toronto Area marked (except on the 404, which draws its own).
 

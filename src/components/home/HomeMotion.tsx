@@ -4,8 +4,11 @@ import { useEffect } from "react";
 import { LINE_KINDS, STORY_W, storyGrid, storyLevels, storyLines, storyMembers } from "@/content/story-drawing";
 import { ORDER, engine, hso, measureRange, setStyle, sso, type Frame, type MotionModule, type Range } from "@/lib/motion/engine";
 import {
-  contactCard,
-  contactLetter,
+  contactBlock,
+  contactCell,
+  contactLine,
+  contactPicture,
+  contactRise,
   headerGround,
   heroState,
   introCopy,
@@ -999,79 +1002,100 @@ function handover(): MotionModule | null {
 }
 
 /*
- * Contact: the word cut in letter by letter, each rising from its own mask
- * as the word comes up; then the cards rise and their blocks fade in (the
- * right one a beat behind on wide screens) while each picture's sheet
- * wipes up from the bottom and settles.
- *
- * Each letter is a box of its own, which loses the face's kerning between
- * letters (14px between T and A at 1440 wide). The stylesheet gives the
- * kerning pairs back for first paint and the still layout; measure() sets
- * the word as one run, out of sight, and gives each letter back the exact
- * difference, in em, so it holds at every size.
+ * Contact: the label, the heading and the paragraph rise line by line from
+ * their masks as each comes up, and the actions rise into place after them;
+ * the picture's sheet wipes up from the bottom and settles; the title block
+ * is drawn in from the left, its cells coming in behind the drawing's edge,
+ * left to right along each row. Each part runs from its own place on the
+ * screen, so the order holds at every width. Whatever holds focus is in
+ * place, whatever the scroll.
  */
 function contact(): MotionModule | null {
   const section = one("[data-contact]");
   const heading = section && one("[data-contact-heading]", section);
-  if (!section || !heading) return null;
-  const masks = all(".contact-letter", heading);
-  const letters = all("[data-contact-letter]", heading);
-  const cards = all("[data-contact-card]", section).map((el) => ({ el, pic: one(".contact-pic", el), wipe: one("[data-contact-wipe]", el), img: one("[data-contact-wipe] img", el) }));
-  const wide = matchMedia("(min-width: 768px)");
+  const body = section && one("[data-contact-body]", section);
+  if (!section || !heading || !body) return null;
+  const label = one("[data-contact-roll]", section);
+  const actions = one("[data-contact-actions]", section);
+  const pic = one("[data-contact-pic]", section);
+  const wipe = one("[data-contact-wipe]", section);
+  const img = one("[data-contact-wipe] img", section);
+  const caption = one("[data-contact-caption]", section);
+  const block = one("[data-contact-block]", section);
+  const cells = all("[data-contact-cell]", section);
+  let headLines: HTMLElement[] = [];
+  let bodyLines: HTMLElement[] = [];
+  let rLabel: Range | null = null;
   let rHeading: Range;
-  let rCards: Range[] = [];
-  let rPics: (Range | null)[] = [];
+  let rBody: Range;
+  let rActions: Range | null = null;
+  let rPic: Range | null = null;
+  let rBlock: Range | null = null;
+  // Each shown cell's place, and its rank in its row (left to right).
+  let rCells: { el: HTMLElement; r: Range; rank: number }[] = [];
 
-  const kern = () => {
-    const word = letters.map((l) => l.textContent ?? "").join("");
-    const probe = document.createElement("span");
-    probe.textContent = word;
-    probe.style.cssText = "position:absolute;left:0;top:0;white-space:nowrap;visibility:hidden;pointer-events:none";
-    heading.append(probe);
-    // All reads, then the writes.
-    const text = probe.firstChild;
-    const range = document.createRange();
-    const xs = letters.map((_, i) => {
-      if (!(text instanceof Text)) return 0;
-      range.setStart(text, i);
-      range.setEnd(text, i + 1);
-      return range.getBoundingClientRect().left;
-    });
-    const widths = masks.map((m) => m.getBoundingClientRect().width);
-    const size = parseFloat(getComputedStyle(heading).fontSize) || 1;
-    probe.remove();
-    masks.forEach((m, i) => setStyle(m, "marginLeft", i && text instanceof Text ? `${((xs[i] - xs[i - 1] - widths[i - 1]) / size).toFixed(4)}em` : ""));
+  const reset = () => {
+    for (const el of [label, ...headLines, ...bodyLines]) if (el) clear(el, "transform");
+    for (const el of [actions, ...cells]) if (el) clear(el, "transform", "opacity");
+    if (wipe) clear(wipe, "clipPath");
+    if (img) clear(img, "transform");
+    if (caption) clear(caption, "opacity");
+    if (block) clear(block, "clipPath");
   };
 
   return {
     order: ORDER.contact,
-    measure() {
-      kern();
+    measure(f) {
+      if (f.tracks) {
+        headLines = resplitIfNeeded(heading, headLines);
+        bodyLines = resplitIfNeeded(body, bodyLines);
+      } else if (headLines.length || bodyLines.length) {
+        reset();
+        unsplit(heading);
+        unsplit(body);
+        headLines = [];
+        bodyLines = [];
+      }
+      rLabel = label ? measureRange(label) : null;
       rHeading = measureRange(heading);
-      rCards = cards.map((c) => measureRange(c.el));
-      rPics = cards.map((c) => (c.pic ? measureRange(c.pic) : null));
+      rBody = measureRange(body);
+      rActions = actions ? measureRange(actions) : null;
+      rPic = pic ? measureRange(pic) : null;
+      rBlock = block ? measureRange(block) : null;
+      const shown = cells.filter((el) => el.offsetParent).map((el) => ({ el, r: measureRange(el), rank: 0 }));
+      for (const c of shown) c.rank = shown.filter((o) => Math.abs(o.r.top - c.r.top) < 2 && o.r.left < c.r.left).length;
+      rCells = shown;
     },
     update(f) {
-      if (!f.tracks) {
-        letters.forEach((el) => clear(el, "transform"));
-        for (const c of cards) {
-          clear(c.el, "transform", "opacity");
-          if (c.wipe) clear(c.wipe, "clipPath");
-          if (c.img) clear(c.img, "transform");
-        }
-        return;
-      }
+      if (!f.tracks) return reset();
+      const focused = document.activeElement;
+      const holds = (el: HTMLElement | null) => !!el && focused instanceof Node && el.contains(focused);
+      if (label && rLabel) setStyle(label, "transform", liftPercent(contactLine(sso(rLabel, f), 0)));
       const sh = sso(rHeading, f);
-      letters.forEach((el, i) => setStyle(el, "transform", liftPercent(contactLetter(sh, i))));
-      cards.forEach((c, k) => {
-        const st = contactCard(sso(rCards[k], f), wide.matches ? k % 2 : 0);
-        // Written out even at rest: the tracks' initial state in globals.css holds the cards down until now.
+      headLines.forEach((line, j) => setStyle(line, "transform", liftPercent(contactLine(sh, j))));
+      const sb = sso(rBody, f);
+      bodyLines.forEach((line, j) => setStyle(line, "transform", liftPercent(contactLine(sb, j))));
+      if (actions && rActions) {
+        const st = holds(actions) ? { y: 0, opacity: 1 } : contactRise(sso(rActions, f));
+        setStyle(actions, "transform", st.y > 0.005 ? lift(st.y) : "none");
+        setStyle(actions, "opacity", num(st.opacity));
+      }
+      if (rPic) {
+        const st = contactPicture(sso(rPic, f));
+        if (wipe) setStyle(wipe, "clipPath", `inset(${riseInset(st.t, rPic.top - f.scroll, rPic.height, f.vh).toFixed(2)}% 0 0 0)`);
+        if (img) setStyle(img, "transform", st.scale > 1.00005 ? `scale(${num(st.scale)})` : "none");
+        if (caption) setStyle(caption, "opacity", num(st.t));
+      }
+      if (block && rBlock) {
+        const draw = holds(block) ? 1 : contactBlock(sso(rBlock, f));
+        // Written out even when drawn: the tracks' initial state in globals.css holds the block undrawn until now.
+        setStyle(block, "clipPath", draw < 0.9995 ? `inset(0 ${((1 - draw) * 100).toFixed(2)}% 0 0)` : "none");
+      }
+      for (const c of rCells) {
+        const st = holds(c.el) ? { y: 0, opacity: 1 } : contactCell(sso(c.r, f), c.rank);
         setStyle(c.el, "transform", st.y > 0.005 ? lift(st.y) : "none");
         setStyle(c.el, "opacity", num(st.opacity));
-        const pic = rPics[k];
-        if (c.wipe && pic) setStyle(c.wipe, "clipPath", `inset(${riseInset(st.t, pic.top - f.scroll + st.y, pic.height, f.vh).toFixed(2)}% 0 0 0)`);
-        if (c.img) setStyle(c.img, "transform", `scale(${num(st.scale)})`);
-      });
+      }
     },
   };
 }

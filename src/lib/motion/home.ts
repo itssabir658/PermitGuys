@@ -703,18 +703,48 @@ export function servicesHandover(x: number) {
 
 /* ---- Contact ---- */
 
-/** Letter i of the wordmark, from the heading's own sso: each rises from its own mask, 0.03 apart, the last in place as the word's top passes 44% of the screen. */
-export function contactLetter(s: number, i: number) {
-  return roll(tween(s, 0.04 + i * 0.03, 0.34, ease.power3Out), 0);
+/**
+ * A masked line of the close, from its block's own sso: the label, each
+ * line of the heading and each line of the paragraph rise from their
+ * masks, line j 0.04 after the one above it, each over 0.3, so a block's
+ * lines are all in place by the time its top is halfway up the screen.
+ */
+export function contactLine(s: number, j: number) {
+  return roll(tween(s, 0.06 + j * 0.04, 0.3, ease.power3Out), 0);
 }
 
 /**
- * A card, from its own sso: it rises 48px and its block fades in over the
- * first 40% (a block may fade; its type never does on its own), while its
- * picture's sheet wipes up as `t` runs (riseInset) and settles from 1.12.
- * `col` staggers the right-hand card 0.06 behind.
+ * A block of the close (the actions, a cell of the title block), from its
+ * own sso: it rises `rise` px and fades in over the first 40% of its run (a
+ * block may fade; its type never does on its own), starting `delay` after
+ * 0.06 and taking `duration`.
  */
-export function contactCard(s: number, col: number) {
-  const t = tween(s, 0.06 + col * 0.06, 0.38, ease.power3Out);
-  return { t, y: (1 - t) * 48, opacity: Math.min(1, t * 2.5), scale: mix(1.12, 1, t) };
+export function contactRise(s: number, delay = 0, rise = 24, duration = 0.3) {
+  const t = tween(s, 0.06 + delay, duration, ease.power3Out);
+  return { t, y: (1 - t) * rise, opacity: Math.min(1, t * 2.5) };
+}
+
+/** The picture, from its frame's own sso: its sheet wipes up as `t` runs (riseInset) while the picture settles from 1.12. */
+export function contactPicture(s: number) {
+  const t = tween(s, 0.04, 0.4, ease.power3Out);
+  return { t, scale: mix(1.12, 1, t) };
+}
+
+/**
+ * The title block, from its own sso: drawn in from the left (the share of
+ * its width shown), over 0.24 from 0.02. The block sits low in the
+ * section, so everything in it is done by 0.38: at 1440×900, as the
+ * section's top reaches the top of the screen.
+ */
+export function contactBlock(s: number) {
+  return tween(s, 0.02, 0.24, ease.power2InOut);
+}
+
+/**
+ * A cell of the title block, from its own sso: it rises 12px and fades in
+ * behind the drawing's edge, cells in one row left to right, `rank` 0.02
+ * apart; the last of six is done by 0.38.
+ */
+export function contactCell(s: number, rank: number) {
+  return contactRise(s, rank * 0.02, 12, 0.22);
 }

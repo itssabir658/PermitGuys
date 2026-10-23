@@ -40,7 +40,7 @@ Browsers without registered custom properties get a 0.6s fade instead of the iri
 
 ## Sections (scroll map at 1440×900)
 
-Positions are in screens. The page scrolls 25.4 screens at 1440×900 and 26.9 at 390×844.
+Positions are in screens. The page scrolls 24.8 screens at 1440×900 and 26.6 at 390×844.
 
 | Section | Track | Behaviour |
 |---|---|---|
@@ -51,8 +51,8 @@ Positions are in screens. The page scrolls 25.4 screens at 1440×900 and 26.9 at
 | Values (`Values.tsx`) | 16.6 to 20.6 (400vh: four 100vh blocks under one pinned stage) | Each picture grows from 0.72 to full size as it reaches the centre. The words are stacked in one cell and roll like an odometer: the outgoing word leads by 0.02 screens and both travel on one ease over 0.16 screens, so they never print over each other, and each word holds 0.58 screens or more. Every word and description is set twice: ink over the ground, and ivory inside a mask clipped to the union of the pictures on screen, so a picture's edge splits a word into two colours. A description line shows in one copy only (ivory while its letters are all over a picture, ink otherwise), so a passing edge never cuts a line. Below 1024px each word is fitted a little wider than its picture, and on any screen a word that would come too close to the corner label shrinks until it clears it (`valuesWordSize`). The pictures dim to half brightness as dusk falls. |
 | Dusk | Services sso 0.24 to 0.46 | The ground turns from cream to night quickly, blended in OKLab so the middle stays warm. The last Values word has left by sso 0.36; the two sections' pictures fill the screen between the last word and the Services heading. |
 | Services (`Services.tsx`) | 20.6 to 23.8 (300vh track, pinned two screens) | See below. |
-| Contact (`Contact.tsx`) | 23.8 to 25.3 | An ivory sheet that rises over Services. See below. |
-| Footer (`SiteFooter.tsx`) | 25.3 to the end | See "The footer". |
+| Contact (`Contact.tsx`) | 23.8 to 24.7 | An ivory sheet that rises over Services. See below. |
+| Footer (`SiteFooter.tsx`) | 24.7 to the end | See "The footer". |
 
 Every scrubbed value is a pure function of scroll position, so scrolling back up reverses everything exactly. The Services picture swaps are timed rather than scrubbed, and run back the same way.
 
@@ -83,8 +83,14 @@ How a project moves through the firm, told with one client house (the narrow con
 
 Contact's ivory sheet rises over Services, which lags behind the scroll by up to 0.35 screen and dims to 0.45 as it is covered (`servicesHandover`). The Services stage has released about 0.2 screen before (at 1440×900), so this never moves a pinned stage. The header turns back to ink as the sheet reaches it.
 
-- **CONTACT** is cut in letter by letter, each rising from its own mask, 0.03 screens apart (`contactLetter`). Screen readers get the word once. Each letter is a box of its own, which loses the face's kerning between them, so the pairs that kern (O–N, T–A, A–C) get it back as em margins in the stylesheet, measured against the plain word, which also holds without JavaScript; the contact module re-measures and refines them.
-- **Cards** rise 48px, one column a step behind the other on wide screens, their pictures wiping up from the bottom and settling from 112% (`contactCard`). From 768px wide the two cards share their rows (picture, text, foot) through subgrid, so "Get in touch" sits on the same rule as the rating and credentials.
+### Contact
+
+Contact is a quiet close, under one screen tall at 1440×900: an invitation beside one picture, then the firm's details set as the title block of a drawing sheet, the block the story's sheet is issued with. Each part runs from its own place on the screen (its own sso), so the order holds at every width.
+
+- **Invitation.** The label, the heading's lines and the paragraph's lines rise from their masks, each line 0.04 after the one above it, over 0.3 (`contactLine`), so each block's lines are in place by about the time its top is halfway up the screen. The actions ("Start a project", and the phone number) rise 24px and fade in after them (`contactRise`).
+- **Picture.** Its sheet wipes up from the bottom of the screen and the picture settles from 112% (`contactPicture`, `riseInset`); the caption fades in with it.
+- **Title block.** The block is drawn in from the left over 0.24 (`contactBlock`, a `clip-path` wipe), and its cells come in behind the drawing's edge, rising 12px, left to right along each row, 0.02 apart (`contactCell`). It sits low in the section, so everything in it is done by its sso 0.38: at 1440×900 the block is whole as the section's top reaches the top of the screen. The cells are the firm's mark (PermitGuys, Architects), the office, the hours, phone and email, the Google rating and the credentials: one row from 1440px wide, three to a row from 768px, and rows of their own on phones, where the mark is left out (the footer's logo follows straight after).
+- Whatever holds keyboard focus (the actions, a link in the block) is in place, whatever the scroll.
 
 ### The footer
 
@@ -103,13 +109,13 @@ On every page the footer's content rises out from under the sheet above it, lagg
 
 ## Reduced motion and still layouts
 
-With `prefers-reduced-motion: reduce`: Lenis duration 0 and no wheel smoothing; no preloader; every homepage section shows its still layout with all content visible; the Services picture follows a hover or focus at once; the Contact letters, cards and footer outline are simply there; roll links, parallax and the inner-page reveals are off; page transitions and Back and forward are a 0.3s crossfade, and glides are jumps; CSS durations collapse to 0.01ms.
+With `prefers-reduced-motion: reduce`: Lenis duration 0 and no wheel smoothing; no preloader; every homepage section shows its still layout with all content visible; the Services picture follows a hover or focus at once; Contact's lines, picture and title block and the footer outline are simply there; roll links, parallax and the inner-page reveals are off; page transitions and Back and forward are a 0.3s crossfade, and glides are jumps; CSS durations collapse to 0.01ms.
 
-Screens under 500px tall (a phone on its side) and visitors without JavaScript get the same still layouts, with motion otherwise allowed. So does a printed page, from wherever it was scrolled to: the tracks CSS applies to screens only, and the engine turns the tracks off from `beforeprint` to `afterprint`, so every module clears what it wrote before the page prints and writes it again after. In print a project or a value stays on one sheet with its picture, dark grounds keep their graphite, and sticky boxes print in the flow. Every split line or letter keeps its text for screen readers once.
+Screens under 500px tall (a phone on its side) and visitors without JavaScript get the same still layouts, with motion otherwise allowed. So does a printed page, from wherever it was scrolled to: the tracks CSS applies to screens only, and the engine turns the tracks off from `beforeprint` to `afterprint`, so every module clears what it wrote before the page prints and writes it again after. In print a project or a value stays on one sheet with its picture, dark grounds keep their graphite, and sticky boxes print in the flow. Every split line keeps its text for screen readers once.
 
 ## Where this differs from the spec
 
-- **Choreography.** The spec's section behaviours were replaced section by section: the hero is covered by the intro's sheet rather than fading, the orbit is one squircle path rather than seven orbit slots, Works is one pinned viewer with wipes rather than resolving panels, Values is an odometer with a union mask, Services pins on every size, and Contact is a sheet with letters cut in. The story, one house drawn from sketch to permit sheet, is new. Display type never fades.
+- **Choreography.** The spec's section behaviours were replaced section by section: the hero is covered by the intro's sheet rather than fading, the orbit is one squircle path rather than seven orbit slots, Works is one pinned viewer with wipes rather than resolving panels, Values is an odometer with a union mask, Services pins on every size, and Contact is a sheet that closes on the firm's title block. The story, one house drawn from sketch to permit sheet, is new. Display type never fades.
 - **No WebGL layer.** Its shaders were never captured, so nothing of them is guessed. The `homeCard` FLIP between a works card and its page belongs to that layer and is not built either.
 - **Colours** are PermitGuys' ivory (`#f4f1eb`), stone and graphite (`#191918`), and the ground goes through dusk into night for Services.
 - **The preloader** draws Ontario's outline and opens with an iris from the GTA dot rather than the arch logo; the transition panel and the footer carry the same outline.
@@ -125,6 +131,6 @@ Screens under 500px tall (a phone on its side) and visitors without JavaScript g
 
 ## Checks
 
-- `tests/motion.test.ts`: the windows and handovers of every section (masks never overlap, holds, the dusk against the last Values word and the Services heading, the Services lead and its stop at the pin, row cascade, swap stack, the Contact letters and cards, the footer), plus the orbit geometry. For the story: every state runs one way and is done by the release, each change starts within 0.2 screens before its chapter's boundary, each chapter's text is composed for 0.6 screens or more and in any rank one line leaves before the next moves, the sketch's cascade, the line geometry, and the engineering's order.
+- `tests/motion.test.ts`: the windows and handovers of every section (masks never overlap, holds, the dusk against the last Values word and the Services heading, the Services lead and its stop at the pin, row cascade, swap stack, Contact's lines, picture and title block, the footer), plus the orbit geometry. For the story: every state runs one way and is done by the release, each change starts within 0.2 screens before its chapter's boundary, each chapter's text is composed for 0.6 screens or more and in any rank one line leaves before the next moves, the sketch's cascade, the line geometry, and the engineering's order.
 - `tests/story-drawing.test.ts`: the story drawing's rectification (the inverse undoes it, horizontals meet at the vanishing point), that every line stays inside the picture and the sheet's margins, that the sheet is a true elevation, the sketch's order, and that the structure is labelled by what it is, never by a size.
-- `e2e/site.spec.ts`: reduced motion, the menu at every width, the page transition and its reduced-motion crossfade, the phone header over Contact, the story forwards and backwards and its reduced-motion still sheet, axe on every main page, and no sideways scrolling.
+- `e2e/site.spec.ts`: reduced motion, the menu at every width, the page transition and its reduced-motion crossfade, the phone header over Contact, the story forwards and backwards and its reduced-motion still sheet, Contact's title block drawn in as it comes up and whole at the page's end, axe on every main page, and no sideways scrolling.

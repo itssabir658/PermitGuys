@@ -16,8 +16,11 @@ import {
   STORY,
   STORY_LINE_DUR,
   STORY_OVERSHOOT,
-  contactCard,
-  contactLetter,
+  contactBlock,
+  contactCell,
+  contactLine,
+  contactPicture,
+  contactRise,
   headerGround,
   heroState,
   introCopy,
@@ -161,8 +164,8 @@ describe("motion vocabulary", () => {
     expect(servicesHeading(1, 1)).toBe(0);
     expect(servicesRow(0, 0).y).toBe(MASK);
     expect(servicesRow(1.04, 6).y).toBe(0);
-    expect(contactLetter(0, 0)).toBe(MASK);
-    expect(contactLetter(1, 6)).toBe(0);
+    expect(contactLine(0, 0)).toBe(MASK);
+    expect(contactLine(1, 6)).toBe(0);
     expect(valuesTitle(-1, 1, 4)).toBe(MASK);
     expect(valuesTitle(0, 1, 4)).toBe(0);
     expect(valuesTitle(1, 1, 4)).toBe(-MASK);
@@ -907,22 +910,39 @@ describe("homepage choreography", () => {
     expect(servicesHandover(3).lift).toBe(0.35);
   });
 
-  it("contact: the word is cut in letter by letter, left to right, without fading", () => {
-    for (let i = 0; i < 7; i++) {
-      expect(contactLetter(0.04 + i * 0.03, i)).toBe(MASK);
-      expect(contactLetter(0.56, i)).toBe(0);
+  it("contact: the label, the heading and the paragraph rise line by line, 0.04 apart, without fading", () => {
+    for (let j = 0; j < 6; j++) {
+      expect(contactLine(0.06 + j * 0.04, j)).toBe(MASK);
+      expect(contactLine(0.37 + j * 0.04, j)).toBe(0);
     }
-    for (const s of range(0, 0.6, 0.01)) for (let i = 1; i < 7; i++) expect(contactLetter(s, i)).toBeGreaterThanOrEqual(contactLetter(s, i - 1));
+    for (const s of range(0, 0.7, 0.01)) for (let j = 1; j < 6; j++) expect(contactLine(s, j)).toBeGreaterThanOrEqual(contactLine(s, j - 1));
+    // A heading of two lines is in place by the time its top is 0.42 up the screen.
+    expect(contactLine(0.41, 1)).toBe(0);
   });
 
-  it("contact cards rise 48px, the block fading in over the first 40%, the right card a beat behind", () => {
-    expect(contactCard(0.06, 0)).toEqual({ t: 0, y: 48, opacity: 0, scale: 1.12 });
-    expect(contactCard(0.44, 0)).toEqual({ t: 1, y: 0, opacity: 1, scale: 1 });
-    expect(contactCard(0.5, 1)).toEqual({ t: 1, y: 0, opacity: 1, scale: 1 });
-    for (const s of range(0, 0.6, 0.01)) expect(contactCard(s, 1).t).toBeCloseTo(contactCard(s - 0.06, 0).t, 9);
-    // Opaque once its picture's sheet is 40% up.
-    const at = range(0.06, 0.44, 0.001).find((s) => contactCard(s, 0).opacity === 1)!;
-    expect(contactCard(at, 0).t).toBeCloseTo(0.4, 2);
+  it("contact: the actions rise 24px, fading in over the first 40% of their run", () => {
+    expect(contactRise(0.06)).toEqual({ t: 0, y: 24, opacity: 0 });
+    expect(contactRise(0.37)).toEqual({ t: 1, y: 0, opacity: 1 });
+    const at = range(0.06, 0.36, 0.001).find((s) => contactRise(s).opacity === 1)!;
+    expect(contactRise(at).t).toBeCloseTo(0.4, 2);
+  });
+
+  it("contact: the picture's sheet wipes up as the picture settles from 112%", () => {
+    expect(contactPicture(0.04)).toEqual({ t: 0, scale: 1.12 });
+    expect(contactPicture(0.45)).toEqual({ t: 1, scale: 1 });
+    for (const s of range(0.04, 0.45, 0.01)) expect(contactPicture(s).scale).toBeCloseTo(1.12 - 0.12 * contactPicture(s).t, 9);
+  });
+
+  it("contact: the title block is drawn in from the left, then its cells come in left to right, whole by 0.38", () => {
+    expect(contactBlock(0.02)).toBe(0);
+    expect(contactBlock(0.27)).toBe(1);
+    for (let rank = 0; rank < 6; rank++) {
+      expect(contactCell(0.06 + rank * 0.02, rank)).toEqual({ t: 0, y: 12, opacity: 0 });
+      expect(contactCell(0.39, rank)).toEqual({ t: 1, y: 0, opacity: 1 });
+    }
+    for (const s of range(0, 0.4, 0.01)) for (let rank = 1; rank < 6; rank++) expect(contactCell(s, rank).t).toBeLessThanOrEqual(contactCell(s, rank - 1).t);
+    // The first cell only starts once the drawing has begun.
+    expect(contactBlock(0.06)).toBeGreaterThan(0);
   });
 });
 

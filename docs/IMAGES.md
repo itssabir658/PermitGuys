@@ -26,7 +26,7 @@ Preparation:
 
 Where they appear:
 
-- On the homepage: the hero, the intro ring, the story (the narrow contemporary house, under the linework traced from it), Selected projects, Values, custom homes in Services, and the two contact cards (the story's house is not repeated there).
+- On the homepage: the hero, the intro ring, the story (the narrow contemporary house, under the linework traced from it), Selected projects, Values, custom homes in Services, and Contact's picture (the story's house is not repeated there).
 - The bands on the services, how it works, about and service areas pages.
 - The custom home permits page.
 - All of them on the projects page, where `clientProjects` lists each project and its views. The anchors there are linked from Selected projects, and every service page links to the page from "Examples of our work" until it has approved case studies.
