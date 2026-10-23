@@ -23,17 +23,14 @@ export const metadata = pageMetadata({
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** Each project's first figure number: figures are numbered through the page. */
-const firstFigure = clientProjects.map((_, i) => clientProjects.slice(0, i).reduce((n, p) => n + p.views.length, 1));
-
 /*
  * The client projects, each with its one or two renderings at their own
  * proportions, uncropped, beside a title column that stays in view while
  * its pictures pass (lg). Hairlines run only between projects: the
  * header's closing rule opens the list and the change of ground closes it.
  * Each project's id is its anchor, linked from the homepage. The lead and
- * each title column say they are renderings, so the captions name only
- * the view.
+ * each title column say they are renderings, so the pictures go
+ * uncaptioned.
  */
 export default function ProjectsPage() {
   const projects = getProjects();
@@ -61,8 +58,8 @@ export default function ProjectsPage() {
                 <p className="mt-3 text-label text-ink-muted">Client project · {p.views.length === 1 ? "Rendering" : "Two renderings"}</p>
               </div>
               <div className="grid gap-10 lg:col-span-8 lg:gap-14">
-                {p.views.map((v, j) => (
-                  <Plate key={v.plate.src} plate={v.plate} aspect="natural" fig={pad(firstFigure[i] + j)} label={v.view} note={false} sizes="(min-width: 1600px) 61rem, (min-width: 1024px) 60vw, 100vw" />
+                {p.views.map((plate) => (
+                  <Plate key={plate.src} plate={plate} aspect="natural" note={false} sizes="(min-width: 1600px) 61rem, (min-width: 1024px) 60vw, 100vw" />
                 ))}
               </div>
             </article>

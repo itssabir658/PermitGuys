@@ -14,12 +14,11 @@ import { Plate } from "./Plate";
  * draws the picture at 110%, so a picture wider than the band is fetched
  * as wide as it is drawn at the band's height.
  */
-export function PlateBand({ plate, fig = "01" }: { plate: PlateData; fig?: string }) {
+export function PlateBand({ plate }: { plate: PlateData }) {
   return (
     <Container className="pb-6 lg:pb-8">
       <Plate
         plate={plate}
-        fig={fig}
         reveal={false}
         priority
         drift="slow"

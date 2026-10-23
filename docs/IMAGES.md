@@ -8,7 +8,7 @@ Two kinds of picture, registered as plates in `src/content/imagery.ts`. Each pla
 
 `public/images/projects/` holds design renderings from nine PermitGuys client projects, supplied by PermitGuys in October 2026. Of the 36 images supplied, one or two views of each project were chosen, never more than two. Where a project had several near-identical renders, the best-graded one was used.
 
-- **Captions.** Each caption says "Rendering of a client project." (`PROJECT_NOTE`). The projects page says it once in its lead and in each project's title column.
+- **Captions.** A caption is only the note "Rendering of a client project." (`PROJECT_NOTE`), with no figure number or picture name. The projects page says it once in its lead and in each project's title column, and its pictures go uncaptioned.
 - **What the site claims.** The pictures are renderings, so the site never presents them as photographs of finished buildings. Nothing on the site describes a project's scope, approval or result.
 - **No addresses.** Captions, alt text, anchors and file names describe the house, never its street, number or town.
 - **Retouching.** Three renderings showed part of an address, and each was retouched out:
@@ -66,7 +66,7 @@ Both take a `scale` for pictures zoomed inside their frame (drift, the Works sho
 3. Add a plate in `src/content/imagery.ts`:
    - `kind`;
    - `alt` describing what the picture shows (for a rendering, start with "Rendering of");
-   - a short `caption`;
+   - a short `caption`, the picture's name (Selected projects on the homepage uses it as the project's title; it is not shown under pictures);
    - a `focus` that keeps the subject in narrow crops.
 4. For a client rendering, add the plate to its project in `clientProjects`, which takes one or two views per project. For a photo of a completed project, published with the client's permission, add a case study in `src/content/projects.ts` instead. Approved case studies are listed on the projects page and the homepage.
 

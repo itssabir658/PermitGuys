@@ -18,7 +18,7 @@ export interface Plate {
   width: number;
   height: number;
   alt: string;
-  /** Short editorial caption, shown as "Fig." text beside the image. */
+  /** Short name for the picture. Selected projects on the homepage uses it as the project's title. */
   caption: string;
   /** CSS object-position for crops, so the subject survives narrow frames. */
   focus?: string;
@@ -205,38 +205,24 @@ export type PlateKey = keyof typeof plates;
 export interface ClientProject {
   id: string;
   title: string;
-  views: { plate: Plate; view: string }[];
+  views: Plate[];
 }
 
 export const clientProjects: ClientProject[] = [
-  {
-    id: "contemporary-house",
-    title: "Contemporary house with a pool terrace",
-    views: [
-      { plate: plates.dusk, view: "From the lawn, at dusk" },
-      { plate: plates.terrace, view: "The rear terrace and pool" },
-    ],
-  },
-  { id: "stone-house", title: "Stone house with three gables", views: [{ plate: plates.stone, view: "From the street" }] },
-  {
-    id: "prairie-style-house",
-    title: "Prairie-style two-storey",
-    views: [
-      { plate: plates.prairieFront, view: "From the street" },
-      { plate: plates.prairieCorner, view: "From the corner" },
-    ],
-  },
-  { id: "red-brick-house", title: "Red-brick house with three gables", views: [{ plate: plates.redBrick, view: "From the street" }] },
-  { id: "farmhouse-bungalow", title: "Farmhouse bungalow", views: [{ plate: plates.farmhouse, view: "From the street" }] },
-  { id: "two-gabled-house", title: "Two-gabled house in board and batten", views: [{ plate: plates.greenBatten, view: "From the street" }] },
-  { id: "narrow-contemporary-house", title: "Narrow contemporary house", views: [{ plate: plates.narrow, view: "From the street" }] },
-  { id: "board-and-batten-house", title: "Board and batten over a stone base", views: [{ plate: plates.whiteBatten, view: "From the street" }] },
-  { id: "contemporary-brick-house", title: "Contemporary house in brick and dark cladding", views: [{ plate: plates.brick, view: "From the street" }] },
+  { id: "contemporary-house", title: "Contemporary house with a pool terrace", views: [plates.dusk, plates.terrace] },
+  { id: "stone-house", title: "Stone house with three gables", views: [plates.stone] },
+  { id: "prairie-style-house", title: "Prairie-style two-storey", views: [plates.prairieFront, plates.prairieCorner] },
+  { id: "red-brick-house", title: "Red-brick house with three gables", views: [plates.redBrick] },
+  { id: "farmhouse-bungalow", title: "Farmhouse bungalow", views: [plates.farmhouse] },
+  { id: "two-gabled-house", title: "Two-gabled house in board and batten", views: [plates.greenBatten] },
+  { id: "narrow-contemporary-house", title: "Narrow contemporary house", views: [plates.narrow] },
+  { id: "board-and-batten-house", title: "Board and batten over a stone base", views: [plates.whiteBatten] },
+  { id: "contemporary-brick-house", title: "Contemporary house in brick and dark cladding", views: [plates.brick] },
 ];
 
 /** The project a client rendering belongs to, for links to its place on the projects page. */
 export function projectOf(plate: Plate) {
-  return clientProjects.find((p) => p.views.some((v) => v.plate === plate));
+  return clientProjects.find((p) => p.views.includes(plate));
 }
 
 /** The picture shown for each service: a client rendering where one shows that kind of project, otherwise a study. */

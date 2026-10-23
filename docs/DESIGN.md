@@ -16,7 +16,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | `brand-400` | `#EE352F` | The logo red. Dots, rules and small marks only. |
 | `brand-500` … `brand-700` | `#C2352C` … `#8F271F` | Red text on light grounds, if ever needed. Use `brand-300` on dark. |
 
-- **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels, figure numbers and metadata, and Playfair Display Black only for the wordmark display type: the hero name, the Values words and CONTACT (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
+- **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels and metadata, and Playfair Display Black only for the wordmark display type: the hero name, the Values words and CONTACT (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
 - **Scale:** `text-hero` (fluid up to 8.5rem), `text-display-2xl` … `text-display-sm`, `text-lede`, `text-label` (mono, uppercase, tracked).
 - **Easing:** `ease-out-expo` for reveals and hovers, `ease-in-out-quint` for masks and the menu panel. Durations sit between 0.5s and 1.4s.
 - **Width:** content runs to `max-w-site` (100rem) on a 12-column grid; long copy stays at `max-w-prose`.
@@ -28,7 +28,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | `Eyebrow` | Mono label with a section number and a short rule ("02 — Services"). Number homepage sections in order. |
 | `SectionHeading`, `Section` | Section heading and the band around it. Tones: `ivory`, `stone`, `dark`. |
 | `PageHeader` | Opening block of every inner page: breadcrumbs, a large light H1, an optional aside, a closing rule. Index pages follow it with a wide picture band (`PlateBand`). |
-| `Plate` | Every image. Mask reveal, optional scroll drift, and a mono "Fig. NN" caption that carries the plate's note: a rendering of a client project, or a rendered study (see `docs/IMAGES.md`). The projects page sets the note once instead (`note={false}`). |
+| `Plate` | Every image. Mask reveal, optional scroll drift, and a one-line mono caption with the plate's note: a rendering of a client project, or a rendered study (see `docs/IMAGES.md`). No figure numbers or picture names. The projects page sets the note once instead (`note={false}`). |
 | `LinkButton` | The call to action: a square-cornered mono label plate and a square arrow cell. Tones `dark` (ink, the default), `light` (ivory, on photographs and dark grounds), `outline` (the quieter second action on paper) and `ghost` (the same on dark grounds). `LinkButtonFace` and `linkButtonClass` give a `<button>` or an outside link the same face. `ArrowLink` for quieter text links. One dark or light button per block. |
 | `ServiceIndex` | Numbered service rows. On a fine pointer a preview image follows the cursor and the other rows dim. |
 | `IndexList`, `LinkRows`, `FaqList`, `StepList` | Hairline lists for services, links, questions and process steps on inner pages. |

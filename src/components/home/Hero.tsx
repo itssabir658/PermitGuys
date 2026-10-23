@@ -89,7 +89,7 @@ export function Hero() {
             ))}
           </p>
           <p className="hero-fig max-w-xs text-label text-ivory/70 lg:text-right">
-            Fig. 01 — {plate.caption}. {plateNote(plate)}
+            {plateNote(plate)}
           </p>
         </div>
       </div>

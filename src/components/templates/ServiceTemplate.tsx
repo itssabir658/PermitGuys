@@ -43,10 +43,8 @@ export function ServiceTemplate({ service }: { service: Service }) {
             plate={plate}
             reveal={false}
             priority
-            fig="01"
             drift="slow"
             notch
-            stackCaption
             aspect="aspect-[3/2] md:aspect-[16/10] lg:aspect-[4/5]"
             frameClassName="motion-unveil"
             sizes={`(min-width: 1024px) ${coverWidth(plate, 4 / 5, "33vw", 1.1)}, (min-width: 768px) ${coverWidth(plate, 16 / 10, "100vw", 1.1)}, ${coverWidth(plate, 3 / 2, "100vw", 1.1)}`}

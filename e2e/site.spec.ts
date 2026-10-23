@@ -355,6 +355,14 @@ test.describe("interactive pieces", () => {
     }
   });
 
+  test("no picture carries a figure number", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "The text is the same at every width");
+    for (const path of [...new Set([...(await sitemapPaths(page)), "/projects/"])]) {
+      await page.goto(path);
+      expect(await page.locator("body").textContent(), path).not.toMatch(/\bFig\.\s*\d/);
+    }
+  });
+
   test("the services caption follows the picture: a client rendering for custom homes, a study elsewhere", async ({ page }, info) => {
     test.skip(info.project.name !== "desktop", "The frame shows beside the list from md; one width is enough");
     await page.emulateMedia({ reducedMotion: "reduce" });

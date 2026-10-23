@@ -34,18 +34,18 @@ describe("imagery", () => {
     for (const project of clientProjects) {
       expect(project.views.length, project.id).toBeGreaterThanOrEqual(1);
       expect(project.views.length, project.id).toBeLessThanOrEqual(2);
-      for (const v of project.views) expect(v.plate.kind, project.id).toBe("project");
+      for (const view of project.views) expect(view.kind, project.id).toBe("project");
     }
     for (const plate of renderings) {
-      expect(clientProjects.filter((p) => p.views.some((v) => v.plate === plate)), plate.src).toHaveLength(1);
+      expect(clientProjects.filter((p) => p.views.includes(plate)), plate.src).toHaveLength(1);
       expect(projectOf(plate)).toBeDefined();
     }
   });
 
-  it("never carries an address: no numbers in a client project's anchor, title, views, captions, alt text or file names", () => {
+  it("never carries an address: no numbers in a client project's anchor, title, captions, alt text or file names", () => {
     for (const project of clientProjects) {
       expect(project.id).toMatch(/^[a-z]+(-[a-z]+)*$/);
-      for (const text of [project.title, ...project.views.map((v) => v.view)]) expect(text).not.toMatch(/\d/);
+      expect(project.title).not.toMatch(/\d/);
     }
     for (const plate of renderings) {
       for (const text of [plate.caption, plate.alt, plate.src, plate.tall?.src ?? ""]) expect(text, plate.src).not.toMatch(/\d/);

@@ -6,10 +6,9 @@ import { cn } from "./cn";
 /**
  * An image set as a plate: a fixed crop (or the picture's own proportions,
  * aspect="natural") that unveils upwards as it scrolls into view, with
- * optional slow drift, and a mono caption in the manner of a numbered
- * figure. The caption carries the plate's note, client rendering or study;
- * note={false} leaves it to the page, where one line says it for every
- * picture.
+ * optional slow drift, and a one-line mono caption with the plate's note,
+ * client rendering or study. note={false} leaves it to the page, where one
+ * line says it for every picture.
  *
  * In the first screen, pass reveal={false} and frameClassName="motion-unveil"
  * so the plate unveils with the page header instead (globals.css, "Inner
@@ -25,17 +24,13 @@ export function Plate({
   frameClassName,
   sizes = "(min-width: 1024px) 50vw, 100vw",
   priority,
-  fig,
-  caption = true,
   drift,
   reveal = true,
   onDark,
   delay,
   focus,
   notch,
-  stackCaption,
   note = true,
-  label,
 }: {
   plate: PlateData;
   /** Aspect ratio utility for the crop, or "natural" for the picture's own proportions. */
@@ -44,9 +39,6 @@ export function Plate({
   frameClassName?: string;
   sizes?: string;
   priority?: boolean;
-  /** Figure number shown in the caption ("01"). */
-  fig?: string;
-  caption?: boolean;
   /** Slow scroll-linked drift inside the crop. */
   drift?: "slow" | "normal";
   reveal?: boolean;
@@ -57,12 +49,8 @@ export function Plate({
   focus?: string;
   /** Frame the picture as a notched drawing sheet. */
   notch?: boolean;
-  /** Set the caption's label and note one above the other, for narrow plates. */
-  stackCaption?: boolean;
-  /** Show the plate's note in the caption. */
+  /** Caption the picture with the plate's note. */
   note?: boolean;
-  /** Caption text in place of the plate's own. */
-  label?: string;
 }) {
   const natural = aspect === "natural";
   const frame = (
@@ -89,22 +77,7 @@ export function Plate({
   return (
     <figure className={cn("relative", className)}>
       {notch ? <div className="notch-clip">{frame}</div> : frame}
-      {caption ? (
-        <figcaption
-          className={cn(
-            "mt-4 flex text-label",
-            stackCaption ? "flex-col gap-1 text-pretty" : "flex-wrap items-baseline justify-between gap-x-6 gap-y-1",
-            onDark ? "text-charcoal-300" : "text-ink-muted",
-          )}
-        >
-          <span>
-            {fig ? <span className={onDark ? "text-ivory" : "text-ink"}>Fig. {fig}</span> : null}
-            {fig ? <span aria-hidden="true"> — </span> : null}
-            {label ?? plate.caption}
-          </span>
-          {note ? <span>{plateNote(plate)}</span> : null}
-        </figcaption>
-      ) : null}
+      {note ? <figcaption className={cn("mt-4 text-label text-pretty", onDark ? "text-charcoal-300" : "text-ink-muted")}>{plateNote(plate)}</figcaption> : null}
     </figure>
   );
 }
