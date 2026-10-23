@@ -47,7 +47,10 @@ export function roll(inP: number, outP: number) {
  * since the sheet arrives at its edge (0.02 → 0.37); the name follows,
  * gone by 0.72, before the sheet reaches it, lifting 0.08 screen as it
  * goes. The caption fades by 0.3. The picture recedes under the sheet the
- * whole time: it drifts up, grows 8% and darkens.
+ * whole time, each plane at its own depth: the house drifts up 0.04 screen,
+ * grows 8% and darkens, the sky drifts 0.015 screen and grows 3%, so the
+ * sky slides behind the roof. Each plane's growth covers its drift, so no
+ * edge ever shows.
  */
 export function heroState(scroll: number, top: number, vh: number) {
   const s = Math.max(0, (scroll - top) / vh);
@@ -60,9 +63,23 @@ export function heroState(scroll: number, top: number, vh: number) {
     figOpacity: 1 - tween(s, 0, 0.3),
     imageScale: 1 + 0.08 * pic,
     imageY: -0.04 * vh * pic,
+    skyScale: 1 + 0.03 * pic,
+    skyY: -0.015 * vh * pic,
     dim: 0.45 * pic,
   };
 }
+
+/**
+ * The hero's depth under a fine pointer (HomeMotion, hero module): at full
+ * deflection the house (the near plane) moves against the pointer by these
+ * fractions of the stage's width and height, and the sky with it, while the
+ * name holds still between them. The planes follow at `rate` (an
+ * exponential approach, per second) and settle back when the pointer leaves
+ * the window. Keep nearX and nearY in step with --sway and --sway-y in
+ * globals.css, which keep the roof's wedge under R to T as the house moves,
+ * and the overscan there (--z, 1.04) at least 1 + 2 × each amount.
+ */
+export const HERO_DEPTH = { nearX: 0.015, nearY: 0.008, farX: 0.009, farY: 0.005, rate: 5 };
 
 /* ---- Intro orbit (510vh track for two paragraphs, 100vh sticky stage) ---- */
 
@@ -566,7 +583,7 @@ export function headerGround(ground: { fade: number; color: number }, contactTop
   return { night: ground.fade > 0.5 && !onContact, color: onContact ? CREAM : ground.color };
 }
 
-/* ---- Services (300vh track: a stage pinned for two screens; phones from 620px tall, wider screens from 720px) ---- */
+/* ---- Services (300vh track: a stage pinned for two screens, on screens from 768px wide and 720px tall; elsewhere it flows) ---- */
 
 /**
  * A wipe that rises from a frame's bottom edge, or from the bottom of the
@@ -612,20 +629,21 @@ export function servicesHeading(s: number, j: number) {
   return roll(tween(s, 0.36 + j * 0.06, 0.34, ease.power3Out), 0);
 }
 
-/** How far a row's label is up when its number and tag start to fade in. */
+/** How far a row's label is up when its scope and arrow start to fade in. */
 export const SERVICES_META_ON = 0.6;
 
 /**
- * Row i of the list, from the track's sso: its label rises from its mask
- * (`y`, a yPercent) and its rule draws across (`t`), 0.04 apart. Its number
- * and tag (`meta`) are switched on once the label is most of the way up,
- * and fade in on their own just behind it (a 0.3s transition in
- * globals.css, not written frame by frame). The seventh row is in place at
- * sso 0.98, as the stage pins, so the composition is whole for all of the
- * hold.
+ * Slot k of the list on the pinned track, from the track's sso: the list
+ * in order, each group's label and then its rows (two labels and seven
+ * rows), 0.03 apart. A label or a row's name rises from its mask (`y`, a
+ * yPercent) and a row's rule draws across (`t`). A row's scope and arrow
+ * (`meta`) are switched on once its name is most of the way up, and fade
+ * in on their own just behind it (a 0.3s transition in globals.css, not
+ * written frame by frame). The last row (slot 8) is in place at sso 0.98,
+ * as the stage pins, so the composition is whole for all of the hold.
  */
-export function servicesRow(s: number, i: number) {
-  const t = tween(s, 0.44 + i * 0.04, 0.3, ease.power3Out);
+export function servicesRow(s: number, k: number) {
+  const t = tween(s, 0.44 + k * 0.03, 0.3, ease.power3Out);
   return { t, y: roll(t, 0), meta: t >= SERVICES_META_ON };
 }
 

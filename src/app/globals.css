@@ -1392,11 +1392,159 @@ body:has(.not-found__map) .site-footer__place {
 
 /* ---- Homepage: hero (Hero.tsx) ---- */
 /*
- * The iris opens from the GTA dot onto the picture, which settles from 112%
- * around that same point (1.8s); the name rises at 0.45s (1.2s), the
- * statement's lines from 0.85s, 0.09s apart, the caption at 1.15s. After a
- * page transition (data-arrival="route") the same entrance runs sooner, as
- * the cover lifts. All of it waits for data-revealed.
+ * Three planes in one stage, a size container, so the geometry below is in
+ * the stage's own units: the sky behind, the name, and in front of it the
+ * rendering itself, masked by its matte (the house, the pine, the trees and
+ * the ground), so the roof hides the foot of the letters beneath it.
+ *
+ * The name is placed from where cover-fitting puts the roof's peak and the
+ * chimney's edge (in the picture's pixels: peak 1639.8, 456.4, chimney x
+ * 900, of 3800 × 1994; the tall crop starts at x 1340), after the overscan
+ * zoom --z. Its baseline sits --tuck of the cap height below the peak, so
+ * the roof's wedge (slopes 0.4728 to the left, 0.1854 to the right) hides
+ * the foot of the letters over it. That wedge must fall under R, M, I or T:
+ * E without its foot reads as F, and G as C. The letters also start clear
+ * of the chimney (and of its sway with the pointer), their caps clear the
+ * header (--clear) and the word keeps the side margins. In em of the face,
+ * with this tracking: the ink runs from 0.023 to 6.644, E's ink starts at
+ * 0.683, R's at 1.31 and T's ends at 4.01; the cap height is 0.71 and the
+ * baseline 0.875 below the top of the 0.92 line.
+ *   Wider screens: the peak under R to T, the word as large as that allows
+ *   and centred between the chimney and the right margin where it can be.
+ *   Narrow portrait screens, where the peak is near the left edge: the word
+ *   starts just right of the peak, and the roof's right slope hides only
+ *   the foot of P.
+ * With a fine pointer on the tracks every plane is drawn 4% larger (--z),
+ * room for HomeMotion to move the house against the pointer, up to --sway
+ * across and --sway-y up or down (HERO_DEPTH), and the sky with it; the name
+ * holds still between them. The placement allows for the house's sway: as
+ * it rises the wedge deepens and reaches farther along the word (--rise-l,
+ * --rise-r), so even then it stays under R to T.
+ */
+.hero-stage {
+  container: hero-stage / size;
+  --z: 1;
+  --sway: 0px;
+  --sway-y: 0px;
+  --tuck: 0.25;
+  --clear: 4.5rem;
+  --margin: 1.25rem;
+  --pos: 55% 0%;
+  /* The wide picture, drawn to the stage's height (wider stages: below). */
+  --peak-x: calc((100cqw - 190.5717cqh) * 0.55 + 82.237cqh);
+  --peak-y: 22.889cqh;
+  --chimney-x: calc((100cqw - 190.5717cqh) * 0.55 + 45.135cqh);
+}
+/* Stages wider than the picture draw it to their width, from its top. */
+@container hero-stage (min-aspect-ratio: 3800/1994) {
+  .hero-stage > * {
+    --peak-x: 43.153cqw;
+    --peak-y: 12.011cqw;
+    --chimney-x: 23.684cqw;
+  }
+}
+/* The site's gutters, and the header's height. */
+@media (min-width: 640px) {
+  .hero-stage {
+    --margin: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .hero-stage {
+    --margin: 3rem;
+    --clear: 5.5rem;
+  }
+}
+@media (min-width: 1280px) {
+  .hero-stage {
+    --margin: 4rem;
+  }
+}
+/* The tall crop (Hero.tsx, TALL), drawn to the stage's height at 50% 60%; the chimney is outside it. */
+@media (max-aspect-ratio: 3/5) {
+  .hero-stage {
+    --pos: 50% 60%;
+    --peak-x: calc((100cqw - 75.226cqh) * 0.5 + 15.035cqh);
+    --chimney-x: -100cqw;
+    --tuck: 0.2;
+  }
+}
+@media screen and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] .hero-stage {
+    --z: 1.04;
+    --sway: 1.5cqw;
+    --sway-y: 0.8cqh;
+  }
+}
+.hero-layer {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--z));
+}
+.hero-plate {
+  position: absolute;
+  inset: 0;
+}
+.hero-plate img {
+  object-position: var(--pos);
+}
+/* The matte is the picture's size, so placed as the picture is it covers it exactly. */
+.hero-plate--near {
+  -webkit-mask: var(--matte) var(--pos) / cover no-repeat;
+  mask: var(--matte) var(--pos) / cover no-repeat;
+}
+@media (max-aspect-ratio: 3/5) {
+  .hero-plate--near {
+    -webkit-mask-image: var(--matte-tall);
+    mask-image: var(--matte-tall);
+  }
+}
+.hero-name {
+  /* The peak and the chimney after the zoom, and the span the letters may use. */
+  --px: calc(50cqw + (var(--peak-x) - 50cqw) * var(--z));
+  --py: calc(50cqh + (var(--peak-y) - 50cqh) * var(--z));
+  --xl: max(var(--margin), calc(50cqw + (var(--chimney-x) - 50cqw) * var(--z) + var(--sway) + 1rem));
+  --xr: calc(100cqw - var(--margin));
+  /* How far the roof's wedge reaches either side of the peak along the baseline, and where along the word the peak may fall (past E, before G), in em; and how much farther it reaches when the house rises with the pointer. */
+  --reach-l: calc(var(--tuck) * 0.71 / 0.4728);
+  --reach-r: calc(var(--tuck) * 0.71 / 0.1854);
+  --p-min: calc(1.31 + var(--reach-l));
+  --p-max: calc(4.01 - var(--reach-r));
+  --rise-l: calc(var(--sway) + var(--sway-y) / 0.4728);
+  --rise-r: calc(var(--sway) + var(--sway-y) / 0.1854);
+  position: absolute;
+  margin: 0;
+  font-size: min(
+    calc((var(--xr) - var(--xl)) / 6.644),
+    calc((var(--py) - var(--clear)) / (0.71 * (1 - var(--tuck)))),
+    calc((var(--px) - var(--rise-l) - var(--xl)) / var(--p-min)),
+    calc((var(--xr) - var(--px) - var(--rise-r)) / (6.644 - var(--p-max)))
+  );
+  top: calc(var(--py) + var(--tuck) * 0.71em - 0.875em);
+  left: max(
+    var(--xl),
+    calc(var(--px) + var(--rise-r) - var(--p-max) * 1em),
+    min(calc(var(--xr) - 6.644em), calc(var(--px) - var(--rise-l) - var(--p-min) * 1em), calc((var(--xl) + var(--xr) - 6.644em) / 2))
+  );
+}
+@media (max-aspect-ratio: 13/20) {
+  .hero-name {
+    /* How far right of the peak the word starts, in em, so the roof's right slope meets the baseline a hair before E's ink. */
+    --lead: max(0, var(--reach-r) - 0.66);
+    font-size: min(
+      calc((var(--xr) - var(--xl)) / 6.644),
+      calc((var(--py) - var(--clear)) / (0.71 * (1 - var(--tuck)))),
+      calc((var(--xr) - var(--px) - var(--rise-r)) / (6.644 + var(--lead)))
+    );
+    left: max(var(--xl), calc(var(--px) + var(--rise-r) + var(--lead) * 1em), min(calc(var(--xr) - 6.644em), calc((var(--xl) + var(--xr) - 6.644em) / 2)));
+  }
+}
+/*
+ * The iris opens from the GTA dot onto the picture, whose planes settle
+ * from 112% around that same point (1.8s); the name rises at 0.45s (1.2s),
+ * the statement's lines from 0.85s, 0.09s apart, the caption at 1.15s.
+ * After a page transition (data-arrival="route") the same entrance runs
+ * sooner, as the cover lifts. All of it waits for data-revealed.
  */
 @keyframes hero-settle {
   from {
@@ -1404,7 +1552,7 @@ body:has(.not-found__map) .site-footer__place {
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-motion] [data-hero-image] img {
+  :root[data-motion] [data-hero-plate] {
     transform-origin: var(--iris-x, 50%) var(--iris-y, 50%);
     animation: hero-settle 1.8s var(--ease-out-expo) backwards;
   }
@@ -1417,7 +1565,7 @@ body:has(.not-found__map) .site-footer__place {
   :root[data-motion] .hero-fig {
     animation: fade-in 0.7s var(--e-out) 1.15s both;
   }
-  :root[data-motion][data-arrival="route"] [data-hero-image] img {
+  :root[data-motion][data-arrival="route"] [data-hero-plate] {
     animation-duration: 1.4s;
   }
   :root[data-motion][data-arrival="route"] .hero-heading-line .split-line__inner {
@@ -1429,7 +1577,7 @@ body:has(.not-found__map) .site-footer__place {
   :root[data-motion][data-arrival="route"] .hero-fig {
     animation-delay: 0.6s;
   }
-  :root[data-motion]:not([data-revealed]) :is([data-hero-image] img, .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig) {
+  :root[data-motion]:not([data-revealed]) :is([data-hero-plate], .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig) {
     animation-play-state: paused;
   }
 }
@@ -2263,23 +2411,76 @@ body:has(.not-found__map) .site-footer__place {
 }
 
 /* ---- Homepage: services (Services.tsx) ---- */
+/*
+ * Phones: one column that flows. The heading, then each group: its label,
+ * the picture of its first service with the picture's note, and its rows,
+ * each a link across the column: the service's name over a line on what it
+ * covers, and an arrow. From 768px the list sits beside one framed picture.
+ * There the rows are names alone (the line on what each covers is still
+ * read out with its name, and shows under the picture for the row the
+ * picture shows), that row marked by the section's one red dot and an
+ * arrow drawn in at its end.
+ */
 .services-grid {
-  padding-block: 7rem 4rem;
+  padding-block: 6rem 3.5rem;
+}
+@media (min-width: 768px) {
+  .services-grid {
+    padding-block: 7rem 4rem;
+  }
 }
 @media (min-width: 1024px) {
   .services-grid {
     padding-block: 10rem 5rem;
   }
 }
+.services-list {
+  margin-top: 3rem;
+}
+.services-group + .services-group {
+  margin-top: 4rem;
+}
+.services-plate {
+  margin-top: 1.25rem;
+}
+.services-plate__frame {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--color-charcoal-800);
+}
+.services-rows {
+  margin-top: 1.75rem;
+}
 .services-frame-col {
   display: none;
 }
 @media (min-width: 768px) {
+  .services-list {
+    margin-top: 2.5rem;
+  }
+  .services-group + .services-group {
+    margin-top: 2.25rem;
+  }
+  .services-plate {
+    display: none;
+  }
+  .services-rows {
+    margin-top: 0.75rem;
+  }
   .services-frame-col {
     display: block;
   }
 }
-/* As wide as the picture and set to the right, so the caption starts under the picture's left edge. */
+@media (min-width: 1024px) {
+  .services-list {
+    margin-top: 3.5rem;
+  }
+  .services-group + .services-group {
+    margin-top: 2.75rem;
+  }
+}
+/* As wide as the picture and set to the right, so the lines under it start under its left edge (they take no part in its width). */
 .services-frame-pin {
   position: sticky;
   top: 15svh;
@@ -2296,10 +2497,25 @@ body:has(.not-found__map) .site-footer__place {
   overflow: hidden;
   background: var(--color-charcoal-800);
 }
-/* The caption carries both notes and shows the one for the kind of picture in the frame (data-kind, set with the picture). */
-.services-caption[data-kind="study"] [data-note="project"],
-.services-caption[data-kind="project"] [data-note="study"] {
-  display: none;
+/* Under the frame, for the service shown, what it covers and what its picture is: a block for each service, all in one cell, so the caption keeps the height of the tallest, and the blocks cross-fade (data-on, set with the picture). */
+.services-caption {
+  display: grid;
+  contain: inline-size;
+}
+.services-caption > * {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s var(--e-ui),
+    visibility 0s linear 0.4s;
+}
+.services-caption > [data-on] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.4s var(--e-ui),
+    visibility 0s;
 }
 /* Each row's rule is an element of its own, so drawing it across (HomeMotion) touches nothing else. */
 .services-item {
@@ -2318,40 +2534,122 @@ body:has(.not-found__map) .site-footer__place {
   top: 0;
   bottom: auto;
 }
-/* The number column holds the active row's dot: the section's one red. */
-.services-item__num {
+/* A row: the name over its scope, the arrow beside both. */
+.services-item__link {
   position: relative;
+  display: grid;
+  min-height: 2.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 1rem;
+  padding-block: 1.125rem;
 }
-.services-item__num::before {
-  content: "";
-  position: absolute;
-  right: calc(100% + 0.5rem);
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
-  border-radius: 9999px;
-  background: var(--color-brand-400);
-  transform: scale(0);
-  transition: transform 0.3s var(--e-ui);
+.services-item__label,
+.services-item__scope {
+  grid-column: 1;
 }
-.services-item[data-active] .services-item__num::before {
-  transform: scale(1);
+.services-item__scope {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-charcoal-300);
 }
-/*
- * Every label at full strength at rest. Others dim only when one row is
- * singled out: hovered or focused, or, on the pinned track, the row the
- * picture shows (data-active, which there also follows the pointer and
- * focus, and is the only rule, so a resting pointer never dims the row
- * scrolled to).
- */
+.services-item__arrow {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: rgb(244 241 235 / 0.6);
+  transition: color 0.3s var(--e-ui);
+}
+.services-item__arrow svg {
+  transition:
+    opacity 0.3s var(--e-ui),
+    transform 0.3s var(--e-ui);
+}
+.services-item__link:is(:hover, :focus-visible) .services-item__arrow {
+  color: var(--color-ivory);
+}
+.services-item__link:is(:hover, :focus-visible) .services-item__arrow svg {
+  transform: translateX(0.25rem);
+}
+.services-item__dot {
+  display: none;
+}
 .services-item__label {
   opacity: 1;
   transition: opacity 0.3s var(--e-ui);
 }
-[data-services]:not([data-services-pinned]) .services-list:has(.services-item:is(:hover, :focus-within)) .services-item:not(:hover, :focus-within) .services-item__label,
-[data-services-pinned] .services-item:not([data-active]) .services-item__label {
-  opacity: 0.5;
+.services-all {
+  margin-top: 2.25rem;
+}
+@media (min-width: 768px) {
+  .services-item__link {
+    padding-block: 0.875rem;
+  }
+  /* Read out with the name; shown under the picture instead. */
+  .services-item__scope {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* The arrow is drawn in for the row the picture shows, and under the pointer or focus. */
+  .services-item__arrow svg {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  .services-item[data-active] .services-item__arrow svg {
+    opacity: 1;
+    transform: none;
+  }
+  .services-item__link:is(:hover, :focus-visible) .services-item__arrow svg {
+    opacity: 1;
+    transform: translateX(0.25rem);
+  }
+  /* The row the picture shows carries the section's one red, hung in the margin before its name. */
+  .services-item__dot {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 0.75rem);
+    display: block;
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 9999px;
+    background: var(--color-brand-400);
+    transform: scale(0);
+    transition: transform 0.3s var(--e-ui);
+  }
+  .services-item[data-active] .services-item__dot {
+    transform: scale(1);
+  }
+  /*
+   * Every label at full strength at rest. Others dim only when one row is
+   * singled out: hovered or focused, or, on the pinned track, the row the
+   * picture shows (data-active, which there also follows the pointer and
+   * focus, and is the only rule, so a resting pointer never dims the row
+   * scrolled to).
+   */
+  [data-services]:not([data-services-pinned]) .services-list:has(.services-item:is(:hover, :focus-within)) .services-item:not(:hover, :focus-within) .services-item__label,
+  [data-services-pinned] .services-item:not([data-active]) .services-item__label {
+    opacity: 0.5;
+  }
+  .services-all {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .services-item__link {
+    padding-block: 1.25rem;
+  }
+  .services-all {
+    margin-top: 2rem;
+  }
 }
 
 /* ---- Homepage: contact (Contact.tsx) ---- */
@@ -2511,20 +2809,20 @@ body:has(.not-found__map) .site-footer__place {
     transform: translateY(120%);
   }
 
-  /* Services: only the pictures exist (the empty frame is never seen filling in), and everything masked starts below its mask. */
-  :root[data-motion] .services-frame {
+  /* Services: only the pictures exist (the empty frames are never seen filling in), and everything masked starts below its mask. */
+  :root[data-motion] :is(.services-frame, .services-plate__frame) {
     background: transparent;
   }
-  :root[data-motion] :is([data-services-roll], .services-item__label .split-line__inner) {
+  :root[data-motion] :is([data-services-roll], [data-services-group-roll], .services-item__label .split-line__inner) {
     transform: translateY(120%);
   }
-  :root[data-motion] [data-services-reveal] {
+  :root[data-motion] :is([data-services-reveal], [data-services-plate-reveal]) {
     clip-path: inset(100% 0 0 0);
   }
-  :root[data-motion] :is([data-services-meta], [data-services-all], [data-services-caption]) {
+  :root[data-motion] :is([data-services-meta], [data-services-all], [data-services-caption], [data-services-plate-caption]) {
     opacity: 0;
   }
-  /* Each row's number and tag, and 'All services', fade in on their own once their row is most of the way up (data-services-in, HomeMotion): small labels, left to the compositor rather than written every frame. */
+  /* Each row's scope and arrow, and 'All services', fade in on their own once their row is most of the way up (data-services-in, HomeMotion): small labels, left to the compositor rather than written every frame. */
   :root[data-motion] :is([data-services-meta], [data-services-all]) {
     transition: opacity 0.3s var(--e-ui);
   }
@@ -2533,6 +2831,10 @@ body:has(.not-found__map) .site-footer__place {
   }
   :root[data-motion] .services-item__rule {
     transform: scaleX(0);
+  }
+  /* The active row's dot waits for its row too. */
+  :root[data-motion] .services-item:not([data-services-in]) .services-item__dot {
+    transform: scale(0);
   }
 
   /* Contact: the lines wait below their masks, the actions and the cells below their places, the picture's sheet and the title block undrawn. */
@@ -2557,7 +2859,8 @@ body:has(.not-found__map) .site-footer__place {
  * track with the whole composition pinned for two screens, the picture
  * beside the list, centred. The heading, the rows and the spacing are
  * capped by the screen's height (they bind below about 860px), so the
- * eyebrow to the 'All services' link fits in about 700px at 720.
+ * eyebrow to the 'All services' link fits in about 690px at 720. Phones
+ * never pin it: there the section flows, a column too long to hold.
  */
 @media screen and (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 720px) {
   :root[data-motion] .services-track {
@@ -2573,7 +2876,7 @@ body:has(.not-found__map) .site-footer__place {
   :root[data-motion] .services-grid {
     width: 100%;
     align-items: center;
-    padding-block: min(5.5rem, 11svh) min(2rem, 3svh);
+    padding-block: min(5.5rem, 10svh) min(2rem, 3svh);
   }
   :root[data-motion] .services-frame-col {
     container-type: inline-size;
@@ -2588,19 +2891,25 @@ body:has(.not-found__map) .site-footer__place {
   }
   :root[data-motion] .services-heading {
     max-width: 20ch;
-    font-size: min(var(--text-display-lg), 6.5svh);
+    font-size: min(var(--text-display-lg), 5.8svh);
   }
   :root[data-motion] .services-list {
-    margin-top: min(2rem, 3.5svh);
+    margin-top: min(2.75rem, 4.2svh);
   }
-  :root[data-motion] .services-item a {
-    padding-block: min(0.7rem, 1.4svh);
+  :root[data-motion] .services-group + .services-group {
+    margin-top: min(2.25rem, 2.8svh);
+  }
+  :root[data-motion] .services-rows {
+    margin-top: min(0.5rem, 0.8svh);
+  }
+  :root[data-motion] .services-item__link {
+    padding-block: min(0.7rem, 1.1svh);
   }
   :root[data-motion] .services-item__label {
-    font-size: min(clamp(1.35rem, 0.9rem + 1.1vw, 2.1rem), 3.6svh);
+    font-size: min(clamp(1.35rem, 0.9rem + 1.1vw, 2.1rem), 3.4svh);
   }
   :root[data-motion] .services-all {
-    margin-top: min(2rem, 2.5svh);
+    margin-top: min(2rem, 2.2svh);
   }
 }
 /*
@@ -2613,87 +2922,6 @@ body:has(.not-found__map) .site-footer__place {
     padding-top: 2.5rem;
   }
 }
-/*
- * Phones from 620px tall: the same 300vh track, stacked. The picture takes
- * whatever height the heading and the list leave (at least 6.5rem, at most
- * a quarter of the screen), so the list is never cut off below or the
- * picture tucked under the header; the eyebrow goes (the heading names the
- * section) and the caption sits at the foot of the stage.
- */
-@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) {
-  :root[data-motion] .services-track {
-    height: 300vh;
-  }
-  :root[data-motion] .services-stage {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-  }
-  :root[data-motion] .services-grid {
-    display: flex;
-    height: 100%;
-    flex-direction: column;
-    gap: 1rem;
-    padding-block: 5.5rem 1rem;
-  }
-  :root[data-motion] :is(.services-frame-col, .services-frame-pin) {
-    display: contents;
-  }
-  :root[data-motion] .services-frame {
-    order: -1;
-    width: 100%;
-    flex: 1 1 0;
-    min-height: 6.5rem;
-    max-height: 26svh;
-    aspect-ratio: auto;
-  }
-  :root[data-motion] .services-caption {
-    order: 3;
-    margin-top: auto;
-  }
-  :root[data-motion] .services-eyebrow {
-    display: none;
-  }
-  :root[data-motion] .services-heading {
-    margin-top: 0;
-  }
-  :root[data-motion] .services-list {
-    margin-top: 1rem;
-  }
-  :root[data-motion] .services-item a {
-    padding-block: 0.4rem;
-  }
-  :root[data-motion] .services-item__label {
-    font-size: clamp(1.05rem, 0.9rem + 0.9vw, 1.25rem);
-  }
-  :root[data-motion] .services-all {
-    margin-top: 0.75rem;
-  }
-}
-/*
- * Short phones (620 to 720px tall): the stage needs about 700px as above,
- * so it tightens to fit: smaller gaps and heading, and a picture that may
- * shrink to 4rem. The picture still starts clear of the 80px header bar,
- * and the rows keep their 44px.
- */
-@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) and (max-height: 719.98px) {
-  :root[data-motion] .services-grid {
-    gap: 0.5rem;
-    padding-block: 5.5rem 0.5rem;
-  }
-  :root[data-motion] .services-frame {
-    min-height: 4rem;
-  }
-  :root[data-motion] .services-heading {
-    font-size: 1.5rem;
-  }
-  :root[data-motion] .services-list {
-    margin-top: 0.25rem;
-  }
-  :root[data-motion] .services-all {
-    margin-top: 0.5rem;
-  }
-}
 
 /*
  * Gone back to (Back or Forward, ScreenTransition sets data-returning): the
@@ -2701,7 +2929,7 @@ body:has(.not-found__map) .site-footer__place {
  * play again (until the next navigation, which happens under the cover).
  */
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-motion][data-returning] :is([data-hero-image] img, .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
+  :root[data-motion][data-returning] :is([data-hero-plate], .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
     animation: none;
   }
 }

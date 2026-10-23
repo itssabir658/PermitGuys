@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
+import { openingAssets } from "@/lib/motion/opening";
 import { OntarioOutline } from "./OntarioOutline";
 
 /*
@@ -13,7 +14,7 @@ import { OntarioOutline } from "./OntarioOutline";
  * mainland over 0.9s, the islands overlapping its end; the GTA dot pops at
  * 0.95s and rings out once. The screen waits for the strokes (about 1.35s;
  * the dot finishes popping as the exit sets off), the fonts and the opening
- * picture, and for at least 1.25s from navigation.
+ * pictures (openingAssets), and for at least 1.25s from navigation.
  *
  * Then, T₀: the page is put back at the top and the document gets
  * data-loaded and data-revealed, so the page's own entrance (the hero, the
@@ -63,8 +64,7 @@ export function Preloader() {
     // Only the strokes are waited for: the dot pops as the mainland closes and finishes during the exit's slow start, and its ring rings out through the exit.
     const drawing = el.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation && (a.animationName === "dot-in" || a.animationName === "dot-pulse")));
     const drawn = Promise.all(drawing.map((a) => a.finished.catch(() => undefined)));
-    const picture = document.querySelector<HTMLImageElement>("[data-hero-image] img");
-    const assets = Promise.all([document.fonts?.ready, picture && !picture.complete ? picture.decode().catch(() => undefined) : undefined]);
+    const assets = Promise.all([document.fonts?.ready, ...openingAssets()]);
 
     Promise.all([drawn, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
       if (cancelled) return;

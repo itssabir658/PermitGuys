@@ -86,7 +86,7 @@ export function validateContent({ services, guides, locations, projects }: Conte
 
   for (const s of services) {
     const w = `service "${s.slug}"`;
-    for (const k of ["name", "navLabel", "summary", "directAnswer"] as const) text(p, `${w}.${k}`, s[k]);
+    for (const k of ["name", "navLabel", "scope", "summary", "directAnswer"] as const) text(p, `${w}.${k}`, s[k]);
     list(p, `${w}.overview`, s.overview);
     list(p, `${w}.whoItsFor`, s.whoItsFor);
     text(p, `${w}.typicalRequirements.qualifier`, s.typicalRequirements.qualifier);

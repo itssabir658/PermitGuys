@@ -392,10 +392,10 @@ export function MainNav({
         <div ref={bgRef} aria-hidden="true" className="site-menu__bg" />
         <div ref={contentRef} className="site-menu__content">
           <nav aria-label="Site menu">
-            <ol className="space-y-0.5">
-              {menu.map((link, i) => (
+            <ul className="space-y-0.5">
+              {menu.map((link) => (
                 <li key={link.href}>
-                  {/* The mask the link rises in; it lets 4px past its edge, where the link's focus ring is drawn (clear of the numeral). */}
+                  {/* The mask the link rises in; it lets 4px past its edge, where the link's focus ring is drawn. */}
                   <span className="block overflow-clip" style={{ overflowClipMargin: 4 }}>
                     <Link
                       href={link.href}
@@ -403,7 +403,6 @@ export function MainNav({
                       aria-current={isActive(pathname, link.href) && (link.href !== "/" || pathname === "/") ? "page" : undefined}
                       className="group flex items-baseline gap-4 py-1 outline-offset-1"
                     >
-                      <span aria-hidden="true" className="w-7 text-label text-charcoal-300 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
                       <span className="font-display text-[clamp(1.9rem,1.3rem+1.9vw,2.85rem)] leading-[1.08] font-light tracking-[-0.04em] text-ivory/90 group-hover:text-ivory group-focus-visible:text-ivory group-aria-[current=page]:text-ivory">
                         <RollText>{link.label}</RollText>
                       </span>
@@ -412,7 +411,7 @@ export function MainNav({
                   </span>
                 </li>
               ))}
-            </ol>
+            </ul>
           </nav>
           <div data-menu-item="" className="site-menu__aside grid content-between gap-10">
             {/* Phones leave the services out (the footer and the Services page list them), so the call to action fits. */}
