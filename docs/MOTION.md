@@ -40,7 +40,7 @@ Browsers without registered custom properties get a 0.6s fade instead of the iri
 
 ## Sections (scroll map at 1440×900)
 
-Positions are in screens. The page scrolls 19.6 screens at 1440×900 and 21.0 at 390×844.
+Positions are in screens. The page scrolls 19.6 screens at 1440×900 and 21.1 at 390×844.
 
 | Section | Track | Behaviour |
 |---|---|---|
@@ -105,7 +105,7 @@ Screens under 500px tall (a phone on its side) and visitors without JavaScript g
 ## What could not be verified
 
 - **Real devices.** Checked in headless Chromium at 1440×900, 1280×720, 1280×680, 1024×720, 820×1180, 390×844, 375×700, 360×740, 360×620, 320 wide and 844×390, with frame captures, wheel recordings forward and back, and traces at four times CPU throttle; not on a physical phone or in Safari or Firefox (the iris needs registered custom properties; others get the fade).
-- **Frame cost.** Through the dusk at four times CPU throttle most frames take 17 to 33ms of main thread, with peaks near 50 to 65ms where the Values odometer, the dusk and the Services entrance overlap; unthrottled frames stay near 10ms. Per frame the time splits roughly evenly between the modules' update, style recalculation of the elements being moved, and paint (the clip-path wipes repaint their pictures). Moving the Services numbers and tags to a CSS transition removed their per-frame writes but did not change the peaks measurably. Not measured on a low-end phone.
+- **Frame cost.** Through the dusk at four times CPU throttle the median frame takes about 30ms of main thread and the slowest about 57ms; unthrottled, frames there stay near 9 to 10ms. Per frame the time is mostly the scroll update, the style recalculation of the elements being moved, and paint (the clip-path wipes repaint their pictures, and layers at the edge of the area Chrome keeps painted repaint as the page scrolls). The root's night ground is no longer read by any style rule, so turning it on and off (as the dusk falls, and as Contact reaches the header) no longer restyles the whole document, which had cost a 20ms frame each time. The footer's outline is on its own layer, so drawing it repaints only the outline. In this environment's software rendering the last screen before the footer still shows a few 16 to 27ms frames while the compositor rasterises; not measured on real hardware or a low-end phone.
 - **Line counts** depend on the fonts actually loaded; line splitting re-runs whenever a block's width changes.
 - **The reference.** Only a still frame of Sebra's video arrived and the live reference site cannot be opened from the build environment.
 
