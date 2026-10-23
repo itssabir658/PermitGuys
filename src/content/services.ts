@@ -73,6 +73,7 @@ export const services: Service[] = [
     slug: "residential-additions",
     name: "Residential Addition Permits",
     navLabel: "Residential additions",
+    scope: "Rear, side and second-storey additions",
     category: "residential",
     featured: true,
     summary:
@@ -133,6 +134,7 @@ export const services: Service[] = [
     slug: "commercial-permits",
     name: "Commercial Permits",
     navLabel: "Commercial permits",
+    scope: "Commercial interiors, tenant improvements and changes of use",
     category: "commercial",
     featured: true,
     summary:
@@ -196,6 +198,7 @@ export const services: Service[] = [
     slug: "landlord-permits",
     name: "Landlord and Rental Property Permits",
     navLabel: "Landlord permits",
+    scope: "New rental units and spaces readied for tenants",
     category: "commercial",
     featured: true,
     summary:
@@ -250,6 +253,7 @@ export const services: Service[] = [
     slug: "interior-renovation-permits",
     name: "Interior Renovation Permits",
     navLabel: "Interior renovations",
+    scope: "Structural and layout changes, in homes and businesses",
     category: "commercial",
     featured: true,
     summary:
@@ -303,6 +307,7 @@ export const services: Service[] = [
     slug: "legal-basement-permits",
     name: "Legal Basement Apartment Permits",
     navLabel: "Legal basement apartments",
+    scope: "A legal second unit in your basement",
     category: "residential",
     featured: true,
     summary:
@@ -364,6 +369,7 @@ export const services: Service[] = [
     slug: "deck-permits",
     name: "Deck Permits",
     navLabel: "Deck permits",
+    scope: "New and replacement decks, raised or attached",
     category: "residential",
     featured: false,
     summary:
@@ -416,6 +422,7 @@ export const services: Service[] = [
     slug: "custom-home-permits",
     name: "Custom Home Permits",
     navLabel: "Custom homes",
+    scope: "New and replacement homes on existing lots",
     category: "residential",
     featured: false,
     summary:

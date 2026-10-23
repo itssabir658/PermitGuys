@@ -744,28 +744,33 @@ function values(shared: Shared): MotionModule | null {
 }
 
 /*
- * Services. On the pinned track (phones from 620px tall, wider screens
- * from 720px; globals.css) the whole composition comes up through the dusk
- * and holds for two screens. The stage rides 0.3 screen ahead of its track
- * until the dusk is over and settles into the pin (servicesLead), so its
- * picture follows close under the last Values picture: the picture's sheet
- * wipes up from the bottom of the screen as the frame comes into view,
- * then, once the ground is past half night, the heading's lines and
- * the rows rise out of their masks, each row's rule drawing across; it is
- * whole as the stage pins. While it holds, scrolling walks the rows. The
- * frame shows the row hovered (with a fine pointer), else the one focused,
- * else the one scrolling has reached; the latest of a hover and a scroll
- * wins, so a pointer resting on the list never freezes the walk. A hover
- * is taken only from the pointer moving, and only while the stage holds,
- * so rows rising under a resting pointer never pick a picture. While the
- * page is held (a page transition, the menu) the frame keeps its picture.
- * Each new picture wipes up over the last, which darkens under it (swapTo).
+ * Services. On the pinned track (screens from 768px wide and 720px tall;
+ * globals.css) the whole composition comes up through the dusk and holds
+ * for two screens. The stage rides 0.3 screen ahead of its track until the
+ * dusk is over and settles into the pin (servicesLead), so its picture
+ * follows close under the last Values picture: the picture's sheet wipes
+ * up from the bottom of the screen as the frame comes into view, then,
+ * once the ground is past half night, the heading's lines rise out of
+ * their masks, then the list's group labels and rows, each row's rule
+ * drawing across; it is whole as the stage pins. While it holds,
+ * scrolling walks the rows. The frame shows the row hovered (with a fine
+ * pointer), else the one focused, else the one scrolling has reached; the
+ * latest of a hover and a scroll wins, so a pointer resting on the list
+ * never freezes the walk. A hover is taken only from the pointer moving,
+ * and only while the stage holds, so rows rising under a resting pointer
+ * never pick a picture. While the page is held (a page transition, the
+ * menu) the frame keeps its picture. Each new picture wipes up over the
+ * last, which darkens under it (swapTo), and the line on what the service
+ * covers changes under it.
  *
- * On wide screens too short to pin, the section flows, starting close
- * under the last Values picture: the heading rises with the track as it
- * does when pinned, each row arrives from its own place, and the picture
- * follows the row crossing the middle of the screen. Without the tracks
- * everything is still and the picture follows a hover or focus at once.
+ * Elsewhere the section flows. The heading rises with the track as it does
+ * when pinned, and each group label and row arrives from its own place.
+ * On phones there is no frame: each group's picture wipes up from the
+ * bottom of the screen as it comes into view. On wide screens too short to
+ * pin, the section starts close under the last Values picture and the
+ * frame follows the row crossing the middle of the screen. Without the
+ * tracks everything is still and the frame follows a hover or focus at
+ * once.
  */
 function services(): MotionModule[] {
   const section = one("[data-services]");
@@ -779,21 +784,37 @@ function services(): MotionModule[] {
   const list = section && one("[data-services-body]", section);
   if (!section || !track || !stage || !frameCol || !box || !reveal || !zoom || !heading || !list) return [];
   const pics = all("[data-services-pic]", section);
+  const captions = all("[data-caption]", section);
   const rows = all("[data-service-index]", section).map((li) => ({
     li,
     inner: one(".services-item__label .split-line__inner", li),
     rules: all("[data-services-rule]", li),
+  }));
+  // The list in order: each group's label, then its rows.
+  const slots = all("[data-services-group-roll], [data-service-index]", list).map((el) => {
+    const row = rows.find((r) => r.li === el);
+    return row ? { box: el, row, roll: null } : { box: el.parentElement ?? el, row: null, roll: el };
+  });
+  // Phones: each group's own picture.
+  const plates = all("[data-services-plate]", section).map((fig) => ({
+    fig,
+    frame: one(".services-plate__frame", fig),
+    reveal: one("[data-services-plate-reveal]", fig),
+    zoom: one("[data-services-plate-zoom]", fig),
+    caption: one("[data-services-plate-caption]", fig),
   }));
   const eyebrow = one("[data-services-roll]", section);
   const caption = one("[data-services-caption]", section);
   const more = one("[data-services-all]", section);
   const n = rows.length;
   const deskTrack = matchMedia("(min-width: 768px) and (min-height: 720px)");
-  const phoneTrack = matchMedia("(max-width: 767px) and (min-height: 620px)");
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
   let pinned = false;
+  let frameShown = true;
   let rTrack: Range, rCol: Range, rMore: Range | null = null;
   let rRows: Range[] = [];
+  let rSlots: Range[] = [];
+  let rPlates: (Range | null)[] = [];
   let stageH = 0;
   let boxTop = 0;
   let boxH = 0;
@@ -848,9 +869,12 @@ function services(): MotionModule[] {
   const image: MotionModule = {
     order: ORDER.servicesImage,
     measure(f) {
-      pinned = f.tracks && (phoneTrack.matches || deskTrack.matches);
+      pinned = f.tracks && deskTrack.matches;
       if (pinned) section.dataset.servicesPinned = "";
       else delete section.dataset.servicesPinned;
+      // The frame is not drawn on phones, and each group's picture only there.
+      frameShown = frameCol.getClientRects().length > 0;
+      rPlates = plates.map((p) => (p.frame && p.fig.getClientRects().length ? measureRange(p.frame) : null));
       rTrack = measureRange(track);
       rCol = measureRange(frameCol);
       rRows = rows.map((r) => measureRange(r.li));
@@ -860,6 +884,28 @@ function services(): MotionModule[] {
       boxTop = box.getBoundingClientRect().top - stage.getBoundingClientRect().top;
     },
     update(f) {
+      // Each group's picture: its sheet wipes up from the bottom of the screen as it comes into view.
+      plates.forEach((p, i) => {
+        const r = rPlates[i];
+        if (!p.reveal || !p.zoom) return;
+        if (!f.tracks || !r) {
+          clear(p.reveal, "clipPath");
+          clear(p.zoom, "transform");
+          if (p.caption) clear(p.caption, "opacity");
+          return;
+        }
+        const top = r.top - f.scroll;
+        const rv = servicesReveal((f.vh - top) / f.vh);
+        setStyle(p.reveal, "clipPath", `inset(${riseInset(rv.r, top, r.height, f.vh).toFixed(2)}% 0 0 0)`);
+        setStyle(p.zoom, "transform", `translate3d(0, ${rv.y.toFixed(2)}%, 0) scale(${num(rv.scale)})`);
+        if (p.caption) setStyle(p.caption, "opacity", num(rv.r));
+      });
+      if (!frameShown) {
+        // No frame, so no row is the one it shows.
+        if (shown >= 0) rows.forEach((r) => flag(r.li, "data-active", false));
+        shown = -1;
+        return;
+      }
       // The row the frame shows.
       const reached = pinned ? servicesIndex(f.scroll, rTrack.top, rTrack.height, f.vh, n) : f.tracks ? rRows.reduce((k, r, i) => (r.top < f.scroll + 0.5 * f.vh ? i : k), 0) : scrollIdx;
       // Scrolling to a new row takes over from a resting pointer, and on the pinned track a hover counts only while the stage holds (not as the list rises under the pointer, or leaves).
@@ -872,11 +918,9 @@ function services(): MotionModule[] {
         stack = swapTo(stack, target, f.time, f.reduced);
       }
       if (shown !== target) {
-        rows[shown]?.li.removeAttribute("data-active");
-        rows[target]?.li.setAttribute("data-active", "");
-        // The caption names the kind of the picture arriving: a client rendering or a study.
-        const kind = pics[target]?.dataset.kind;
-        if (caption && kind) caption.dataset.kind = kind;
+        rows.forEach((r, i) => flag(r.li, "data-active", i === target));
+        // The caption says what the service covers, and what the picture arriving is: a client rendering or a study.
+        captions.forEach((el, i) => flag(el, "data-on", i === target));
         shown = target;
       }
       stack = swapSettle(stack, f.time, f.reduced);
@@ -926,6 +970,7 @@ function services(): MotionModule[] {
     order: ORDER.services,
     measure(f) {
       rMore = more ? measureRange(more) : null;
+      rSlots = slots.map((slot) => measureRange(slot.box));
       if (f.tracks) headLines = resplitIfNeeded(heading, headLines);
       else if (headLines.length) {
         unsplit(heading);
@@ -935,6 +980,7 @@ function services(): MotionModule[] {
     update(f) {
       if (!f.tracks) {
         if (eyebrow) clear(eyebrow, "transform");
+        for (const slot of slots) if (slot.roll) clear(slot.roll, "transform");
         for (const r of rows) {
           if (r.inner) clear(r.inner, "transform");
           r.rules.forEach((el) => clear(el, "transform"));
@@ -945,7 +991,9 @@ function services(): MotionModule[] {
       }
       // Whatever holds focus is in place, whatever the scroll.
       const focused = document.activeElement;
-      const show = (r: (typeof rows)[number], t: number, y: number, meta: boolean) => {
+      const show = (slot: (typeof slots)[number], t: number, y: number, meta: boolean) => {
+        if (slot.roll) return setStyle(slot.roll, "transform", liftPercent(y));
+        const r = slot.row;
         const held = focused instanceof Node && r.li.contains(focused);
         if (r.inner) setStyle(r.inner, "transform", liftPercent(held ? 0 : y));
         r.rules.forEach((el) => setStyle(el, "transform", `scaleX(${num(held ? 1 : t)})`));
@@ -956,18 +1004,18 @@ function services(): MotionModule[] {
       if (eyebrow) setStyle(eyebrow, "transform", liftPercent(roll(tween(s, 0.34, 0.3, ease.power3Out), 0)));
       headLines.forEach((line, j) => setStyle(line, "transform", liftPercent(servicesHeading(s, j))));
       if (pinned) {
-        // The rows from the track too, so the composition is whole as the stage pins.
-        rows.forEach((r, i) => {
-          const st = servicesRow(s, i);
-          show(r, st.t, st.y, st.meta);
+        // The list from the track too, so the composition is whole as the stage pins.
+        slots.forEach((slot, k) => {
+          const st = servicesRow(s, k);
+          show(slot, st.t, st.y, st.meta);
         });
-        if (more) mark(more, servicesRow(s, n - 1).meta);
+        if (more) mark(more, servicesRow(s, slots.length - 1).meta);
         return;
       }
-      // Flowing: each row from its own place.
-      rows.forEach((r, i) => {
-        const t = tween(sso(rRows[i], f), 0.06, 0.22, ease.power3Out);
-        show(r, t, roll(t, 0), t >= SERVICES_META_ON);
+      // Flowing: each label and row from its own place.
+      slots.forEach((slot, k) => {
+        const t = tween(sso(rSlots[k], f), 0.06, 0.22, ease.power3Out);
+        show(slot, t, roll(t, 0), t >= SERVICES_META_ON);
       });
       if (more && rMore) mark(more, tween(sso(rMore, f), 0.06, 0.22, ease.power3Out) >= SERVICES_META_ON);
     },

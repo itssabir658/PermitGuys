@@ -2263,23 +2263,76 @@ body:has(.not-found__map) .site-footer__place {
 }
 
 /* ---- Homepage: services (Services.tsx) ---- */
+/*
+ * Phones: one column that flows. The heading, then each group: its label,
+ * the picture of its first service with the picture's note, and its rows,
+ * each a link across the column: the service's name over a line on what it
+ * covers, and an arrow. From 768px the list sits beside one framed picture.
+ * There the rows are names alone (the line on what each covers is still
+ * read out with its name, and shows under the picture for the row the
+ * picture shows), that row marked by the section's one red dot and an
+ * arrow drawn in at its end.
+ */
 .services-grid {
-  padding-block: 7rem 4rem;
+  padding-block: 6rem 3.5rem;
+}
+@media (min-width: 768px) {
+  .services-grid {
+    padding-block: 7rem 4rem;
+  }
 }
 @media (min-width: 1024px) {
   .services-grid {
     padding-block: 10rem 5rem;
   }
 }
+.services-list {
+  margin-top: 3rem;
+}
+.services-group + .services-group {
+  margin-top: 4rem;
+}
+.services-plate {
+  margin-top: 1.25rem;
+}
+.services-plate__frame {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--color-charcoal-800);
+}
+.services-rows {
+  margin-top: 1.75rem;
+}
 .services-frame-col {
   display: none;
 }
 @media (min-width: 768px) {
+  .services-list {
+    margin-top: 2.5rem;
+  }
+  .services-group + .services-group {
+    margin-top: 2.25rem;
+  }
+  .services-plate {
+    display: none;
+  }
+  .services-rows {
+    margin-top: 0.75rem;
+  }
   .services-frame-col {
     display: block;
   }
 }
-/* As wide as the picture and set to the right, so the caption starts under the picture's left edge. */
+@media (min-width: 1024px) {
+  .services-list {
+    margin-top: 3.5rem;
+  }
+  .services-group + .services-group {
+    margin-top: 2.75rem;
+  }
+}
+/* As wide as the picture and set to the right, so the lines under it start under its left edge (they take no part in its width). */
 .services-frame-pin {
   position: sticky;
   top: 15svh;
@@ -2296,10 +2349,25 @@ body:has(.not-found__map) .site-footer__place {
   overflow: hidden;
   background: var(--color-charcoal-800);
 }
-/* The caption carries both notes and shows the one for the kind of picture in the frame (data-kind, set with the picture). */
-.services-caption[data-kind="study"] [data-note="project"],
-.services-caption[data-kind="project"] [data-note="study"] {
-  display: none;
+/* Under the frame, for the service shown, what it covers and what its picture is: a block for each service, all in one cell, so the caption keeps the height of the tallest, and the blocks cross-fade (data-on, set with the picture). */
+.services-caption {
+  display: grid;
+  contain: inline-size;
+}
+.services-caption > * {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s var(--e-ui),
+    visibility 0s linear 0.4s;
+}
+.services-caption > [data-on] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.4s var(--e-ui),
+    visibility 0s;
 }
 /* Each row's rule is an element of its own, so drawing it across (HomeMotion) touches nothing else. */
 .services-item {
@@ -2318,40 +2386,122 @@ body:has(.not-found__map) .site-footer__place {
   top: 0;
   bottom: auto;
 }
-/* The number column holds the active row's dot: the section's one red. */
-.services-item__num {
+/* A row: the name over its scope, the arrow beside both. */
+.services-item__link {
   position: relative;
+  display: grid;
+  min-height: 2.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 1rem;
+  padding-block: 1.125rem;
 }
-.services-item__num::before {
-  content: "";
-  position: absolute;
-  right: calc(100% + 0.5rem);
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
-  border-radius: 9999px;
-  background: var(--color-brand-400);
-  transform: scale(0);
-  transition: transform 0.3s var(--e-ui);
+.services-item__label,
+.services-item__scope {
+  grid-column: 1;
 }
-.services-item[data-active] .services-item__num::before {
-  transform: scale(1);
+.services-item__scope {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-charcoal-300);
 }
-/*
- * Every label at full strength at rest. Others dim only when one row is
- * singled out: hovered or focused, or, on the pinned track, the row the
- * picture shows (data-active, which there also follows the pointer and
- * focus, and is the only rule, so a resting pointer never dims the row
- * scrolled to).
- */
+.services-item__arrow {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: rgb(244 241 235 / 0.6);
+  transition: color 0.3s var(--e-ui);
+}
+.services-item__arrow svg {
+  transition:
+    opacity 0.3s var(--e-ui),
+    transform 0.3s var(--e-ui);
+}
+.services-item__link:is(:hover, :focus-visible) .services-item__arrow {
+  color: var(--color-ivory);
+}
+.services-item__link:is(:hover, :focus-visible) .services-item__arrow svg {
+  transform: translateX(0.25rem);
+}
+.services-item__dot {
+  display: none;
+}
 .services-item__label {
   opacity: 1;
   transition: opacity 0.3s var(--e-ui);
 }
-[data-services]:not([data-services-pinned]) .services-list:has(.services-item:is(:hover, :focus-within)) .services-item:not(:hover, :focus-within) .services-item__label,
-[data-services-pinned] .services-item:not([data-active]) .services-item__label {
-  opacity: 0.5;
+.services-all {
+  margin-top: 2.25rem;
+}
+@media (min-width: 768px) {
+  .services-item__link {
+    padding-block: 0.875rem;
+  }
+  /* Read out with the name; shown under the picture instead. */
+  .services-item__scope {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* The arrow is drawn in for the row the picture shows, and under the pointer or focus. */
+  .services-item__arrow svg {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  .services-item[data-active] .services-item__arrow svg {
+    opacity: 1;
+    transform: none;
+  }
+  .services-item__link:is(:hover, :focus-visible) .services-item__arrow svg {
+    opacity: 1;
+    transform: translateX(0.25rem);
+  }
+  /* The row the picture shows carries the section's one red, hung in the margin before its name. */
+  .services-item__dot {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 0.75rem);
+    display: block;
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 9999px;
+    background: var(--color-brand-400);
+    transform: scale(0);
+    transition: transform 0.3s var(--e-ui);
+  }
+  .services-item[data-active] .services-item__dot {
+    transform: scale(1);
+  }
+  /*
+   * Every label at full strength at rest. Others dim only when one row is
+   * singled out: hovered or focused, or, on the pinned track, the row the
+   * picture shows (data-active, which there also follows the pointer and
+   * focus, and is the only rule, so a resting pointer never dims the row
+   * scrolled to).
+   */
+  [data-services]:not([data-services-pinned]) .services-list:has(.services-item:is(:hover, :focus-within)) .services-item:not(:hover, :focus-within) .services-item__label,
+  [data-services-pinned] .services-item:not([data-active]) .services-item__label {
+    opacity: 0.5;
+  }
+  .services-all {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .services-item__link {
+    padding-block: 1.25rem;
+  }
+  .services-all {
+    margin-top: 2rem;
+  }
 }
 
 /* ---- Homepage: contact (Contact.tsx) ---- */
@@ -2511,20 +2661,20 @@ body:has(.not-found__map) .site-footer__place {
     transform: translateY(120%);
   }
 
-  /* Services: only the pictures exist (the empty frame is never seen filling in), and everything masked starts below its mask. */
-  :root[data-motion] .services-frame {
+  /* Services: only the pictures exist (the empty frames are never seen filling in), and everything masked starts below its mask. */
+  :root[data-motion] :is(.services-frame, .services-plate__frame) {
     background: transparent;
   }
-  :root[data-motion] :is([data-services-roll], .services-item__label .split-line__inner) {
+  :root[data-motion] :is([data-services-roll], [data-services-group-roll], .services-item__label .split-line__inner) {
     transform: translateY(120%);
   }
-  :root[data-motion] [data-services-reveal] {
+  :root[data-motion] :is([data-services-reveal], [data-services-plate-reveal]) {
     clip-path: inset(100% 0 0 0);
   }
-  :root[data-motion] :is([data-services-meta], [data-services-all], [data-services-caption]) {
+  :root[data-motion] :is([data-services-meta], [data-services-all], [data-services-caption], [data-services-plate-caption]) {
     opacity: 0;
   }
-  /* Each row's number and tag, and 'All services', fade in on their own once their row is most of the way up (data-services-in, HomeMotion): small labels, left to the compositor rather than written every frame. */
+  /* Each row's scope and arrow, and 'All services', fade in on their own once their row is most of the way up (data-services-in, HomeMotion): small labels, left to the compositor rather than written every frame. */
   :root[data-motion] :is([data-services-meta], [data-services-all]) {
     transition: opacity 0.3s var(--e-ui);
   }
@@ -2533,6 +2683,10 @@ body:has(.not-found__map) .site-footer__place {
   }
   :root[data-motion] .services-item__rule {
     transform: scaleX(0);
+  }
+  /* The active row's dot waits for its row too. */
+  :root[data-motion] .services-item:not([data-services-in]) .services-item__dot {
+    transform: scale(0);
   }
 
   /* Contact: the lines wait below their masks, the actions and the cells below their places, the picture's sheet and the title block undrawn. */
@@ -2557,7 +2711,8 @@ body:has(.not-found__map) .site-footer__place {
  * track with the whole composition pinned for two screens, the picture
  * beside the list, centred. The heading, the rows and the spacing are
  * capped by the screen's height (they bind below about 860px), so the
- * eyebrow to the 'All services' link fits in about 700px at 720.
+ * eyebrow to the 'All services' link fits in about 690px at 720. Phones
+ * never pin it: there the section flows, a column too long to hold.
  */
 @media screen and (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 720px) {
   :root[data-motion] .services-track {
@@ -2573,7 +2728,7 @@ body:has(.not-found__map) .site-footer__place {
   :root[data-motion] .services-grid {
     width: 100%;
     align-items: center;
-    padding-block: min(5.5rem, 11svh) min(2rem, 3svh);
+    padding-block: min(5.5rem, 10svh) min(2rem, 3svh);
   }
   :root[data-motion] .services-frame-col {
     container-type: inline-size;
@@ -2588,19 +2743,25 @@ body:has(.not-found__map) .site-footer__place {
   }
   :root[data-motion] .services-heading {
     max-width: 20ch;
-    font-size: min(var(--text-display-lg), 6.5svh);
+    font-size: min(var(--text-display-lg), 5.8svh);
   }
   :root[data-motion] .services-list {
-    margin-top: min(2rem, 3.5svh);
+    margin-top: min(2.75rem, 4.2svh);
   }
-  :root[data-motion] .services-item a {
-    padding-block: min(0.7rem, 1.4svh);
+  :root[data-motion] .services-group + .services-group {
+    margin-top: min(2.25rem, 2.8svh);
+  }
+  :root[data-motion] .services-rows {
+    margin-top: min(0.5rem, 0.8svh);
+  }
+  :root[data-motion] .services-item__link {
+    padding-block: min(0.7rem, 1.1svh);
   }
   :root[data-motion] .services-item__label {
-    font-size: min(clamp(1.35rem, 0.9rem + 1.1vw, 2.1rem), 3.6svh);
+    font-size: min(clamp(1.35rem, 0.9rem + 1.1vw, 2.1rem), 3.4svh);
   }
   :root[data-motion] .services-all {
-    margin-top: min(2rem, 2.5svh);
+    margin-top: min(2rem, 2.2svh);
   }
 }
 /*
@@ -2611,87 +2772,6 @@ body:has(.not-found__map) .site-footer__place {
 @media screen and (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 500px) and (max-height: 719.98px) {
   :root[data-motion] .services-grid {
     padding-top: 2.5rem;
-  }
-}
-/*
- * Phones from 620px tall: the same 300vh track, stacked. The picture takes
- * whatever height the heading and the list leave (at least 6.5rem, at most
- * a quarter of the screen), so the list is never cut off below or the
- * picture tucked under the header; the eyebrow goes (the heading names the
- * section) and the caption sits at the foot of the stage.
- */
-@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) {
-  :root[data-motion] .services-track {
-    height: 300vh;
-  }
-  :root[data-motion] .services-stage {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-  }
-  :root[data-motion] .services-grid {
-    display: flex;
-    height: 100%;
-    flex-direction: column;
-    gap: 1rem;
-    padding-block: 5.5rem 1rem;
-  }
-  :root[data-motion] :is(.services-frame-col, .services-frame-pin) {
-    display: contents;
-  }
-  :root[data-motion] .services-frame {
-    order: -1;
-    width: 100%;
-    flex: 1 1 0;
-    min-height: 6.5rem;
-    max-height: 26svh;
-    aspect-ratio: auto;
-  }
-  :root[data-motion] .services-caption {
-    order: 3;
-    margin-top: auto;
-  }
-  :root[data-motion] .services-eyebrow {
-    display: none;
-  }
-  :root[data-motion] .services-heading {
-    margin-top: 0;
-  }
-  :root[data-motion] .services-list {
-    margin-top: 1rem;
-  }
-  :root[data-motion] .services-item a {
-    padding-block: 0.4rem;
-  }
-  :root[data-motion] .services-item__label {
-    font-size: clamp(1.05rem, 0.9rem + 0.9vw, 1.25rem);
-  }
-  :root[data-motion] .services-all {
-    margin-top: 0.75rem;
-  }
-}
-/*
- * Short phones (620 to 720px tall): the stage needs about 700px as above,
- * so it tightens to fit: smaller gaps and heading, and a picture that may
- * shrink to 4rem. The picture still starts clear of the 80px header bar,
- * and the rows keep their 44px.
- */
-@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) and (max-height: 719.98px) {
-  :root[data-motion] .services-grid {
-    gap: 0.5rem;
-    padding-block: 5.5rem 0.5rem;
-  }
-  :root[data-motion] .services-frame {
-    min-height: 4rem;
-  }
-  :root[data-motion] .services-heading {
-    font-size: 1.5rem;
-  }
-  :root[data-motion] .services-list {
-    margin-top: 0.25rem;
-  }
-  :root[data-motion] .services-all {
-    margin-top: 0.5rem;
   }
 }
 

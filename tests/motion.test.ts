@@ -163,7 +163,7 @@ describe("motion vocabulary", () => {
     expect(servicesHeading(0, 0)).toBe(MASK);
     expect(servicesHeading(1, 1)).toBe(0);
     expect(servicesRow(0, 0).y).toBe(MASK);
-    expect(servicesRow(1.04, 6).y).toBe(0);
+    expect(servicesRow(1.04, 8).y).toBe(0);
     expect(contactLine(0, 0)).toBe(MASK);
     expect(contactLine(1, 6)).toBe(0);
     expect(valuesTitle(-1, 1, 4)).toBe(MASK);
@@ -805,17 +805,18 @@ describe("homepage choreography", () => {
     expect(servicesHeading(0.6, 1)).toBeGreaterThan(servicesHeading(0.6, 0));
   });
 
-  it("services rows: a quick cascade, all seven whole the moment the stage pins, and never faded", () => {
-    for (let i = 0; i < 7; i++) expect(servicesRow(0.98, i)).toEqual({ t: 1, y: 0, meta: true });
+  it("services list: a quick cascade, both group labels and all seven rows whole the moment the stage pins, and never faded", () => {
+    // Nine slots: each group's label, then its rows.
+    for (let k = 0; k < 9; k++) expect(servicesRow(0.98, k)).toEqual({ t: 1, y: 0, meta: true });
     expect(servicesRow(0.44, 0)).toEqual({ t: 0, y: MASK, meta: false });
     for (const s of range(0.4, 1.1, 0.01)) {
-      for (let i = 1; i < 7; i++) {
-        // Each row a step behind the one above it: 0.04 of a screen.
-        expect(servicesRow(s, i).y).toBeGreaterThanOrEqual(servicesRow(s, i - 1).y);
-        expect(servicesRow(s, i).t).toBeCloseTo(servicesRow(s - 0.04, i - 1).t, 9);
+      for (let k = 1; k < 9; k++) {
+        // Each slot a step behind the one above it: 0.03 of a screen.
+        expect(servicesRow(s, k).y).toBeGreaterThanOrEqual(servicesRow(s, k - 1).y);
+        expect(servicesRow(s, k).t).toBeCloseTo(servicesRow(s - 0.03, k - 1).t, 9);
       }
-      // The number and tag follow the label: they are switched on (and fade in on their own) once it is most of the way up, and off again below that on the way back.
-      for (let i = 0; i < 7; i++) expect(servicesRow(s, i).meta).toBe(servicesRow(s, i).t >= SERVICES_META_ON);
+      // A row's scope and arrow follow its name: they are switched on (and fade in on their own) once it is most of the way up, and off again below that on the way back.
+      for (let k = 0; k < 9; k++) expect(servicesRow(s, k).meta).toBe(servicesRow(s, k).t >= SERVICES_META_ON);
     }
   });
 

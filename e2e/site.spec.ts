@@ -365,16 +365,27 @@ test.describe("interactive pieces", () => {
     }
   });
 
-  test("the services caption follows the picture: a client rendering for custom homes, a study elsewhere", async ({ page }, info) => {
+  test("the services caption follows the picture: what the service covers, and a client rendering for custom homes, a study elsewhere", async ({ page }, info) => {
     test.skip(info.project.name !== "desktop", "The frame shows beside the list from md; one width is enough");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     const caption = page.locator("[data-services-caption]");
-    await expect(caption).toHaveText(/^rendered study for illustration, not a client project\.$/i, { useInnerText: true });
+    await expect(caption).toHaveText(/^rear, side and second-storey additions\s+rendered study for illustration, not a client project\.$/i, { useInnerText: true });
     await page.locator("#services").getByRole("link", { name: /custom home/i }).focus();
-    await expect(caption).toHaveText(/^rendering of a client project\.$/i, { useInnerText: true });
+    await expect(caption).toHaveText(/^new and replacement homes on existing lots\s+rendering of a client project\.$/i, { useInnerText: true });
     await page.locator("#services").getByRole("link", { name: /deck permit/i }).focus();
-    await expect(caption).toHaveText(/^rendered study for illustration, not a client project\.$/i, { useInnerText: true });
+    await expect(caption).toHaveText(/^new and replacement decks, raised or attached\s+rendered study for illustration, not a client project\.$/i, { useInnerText: true });
+  });
+
+  test("the services list is grouped for homes and for businesses, unnumbered, each service with a line on what it covers", async ({ page }) => {
+    await page.goto("/");
+    const section = page.locator("#services");
+    await expect(section.getByRole("heading", { level: 3 })).toHaveText(["For homes", "For businesses"]);
+    await expect(section.getByRole("list", { name: "For homes" }).getByRole("link")).toHaveCount(4);
+    await expect(section.getByRole("list", { name: "For businesses" }).getByRole("link")).toHaveCount(3);
+    // The name and what it covers make each link's name.
+    await expect(section.getByRole("link", { name: "Deck permits New and replacement decks, raised or attached" })).toHaveAttribute("href", "/services/deck-permits/");
+    await expect(section.locator("[data-services-body]")).not.toContainText(/\d/);
   });
 
   test("the story follows one house from idea to permit, and plays backwards on the way up", async ({ page }) => {

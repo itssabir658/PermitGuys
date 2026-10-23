@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLink } from "@/components/ui/ArrowLink";
 import { Container } from "@/components/ui/Container";
-import { PROJECT_NOTE, STUDY_NOTE, coverWidth, coverWidthByHeight, plateForService } from "@/content/imagery";
+import { ArrowRight } from "@/components/ui/Icons";
+import { coverWidth, coverWidthByHeight, plateForService, plateNote } from "@/content/imagery";
 import { otherWork } from "@/content/other-work";
 import { escapeHtml } from "@/lib/html";
 import { getServices } from "@/lib/content";
@@ -11,22 +12,30 @@ import { paths } from "@/lib/routes";
 const LEAD = "Design, engineering and permits for every kind of project.";
 
 /*
- * Services on the night ground: the list of services beside one framed
- * picture.
+ * Services on the night ground: the services in two groups, for homes and
+ * for businesses, each a name with a few words on what it covers.
  *
- * Tracks: the section is a 300vh track with the whole composition pinned
- * for two screens, on phones from 620px tall and on wider screens from
- * 720px. The stage rides a little ahead of its track as it comes up, so
- * the picture follows close under the last Values picture: through the
- * dusk the picture's sheet wipes up from the bottom and settles, then the
- * heading's lines and the rows rise out of their masks, each row's rule
- * drawing across, so the composition is whole as the stage pins. While it holds, scrolling walks the rows: the picture
- * follows the row reached, or the one hovered or focused, each new picture
- * wiping up over the last as it darkens (HomeMotion, services modules).
- * The pictures are stacked layers, so a swap never passes through the ones
- * in between. On wide screens too short to hold it, the section flows,
- * starting close under Values, and the picture follows the row crossing
- * the middle of the screen.
+ * Phones: the section flows. Each group opens on the picture of its first
+ * service, captioned, and its rows follow, every row a name, its scope and
+ * an arrow, a full-width link. On the tracks the heading's lines, the group
+ * labels and the rows rise out of their masks as they come up, each row's
+ * rule drawing across, and each picture's sheet wipes up as it enters.
+ *
+ * From 768px: the list beside one framed picture, which shows the service
+ * hovered, focused or reached, with its scope and the kind of picture under
+ * it. On screens tall enough to hold it (720px) the section is a 300vh
+ * track with the whole composition pinned for two screens. The stage rides
+ * a little ahead of its track as it comes up, so the picture follows close
+ * under the last Values picture: through the dusk the picture's sheet wipes
+ * up from the bottom and settles, then the heading's lines, the group labels
+ * and the rows rise out of their masks, each row's rule drawing across, so
+ * the composition is whole as the stage pins. While it holds, scrolling
+ * walks the rows: the picture follows the row reached, or the one hovered
+ * or focused, each new picture wiping up over the last as it darkens
+ * (HomeMotion, services modules). The pictures are stacked layers, so a swap
+ * never passes through the ones in between. Wide screens too short to hold
+ * it flow, starting close under Values, and the picture follows the row
+ * crossing the middle of the screen.
  *
  * Contact then rises over the section as an ivory sheet while it sinks and
  * dims (data-services-inner, the handover module).
@@ -36,16 +45,21 @@ const LEAD = "Design, engineering and permits for every kind of project.";
  *
  * Custom homes show a client rendering, the other services rendered studies
  * (no client rendering shows those kinds of project), so the caption under
- * the frame names the kind of the picture shown (data-kind, set with the
- * picture).
+ * each picture names its kind (under the frame, with what the service
+ * covers, the block for the picture shown: data-on, set with the picture).
  *
  * The frame is portrait beside the list (at most 70% of the screen's height
- * and 44rem) and a wide band on phones, so each picture is fetched as wide
- * as it is drawn at that height, or across the phone.
+ * and 44rem), so each picture is fetched as wide as it is drawn at that
+ * height; the frame's pictures and the groups' pictures load only where
+ * they show.
  */
 export function Services() {
   // Homes first, then businesses and landlords.
   const services = [...getServices()].sort((a, b) => (a.category === b.category ? 0 : a.category === "residential" ? -1 : 1));
+  const groups = [
+    { key: "homes", label: "For homes", items: services.filter((s) => s.category === "residential") },
+    { key: "businesses", label: "For businesses", items: services.filter((s) => s.category !== "residential") },
+  ].filter((g) => g.items.length);
   return (
     <section id="services" data-services="" data-tone="dark" aria-labelledby="services-heading" className="relative bg-charcoal-900 text-ivory">
       <div data-services-inner="">
@@ -64,28 +78,65 @@ export function Services() {
                   className="services-heading mt-5 max-w-[17ch] font-display text-display-lg font-light"
                   dangerouslySetInnerHTML={{ __html: escapeHtml(LEAD) }}
                 />
-                <ol data-services-body="" className="services-list mt-10 lg:mt-14">
-                  {services.map((s, i) => (
-                    <li key={s.slug} data-service-index={i} className="services-item">
-                      {/* The list's top rule, drawn with the first row. */}
-                      {i === 0 ? <span aria-hidden="true" data-services-rule="" className="services-item__rule services-item__rule--top" /> : null}
-                      <Link href={paths.service(s.slug)} className="group grid min-h-11 grid-cols-[2.25rem_1fr_auto] items-baseline gap-4 py-3.5 lg:py-5">
-                        <span data-services-meta="" className="services-item__num text-label text-charcoal-300 tabular-nums">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className="services-item__label split-line font-display text-[clamp(1.5rem,1.1rem+1.2vw,2.35rem)] leading-[1.1] font-light tracking-[-0.03em]">
-                          <span className="split-line__inner">{s.navLabel}</span>
-                        </span>
-                        <span data-services-meta="" className="text-label text-charcoal-300">
-                          {s.category === "residential" ? "Homes" : "Business"}
-                        </span>
-                      </Link>
-                      {/* The row's rule, drawn across as the row arrives. */}
-                      <span aria-hidden="true" data-services-rule="" className="services-item__rule" />
-                    </li>
-                  ))}
-                </ol>
-                <div data-services-all="" className="services-all mt-6 flex justify-end lg:mt-8">
+                <div data-services-body="" className="services-list">
+                  {groups.map((g) => {
+                    const plate = plateForService(g.items[0].slug);
+                    return (
+                      <div key={g.key} className="services-group">
+                        <h3 id={`services-${g.key}`} className="services-group__label split-line text-label text-charcoal-300">
+                          <span data-services-group-roll="" className="block">
+                            {g.label}
+                          </span>
+                        </h3>
+                        {/* Phones: the group opens on its first service's picture. */}
+                        <figure data-services-plate="" className="services-plate">
+                          <div className="services-plate__frame notch-clip">
+                            <div data-services-plate-reveal="" className="absolute inset-0 overflow-hidden">
+                              <div data-services-plate-zoom="" className="absolute inset-0">
+                                <Image
+                                  src={plate.src}
+                                  alt={plate.alt}
+                                  fill
+                                  sizes={coverWidth(plate, 1.5, "100vw")}
+                                  quality={75}
+                                  loading="lazy"
+                                  className="object-cover"
+                                  style={{ objectPosition: plate.focus }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <figcaption data-services-plate-caption="" className="mt-3 text-label text-charcoal-300">
+                            {plateNote(plate)}
+                          </figcaption>
+                        </figure>
+                        <ul aria-labelledby={`services-${g.key}`} className="services-rows">
+                          {g.items.map((s, j) => (
+                            <li key={s.slug} data-service-index={services.indexOf(s)} className="services-item">
+                              {/* The group's top rule, drawn with its first row. */}
+                              {j === 0 ? <span aria-hidden="true" data-services-rule="" className="services-item__rule services-item__rule--top" /> : null}
+                              <Link href={paths.service(s.slug)} className="services-item__link group">
+                                <span aria-hidden="true" className="services-item__dot" />
+                                <span className="services-item__label split-line font-display text-[clamp(1.5rem,1.1rem+1.2vw,2.35rem)] leading-[1.1] font-light tracking-[-0.03em]">
+                                  <span className="split-line__inner">{s.navLabel}</span>
+                                </span>{" "}
+                                <span data-services-meta="" className="services-item__scope">
+                                  {s.scope}
+                                </span>
+                                <span aria-hidden="true" data-services-meta="" className="services-item__arrow">
+                                  <ArrowRight className="size-[1.125rem]" />
+                                </span>
+                              </Link>
+                              {/* The row's rule, drawn across as the row arrives. */}
+                              <span aria-hidden="true" data-services-rule="" className="services-item__rule" />
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div data-services-all="" className="services-all">
                   <ArrowLink href={paths.services} onDark>
                     All services
                   </ArrowLink>
@@ -100,14 +151,14 @@ export function Services() {
                         {services.map((s, i) => {
                           const plate = plateForService(s.slug);
                           return (
-                            <div key={s.slug} data-services-pic={i} data-kind={plate.kind} className="absolute inset-0" style={i ? { visibility: "hidden" } : undefined}>
+                            <div key={s.slug} data-services-pic={i} className="absolute inset-0" style={i ? { visibility: "hidden" } : undefined}>
                               <Image
                                 src={plate.src}
                                 alt=""
                                 fill
-                                sizes={`(max-width: 767px) ${coverWidth(plate, 1.6, "100vw")}, (min-height: 1006px) ${coverWidthByHeight(plate, "44rem")}, ${coverWidthByHeight(plate, "70vh")}`}
+                                sizes={`(min-height: 1006px) ${coverWidthByHeight(plate, "44rem")}, ${coverWidthByHeight(plate, "70vh")}`}
                                 quality={75}
-                                loading={i ? "eager" : undefined}
+                                loading="lazy"
                                 fetchPriority={i ? "low" : undefined}
                                 className="object-cover"
                                 style={{ objectPosition: plate.focus }}
@@ -118,10 +169,17 @@ export function Services() {
                       </div>
                     </div>
                   </div>
-                  <p data-services-caption="" data-kind={plateForService(services[0].slug).kind} className="services-caption mt-4 text-label text-charcoal-300">
-                    <span data-note="study">{STUDY_NOTE}</span>
-                    <span data-note="project">{PROJECT_NOTE}</span>
-                  </p>
+                  {/* For the service shown, what it covers and what its picture is: one block for each, all in one cell, so the caption keeps the height of the tallest. */}
+                  <div data-services-caption="" className="services-caption mt-4">
+                    {services.map((s, i) => (
+                      <p key={s.slug} data-caption={i} data-on={i ? undefined : ""}>
+                        <span className="block text-[0.9375rem] leading-snug text-ivory/80">{s.scope}</span>
+                        <span data-note="" className="mt-2 block text-label text-charcoal-300">
+                          {plateNote(plateForService(s.slug))}
+                        </span>
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
             </Container>

@@ -70,6 +70,8 @@ export interface Service {
   name: string;
   /** Short label for navigation and cards. */
   navLabel: string;
+  /** A few words on what the service covers, under its name in the homepage list (no full stop). */
+  scope: string;
   category: ServiceCategory;
   /** Primary services get prominence on the homepage and in navigation. */
   featured: boolean;
