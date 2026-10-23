@@ -530,6 +530,10 @@
 :root[data-motion]:not([data-preloaded]) .preloader {
   display: grid;
 }
+/* The page is live from the moment the exit starts: a mask does not stop hit testing, so the opening screen lets clicks through. */
+:root[data-loaded] .preloader {
+  pointer-events: none;
+}
 .preloader__inner,
 .screen-veil__mark {
   display: grid;
@@ -575,7 +579,9 @@
 }
 .preloader .ontario__pulse {
   display: inline;
-  animation: dot-pulse 0.9s var(--e-out) 1s both;
+  /* Unseen until it rings (not filled backwards), and gone after. */
+  opacity: 0;
+  animation: dot-pulse 0.9s var(--e-out) 1s forwards;
 }
 .preloader__label {
   animation: fade-in 0.6s var(--e-out) 0.3s both;
@@ -808,6 +814,10 @@
 .site-nav:is([data-tone="dark"], [data-open]) .site-nav__menu-btn {
   background: var(--color-ivory);
   color: var(--color-ink);
+}
+/* The slot clips the button's step in and out, and would clip a ring drawn outside it: the focus ring sits inside the square. */
+.site-nav__menu-btn:focus-visible {
+  outline-offset: -4px;
 }
 /* Wide screens at the top of the page: the button waits below its slot, out of sight. */
 @media (min-width: 768px) {

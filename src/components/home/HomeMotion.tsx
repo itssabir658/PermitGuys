@@ -6,6 +6,7 @@ import {
   contactReveal,
   headerGround,
   heroState,
+  introCopy,
   introLine,
   introPhases,
   introProgress,
@@ -151,6 +152,7 @@ function hero(): MotionModule | null {
 function intro(): MotionModule | null {
   const section = one("[data-intro]");
   if (!section) return null;
+  const stage = one("[data-intro-stage]", section);
   const items = all("[data-orbit-slot]", section).map((el) => ({ el, slot: Number(el.dataset.orbitSlot), img: one("[data-orbit-img]", el) }));
   const copies = all("[data-intro-copy]", section);
   const caption = one("[data-intro-caption]", section);
@@ -167,9 +169,9 @@ function intro(): MotionModule | null {
         copies.forEach(unsplit);
         lines = copies.map(() => []);
       }
-      // The ring and the image sizes follow the screen; rebuilt only here, so a resize re-spaces the ring. Portrait screens keep the studies clear of the taller paragraph.
-      const clear = copies.reduce((m, c) => Math.max(m, c.offsetHeight / 2), 0);
-      path = orbitPath(f.vw, f.vh, clear);
+      // The ring and the image sizes follow the stage (100svh, so a phone's toolbar does not push the ring under the header or the caption); rebuilt only here, so a resize re-spaces the ring. Portrait screens keep the studies clear of the taller paragraph.
+      const copyHalf = copies.reduce((m, c) => Math.max(m, c.offsetHeight / 2), 0);
+      path = orbitPath(f.vw, (f.tracks && stage?.offsetHeight) || f.vh, copyHalf, f.vh);
       for (const it of items) setStyle(it.el, "--size", f.tracks ? px(path.sizes[it.slot] ?? 0) : "");
     },
     update(f) {
@@ -183,10 +185,11 @@ function intro(): MotionModule | null {
         if (caption) clear(caption, "opacity");
         return;
       }
-      const { e, exit } = introProgress(sso(r, f), sectionVh / 100, exitStart);
+      const { e, exit, raw } = introProgress(sso(r, f), sectionVh / 100, exitStart);
+      const copy = introCopy(raw, copyIn);
       let ring = 0;
       for (const it of items) {
-        const o = orbitItem(path, it.slot, e, exit);
+        const o = orbitItem(path, it.slot, e, exit, copy);
         setStyle(it.el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0)`);
         setStyle(it.el, "opacity", num(o.opacity));
         if (it.img) setStyle(it.img, "transform", `scale(${num(o.imgScale)})`);

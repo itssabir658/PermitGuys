@@ -41,7 +41,7 @@ export function Intro() {
       <h2 id="intro-heading" className="sr-only">
         About PermitGuys
       </h2>
-      <div className="relative isolate flex flex-col overflow-hidden tracks:sticky tracks:top-0 tracks:h-svh tracks:bg-ivory tracks:shadow-[0_-2rem_3rem_-1.5rem_rgb(0_0_0/0.4)]">
+      <div data-intro-stage="" className="relative isolate flex flex-col overflow-hidden tracks:sticky tracks:top-0 tracks:h-svh tracks:bg-ivory tracks:shadow-[0_-2rem_3rem_-1.5rem_rgb(0_0_0/0.4)]">
         <ul aria-hidden="true" className="intro-orbit order-2">
           {studies.map((plate, i) => (
             <li key={plate.src} data-orbit-slot={i} className="intro-orbit__item">

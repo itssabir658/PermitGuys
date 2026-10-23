@@ -11,8 +11,9 @@ import { OntarioOutline } from "./OntarioOutline";
  * A graphite screen is in place before first paint and the outline of
  * Ontario draws itself (CSS, so it starts before any script runs): the
  * mainland over 0.9s, the islands overlapping its end; the GTA dot pops at
- * 0.95s and rings out once. The screen waits for the drawing, the fonts and
- * the opening picture, and for at least 1.25s from navigation.
+ * 0.95s and rings out once. The screen waits for the strokes (about 1.35s;
+ * the dot finishes popping as the exit sets off), the fonts and the opening
+ * picture, and for at least 1.25s from navigation.
  *
  * Then, T₀: the page is put back at the top and the document gets
  * data-loaded and data-revealed, so the page's own entrance (the hero, the
@@ -25,7 +26,9 @@ import { OntarioOutline } from "./OntarioOutline";
  *
  * The page is held still while the screen is up (an impatient wheel would
  * otherwise scroll the hero away before its entrance) and released at 70%
- * of the iris, when it no longer looks held, or after 8s whatever happens.
+ * of the iris, when it no longer looks held, or 8s after navigation
+ * whatever happens. From data-loaded on, the screen lets the pointer through
+ * to the page (globals.css).
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on only for visitors who allow motion and have JavaScript, and
@@ -33,8 +36,10 @@ import { OntarioOutline } from "./OntarioOutline";
  */
 export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else d.dataset.motion="";setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
 
-/** From navigation start: the drawing and the dot's pop are done by then. */
+/** From navigation start, the shortest the drawing is shown (it finishes at about 1.35s; the dot's pop ends during the exit's slow start). */
 const MIN_MS = 1250;
+/** From navigation start, as the head script: the page is released by then whatever happens. */
+const SAFETY_MS = 8000;
 /** Never hold the page for slow assets longer than this. */
 const ASSET_CAP_MS = 3500;
 const SHRINK_MS = 700;
@@ -50,18 +55,24 @@ export function Preloader() {
     if (!el || "loaded" in html.dataset) return;
     engine.boot();
     engine.lock("preloader");
-    const safety = window.setTimeout(() => engine.unlock("preloader"), 8000);
+    // Timed from navigation, not from hydration, so a slow script cannot hold the page past the head script's 8s.
+    const safety = window.setTimeout(() => engine.unlock("preloader"), Math.max(0, SAFETY_MS - performance.now()));
     let release = 0;
     let cancelled = false;
     const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
-    // The ring around the dot rings out through the exit; only the drawing is waited for.
-    const drawing = el.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation && a.animationName === "dot-pulse"));
+    // Only the strokes are waited for: the dot pops as the mainland closes and finishes during the exit's slow start, and its ring rings out through the exit.
+    const drawing = el.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation && (a.animationName === "dot-in" || a.animationName === "dot-pulse")));
     const drawn = Promise.all(drawing.map((a) => a.finished.catch(() => undefined)));
     const picture = document.querySelector<HTMLImageElement>("[data-hero-image] img");
     const assets = Promise.all([document.fonts?.ready, picture && !picture.complete ? picture.decode().catch(() => undefined) : undefined]);
 
     Promise.all([drawn, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
       if (cancelled) return;
+      // Too late: the head script has already revealed the page (8s), so leave the page where the visitor has it.
+      if ("preloaded" in html.dataset) {
+        engine.unlock("preloader");
+        return;
+      }
       // The iris and the hero's settle open from the dot, wherever the drawing put it.
       const dot = el.querySelector(".ontario__dot")?.getBoundingClientRect();
       const x = dot ? dot.left + dot.width / 2 : window.innerWidth / 2;

@@ -106,11 +106,30 @@ export function introPhases(blocks: number) {
  */
 export function introProgress(sso: number, heightVh: number, exitStart: number) {
   const raw = sso - 1;
-  return { e: clamp(raw, -1, heightVh - 1), exit: smoothstep(raw, exitStart, exitStart + ORBIT.exitVh) };
+  return { e: clamp(raw, -1, heightVh - 1), exit: smoothstep(raw, exitStart, exitStart + ORBIT.exitVh), raw };
+}
+
+/**
+ * How much copy is at the centre, 0–1, from the unclamped progress (introProgress
+ * raw), so it can finish after the stage releases. It leads the text in and
+ * follows it out, so a study is never seen fading behind a readable line:
+ * whole just as the first paragraph's first line starts to show (the lines
+ * rise from copyIn − 0.65), and down only once the last one's lines have
+ * all but left (they leave from + 0.85, the seventh more than half gone by
+ * + 1.2). A paragraph is on screen for 1.9 screens and the next starts 1.75
+ * after it (copyStepVh), so the handover never leaves the centre bare in
+ * between.
+ */
+export function introCopy(raw: number, copyIn: number[]) {
+  const first = copyIn[0] ?? ORBIT.firstCopy;
+  const last = copyIn[copyIn.length - 1] ?? first;
+  return tween(raw, first - 0.9, 0.3) * (1 - tween(raw, last + 1.2, 0.3));
 }
 
 export interface OrbitPath {
   portrait: boolean;
+  /** The stage's height (100svh, so it holds still as a phone's toolbar comes and goes) and the screen's (100lvh, the timeline's unit), in px. */
+  h: number;
   vh: number;
   /** Each slot's size in px. */
   sizes: number[];
@@ -129,23 +148,24 @@ const PATH_SAMPLES = 512;
 const sgnSqrt = (v: number) => Math.sign(v) * Math.sqrt(Math.abs(v));
 
 /**
- * The ring for one screen: a squircle inside the safe box (clear of the
+ * The ring for one stage: a squircle inside the safe box (clear of the
  * header on portrait screens, of the caption below), inset by half the
- * largest image, so every image stays whole on screen. Sampled once per
- * measure, so the images can be spaced along it by arc length: evenly
- * spaced angles crowd the squircle's flat sides. `clear` is half the height
- * of the copy block, for the portrait fade.
+ * largest image, so every image stays whole on the stage. `h` is the
+ * stage's height and `vh` the screen's (they differ while a phone shows its
+ * toolbar). Sampled once per measure, so the images can be spaced along it
+ * by arc length: evenly spaced angles crowd the squircle's flat sides.
+ * `clear` is half the height of the copy block, for the portrait fade.
  */
-export function orbitPath(vw: number, vh: number, clear = 0): OrbitPath {
-  const portrait = vw < 0.8 * vh;
-  const sizes = ORBIT_SLOTS.map((s) => (portrait ? s.p * Math.min(vw, 0.5 * vh) : s.d * vh));
+export function orbitPath(vw: number, h: number, clear = 0, vh = h): OrbitPath {
+  const portrait = vw < 0.8 * h;
+  const sizes = ORBIT_SLOTS.map((s) => (portrait ? s.p * Math.min(vw, 0.5 * h) : s.d * h));
   const big = Math.max(...sizes);
   const padX = portrait ? 12 : Math.max(32, 0.04 * vw);
   const padTop = portrait ? 96 : 40;
   // Above the caption, with room for the 3% breathing (it sets on two lines on phones).
   const padBot = portrait ? 88 : 72;
   const rx = vw / 2 - big / 2 - padX;
-  const ry = (vh - padTop - padBot) / 2 - big / 2;
+  const ry = (h - padTop - padBot) / 2 - big / 2;
   const cy = (padTop - padBot) / 2;
   const xs = new Float64Array(PATH_SAMPLES + 1);
   const ys = new Float64Array(PATH_SAMPLES + 1);
@@ -156,7 +176,7 @@ export function orbitPath(vw: number, vh: number, clear = 0): OrbitPath {
     ys[i] = cy + ry * sgnSqrt(Math.sin(a));
     if (i) cum[i] = cum[i - 1] + Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]);
   }
-  return { portrait, vh, sizes, clear, cy, ry, xs, ys, cum };
+  return { portrait, h, vh, sizes, clear, cy, ry, xs, ys, cum };
 }
 
 /** The point at `u` of the way along the path (any number; it wraps), in px from the stage's centre. */
@@ -174,27 +194,45 @@ export function pathAt(path: OrbitPath, u: number): [number, number] {
   return [mix(xs[lo], xs[hi], t), mix(ys[lo], ys[hi], t)];
 }
 
+/** A study flung down dissolves over this many px (widening with the fling) before its lower edge would meet the stage's; at rest the ring's lowest study keeps 57px or more above that edge, up to 2560×1440. */
+export const ORBIT_EDGE_FADE = 44;
+
 /**
  * Where one study sits: travelling along the path at one speed for all, so
  * neighbours never close up. It glides in from 1.8× the ring as the sheet
  * rises (e −1 to 0), starting just before its own part of the sheet comes
  * up over the bottom edge, so the top of the ring arrives first and the
  * sheet is never blank. It breathes 3%, and is flung out to exitRadius ×
- * the ring at the end. On portrait screens the copy fills the width, so a
- * study fades in only once it is clear of the copy, above or below it: a
- * ring tilting behind the text.
+ * the ring at the end.
+ *
+ * On portrait screens the copy fills the width, so while there is copy at
+ * the centre (`copy`, introCopy) a study shows only once clear of it, above
+ * or below: a ring tilting behind the text. With no copy, all of it shows.
+ *
+ * The stage clips at its bottom edge, and once it releases that edge is a
+ * line across the middle of the screen with ivory on both sides; the fling
+ * carries the lower studies down onto it. They dissolve before they reach
+ * it, so none is ever cut by an edge nobody can see. At rest the ring keeps
+ * clear of that band, so this changes nothing until the fling.
  */
-export function orbitItem(path: OrbitPath, slot: number, e: number, exit: number) {
+export function orbitItem(path: OrbitPath, slot: number, e: number, exit: number, copy = 1) {
   const [x0, y0] = pathAt(path, ORBIT_SLOTS[slot].u + e * ORBIT.turnsPerScreen);
-  const enter = 0.5 + y0 / path.vh - 1.25;
+  const size = path.sizes[slot];
+  // The stage's top edge is −e screens down the screen while the sheet rises, so this place comes into view at e = (h/2 + y0)/vh − 1.
+  const enter = (path.h / 2 + y0) / path.vh - 1.25;
   const arrive = ease.power3Out(clamp((e - enter) / 1.1));
   const breathe = 1 + 0.03 * Math.sin(e * 1.7 + slot * 1.3);
   const k = mix(1.8, 1, arrive) * breathe * (1 + (ORBIT.exitRadius - 1) * ease.power2In(exit));
   const x = x0 * k;
   const y = path.cy + (y0 - path.cy) * k;
   let side = 1;
-  if (path.portrait) side = path.clear > 0 ? smoothstep(Math.abs(y) - path.sizes[slot] / 2 - path.clear, 4, 52) : smoothstep(Math.abs(y0 - path.cy) / path.ry, 0.45, 0.65);
-  return { x, y, opacity: arrive * side, imgScale: mix(1.18, 1, arrive), arrive };
+  if (path.portrait) {
+    const clearOfCopy = path.clear > 0 ? smoothstep(Math.abs(y) - size / 2 - path.clear, 4, 52) : smoothstep(Math.abs(y0 - path.cy) / path.ry, 0.45, 0.65);
+    side = 1 - clamp(copy) * (1 - clearOfCopy);
+  }
+  // The band widens with the fling, so a study dissolves over about a quarter of a screen rather than in one notch.
+  const edge = 1 - smoothstep(y + size / 2, path.h / 2 - ORBIT_EDGE_FADE * (1 + 3 * exit), path.h / 2);
+  return { x, y, opacity: arrive * side * edge, imgScale: mix(1.18, 1, arrive), arrive };
 }
 
 /**

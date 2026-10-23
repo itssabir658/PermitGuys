@@ -4,11 +4,13 @@ import {
   MASK,
   NIGHT,
   ORBIT,
+  ORBIT_EDGE_FADE,
   ORBIT_SLOTS,
   STONE,
   contactReveal,
   headerGround,
   heroState,
+  introCopy,
   introLine,
   introPhases,
   introProgress,
@@ -344,6 +346,138 @@ describe("homepage choreography", () => {
     // Wide screens never fade them, whatever the copy.
     const wide = orbitPath(VW, VH, 200);
     for (let slot = 0; slot < 6; slot++) expect(orbitItem(wide, slot, 2, 0).opacity).toBeCloseTo(1);
+  });
+
+  it("intro copy is at the centre exactly while its lines are: none before the first rises, none after the last leaves, no dip at the handover", () => {
+    const { copyIn } = introPhases(2);
+    expect(introCopy(-1, copyIn)).toBe(0);
+    expect(introCopy(copyIn[0] - 0.9, copyIn)).toBe(0);
+    expect(introCopy(copyIn[0] - 0.6, copyIn)).toBe(1);
+    expect(introCopy(copyIn[1] + 1.2, copyIn)).toBe(1);
+    // It reads the unclamped progress, so it finishes after the stage releases (e stops at 4.1) instead of holding half way.
+    const { sectionVh, exitStart } = introPhases(2);
+    expect(introProgress(1 + copyIn[1] + 1.5, sectionVh / 100, exitStart).e).toBeCloseTo(4.1);
+    expect(introCopy(introProgress(1 + copyIn[1] + 1.5, sectionVh / 100, exitStart).raw, copyIn)).toBeCloseTo(0, 9);
+    for (let e = -1; e <= 4.1; e += 0.01) {
+      const c = introCopy(e, copyIn);
+      // Seven lines a paragraph, the most a phone sets.
+      const ys = copyIn.flatMap((n) => Array.from({ length: 7 }, (_, j) => introLine(e, n, j)));
+      // Any line showing at all, and there is copy; every line of a paragraph at rest, and it is all there.
+      if (ys.some((y) => Math.abs(y) < MASK)) expect(c).toBeGreaterThan(0);
+      if (copyIn.some((n) => Array.from({ length: 7 }, (_, j) => introLine(e, n, j)).every((y) => y === 0))) expect(c).toBe(1);
+      // Through the handover the centre is never bare.
+      if (e > copyIn[0] && e < copyIn[1]) expect(c).toBe(1);
+      // Whole before the first line is a third out of its mask, so the studies have gone before any text can be read.
+      if (e < copyIn[0] && introLine(e, copyIn[0], 0) < MASK * (2 / 3)) expect(c).toBe(1);
+      // And it holds until the last paragraph's lines are at least half way out of their masks.
+      if (e > copyIn[1] && ys.some((y) => y > -MASK / 2 && y <= 0)) expect(c).toBe(1);
+    }
+  });
+
+  it("orbit on portrait screens: with no copy at the centre the whole ring shows, and it gives way only while copy is there", () => {
+    const { copyIn } = introPhases(2);
+    for (const [vw, vh] of [
+      [390, 844],
+      [360, 740],
+      [820, 1180],
+    ] as const) {
+      const p = orbitPath(vw, vh, 104);
+      // Landing on the bare sheet, before the first line rises: all six, nothing held back.
+      expect(introCopy(0.08, copyIn)).toBe(0);
+      for (let slot = 0; slot < 6; slot++) {
+        const o = orbitItem(p, slot, 0.08, 0, introCopy(0.08, copyIn));
+        expect(o.opacity).toBe(o.arrive);
+        expect(o.opacity).toBeGreaterThan(0.8);
+      }
+      for (let e = -1; e <= 4.1; e += 0.02) {
+        const copy = introCopy(e, copyIn);
+        for (let slot = 0; slot < 6; slot++) {
+          const o = orbitItem(p, slot, e, 0, copy);
+          // Over the copy's band a study shows only as much as the copy has gone.
+          if (Math.abs(o.y) - p.sizes[slot] / 2 < p.clear + 4) expect(o.opacity).toBeLessThanOrEqual(o.arrive * (1 - copy) + 1e-9);
+        }
+      }
+    }
+  });
+
+  it("orbit at rest keeps clear of the stage's bottom edge at every size, so the edge fade changes nothing until the fling", () => {
+    for (const [vw, vh] of [
+      [1440, 900],
+      [1280, 720],
+      [1024, 768],
+      [2560, 1440],
+      [820, 1180],
+      [390, 844],
+      [360, 740],
+    ] as const) {
+      const p = orbitPath(vw, vh, 104);
+      for (let e = 0.5; e <= 4.1; e += 0.02) {
+        for (let slot = 0; slot < 6; slot++) {
+          const o = orbitItem(p, slot, e, 0, 0);
+          expect(o.y + p.sizes[slot] / 2).toBeLessThan(vh / 2 - ORBIT_EDGE_FADE);
+          expect(o.opacity).toBe(o.arrive);
+          expect(o.opacity).toBeGreaterThan(0.99);
+        }
+      }
+    }
+  });
+
+  it("orbit fling: a study is gone before it reaches the stage's bottom edge, which crosses mid-screen once the stage releases", () => {
+    const { sectionVh, exitStart } = introPhases(2);
+    for (const [vw, vh] of [
+      [1440, 900],
+      [1280, 720],
+      [820, 1180],
+      [390, 844],
+      [360, 740],
+    ] as const) {
+      const p = orbitPath(vw, vh, 104);
+      let faded = 0;
+      for (let raw = exitStart; raw <= exitStart + ORBIT.exitVh + 0.3; raw += 0.01) {
+        const { e, exit } = introProgress(raw + 1, sectionVh / 100, exitStart);
+        for (let slot = 0; slot < 6; slot++) {
+          const o = orbitItem(p, slot, e, exit, 0);
+          const bottom = o.y + p.sizes[slot] / 2;
+          // Never cut by the stage's clip: whatever still shows is wholly above it.
+          if (o.opacity > 0) expect(bottom).toBeLessThan(vh / 2);
+          if (bottom > vh / 2 - 10 && bottom < vh / 2) faded++;
+        }
+      }
+      // And it is the lower studies that meet it, at every size.
+      expect(faded).toBeGreaterThan(0);
+    }
+    // The upper studies are flung out whole: no edge fade on the top centre one.
+    const p = orbitPath(VW, VH);
+    expect(orbitItem(p, 0, 0, 0.6, 0).opacity).toBeCloseTo(1);
+  });
+
+  it("orbit on a phone with its toolbar showing: the ring fits the 100svh stage, and the sheet's timing stays in screens", () => {
+    // 100lvh 844, 100svh 744.
+    const stage = orbitPath(390, 744, 104, 844);
+    expect(stage.h).toBe(744);
+    expect(stage.vh).toBe(844);
+    expect(stage.ry).toBeLessThan(orbitPath(390, 844, 104).ry);
+    for (let e = 0.5; e <= 4.1; e += 0.02) {
+      for (let slot = 0; slot < 6; slot++) {
+        const o = orbitItem(stage, slot, e, 0, 0);
+        const half = stage.sizes[slot] / 2;
+        // Below the 80px header bar, above the two-line caption at the foot of the stage.
+        expect(o.y - half).toBeGreaterThan(-744 / 2 + 80);
+        expect(o.y + half).toBeLessThan(744 / 2 - 60);
+      }
+    }
+    // The sheet still rises a screen (lvh) at a time: a study wholly in the part it has uncovered is already more than half way in, and one still a third of a screen under it has not started.
+    for (let e = -1; e <= 0; e += 0.01) {
+      // The screen's bottom edge, in the stage's coordinates: the stage's top is −e screens down the screen.
+      const uncovered = (1 + e) * 844 - 744 / 2;
+      for (let slot = 0; slot < 6; slot++) {
+        const o = orbitItem(stage, slot, e, 0);
+        const half = stage.sizes[slot] / 2;
+        const [, y0] = pathAt(stage, ORBIT_SLOTS[slot].u + e * ORBIT.turnsPerScreen);
+        if (o.y + half < uncovered && o.y - half > -744 / 2) expect(o.arrive).toBeGreaterThan(0.5);
+        if (y0 - half > uncovered + 0.3 * 844) expect(o.arrive).toBe(0);
+      }
+    }
   });
 
   it("intro lines rise in, hold composed and leave upward, without fading", () => {
