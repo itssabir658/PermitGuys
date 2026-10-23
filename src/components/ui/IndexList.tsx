@@ -16,14 +16,14 @@ export function IndexList({ items, columns = ["No.", "Project", "What the page c
   const H = headingLevel;
   return (
     <div>
-      <div aria-hidden="true" className="hidden grid-cols-12 gap-6 border-b border-ink/30 pb-4 text-label text-ink-muted sm:grid">
+      <div aria-hidden="true" data-row="" className="hidden grid-cols-12 gap-6 border-b border-ink/30 pb-4 text-label text-ink-muted sm:grid">
         <span className="col-span-1">{columns[0]}</span>
         <span className="col-span-4">{columns[1]}</span>
         <span className="col-span-7">{columns[2]}</span>
       </div>
       <ol>
         {items.map((item, i) => (
-          <li key={item.href} className="border-b border-line">
+          <li key={item.href} className="row-rule">
             <Link href={item.href} className="group grid grid-cols-12 items-baseline gap-x-6 gap-y-2 py-8 lg:py-10">
               <span className="col-span-2 text-label tabular-nums text-ink-muted sm:col-span-1">{String(start + i).padStart(2, "0")}</span>
               <H className="col-span-10 font-display text-display-sm font-light text-ink transition-transform duration-700 ease-out-expo group-hover:translate-x-2 sm:col-span-4"><span className="link-draw">{item.title}</span></H>

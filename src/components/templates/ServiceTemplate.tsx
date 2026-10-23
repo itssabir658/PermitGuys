@@ -37,7 +37,20 @@ export function ServiceTemplate({ service }: { service: Service }) {
         ]}
         eyebrow={service.category === "residential" ? "Residential service" : "Commercial service"}
         title={service.name}
-        aside={<Plate plate={plateForService(service.slug)} reveal={false} priority fig="01" aspect="aspect-[4/5]" sizes="(min-width: 1024px) 33vw, 100vw" />}
+        aside={
+          <Plate
+            plate={plateForService(service.slug)}
+            reveal={false}
+            priority
+            fig="01"
+            drift="slow"
+            notch
+            stackCaption
+            aspect="aspect-[3/2] md:aspect-[16/10] lg:aspect-[4/5]"
+            frameClassName="motion-unveil"
+            sizes="(min-width: 1024px) 33vw, 100vw"
+          />
+        }
       >
         <DirectAnswer>{service.directAnswer}</DirectAnswer>
       </PageHeader>

@@ -31,7 +31,8 @@ export function Breadcrumbs({ items, onDark, page }: { items: Crumb[]; onDark?: 
             return (
               <li key={item.path} className="flex items-center gap-2">
                 {last ? (
-                  <span aria-current="page" className={onDark ? "text-ivory" : "text-ink"}>
+                  // A long title (a guide's question) is cut short here: the H1 below and the structured data carry it in full.
+                  <span aria-current="page" className={`max-w-[24ch] truncate sm:max-w-[40ch] ${onDark ? "text-ivory" : "text-ink"}`}>
                     {item.name}
                   </span>
                 ) : (

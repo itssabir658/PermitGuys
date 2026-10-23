@@ -7,6 +7,12 @@ import { Eyebrow } from "./Eyebrow";
 /**
  * Opening block for inner pages: breadcrumbs, a large editorial H1 and a
  * direct answer on the ivory ground, with an optional plate alongside.
+ *
+ * It enters once the preloader or the page transition lifts (globals.css,
+ * "Inner pages"): the breadcrumb fades in, the eyebrow and the title's
+ * lines rise out of their masks (InteractionEffects splits the title), the
+ * lead follows at 0.4s, an aside plate unveils upward and the closing rule
+ * draws across.
  */
 export function PageHeader({
   crumbs,
@@ -30,18 +36,26 @@ export function PageHeader({
 }) {
   return (
     <header className="bg-ivory text-ink">
-      <Container className="pt-28 pb-16 sm:pt-36 sm:pb-20 lg:pt-44 lg:pb-28">
-        <Breadcrumbs items={crumbs} page={{ name: title, type: pageType, extra: schemaExtra }} />
-        <div className={aside ? "mt-14 grid gap-14 lg:mt-24 lg:grid-cols-12 lg:items-end lg:gap-8" : "mt-14 lg:mt-24"}>
+      <Container className="pt-28 pb-10 sm:pt-32 sm:pb-12 lg:pt-36 lg:pb-14">
+        <div className="page-crumbs">
+          <Breadcrumbs items={crumbs} page={{ name: title, type: pageType, extra: schemaExtra }} />
+        </div>
+        <div className={aside ? "mt-10 grid gap-12 lg:mt-14 lg:grid-cols-12 lg:items-end lg:gap-8" : "mt-10 lg:mt-14"}>
           <div className={aside ? "lg:col-span-7" : "max-w-5xl"}>
-            {eyebrow ? <Eyebrow className="motion-rise">{eyebrow}</Eyebrow> : null}
-            <h1 className="motion-rise mt-8 font-display text-display-xl font-light text-balance">{title}</h1>
-            {lead ? <div className="motion-rise-delay mt-8 max-w-2xl text-lede text-pretty text-ink-muted">{lead}</div> : null}
-            {children ? <div className="motion-rise-delay mt-12 max-w-2xl">{children}</div> : null}
+            {eyebrow ? (
+              <div className="split-line">
+                <Eyebrow className="page-eyebrow">{eyebrow}</Eyebrow>
+              </div>
+            ) : null}
+            <h1 data-reveal-lines="entrance" className="page-title mt-8 font-display text-display-xl font-light text-balance">
+              {title}
+            </h1>
+            {lead ? <div className="motion-rise mt-8 max-w-2xl text-lede text-pretty text-ink-muted">{lead}</div> : null}
+            {children ? <div className={lead ? "motion-rise-delay mt-12 max-w-2xl" : "motion-rise mt-12 max-w-2xl"}>{children}</div> : null}
           </div>
           {aside ? <div className="lg:col-span-4 lg:col-start-9">{aside}</div> : null}
         </div>
-        <div aria-hidden="true" data-reveal="" data-reveal-type="rule" className="mt-16 h-px bg-line lg:mt-24" />
+        <div aria-hidden="true" className="page-rule mt-10 h-px bg-line lg:mt-14" />
       </Container>
     </header>
   );

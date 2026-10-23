@@ -28,7 +28,7 @@ export default function ProjectsPage() {
         title="Projects and case studies."
         lead="Real projects, described accurately and published with our clients' permission."
       />
-      <Section labelledBy="projects-list-heading">
+      <Section labelledBy="projects-list-heading" first>
         <h2 id="projects-list-heading" className="sr-only">
           Case studies
         </h2>
@@ -51,7 +51,7 @@ export default function ProjectsPage() {
               <p className="mt-5 text-lg leading-relaxed text-ink-muted">
                 We only publish projects with our clients&apos; permission. In the meantime, our services and permit guides explain how we approach each type of project.
               </p>
-              <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
+              <div data-row="" className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
                 <Link href={paths.services} className="border-b border-brand-500/60 pb-1 font-medium text-charcoal-900 hover:border-brand-600">
                   Explore services
                 </Link>

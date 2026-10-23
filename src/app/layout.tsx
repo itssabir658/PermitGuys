@@ -9,6 +9,7 @@ import { ScreenTransition } from "@/components/layout/ScreenTransition";
 import { SiteTelemetry } from "@/components/layout/SiteTelemetry";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
+import { NotchClipDefs } from "@/components/ui/NotchClip";
 import { site } from "@/content/site";
 import { organizationSchema, websiteSchema } from "@/lib/jsonld";
 import "./globals.css";
@@ -54,6 +55,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+        {/* The notched drawing-sheet outline for framed pictures on any page (.notch-clip). */}
+        <NotchClipDefs />
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <SiteTelemetry />
         <InteractionEffects />

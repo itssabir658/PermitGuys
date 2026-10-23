@@ -27,7 +27,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | --- | --- |
 | `Eyebrow` | Mono label with a section number and a short rule ("02 — Services"). Number homepage sections in order. |
 | `SectionHeading`, `Section` | Section heading and the band around it. Tones: `ivory`, `stone`, `dark`. |
-| `PageHeader` | Opening block of every inner page: breadcrumbs, a large light H1, an optional aside, a closing rule. |
+| `PageHeader` | Opening block of every inner page: breadcrumbs, a large light H1, an optional aside, a closing rule. Index pages follow it with a wide study band (`PlateBand`). |
 | `Plate` | Every image. Mask reveal, optional scroll drift, and a mono "Fig. NN" caption that always carries the study note (see `docs/IMAGES.md`). |
 | `ButtonLink` | Pill buttons with the arrow in a round cell. `primary` (ink), `light` (on photographs and dark grounds), `secondary`, `ghost-light`. `ArrowLink` for quieter links. One primary per block. |
 | `ServiceIndex` | Numbered service rows. On a fine pointer a preview image follows the cursor and the other rows dim. |
@@ -55,7 +55,7 @@ Process, service areas and guides live on their own pages; the footer carries th
 - **Preloader** (`Preloader.tsx`): on each full page load the outline of Ontario draws itself and the GTA is marked, then it fades away. The outline is from SVG Maps (CC BY 4.0, see `public/images/CREDITS.md`).
 - **Screen transition** (`ScreenTransition.tsx`): on every in-site link a graphite panel unfolds in 3D and scales up to cover the page while the Ontario outline draws on it; the next page loads underneath and the cover fades away.
 - **Header and menu** (`MainNav.tsx`): past 80px of scroll on wide screens the top row lifts away and a menu button takes its place; the menu opens out of that button. Links roll their letters on hover and focus.
-- **Other pages:** `data-reveal` elements below the fold rise or unveil as they enter (`InteractionEffects`), and `data-parallax` pictures drift with scroll (`MotionRoot`).
+- **Other pages:** once the preloader or transition clears, the page header enters in order (breadcrumbs, label, the H1 line by line from behind masks, lead, rule) and the first study unveils. Below it headings rise line by line and rows, hairlines and blocks follow one another in reading order as they enter (`InteractionEffects`); `data-parallax` pictures drift with scroll (`MotionRoot`).
 - With reduced motion everything above is off or reduced to a short crossfade, and the homepage shows still layouts with all content visible.
 
 ## Rules

@@ -54,12 +54,12 @@ export default async function ContactPage() {
         title="Tell us about your project."
         lead="Share a few details about what you are planning and where. We will review them and reply to explain how we can help with drawings and the permit process."
       />
-      <Container className="pb-24 sm:pb-32 lg:pb-40">
+      <Container className="pt-10 pb-24 sm:pb-32 lg:pt-14 lg:pb-40">
         <div className="grid gap-20 lg:grid-cols-12 lg:gap-8">
-          <div className="lg:col-span-7">
+          <div data-reveal="" className="lg:col-span-7">
             <InquiryForm directContact={directContact} />
           </div>
-          <div className="space-y-16 lg:col-span-4 lg:col-start-9">
+          <div data-reveal="" className="space-y-16 lg:col-span-4 lg:col-start-9">
             <aside className="border-t border-ink/25 pt-8" aria-labelledby="direct-heading">
               <h2 id="direct-heading" className="text-label text-ink-muted">
                 Contact directly

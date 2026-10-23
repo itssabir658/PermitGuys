@@ -2,6 +2,8 @@ import { ArticleLayout, ArticleSection, RuledList } from "@/components/ui/Articl
 import { CtaPanel } from "@/components/ui/CtaPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Placeholder } from "@/components/ui/Placeholder";
+import { PlateBand } from "@/components/ui/PlateBand";
+import { plates } from "@/content/imagery";
 import { site } from "@/content/site";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
@@ -30,6 +32,7 @@ export default function AboutPage() {
         title="Permit drawings, prepared with the review in mind."
         lead="PermitGuys is a building permit consulting and permit drawing service for homeowners and property owners in the Greater Toronto Area."
       />
+      <PlateBand plate={plates.detail} />
       <ArticleLayout toc={toc}>
         <ArticleSection id="what-we-do" title="What we do">
           <div className="prose-pg">
@@ -53,12 +56,12 @@ export default function AboutPage() {
         </ArticleSection>
         <ArticleSection id="team" title="Team and credentials">
           {site.credentials.length ? <RuledList items={site.credentials.map((c) => `${c}.`)} /> : null}
-          <Placeholder block>
+          <Placeholder block className="max-w-(--measure-article)">
             team members and their roles, the names behind the credentials above, professional memberships and insurance.
           </Placeholder>
         </ArticleSection>
         <ArticleSection id="story" title="Our story">
-          <Placeholder block>a short account of how and why PermitGuys started, written or approved by the business.</Placeholder>
+          <Placeholder block className="max-w-(--measure-article)">a short account of how and why PermitGuys started, written or approved by the business.</Placeholder>
         </ArticleSection>
       </ArticleLayout>
       <CtaPanel />

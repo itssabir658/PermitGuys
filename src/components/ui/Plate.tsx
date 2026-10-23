@@ -7,6 +7,13 @@ import { cn } from "./cn";
  * An image set as a plate: a fixed crop that unveils upwards as it scrolls
  * into view, with optional slow drift, and a mono caption in the manner of
  * a numbered figure. Captions always state that renders are studies.
+ *
+ * In the first screen, pass reveal={false} and frameClassName="motion-unveil"
+ * so the plate unveils with the page header instead (globals.css, "Inner
+ * pages"); its caption fades in once the picture is up. `notch` cuts the
+ * frame to the homepage's notched drawing sheet (NotchClipDefs, in the root
+ * layout); the notch sits on a wrapper because the unveil animates the
+ * frame's own clip-path.
  */
 export function Plate({
   plate,
@@ -22,6 +29,8 @@ export function Plate({
   onDark,
   delay,
   focus,
+  notch,
+  stackCaption,
 }: {
   plate: PlateData;
   /** Aspect ratio utility for the crop. */
@@ -41,30 +50,43 @@ export function Plate({
   delay?: number;
   /** Overrides the plate's own object-position. */
   focus?: string;
+  /** Frame the picture as a notched drawing sheet. */
+  notch?: boolean;
+  /** Set the caption's label and study note one above the other, for narrow plates. */
+  stackCaption?: boolean;
 }) {
+  const frame = (
+    <div
+      data-reveal={reveal ? "" : undefined}
+      data-reveal-type={reveal ? "mask" : undefined}
+      style={delay ? ({ "--d": delay } as CSSProperties) : undefined}
+      className={cn("grain relative overflow-hidden bg-stone-300", aspect, frameClassName)}
+    >
+      <div data-parallax={drift === "slow" ? "slow" : drift ? "" : undefined} className="absolute inset-0">
+        <Image
+          src={plate.src}
+          alt={plate.alt}
+          fill
+          sizes={sizes}
+          priority={priority}
+          quality={80}
+          className="object-cover"
+          style={{ objectPosition: focus ?? plate.focus ?? "50% 50%" }}
+        />
+      </div>
+    </div>
+  );
   return (
     <figure className={cn("relative", className)}>
-      <div
-        data-reveal={reveal ? "" : undefined}
-        data-reveal-type={reveal ? "mask" : undefined}
-        style={delay ? ({ "--d": delay } as CSSProperties) : undefined}
-        className={cn("grain relative overflow-hidden bg-stone-300", aspect, frameClassName)}
-      >
-        <div data-parallax={drift === "slow" ? "slow" : drift ? "" : undefined} className="absolute inset-0">
-          <Image
-            src={plate.src}
-            alt={plate.alt}
-            fill
-            sizes={sizes}
-            priority={priority}
-            quality={80}
-            className="object-cover"
-            style={{ objectPosition: focus ?? plate.focus ?? "50% 50%" }}
-          />
-        </div>
-      </div>
+      {notch ? <div className="notch-clip">{frame}</div> : frame}
       {caption ? (
-        <figcaption className={cn("mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-label", onDark ? "text-charcoal-300" : "text-ink-muted")}>
+        <figcaption
+          className={cn(
+            "mt-4 flex text-label",
+            stackCaption ? "flex-col gap-1 text-pretty" : "flex-wrap items-baseline justify-between gap-x-6 gap-y-1",
+            onDark ? "text-charcoal-300" : "text-ink-muted",
+          )}
+        >
           <span>
             {fig ? <span className={onDark ? "text-ivory" : "text-ink"}>Fig. {fig}</span> : null}
             {fig ? <span aria-hidden="true"> — </span> : null}

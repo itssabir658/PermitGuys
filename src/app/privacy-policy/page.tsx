@@ -15,7 +15,7 @@ export default function PrivacyPage() {
   return (
     <>
       <PageHeader crumbs={[{ name: "Privacy policy", path: paths.privacy }]} eyebrow="Legal" title="Privacy policy" />
-      <Container className="py-16 sm:py-20">
+      <Container className="pt-10 pb-16 sm:pb-20 lg:pt-14">
         <Placeholder block className="max-w-3xl">
           draft privacy policy. It must be reviewed and approved by the business, ideally with legal advice, before launch. Confirm the effective date, the contact for privacy questions, every service that receives form data and any analytics tools used.
         </Placeholder>

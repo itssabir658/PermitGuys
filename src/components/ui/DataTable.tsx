@@ -3,7 +3,7 @@ import type { DataTable } from "@/content/types";
 /** A captioned data table that scrolls sideways on narrow screens instead of overflowing. */
 export function DataTableView({ table }: { table: DataTable }) {
   return (
-    <figure className="mt-8 max-w-3xl">
+    <figure className="mt-8 max-w-(--measure-article)">
       <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={table.caption}>
         <table className="w-full border-collapse text-left text-[0.95rem]">
           <caption className="pb-4 text-left font-semibold text-charcoal-900">{table.caption}</caption>
