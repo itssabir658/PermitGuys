@@ -458,20 +458,31 @@ export function servicesHeading(s: number, j: number) {
   return roll(tween(s, 0.36 + j * 0.06, 0.34, ease.power3Out), 0);
 }
 
+/** How far a row's label is up when its number and tag start to fade in. */
+export const SERVICES_META_ON = 0.6;
+
 /**
  * Row i of the list, from the track's sso: its label rises from its mask
- * (`y`, a yPercent) and its rule draws across (`t`), 0.04 apart; its number
- * and tag fade in just behind (`meta`). The seventh row is in place at sso
- * 0.98, as the stage pins, so the composition is whole for all of the hold.
+ * (`y`, a yPercent) and its rule draws across (`t`), 0.04 apart. Its number
+ * and tag (`meta`) are switched on once the label is most of the way up,
+ * and fade in on their own just behind it (a 0.3s transition in
+ * globals.css, not written frame by frame). The seventh row is in place at
+ * sso 0.98, as the stage pins, so the composition is whole for all of the
+ * hold.
  */
 export function servicesRow(s: number, i: number) {
   const t = tween(s, 0.44 + i * 0.04, 0.3, ease.power3Out);
-  return { t, y: roll(t, 0), meta: tween(s, 0.52 + i * 0.04, 0.2) };
+  return { t, y: roll(t, 0), meta: t >= SERVICES_META_ON };
 }
 
 /** On the pinned track, the row that scrolling has reached: the hold is shared out evenly between the n rows. */
 export function servicesIndex(scroll: number, top: number, height: number, vh: number, n: number) {
   return Math.min(n - 1, Math.floor(clamp((scroll - top) / Math.max(1, height - vh)) * n));
+}
+
+/** Whether the pinned stage is holding: from the moment it pins to the moment it releases. Only then may a hover choose the picture; before, the list is still rising under the pointer. */
+export function servicesHold(scroll: number, top: number, height: number, vh: number) {
+  return scroll >= top && scroll <= top + Math.max(0, height - vh);
 }
 
 /** Seconds a picture takes to wipe up over the last one. */

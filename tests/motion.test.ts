@@ -11,6 +11,7 @@ import {
   WORKS,
   WORKS_BUTTON,
   SERVICES_LEAD,
+  SERVICES_META_ON,
   SERVICES_WIPE,
   contactCard,
   contactLetter,
@@ -28,6 +29,7 @@ import {
   roll,
   servicesHandover,
   servicesHeading,
+  servicesHold,
   servicesIndex,
   servicesLead,
   servicesReveal,
@@ -782,16 +784,16 @@ describe("homepage choreography", () => {
   });
 
   it("services rows: a quick cascade, all seven whole the moment the stage pins, and never faded", () => {
-    for (let i = 0; i < 7; i++) expect(servicesRow(0.98, i)).toEqual({ t: 1, y: 0, meta: 1 });
-    expect(servicesRow(0.44, 0)).toEqual({ t: 0, y: MASK, meta: 0 });
+    for (let i = 0; i < 7; i++) expect(servicesRow(0.98, i)).toEqual({ t: 1, y: 0, meta: true });
+    expect(servicesRow(0.44, 0)).toEqual({ t: 0, y: MASK, meta: false });
     for (const s of range(0.4, 1.1, 0.01)) {
       for (let i = 1; i < 7; i++) {
         // Each row a step behind the one above it: 0.04 of a screen.
         expect(servicesRow(s, i).y).toBeGreaterThanOrEqual(servicesRow(s, i - 1).y);
         expect(servicesRow(s, i).t).toBeCloseTo(servicesRow(s - 0.04, i - 1).t, 9);
       }
-      // The number and tag follow the label: they start once it is most of the way up.
-      for (let i = 0; i < 7; i++) if (servicesRow(s, i).meta > 0) expect(servicesRow(s, i).t).toBeGreaterThan(0.7);
+      // The number and tag follow the label: they are switched on (and fade in on their own) once it is most of the way up, and off again below that on the way back.
+      for (let i = 0; i < 7; i++) expect(servicesRow(s, i).meta).toBe(servicesRow(s, i).t >= SERVICES_META_ON);
     }
   });
 
@@ -816,6 +818,21 @@ describe("homepage choreography", () => {
     expect(servicesIndex(top + 2 * VH, top, height, VH, 7)).toBe(6);
     expect(servicesIndex(top + 5 * VH, top, height, VH, 7)).toBe(6);
     for (let k = 0; k < 7; k++) expect(servicesIndex(top + ((k + 0.5) / 7) * 2 * VH, top, height, VH, 7)).toBe(k);
+  });
+
+  it("services hold: a hover may choose the picture only while the stage is pinned, not as the list rises or leaves", () => {
+    const top = 14.8 * VH;
+    const height = 3 * VH;
+    expect(servicesHold(top - 1, top, height, VH)).toBe(false);
+    expect(servicesHold(top - 0.4 * VH, top, height, VH)).toBe(false);
+    expect(servicesHold(top, top, height, VH)).toBe(true);
+    expect(servicesHold(top + VH, top, height, VH)).toBe(true);
+    expect(servicesHold(top + 2 * VH, top, height, VH)).toBe(true);
+    expect(servicesHold(top + 2 * VH + 1, top, height, VH)).toBe(false);
+    // Every row's place in the hold (where keyboard focus brings the stage) is inside it.
+    for (let k = 0; k < 7; k++) expect(servicesHold(top + ((k + 0.5) / 7) * 2 * VH, top, height, VH)).toBe(true);
+    // A track no taller than the screen never holds past its top.
+    expect(servicesHold(top + 1, top, VH / 2, VH)).toBe(false);
   });
 
   it("services swap: the new picture's sheet rises over the last, which darkens under it", () => {

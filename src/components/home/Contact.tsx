@@ -25,7 +25,12 @@ const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZon
  *
  * The letters are decoration; the heading's text is the visually hidden
  * word. Splitting a word into boxes loses the face's kerning between them,
- * so HomeMotion measures the word as one run and sets it back.
+ * so the stylesheet sets it back (measured against the word as one run),
+ * and HomeMotion re-measures and refines it.
+ *
+ * From md the two cards share three rows through subgrid (picture, text,
+ * foot), so 'Get in touch' sits on the same rule as the rating and
+ * credentials whatever the text above them.
  */
 export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
   const { contact } = site;
@@ -43,31 +48,31 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
           </span>
         </h2>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:mt-20 lg:gap-8">
-          <article data-contact-card="" className="grid grid-rows-[auto_1fr] gap-8 bg-stone-100 p-5 sm:p-6 lg:p-8">
+        <div className="mt-14 grid gap-6 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] lg:mt-20 lg:gap-8">
+          <article data-contact-card="" className="grid gap-8 bg-stone-100 p-5 sm:p-6 md:row-span-3 md:grid-rows-subgrid lg:p-8">
             <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
               <div data-contact-wipe="" className="absolute inset-0">
                 <Image src={plates.infill.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover object-[64%_62%]" />
               </div>
             </div>
-            <div className="flex flex-col">
+            <div>
               <h3 className="font-display text-display-md font-light text-ink">Start a project</h3>
               <p className="mt-4 max-w-md leading-relaxed text-ink-muted">
                 Tell us what you are planning and where. We will review the details and explain how we can help with drawings and the permit process.
               </p>
-              <div className="mt-auto border-t border-line pt-6">
-                <LinkButton href={paths.contact}>Get in touch</LinkButton>
-              </div>
+            </div>
+            <div className="border-t border-line pt-6">
+              <LinkButton href={paths.contact}>Get in touch</LinkButton>
             </div>
           </article>
 
-          <article data-contact-card="" className="grid grid-rows-[auto_1fr] gap-8 bg-stone-100 p-5 sm:p-6 lg:p-8">
+          <article data-contact-card="" className="grid gap-8 bg-stone-100 p-5 sm:p-6 md:row-span-3 md:grid-rows-subgrid lg:p-8">
             <div className="contact-pic notch-clip relative aspect-[16/10] overflow-hidden bg-stone-300">
               <div data-contact-wipe="" className="absolute inset-0">
                 <Image src={plates.deck.src} alt="" fill sizes="(min-width: 768px) 45vw, 90vw" quality={75} className="object-cover" style={{ objectPosition: plates.deck.focus }} />
               </div>
             </div>
-            <div className="flex flex-col">
+            <div>
               <h3 className="font-display text-display-md font-light text-ink">Call or visit</h3>
               <address className="mt-4 grid gap-1.5 leading-relaxed text-ink-muted not-italic">
                 {contact.address ? <span>{contact.address}</span> : null}
@@ -75,35 +80,35 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
                 {contact.phone ? <PhoneLink location="home-contact" className="link-rule w-fit text-ink" /> : null}
                 {contact.email ? <EmailLink location="home-contact" className="link-rule w-fit text-ink" /> : null}
               </address>
-              <dl className="mt-8 grid gap-6 border-t border-line pt-6 sm:grid-cols-2">
-                {reviews ? (
-                  <div>
-                    <dt className="text-label text-ink-muted">Google rating</dt>
-                    <dd className="mt-2">
-                      <a href={reviews.url} className="group inline-flex items-center gap-1.5 text-ink">
-                        <span className="link-rule">
-                          {reviews.rating.toFixed(1)} out of 5 from {reviews.count} reviews
-                        </span>
-                        <ExternalIcon className="size-3" />
-                      </a>
-                    </dd>
-                    {reviews.source === "profile" && reviews.asOf ? (
-                      <dd className="mt-1 text-[0.8125rem] text-ink-muted">From our Google Business Profile on {dateFormat.format(new Date(reviews.asOf))}.</dd>
-                    ) : null}
-                  </div>
-                ) : null}
-                {site.credentials.length ? (
-                  <div>
-                    <dt className="text-label text-ink-muted">Credentials</dt>
-                    {site.credentials.map((c) => (
-                      <dd key={c} className="mt-2 text-ink">
-                        {c}
-                      </dd>
-                    ))}
-                  </div>
-                ) : null}
-              </dl>
             </div>
+            <dl className="grid gap-6 border-t border-line pt-6 sm:grid-cols-2">
+              {reviews ? (
+                <div>
+                  <dt className="text-label text-ink-muted">Google rating</dt>
+                  <dd className="mt-2">
+                    <a href={reviews.url} className="group inline-flex items-center gap-1.5 text-ink">
+                      <span className="link-rule">
+                        {reviews.rating.toFixed(1)} out of 5 from {reviews.count} reviews
+                      </span>
+                      <ExternalIcon className="size-3" />
+                    </a>
+                  </dd>
+                  {reviews.source === "profile" && reviews.asOf ? (
+                    <dd className="mt-1 text-[0.8125rem] text-ink-muted">From our Google Business Profile on {dateFormat.format(new Date(reviews.asOf))}.</dd>
+                  ) : null}
+                </div>
+              ) : null}
+              {site.credentials.length ? (
+                <div>
+                  <dt className="text-label text-ink-muted">Credentials</dt>
+                  {site.credentials.map((c) => (
+                    <dd key={c} className="mt-2 text-ink">
+                      {c}
+                    </dd>
+                  ))}
+                </div>
+              ) : null}
+            </dl>
           </article>
         </div>
         <p className="mt-6 text-label text-ink-muted">Images are rendered studies for illustration, not client projects.</p>

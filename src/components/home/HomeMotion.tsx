@@ -17,9 +17,11 @@ import {
   riseInset,
   servicesHandover,
   servicesHeading,
+  servicesHold,
   servicesIndex,
   servicesLead,
   servicesReveal,
+  SERVICES_META_ON,
   servicesRow,
   swapK,
   swapLayer,
@@ -60,6 +62,11 @@ const PARKED = liftPercent(MASK);
 
 function clear(el: HTMLElement, ...props: string[]) {
   for (const p of props) setStyle(el, p, "");
+}
+
+/** Sets or removes data-services-in, only when it changes: small labels that fade in on their own once their row is up (a CSS transition, so no frame writes them). */
+function mark(el: HTMLElement, on: boolean) {
+  if (el.hasAttribute("data-services-in") !== on) el.toggleAttribute("data-services-in", on);
 }
 
 /** The right edge of an element's text (not its box), in px from the screen's left. */
@@ -488,8 +495,11 @@ function values(shared: Shared): MotionModule | null {
  * whole as the stage pins. While it holds, scrolling walks the rows. The
  * frame shows the row hovered (with a fine pointer), else the one focused,
  * else the one scrolling has reached; the latest of a hover and a scroll
- * wins, so a pointer resting on the list never freezes the walk. Each new
- * picture wipes up over the last, which darkens under it (swapTo).
+ * wins, so a pointer resting on the list never freezes the walk. A hover
+ * is taken only from the pointer moving, and only while the stage holds,
+ * so rows rising under a resting pointer never pick a picture. While the
+ * page is held (a page transition, the menu) the frame keeps its picture.
+ * Each new picture wipes up over the last, which darkens under it (swapTo).
  *
  * On wide screens too short to pin, the section flows, starting close
  * under the last Values picture: the heading rises with the track as it
@@ -512,7 +522,6 @@ function services(): MotionModule[] {
   const rows = all("[data-service-index]", section).map((li) => ({
     li,
     inner: one(".services-item__label .split-line__inner", li),
-    meta: all("[data-services-meta]", li),
     rules: all("[data-services-rule]", li),
   }));
   const eyebrow = one("[data-services-roll]", section);
@@ -540,32 +549,41 @@ function services(): MotionModule[] {
   const stageTop = (f: Frame) => Math.min(Math.max(rTrack.top - f.scroll, 0), rTrack.top + rTrack.height - f.scroll - stageH);
 
   const rowOf = (node: EventTarget | null) => (node instanceof Node ? rows.findIndex((r) => r.li.contains(node)) : -1);
-  const onEnter = (event: PointerEvent) => {
+  const inStage = (node: EventTarget | null) => node instanceof Node && stage.contains(node);
+  // A hover is taken only from the pointer moving over a row: rows sliding under a resting pointer as the page scrolls fire pointerover (and in some engines a mousemove at the same place), and must never pick one. Watched from the window, so the pointer's last place is known before it reaches the list.
+  let px0 = NaN;
+  let py0 = NaN;
+  const onMove = (event: PointerEvent) => {
+    const moved = event.clientX !== px0 || event.clientY !== py0;
+    px0 = event.clientX;
+    py0 = event.clientY;
+    if (!moved || engine.locked || !finePointer.matches || !(event.target instanceof Node) || !list.contains(event.target)) return;
     const i = rowOf(event.target);
-    if (i >= 0 && finePointer.matches) hoverIdx = i;
+    if (i >= 0) hoverIdx = i;
   };
+  // While the page is held (a page transition growing over the list, the menu), the frame keeps what it shows.
   const onLeave = () => {
-    hoverIdx = null;
+    if (!engine.locked) hoverIdx = null;
   };
   const onFocusIn = (event: FocusEvent) => {
     const i = rowOf(event.target);
     if (i < 0) return;
     focusIdx = i;
-    // Keyboard focus arriving from outside the list while the stage is not pinned: bring the stage to the row's place in the hold, where the list is whole. Only keyboard focus: a press must not move the page under the pointer.
+    // Keyboard focus arriving from outside the stage while it is not pinned: bring the stage to the row's place in the hold, where the list is whole. Only keyboard focus: a press must not move the page under the pointer.
     const f = engine.frame;
     const hold = rTrack ? rTrack.height - f.vh : 0;
-    const from = event.relatedTarget instanceof Node && list.contains(event.relatedTarget);
-    if (pinned && !from && hold > 0 && event.target instanceof Element && event.target.matches(":focus-visible") && (f.scroll < rTrack.top || f.scroll > rTrack.top + hold)) {
+    if (pinned && !inStage(event.relatedTarget) && hold > 0 && event.target instanceof Element && event.target.matches(":focus-visible") && !servicesHold(f.scroll, rTrack.top, rTrack.height, f.vh)) {
       engine.scrollTo(rTrack.top + ((i + 0.5) / n) * hold);
     }
   };
+  // Focus moving on within the stage ('All services' after the last row) keeps the row it came from.
   const onFocusOut = (event: FocusEvent) => {
-    if (!(event.relatedTarget instanceof Node && list.contains(event.relatedTarget))) focusIdx = null;
+    if (!engine.locked && !inStage(event.relatedTarget)) focusIdx = null;
   };
-  list.addEventListener("pointerover", onEnter);
+  window.addEventListener("pointermove", onMove, { passive: true });
   list.addEventListener("pointerleave", onLeave);
   list.addEventListener("focusin", onFocusIn);
-  list.addEventListener("focusout", onFocusOut);
+  stage.addEventListener("focusout", onFocusOut);
 
   const image: MotionModule = {
     order: ORDER.servicesImage,
@@ -584,12 +602,11 @@ function services(): MotionModule[] {
     update(f) {
       // The row the frame shows.
       const reached = pinned ? servicesIndex(f.scroll, rTrack.top, rTrack.height, f.vh, n) : f.tracks ? rRows.reduce((k, r, i) => (r.top < f.scroll + 0.5 * f.vh ? i : k), 0) : scrollIdx;
-      // Scrolling to a new row takes over from a resting pointer.
-      if (reached !== scrollIdx) {
-        scrollIdx = reached;
-        hoverIdx = null;
-      }
-      const next = hoverIdx ?? focusIdx ?? (f.tracks ? scrollIdx : target);
+      // Scrolling to a new row takes over from a resting pointer, and on the pinned track a hover counts only while the stage holds (not as the list rises under the pointer, or leaves).
+      if (reached !== scrollIdx || (pinned && !servicesHold(f.scroll, rTrack.top, rTrack.height, f.vh))) hoverIdx = null;
+      scrollIdx = reached;
+      // While the page is held the frame keeps its picture: a click on a row moves focus and the transition's cover passes under the pointer, and neither may swap the picture just chosen.
+      const next = engine.locked ? target : (hoverIdx ?? focusIdx ?? (f.tracks ? scrollIdx : target));
       if (next !== target) {
         target = next;
         stack = swapTo(stack, target, f.time, f.reduced);
@@ -634,10 +651,10 @@ function services(): MotionModule[] {
       if (caption) setStyle(caption, "opacity", num(rv.r));
     },
     destroy() {
-      list.removeEventListener("pointerover", onEnter);
+      window.removeEventListener("pointermove", onMove);
       list.removeEventListener("pointerleave", onLeave);
       list.removeEventListener("focusin", onFocusIn);
-      list.removeEventListener("focusout", onFocusOut);
+      stage.removeEventListener("focusout", onFocusOut);
       delete section.dataset.servicesPinned;
     },
   };
@@ -658,18 +675,18 @@ function services(): MotionModule[] {
         for (const r of rows) {
           if (r.inner) clear(r.inner, "transform");
           r.rules.forEach((el) => clear(el, "transform"));
-          r.meta.forEach((el) => clear(el, "opacity"));
+          mark(r.li, false);
         }
-        if (more) clear(more, "opacity");
+        if (more) mark(more, false);
         return;
       }
       // Whatever holds focus is in place, whatever the scroll.
       const focused = document.activeElement;
-      const show = (r: (typeof rows)[number], t: number, y: number, meta: number) => {
+      const show = (r: (typeof rows)[number], t: number, y: number, meta: boolean) => {
         const held = focused instanceof Node && r.li.contains(focused);
         if (r.inner) setStyle(r.inner, "transform", liftPercent(held ? 0 : y));
         r.rules.forEach((el) => setStyle(el, "transform", `scaleX(${num(held ? 1 : t)})`));
-        r.meta.forEach((el) => setStyle(el, "opacity", num(held ? 1 : meta)));
+        mark(r.li, held || meta);
       };
       // The eyebrow and the heading from the track, as the ground passes night.
       const s = sso(rTrack, f);
@@ -681,15 +698,15 @@ function services(): MotionModule[] {
           const st = servicesRow(s, i);
           show(r, st.t, st.y, st.meta);
         });
-        if (more) setStyle(more, "opacity", num(servicesRow(s, n - 1).meta));
+        if (more) mark(more, servicesRow(s, n - 1).meta);
         return;
       }
       // Flowing: each row from its own place.
       rows.forEach((r, i) => {
         const t = tween(sso(rRows[i], f), 0.06, 0.22, ease.power3Out);
-        show(r, t, roll(t, 0), t);
+        show(r, t, roll(t, 0), t >= SERVICES_META_ON);
       });
-      if (more && rMore) setStyle(more, "opacity", num(tween(sso(rMore, f), 0.06, 0.22)));
+      if (more && rMore) mark(more, tween(sso(rMore, f), 0.06, 0.22, ease.power3Out) >= SERVICES_META_ON);
     },
   };
   return [image, copy];
@@ -728,9 +745,10 @@ function handover(): MotionModule | null {
  * wipes up from the bottom and settles.
  *
  * Each letter is a box of its own, which loses the face's kerning between
- * letters (14px between T and A at 1440 wide): measure() sets the word as
- * one run, out of sight, and gives each letter back the difference, in em,
- * so it holds at every size.
+ * letters (14px between T and A at 1440 wide). The stylesheet gives the
+ * kerning pairs back for first paint and the still layout; measure() sets
+ * the word as one run, out of sight, and gives each letter back the exact
+ * difference, in em, so it holds at every size.
  */
 function contact(): MotionModule | null {
   const section = one("[data-contact]");

@@ -28,12 +28,12 @@ export function SiteFooter() {
     <footer data-tone="dark" data-site-footer="" className="site-footer bg-charcoal-900 text-ivory">
       <Container className="site-footer__inner pt-20 pb-10 sm:pt-28">
         <div className="grid gap-16 lg:grid-cols-12 lg:gap-8">
-          <div className="lg:col-span-5">
+          <div className="min-w-0 lg:col-span-5">
             <div data-footer-cta="" className="mb-16">
               <p className="text-label text-charcoal-300">Have a project in mind?</p>
-              <Link href={paths.contact} className="group mt-8 inline-flex items-center gap-6 font-display text-[clamp(1.9rem,1rem+2.3vw,3.6rem)] leading-[1.04] font-light tracking-[-0.036em]">
-                <span className="link-rule pb-2 whitespace-nowrap">Start a conversation</span>
-                <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-transform duration-700 ease-out-expo group-hover:rotate-[-45deg]">
+              <Link href={paths.contact} className="group mt-8 inline-flex items-center gap-5 font-display text-[clamp(1.75rem,0.25rem+2.75vw,3.6rem)] leading-[1.04] font-light tracking-[-0.036em] sm:gap-6">
+                <span className="link-rule pb-2 sm:whitespace-nowrap">Start a conversation</span>
+                <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-transform duration-700 ease-out-expo group-hover:rotate-[-45deg] sm:size-14">
                   <ArrowRight className="size-5" />
                 </span>
               </Link>
@@ -52,7 +52,7 @@ export function SiteFooter() {
               {contact.hours ? <p>{contact.hours}</p> : null}
             </address>
           </div>
-          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7 lg:gap-x-6">
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7 lg:grid-cols-[1fr_1fr_auto] lg:gap-x-6 xl:grid-cols-3">
             {footerNav.map((col) => (
               <div key={col.heading}>
                 <h2 className="text-label text-charcoal-300">{col.heading}</h2>

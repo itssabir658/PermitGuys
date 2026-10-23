@@ -45,9 +45,9 @@ The full choreography, scroll map and checks are in [MOTION.md](MOTION.md).
 3. **Selected studies** (`Works.tsx`): one pinned, notched frame on a stone ground; three labelled rendered studies wipe up over one another, each leading to its service. Approved case studies are listed above them when they exist.
 4. **Our values** (`Values.tsx`): four values; the words roll like an odometer between the pictures and change colour where they cross them.
 5. **Services** (`Services.tsx`): the ground turns to night; a numbered list beside one notched frame, pinned while scrolling walks the rows and the picture follows the active row (or the one hovered or focused). "All services" closes the list.
-6. **Contact** (`Contact.tsx`): an ivory sheet over Services; the word CONTACT cut in letter by letter, then two cards of equal height: start a project, and call or visit (address, hours, phone, email, Google rating, credentials).
+6. **Contact** (`Contact.tsx`): an ivory sheet over Services; the word CONTACT cut in letter by letter, then two cards of equal height that share their rows, so their foot rules line up: start a project, and call or visit (address, hours, phone, email, Google rating, credentials).
 
-The footer is the page's one charcoal band. Process, service areas and guides live on their own pages; the footer carries the confirmed contact details and the Ontario outline with the Greater Toronto Area marked.
+The footer is the page's one charcoal band. Process, service areas and guides live on their own pages; the footer carries the confirmed contact details and the Ontario outline with the Greater Toronto Area marked (except on the 404, which draws its own).
 
 ## Motion
 
