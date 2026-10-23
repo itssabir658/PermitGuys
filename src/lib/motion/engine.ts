@@ -37,6 +37,9 @@ import Lenis from "lenis";
  * In-page links glide (`glideTo`: 1.1s on the same exponential ease as the
  * wheel, instant with reduced motion), and wait for the page to be released
  * first (`afterUnlock`), since releasing it cancels any glide under way.
+ *
+ * A page being printed takes the still layout: the tracks are off from
+ * beforeprint to afterprint, so every module clears what it wrote first.
  */
 
 export interface Frame {
@@ -68,7 +71,7 @@ export interface MotionModule {
 
 type Callback = (frame: Frame) => void;
 
-/** Keep in step with the `tracks` custom variant in globals.css. */
+/** Keep in step with the `tracks` custom variant in globals.css (which also limits the tracks to screens; printing sets `printing` here). */
 export const TRACKS_QUERY = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -161,6 +164,8 @@ class Engine {
   private pendingRestore: number | null = null;
   /** Run once the page is released (a glide asked for while the menu was still closing). */
   private unlocked: (() => void)[] = [];
+  /** The page is being printed: the tracks are off until it is done. */
+  private printing = false;
 
   boot() {
     if (this.booted || typeof window === "undefined") return;
@@ -197,6 +202,14 @@ class Engine {
     );
     matchMedia(TRACKS_QUERY).addEventListener("change", layoutChanged);
     new ResizeObserver(layoutChanged).observe(document.body);
+    // A printed page takes the still layout (the tracks are for screens), so the modules clear what they wrote before it prints, and write it again after.
+    const printing = (on: boolean) => () => {
+      this.printing = on;
+      this.measure();
+      this.run();
+    };
+    window.addEventListener("beforeprint", printing(true));
+    window.addEventListener("afterprint", printing(false));
     document.fonts?.ready.then(this.requestMeasure);
     this.started = performance.now();
     this.last = this.started;
@@ -212,12 +225,18 @@ class Engine {
     this.lenis?.raf(now);
     const measured = this.needsMeasure;
     if (measured) this.measure();
-    f.scroll = this.lenis ? this.lenis.scroll : window.scrollY;
-    this.callbacks.forEach((cb) => cb(f));
-    for (const m of this.modules) m.update(f);
+    this.run();
     // Note the reading position against the layout the sections were measured in.
     if (!measured) this.anchor = this.readAnchor(f);
   };
+
+  /** Write the frame: the per-frame callbacks, then the modules in order. */
+  private run() {
+    const f = this.frame;
+    f.scroll = this.lenis ? this.lenis.scroll : window.scrollY;
+    this.callbacks.forEach((cb) => cb(f));
+    for (const m of this.modules) m.update(f);
+  }
 
   private readAnchor(f: Frame) {
     const y = f.scroll + 0.5 * f.vh;
@@ -236,7 +255,7 @@ class Engine {
     f.vh = this.probe?.offsetHeight || window.innerHeight;
     this.lastW = window.innerWidth;
     f.reduced = matchMedia(REDUCED_QUERY).matches;
-    f.tracks = "motion" in document.documentElement.dataset && matchMedia(TRACKS_QUERY).matches;
+    f.tracks = !this.printing && "motion" in document.documentElement.dataset && matchMedia(TRACKS_QUERY).matches;
     // Only a new screen moves the reader; content growing within the page (a disclosure opening) keeps the pixel position.
     const view = `${f.vw}x${f.vh} ${f.tracks}`;
     const keep = this.keepPlace && view !== this.view ? this.anchor : null;

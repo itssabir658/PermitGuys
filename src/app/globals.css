@@ -4,10 +4,12 @@
  * `tracks:` applies while the scroll-scrubbed sticky tracks are on: motion
  * allowed, JavaScript running (the head script sets data-motion) and a
  * screen at least 500px tall. Keep in step with TRACKS_QUERY in
- * src/lib/motion/engine.ts. Everything else gets the still layout.
+ * src/lib/motion/engine.ts. Everything else gets the still layout, and so
+ * does a printed page: the tracks are for screens only (the engine stands
+ * the scroll motion down while the page prints).
  */
 @custom-variant tracks {
-  @media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
     :root[data-motion] & {
       @slot;
     }
@@ -560,7 +562,8 @@
 /*
  * ===== Motion (docs/MOTION.md) =====
  * Track layouts use the `tracks` media query and the head script's
- * data-motion: (prefers-reduced-motion: no-preference) and (min-height: 500px).
+ * data-motion: screen and (prefers-reduced-motion: no-preference) and
+ * (min-height: 500px). Print gets the still layouts.
  */
 
 /* Masked lines (src/lib/motion/split.ts): each line slides from behind its own edge. */
@@ -1375,7 +1378,7 @@ body:has(.not-found__map) .site-footer__place {
   vertical-align: 0.12em;
 }
 /* On the tracks the outline waits undrawn until the footer comes up (with reduced motion and on the still layout it is simply there). */
-@media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
   :root[data-motion] .site-footer__map .ontario__stroke path {
     stroke-dashoffset: 1;
   }
@@ -1458,18 +1461,18 @@ body:has(.not-found__map) .site-footer__place {
   }
 }
 /* Inside the ring on wider screens (HomeMotion, orbitPath: not portrait), the copy is sized by both sides of the screen, so its five lines clear the studies. */
-@media (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-aspect-ratio: 4/5) {
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-aspect-ratio: 4/5) {
   :root[data-motion] .intro-copy {
     font-size: clamp(1.65rem, min(3.2vw, 5.1vh), 3.4rem);
   }
 }
 /*
- * The still intro (reduced motion, short screens, no JavaScript): the
+ * The still intro (reduced motion, short screens, no JavaScript, print): the
  * paragraphs, then the studies as a quiet row beneath them, clear of the
  * copy. The same rules twice: a media query cannot be combined with the
  * missing data-motion in one selector.
  */
-@media (prefers-reduced-motion: reduce), (max-height: 499.98px) {
+@media print, (prefers-reduced-motion: reduce), (max-height: 499.98px) {
   .intro-orbit {
     position: relative;
     inset: auto;
@@ -1818,7 +1821,7 @@ body:has(.not-found__map) .site-footer__place {
 }
 
 /* ---- Homepage: the tracks ---- */
-@media (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
   :root[data-motion] :is(.intro-copy, [data-services-heading], [data-works-title], [data-values-desc]):not([data-split]) {
     opacity: 0;
   }
@@ -1909,7 +1912,7 @@ body:has(.not-found__map) .site-footer__place {
  * capped by the screen's height (they bind below about 860px), so the
  * eyebrow to the 'All services' link fits in about 700px at 720.
  */
-@media (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 720px) {
+@media screen and (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 720px) {
   :root[data-motion] .services-track {
     height: 300vh;
   }
@@ -1958,7 +1961,7 @@ body:has(.not-found__map) .site-footer__place {
  * the last Values picture, so its picture comes up through the dusk with
  * the heading straight after it, not a screen of empty ground later.
  */
-@media (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 500px) and (max-height: 719.98px) {
+@media screen and (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 500px) and (max-height: 719.98px) {
   :root[data-motion] .services-grid {
     padding-top: 2.5rem;
   }
@@ -1970,7 +1973,7 @@ body:has(.not-found__map) .site-footer__place {
  * picture tucked under the header; the eyebrow goes (the heading names the
  * section) and the caption sits at the foot of the stage.
  */
-@media (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) {
+@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) {
   :root[data-motion] .services-track {
     height: 300vh;
   }
@@ -2026,7 +2029,7 @@ body:has(.not-found__map) .site-footer__place {
  * shrink to 4rem. The picture still starts clear of the 80px header bar,
  * and the rows keep their 44px.
  */
-@media (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) and (max-height: 719.98px) {
+@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) and (max-height: 719.98px) {
   :root[data-motion] .services-grid {
     gap: 0.5rem;
     padding-block: 5.5rem 0.5rem;
@@ -2071,8 +2074,9 @@ body:has(.not-found__map) .site-footer__place {
 /*
  * Print: the page as a document. The fixed chrome (header, menu, preloader,
  * transition) is left out, everything the motion moves or hides is put back
- * in place, and the footer keeps its graphite ground so its ivory type
- * prints.
+ * in place (the homepage prints its still layout), and the dark grounds
+ * (the hero, Services, the map, the footer) keep their graphite so their
+ * ivory type prints.
  */
 @media print {
   .site-nav,
@@ -2081,9 +2085,31 @@ body:has(.not-found__map) .site-footer__place {
   .screen-veil {
     display: none !important;
   }
-  .site-footer {
+  [data-tone="dark"],
+  .map-card__ground {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+  /* Sticky boxes print where they stand in the flow, wherever the page was scrolled to. */
+  .sticky {
+    position: relative !important;
+    top: auto !important;
+  }
+  /* A study or a value stays on one sheet with its picture, a section's label and note stay with its first one, and the Contact wordmark with its cards. */
+  .works-panel,
+  .values-outer,
+  :is([data-works], [data-values]) h2 + p,
+  [data-contact] > *,
+  figure {
+    break-inside: avoid;
+  }
+  [data-works-panel="0"],
+  [data-values-outer="0"] {
+    break-before: avoid;
+  }
+  h2,
+  h3 {
+    break-after: avoid;
   }
   .site-footer__inner,
   [data-parallax] {

@@ -91,7 +91,7 @@ On every page the footer's content rises out from under the sheet above it, lagg
 
 With `prefers-reduced-motion: reduce`: Lenis duration 0 and no wheel smoothing; no preloader; every homepage section shows its still layout with all content visible; the Services picture follows a hover or focus at once; the Contact letters, cards and footer outline are simply there; roll links, parallax and the inner-page reveals are off; page transitions and Back and forward are a 0.3s crossfade, and glides are jumps; CSS durations collapse to 0.01ms.
 
-Screens under 500px tall (a phone on its side) and visitors without JavaScript get the same still layouts, with motion otherwise allowed. Every split line or letter keeps its text for screen readers once.
+Screens under 500px tall (a phone on its side) and visitors without JavaScript get the same still layouts, with motion otherwise allowed. So does a printed page, from wherever it was scrolled to: the tracks CSS applies to screens only, and the engine turns the tracks off from `beforeprint` to `afterprint`, so every module clears what it wrote before the page prints and writes it again after. In print a study or a value stays on one sheet with its picture, dark grounds keep their graphite, and sticky boxes print in the flow. Every split line or letter keeps its text for screen readers once.
 
 ## Where this differs from the spec
 

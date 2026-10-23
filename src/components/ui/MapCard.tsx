@@ -44,7 +44,7 @@ export function MapCard({ query, label, note, className, onLight }: { query: str
   return (
     // Laid out by its own width (a container), not the screen's: in the contact sidebar it is narrow even on a wide screen.
     <div className={cn("@container relative isolate", className)}>
-      <div className={cn("relative h-full overflow-hidden text-ivory", onLight ? "bg-charcoal-900" : "bg-charcoal-800")}>
+      <div className={cn("map-card__ground relative h-full overflow-hidden text-ivory", onLight ? "bg-charcoal-900" : "bg-charcoal-800")}>
         <div className="relative h-full min-h-[16rem] @[30rem]:min-h-[26rem]">
           {loaded ? (
             <iframe
