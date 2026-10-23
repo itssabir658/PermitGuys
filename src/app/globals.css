@@ -120,6 +120,17 @@
   --e-sheet: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
+/*
+ * The colour under the header, which the homepage writes on the phone header
+ * bar every frame of a ground change (HomeMotion). It must not inherit:
+ * otherwise each write restyles every element below the one it is set on.
+ */
+@property --ground {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #f4f1eb;
+}
+
 @layer base {
   /* The engine keeps the reading position itself on resize, so the browser's scroll anchoring is off. */
   html {
@@ -688,7 +699,7 @@
 /* Phones keep the row, on a ground of its own once the page has scrolled. */
 @media (max-width: 767px) {
   .site-nav[data-collapsed]:not([data-open]) .site-nav__bar {
-    /* The homepage publishes its live page ground (stone under Works, dusk over Services). */
+    /* The homepage writes the colour under the header here (stone under Works, dusk over Services, ivory over Contact). */
     background: color-mix(in srgb, var(--ground, var(--color-ivory)) 88%, transparent);
     backdrop-filter: blur(14px);
   }

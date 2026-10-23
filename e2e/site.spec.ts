@@ -161,6 +161,29 @@ test.describe("interactive pieces", () => {
     await expect(page.locator("html")).not.toHaveAttribute("data-test-covered");
   });
 
+  test("on phones the collapsed header bar over Contact is ivory, not the night behind it", async ({ page }, info) => {
+    test.skip(info.project.name !== "mobile", "The phone header bar");
+    await page.goto("/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.evaluate(() => {
+      let top = 0;
+      for (let n = document.querySelector<HTMLElement>("[data-contact]"); n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop;
+      window.scrollTo(0, top + 300);
+    });
+    const nav = page.locator(".site-nav");
+    await expect(nav).toHaveAttribute("data-collapsed", "");
+    await expect(nav).toHaveAttribute("data-tone", "light");
+    const ivory = await page.evaluate(() => {
+      const probe = document.createElement("div");
+      probe.style.background = "color-mix(in srgb, #f4f1eb 88%, transparent)";
+      document.body.append(probe);
+      const color = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return color;
+    });
+    await expect.poll(() => page.locator(".site-nav__bar").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(ivory);
+  });
+
   test("the transition and intro stay out of the way with reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");

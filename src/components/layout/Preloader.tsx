@@ -16,9 +16,10 @@ import { OntarioOutline } from "./OntarioOutline";
  * data-loaded and data-revealed, the header fades in at T₀ + 1.6s and the
  * hero's name rises at T₀ + 1.5s (globals.css).
  *
- * The page is held at the top while the screen is up (an impatient wheel
- * would otherwise scroll the whole hero entrance away unseen) and released
- * as the screen starts to leave, or after 8s whatever happens.
+ * The page is held at the top while the screen is up and while it fades (an
+ * impatient wheel would otherwise scroll the hero away before its entrance
+ * starts) and released at T₀, back at the top, or after 8s whatever
+ * happens.
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on only for visitors who allow motion and have JavaScript, and
@@ -48,12 +49,14 @@ export function Preloader() {
 
     Promise.all([drawn, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
       if (cancelled) return;
-      engine.scrollTo(0, true);
-      engine.unlock("preloader");
       const exit = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, delay: 100, easing: cssEase.power1Out, fill: "forwards" });
       exit.finished
         .catch(() => undefined)
         .then(() => {
+          if (!cancelled) {
+            engine.scrollTo(0, true);
+            engine.unlock("preloader");
+          }
           html.dataset.loaded = "";
           html.dataset.revealed = "";
         });

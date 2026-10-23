@@ -172,6 +172,18 @@ export function pageGround(ssoWorks: number, hsoWorks: number, ssoServices: numb
   return { fade, color: mixColorOklab(mixColorNum(CREAM, STONE, stone), NIGHT, fade) };
 }
 
+/**
+ * What the header sits on, read where its tone is read (64px down, the lower
+ * half of the button; MainNav): the ground, until Contact's own ivory
+ * reaches that line (`contactTop` is Contact's top from the top of the
+ * screen). The body stays night behind Contact, but the visitor sees ivory
+ * there, so the phone bar must too. Night turns the header light-on-dark.
+ */
+export function headerGround(ground: { fade: number; color: number }, contactTop: number) {
+  const onContact = contactTop <= 64;
+  return { night: ground.fade > 0.5 && !onContact, color: onContact ? CREAM : ground.color };
+}
+
 /* ---- Services ---- */
 
 /** The image frame wipes up from the bottom and settles from a slight zoom. */

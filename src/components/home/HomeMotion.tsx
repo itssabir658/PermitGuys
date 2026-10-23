@@ -5,6 +5,7 @@ import { ORDER, engine, hso, measureRange, setStyle, sso, type Frame, type Motio
 import {
   ORBIT,
   contactReveal,
+  headerGround,
   heroState,
   introLine,
   introPhases,
@@ -53,8 +54,10 @@ interface Shared {
 /*
  * The page ground, one material per section (pageGround): cream, stone under
  * Works, cream for Values, dusk over the start of Services, night from there
- * on (Contact brings its own ivory, the footer its own charcoal). Published
- * as --ground too, so the phone header bar always matches it. The still
+ * on (Contact brings its own ivory, the footer its own charcoal). The colour
+ * under the header (headerGround) goes to the phone header bar as --ground,
+ * written on the bar itself: the property does not inherit (globals.css), so
+ * a change restyles that one element, not the whole document. The still
  * layout keeps the stylesheet's grounds: ivory, then Services' own charcoal.
  */
 function ground(shared: Shared): MotionModule | null {
@@ -63,6 +66,7 @@ function ground(shared: Shared): MotionModule | null {
   const contact = one("[data-contact]");
   if (!works || !services || !contact) return null;
   const html = document.documentElement;
+  const bar = one(".site-nav__bar");
   let rWorks: Range, rServices: Range, rContact: Range;
   let night = false;
   const setNight = (isNight: boolean) => {
@@ -81,7 +85,7 @@ function ground(shared: Shared): MotionModule | null {
     update(f) {
       if (!f.tracks) {
         setStyle(document.body, "backgroundColor", "");
-        setStyle(html, "--ground", "");
+        if (bar) setStyle(bar, "--ground", "");
         setStyle(services, "backgroundColor", "");
         shared.fade = 0;
         setNight(false);
@@ -89,17 +93,17 @@ function ground(shared: Shared): MotionModule | null {
       }
       const g = pageGround(sso(rWorks, f), hso(rWorks, f), sso(rServices, f));
       shared.fade = g.fade;
-      const color = toHex(g.color);
-      setStyle(document.body, "backgroundColor", color);
-      setStyle(html, "--ground", color);
+      setStyle(document.body, "backgroundColor", toHex(g.color));
       // On the tracks Services shows the night ground through itself.
       setStyle(services, "backgroundColor", "transparent");
-      // Night until Contact's ivory reaches the header.
-      setNight(g.fade > 0.5 && rContact.top - f.scroll > 64);
+      // Night until Contact's ivory reaches the header, and ivory under the header from then on.
+      const h = headerGround(g, rContact.top - f.scroll);
+      if (bar) setStyle(bar, "--ground", toHex(h.color));
+      setNight(h.night);
     },
     destroy() {
       setStyle(document.body, "backgroundColor", "");
-      setStyle(html, "--ground", "");
+      if (bar) setStyle(bar, "--ground", "");
       setStyle(services, "backgroundColor", "");
       delete html.dataset.ground;
     },

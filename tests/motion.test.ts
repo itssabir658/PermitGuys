@@ -6,6 +6,7 @@ import {
   ORBIT,
   STONE,
   contactReveal,
+  headerGround,
   heroState,
   introLine,
   introPhases,
@@ -225,6 +226,20 @@ describe("homepage choreography", () => {
     const at = (s: number, h: number) => pageGround(s, h, -10).color;
     for (const [s, h] of [[1.2, -2], [2, -1.5], [3, -0.6]]) expect(at(s, h)).toBe(STONE);
     for (const [s, h] of [[0.2, -4], [6, 0.5], [9, 3]]) expect(at(s, h)).toBe(CREAM);
+  });
+
+  it("the header reads the ground until Contact's ivory reaches it, then ivory, never the night behind Contact", () => {
+    const night = pageGround(10, 6, 4);
+    const dusk = pageGround(10, 6, 0.4);
+    // Over Services the header sits on the ground, light on dark once the dusk is past half.
+    expect(headerGround(night, 400)).toEqual({ night: true, color: NIGHT });
+    expect(headerGround(dusk, 900)).toEqual({ night: dusk.fade > 0.5, color: dusk.color });
+    expect(headerGround(pageGround(1, -3, -10), 3000)).toEqual({ night: false, color: STONE });
+    // Contact's top at the header's tone line (64px) and above: ivory, not the body's night.
+    expect(headerGround(night, 65)).toEqual({ night: true, color: NIGHT });
+    expect(headerGround(night, 64)).toEqual({ night: false, color: CREAM });
+    expect(headerGround(night, -300)).toEqual({ night: false, color: CREAM });
+    expect(headerGround(night, -5000).color).toBe(CREAM);
   });
 
   it("services frame wipes up and settles from a zoom; items stagger 0.04 of a screen", () => {
