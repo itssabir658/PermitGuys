@@ -1,4 +1,5 @@
 import type { Guide, Service } from "@/content/types";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { LinkRows } from "@/components/ui/LinkRows";
 import { paths } from "@/lib/routes";
 
@@ -8,7 +9,7 @@ export function RelatedContent({ services, guides }: { services: Service[]; guid
     <div className="grid gap-12 xl:grid-cols-2">
       {guides.length > 0 ? (
         <div>
-          <h3 className="text-label text-brand-700">Related guides</h3>
+          <Eyebrow as="h3">Related guides</Eyebrow>
           <div className="mt-4">
             <LinkRows items={guides.map((g) => ({ href: paths.guide(g.slug), title: g.title }))} />
           </div>
@@ -16,7 +17,7 @@ export function RelatedContent({ services, guides }: { services: Service[]; guid
       ) : null}
       {services.length > 0 ? (
         <div>
-          <h3 className="text-label text-brand-700">Related services</h3>
+          <Eyebrow as="h3">Related services</Eyebrow>
           <div className="mt-4">
             <LinkRows items={services.map((s) => ({ href: paths.service(s.slug), title: s.name }))} />
           </div>

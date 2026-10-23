@@ -13,8 +13,8 @@ export const homeSteps: ProcessStep[] = [
     owner: "PermitGuys",
   },
   {
-    title: "We prepare the drawings and documents",
-    body: "We prepare the permit drawings and assemble the documentation your application needs, coordinating with engineers where the project requires them.",
+    title: "We design and engineer the project",
+    body: "We design the project with you, work out the engineering it needs and prepare the permit drawings and documentation your application needs.",
     owner: "PermitGuys",
   },
   {

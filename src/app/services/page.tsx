@@ -4,7 +4,9 @@ import { IndexList } from "@/components/ui/IndexList";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ArrowRight } from "@/components/ui/Icons";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { PlateBand } from "@/components/ui/PlateBand";
 import { Section } from "@/components/ui/Section";
+import { plates } from "@/content/imagery";
 import { otherWork } from "@/content/other-work";
 import { getServicesByCategory } from "@/lib/content";
 import { paths } from "@/lib/routes";
@@ -41,15 +43,16 @@ export default function ServicesPage() {
         crumbs={[{ name: "Services", path: paths.services }]}
         pageType="CollectionPage"
         eyebrow="Services"
-        title="Permit drawings and permit guidance, from first question to municipal review."
-        lead="We prepare the drawings and documentation a building permit application needs, and help you understand each step. Choose a service to see what it involves."
+        title="Architecture, engineering and permit drawings, from the first idea to the municipal review."
+        lead="We design the project, work out its engineering and prepare the drawings and documentation a building permit application needs. Choose a service to see what it involves."
       />
+      <PlateBand plate={plates.farmhouse} />
       {groups.map((g, i) => (
-        <Section key={g.id} labelledBy={`${g.id}-heading`} bordered={i > 0}>
+        <Section key={g.id} labelledBy={`${g.id}-heading`} bordered={i > 0} first={i === 0}>
           <div className="grid gap-10 lg:grid-cols-12">
             <div className="lg:col-span-4">
-              <Eyebrow code={String(i + 1).padStart(2, "0")}>{g.eyebrow}</Eyebrow>
-              <h2 id={`${g.id}-heading`} className="mt-6 font-display text-display-md text-charcoal-900">
+              <Eyebrow>{g.eyebrow}</Eyebrow>
+              <h2 id={`${g.id}-heading`} data-reveal-lines="" className="mt-6 font-display text-display-md text-charcoal-900">
                 {g.title}
               </h2>
               <p className="mt-4 max-w-sm leading-relaxed text-ink-muted">{g.intro}</p>
@@ -68,20 +71,20 @@ export default function ServicesPage() {
           </div>
         </Section>
       ))}
-      <Section labelledBy="other-work-heading" tone="light" bordered>
+      <Section labelledBy="other-work-heading" tone="light">
         <div className="grid gap-8 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <Eyebrow code="03">Also on our drawing board</Eyebrow>
-            <h2 id="other-work-heading" className="mt-6 font-display text-display-sm text-charcoal-900">
+            <Eyebrow>Also on our drawing board</Eyebrow>
+            <h2 id="other-work-heading" data-reveal-lines="" className="mt-6 font-display text-display-sm text-charcoal-900">
               Other work we take on
             </h2>
           </div>
-          <ul className="divide-y divide-line border-y border-line lg:col-span-8">
+          <ul className="border-t border-line lg:col-span-8">
             {otherWork.map((item) => (
-              <li key={item.label}>
-                <Link href={item.href} className="group flex items-center justify-between gap-6 py-4 text-lg text-charcoal-900 hover:text-brand-700">
-                  {item.label}
-                  <ArrowRight className="size-4 shrink-0 text-brand-600 transition-transform duration-300 ease-out-soft group-hover:translate-x-1" />
+              <li key={item.label} className="row-rule">
+                <Link href={item.href} className="group flex items-center justify-between gap-6 py-4 text-lg text-charcoal-900">
+                  <span className="link-draw">{item.label}</span>
+                  <ArrowRight className="size-4 shrink-0 text-ink transition-transform duration-300 ease-(--e-ui) group-hover:translate-x-1" />
                 </Link>
               </li>
             ))}

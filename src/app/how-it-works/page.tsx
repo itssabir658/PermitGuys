@@ -1,7 +1,10 @@
 import { ArticleLayout, ArticleSection, RuledList } from "@/components/ui/Article";
 import { CtaPanel } from "@/components/ui/CtaPanel";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { PlateBand } from "@/components/ui/PlateBand";
 import { StepList } from "@/components/ui/StepList";
+import { plates } from "@/content/imagery";
 import { homeSteps } from "@/content/process";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
@@ -24,8 +27,9 @@ const responsibilities = [
     who: "PermitGuys",
     items: [
       "Assess the project scope and the requirements we can identify.",
+      "Design the project and work out the engineering it needs.",
       "Prepare the permit drawings and assemble the documentation.",
-      "Coordinate with engineers or specialists the project needs.",
+      "Coordinate with any other specialists the project needs.",
       "Help you understand review comments and revise our drawings.",
     ],
   },
@@ -57,6 +61,7 @@ export default function HowItWorksPage() {
         title="From your first question to the municipal review."
         lead="A building permit involves several parties. Here is how the work is divided, so you know what to expect at each step."
       />
+      <PlateBand plate={plates.dusk} />
       <ArticleLayout toc={toc}>
         <ArticleSection id="steps" title="The five steps">
           <StepList steps={homeSteps} />
@@ -65,7 +70,9 @@ export default function HowItWorksPage() {
           <div className="grid gap-10 xl:grid-cols-3">
             {responsibilities.map((r) => (
               <div key={r.who}>
-                <h3 className="mb-4 text-label text-brand-700">{r.who}</h3>
+                <Eyebrow as="h3" className="mb-4">
+                  {r.who}
+                </Eyebrow>
                 <RuledList items={r.items} />
               </div>
             ))}
@@ -82,7 +89,8 @@ export default function HowItWorksPage() {
           />
         </ArticleSection>
       </ArticleLayout>
-      <CtaPanel />
+      {/* This page is the panel's usual second action, so it offers the services instead. */}
+      <CtaPanel secondary={{ href: paths.services, label: "Explore services" }} />
     </>
   );
 }

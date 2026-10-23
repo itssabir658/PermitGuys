@@ -3,7 +3,8 @@ import { ArticleLayout, ArticleSection, Note, RuledList } from "@/components/ui/
 import { CtaPanel } from "@/components/ui/CtaPanel";
 import { DirectAnswer } from "@/components/ui/DirectAnswer";
 import { FaqList } from "@/components/ui/FaqList";
-import { Figure } from "@/components/ui/Figure";
+import { Plate } from "@/components/ui/Plate";
+import { coverWidth, plateForService } from "@/content/imagery";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StepList } from "@/components/ui/StepList";
@@ -27,6 +28,7 @@ const toc = [
 export function ServiceTemplate({ service }: { service: Service }) {
   const path = paths.service(service.slug);
   const projects = getProjectsForService(service.slug);
+  const plate = plateForService(service.slug);
   return (
     <>
       <PageHeader
@@ -36,7 +38,18 @@ export function ServiceTemplate({ service }: { service: Service }) {
         ]}
         eyebrow={service.category === "residential" ? "Residential service" : "Commercial service"}
         title={service.name}
-        aside={<Figure visual={service.visual} tone="dark" captionOnDark framed priority sizes="(min-width: 1024px) 40vw, 100vw" />}
+        aside={
+          <Plate
+            plate={plate}
+            reveal={false}
+            priority
+            drift="slow"
+            notch
+            aspect="aspect-[3/2] md:aspect-[16/10] lg:aspect-[4/5]"
+            frameClassName="motion-unveil"
+            sizes={`(min-width: 1024px) ${coverWidth(plate, 4 / 5, "33vw", 1.1)}, (min-width: 768px) ${coverWidth(plate, 16 / 10, "100vw", 1.1)}, ${coverWidth(plate, 3 / 2, "100vw", 1.1)}`}
+          />
+        }
       >
         <DirectAnswer>{service.directAnswer}</DirectAnswer>
       </PageHeader>
@@ -85,7 +98,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
         </ArticleSection>
 
         <ArticleSection id="projects" title="Examples of our work">
-          <ProjectEvidence projects={projects} context={service.navLabel.toLowerCase()} />
+          <ProjectEvidence projects={projects} context={service.navLabel.toLowerCase()} renderings />
         </ArticleSection>
 
         <ArticleSection id="faq" title="Common questions">

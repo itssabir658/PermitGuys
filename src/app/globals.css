@@ -1,98 +1,196 @@
 @import "tailwindcss";
 
 /*
- * PermitGuys design tokens, from the logo and permitguys.ca: logo red #EE352F
- * (brand-400, for marks and drawings), button red #CA3A31 (brand-500, for
- * text and fills), charcoal #27272A and near-black #1C1C1C, white and a pale
- * cool grey #F2F5F9. Pages are pale grey and white with charcoal bands.
- * brand-500 passes WCAG AA as text on white and on the grey (the logo red
- * does not); on charcoal use brand-300. White text sits on red fills.
- * Type: Lufga for headings and Gilroy for body (see src/app/fonts.ts).
+ * `tracks:` applies while the scroll-scrubbed sticky tracks are on: motion
+ * allowed, JavaScript running (the head script sets data-motion) and a
+ * screen at least 500px tall. Keep in step with TRACKS_QUERY in
+ * src/lib/motion/engine.ts. Everything else gets the still layout, and so
+ * does a printed page: the tracks are for screens only (the engine stands
+ * the scroll motion down while the page prints).
+ */
+@custom-variant tracks {
+  @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+    :root[data-motion] & {
+      @slot;
+    }
+  }
+}
+
+/*
+ * PermitGuys design tokens (luxury redesign, docs/DESIGN.md).
+ *
+ * Materials, not decoration: warm ivory paper, stone, graphite and a near
+ * black, with the PermitGuys red kept as a restrained accent (the logo, a
+ * dot, an active marker, a hover rule). Never a red fill behind body copy.
+ *
+ * Contrast: ink and ink-muted pass WCAG AA on ivory and stone; on graphite
+ * use ivory text and stone-300 for secondary copy; brand-500 is for small
+ * accents on light grounds, brand-300 on dark.
  */
 @theme {
-  --color-charcoal-950: #141416;
-  --color-charcoal-900: #1c1c1c;
-  --color-charcoal-800: #27272a;
-  --color-charcoal-700: #3a3a3e;
-  --color-charcoal-600: #55555b;
-  --color-charcoal-300: #b4b4ba;
-  --color-charcoal-100: #e7e7ea;
+  --color-ivory: #f4f1eb;
+  --color-stone-50: #f8f6f2;
+  --color-stone-100: #ece7df;
+  --color-stone-200: #e2dcd2;
+  --color-stone-300: #cfc7ba;
+  --color-stone-400: #b3aa9c;
+  --color-stone-500: #8f877b;
 
-  --color-paper: #f2f5f9;
-  --color-paper-100: #e9edf2;
-  --color-paper-200: #dfe4ea;
-  --color-paper-300: #ced5dd;
+  --color-charcoal-950: #111110;
+  --color-charcoal-900: #191918;
+  --color-charcoal-800: #232321;
+  --color-charcoal-700: #33322f;
+  --color-charcoal-600: #4a4843;
+  --color-charcoal-300: #a9a49b;
+  --color-charcoal-100: #e4e0d8;
 
-  --color-brand-300: #f28b82;
+  /* Aliases kept so content components read naturally. */
+  --color-paper: #f4f1eb;
+  --color-paper-100: #ece7df;
+  --color-paper-200: #e2dcd2;
+  --color-paper-300: #cfc7ba;
+
+  --color-brand-300: #ec9a8f;
   --color-brand-400: #ee352f;
-  --color-brand-500: #ca3a31;
-  --color-brand-600: #b3322a;
-  --color-brand-700: #9c2a23;
+  --color-brand-500: #c2352c;
+  --color-brand-600: #a92e26;
+  --color-brand-700: #8f271f;
   --color-brand-800: #7f221c;
 
-  --color-ink: #1c1c1c;
-  --color-ink-muted: #55585e;
-  --color-line: #dcdee1;
-  --color-line-strong: #b9bec6;
+  --color-ink: #171716;
+  --color-ink-muted: #5e5952;
+  --color-line: #dcd5ca;
+  --color-line-strong: #b9b0a2;
 
-  --font-display: var(--font-heading), "Lufga", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-body), "Gilroy", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* Drawing annotations and placeholders only. */
-  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-heading), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-wordmark: var(--font-wordmark-face), "Didot", "Bodoni 72", Georgia, serif;
 
-  --text-display-2xl: clamp(2.6rem, 1.2rem + 5vw, 5.75rem);
-  --text-display-2xl--line-height: 1;
-  --text-display-2xl--letter-spacing: -0.035em;
-  --text-display-xl: clamp(2.3rem, 1.4rem + 3.6vw, 4.25rem);
-  --text-display-xl--line-height: 1.04;
-  --text-display-xl--letter-spacing: -0.03em;
-  --text-display-lg: clamp(1.95rem, 1.4rem + 2.3vw, 3.25rem);
-  --text-display-lg--line-height: 1.08;
-  --text-display-lg--letter-spacing: -0.025em;
-  --text-display-md: clamp(1.6rem, 1.3rem + 1.2vw, 2.25rem);
-  --text-display-md--line-height: 1.15;
-  --text-display-md--letter-spacing: -0.02em;
-  --text-display-sm: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --text-hero: clamp(3rem, 0.9rem + 6.6vw, 8.5rem);
+  --text-hero--line-height: 0.93;
+  --text-hero--letter-spacing: -0.052em;
+  --text-display-2xl: clamp(2.7rem, 1rem + 5.4vw, 7rem);
+  --text-display-2xl--line-height: 0.96;
+  --text-display-2xl--letter-spacing: -0.047em;
+  --text-display-xl: clamp(2.35rem, 1.2rem + 3.8vw, 5rem);
+  --text-display-xl--line-height: 1;
+  --text-display-xl--letter-spacing: -0.042em;
+  --text-display-lg: clamp(1.95rem, 1.15rem + 2.6vw, 3.6rem);
+  --text-display-lg--line-height: 1.04;
+  --text-display-lg--letter-spacing: -0.036em;
+  --text-display-md: clamp(1.55rem, 1.2rem + 1.15vw, 2.35rem);
+  --text-display-md--line-height: 1.1;
+  --text-display-md--letter-spacing: -0.026em;
+  --text-display-sm: clamp(1.2rem, 1.1rem + 0.45vw, 1.45rem);
   --text-display-sm--line-height: 1.25;
-  --text-display-sm--letter-spacing: -0.01em;
+  --text-display-sm--letter-spacing: -0.012em;
 
-  --container-site: 82rem;
-  --container-prose: 42rem;
+  --container-site: 100rem;
+  --container-prose: 40rem;
+  /* One right edge for running text, lists, notes and tables in an article column. */
+  --measure-article: 46rem;
 
+  /* One motion language: a long, decelerating ease for reveals and a short one for hovers. */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+}
+
+/*
+ * One motion vocabulary for the whole site (the scroll side is at the top
+ * of src/lib/motion/home.ts):
+ *   - Entrances: --e-out-strong (power3.out).
+ *   - Exits: --e-exit (power2.in).
+ *   - Full-surface sheets: --e-sheet, 0.6–1.0s.
+ *   - Scrubbed wipes: power2.inOut over 0.3 screens.
+ *   - Masked display lines: 0.9–1.2s timed, or 0.24–0.3 screens scrubbed,
+ *     0.06–0.09s apart (0.03–0.05 screens scrubbed).
+ *   - Small labels: 0.7s.
+ *   - Hover and tone: 0.3s --e-ui.
+ * No overshoot. Display type never fades: it rises from its own mask and
+ * leaves upward through it; only small labels, captions and blocks fade.
+ */
+:root {
+  --e-out-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* power1.out */
+  --e-out: cubic-bezier(0.22, 0.61, 0.36, 1); /* power2.out */
+  --e-out-strong: cubic-bezier(0.22, 1, 0.36, 1); /* power3.out */
+  --e-cubic-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --e-inout: cubic-bezier(0.45, 0, 0.55, 1); /* power1.inOut */
+  --e-inout-2: cubic-bezier(0.65, 0, 0.35, 1); /* power2.inOut */
+  --e-in: cubic-bezier(0.55, 0.09, 0.68, 0.53); /* power1.in, power2.in */
+  --e-ui: cubic-bezier(0.4, 0, 0.2, 1);
+  --e-exit: cubic-bezier(0.32, 0, 0.67, 0); /* power2.in */
+  --e-sheet: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/*
+ * The colour under the header, which the homepage writes on the phone header
+ * bar every frame of a ground change (HomeMotion). It must not inherit:
+ * otherwise each write restyles every element below the one it is set on.
+ */
+@property --ground {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #f4f1eb;
 }
 
 @layer base {
+  /* The engine keeps the reading position itself on resize, so the browser's scroll anchoring is off. */
   html {
     -webkit-text-size-adjust: 100%;
     scroll-padding-top: 6rem;
+    overflow-anchor: none;
+  }
+
+  /*
+   * Lenis smooth scroll (src/lib/motion/engine.ts). No selector may name
+   * the lenis* classes: Lenis rewrites them on <html> at the start and end
+   * of every gesture, and each rewrite would restyle the whole document.
+   * The engine holds the page still without touching overflow, so a
+   * classic scrollbar never disappears and nothing shifts sideways.
+   */
+  [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  /* No orphans: headings wrap in balanced lines, paragraphs avoid a lone last word (Chrome balances only up to six lines). */
+  :where(h1, h2, h3, figcaption) {
+    text-wrap: balance;
+  }
+  :where(p, dd, li) {
+    text-wrap: pretty;
   }
 
   body {
-    background-color: var(--color-paper);
+    background-color: var(--color-ivory);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
     text-rendering: optimizeLegibility;
   }
 
-  /* Headings default to medium weight; font-semibold and friends still win. */
   :where(.font-display) {
-    font-weight: 500;
+    font-weight: 400;
   }
 
   ::selection {
-    background-color: var(--color-brand-300);
-    color: var(--color-charcoal-950);
+    background-color: var(--color-charcoal-900);
+    color: var(--color-ivory);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--color-brand-500);
     outline-offset: 3px;
+  }
+  /* On dark grounds the ring is brand-300 (8:1 on graphite; brand-500 would be about 3:1). */
+  [data-tone="dark"] :focus-visible,
+  .site-menu :focus-visible {
+    outline-color: var(--color-brand-300);
   }
 
   @media (prefers-reduced-motion: no-preference) {
     html {
-      scroll-behavior: smooth;
       interpolate-size: allow-keywords;
     }
   }
@@ -101,7 +199,7 @@
 @layer components {
   /* Long-form copy for guides and page bodies. */
   .prose-pg {
-    max-width: var(--container-prose);
+    max-width: var(--measure-article);
     font-size: 1.0625rem;
     line-height: 1.75;
     color: var(--color-ink);
@@ -111,13 +209,14 @@
   }
   .prose-pg h2 {
     font-family: var(--font-display);
-    font-weight: 500;
+    font-weight: 400;
     font-size: var(--text-display-sm);
+    letter-spacing: -0.015em;
     line-height: 1.2;
     margin-top: 2.2em;
   }
   .prose-pg h3 {
-    font-weight: 600;
+    font-weight: 500;
     font-size: 1.125rem;
     margin-top: 1.8em;
   }
@@ -127,7 +226,7 @@
   }
   .prose-pg ul > li {
     position: relative;
-    padding-left: 1.4em;
+    padding-left: 1.6em;
   }
   .prose-pg ul > li + li {
     margin-top: 0.5em;
@@ -136,56 +235,57 @@
     content: "";
     position: absolute;
     left: 0;
-    top: 0.8em;
-    width: 0.7em;
+    top: 0.85em;
+    width: 0.85em;
     height: 1px;
-    background-color: var(--color-brand-500);
+    background-color: var(--color-ink);
   }
   .prose-pg a {
-    color: var(--color-brand-700);
+    color: var(--color-ink);
     text-decoration: underline;
-    text-underline-offset: 0.2em;
+    text-decoration-color: var(--color-line-strong);
+    text-underline-offset: 0.22em;
     text-decoration-thickness: 1px;
+    transition: text-decoration-color 0.3s var(--e-ui);
   }
   .prose-pg a:hover {
-    color: var(--color-charcoal-900);
-  }
-
-  /* Charcoal and pale grey grounds with soft red and grey glows, so glass reads as glass. */
-  .bg-glow-dark {
-    background:
-      radial-gradient(55% 60% at 88% 0%, rgb(202 58 49 / 0.3), transparent 70%),
-      radial-gradient(45% 55% at 0% 100%, rgb(110 116 128 / 0.55), transparent 70%),
-      var(--color-charcoal-900);
-  }
-  .bg-glow-paper {
-    background:
-      radial-gradient(40% 45% at 100% 0%, rgb(202 58 49 / 0.13), transparent 70%),
-      radial-gradient(40% 55% at 0% 100%, rgb(110 116 128 / 0.12), transparent 70%),
-      var(--color-paper);
+    text-decoration-color: currentColor;
   }
 
   /*
-   * Pointer spotlight for interactive cards. InteractionEffects.tsx sets --mx and --my
-   * as the pointer moves; without JavaScript the card simply has no glow.
+   * Underline that draws in from the left on hover, and back out to the
+   * right. Used for text links throughout.
    */
-  .spotlight {
-    position: relative;
-    isolation: isolate;
+  .link-draw {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 100% 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.6s var(--ease-out-expo);
   }
-  .spotlight::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(202 58 49 / 0.16), transparent 45%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+  .link-draw:hover,
+  .group:hover .link-draw,
+  .link-draw:focus-visible {
+    background-size: 100% 1px;
+    background-position: 0 100%;
   }
-  .spotlight:hover::before {
-    opacity: 1;
+  /* A link that is underlined at rest, and redraws on hover. */
+  .link-rule {
+    background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+    background-size:
+      100% 1px,
+      0% 1px;
+    background-position:
+      100% 100%,
+      0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.7s var(--ease-out-expo);
+  }
+  .link-rule:hover,
+  .group:hover .link-rule {
+    background-size:
+      0% 1px,
+      100% 1px;
   }
 
   /* FAQ disclosures open smoothly where the browser supports it. */
@@ -194,116 +294,2500 @@
       block-size: 0;
       overflow-y: clip;
       transition:
-        block-size 0.35s var(--ease-out-soft),
-        content-visibility 0.35s allow-discrete;
+        block-size 0.5s var(--ease-out-expo),
+        content-visibility 0.5s allow-discrete;
     }
     details.smooth[open]::details-content {
       block-size: auto;
     }
   }
 
-  /* Hairline drafting grid used behind drawings and on dark panels. */
-  .bg-drafting-grid {
-    background-image:
-      linear-gradient(to right, rgb(28 28 28 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(28 28 28 / 0.06) 1px, transparent 1px);
-    background-size: 24px 24px;
-  }
-  .bg-drafting-grid-dark {
-    background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-    background-size: 24px 24px;
+  /* Fine film grain over imagery, so flat renders read as photographs. */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.09;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }
 
-/* Frosted glass panels, light and dark. */
-@utility glass {
-  background-color: rgb(255 255 255 / 0.6);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgb(255 255 255 / 0.75);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.7),
-    0 16px 40px -20px rgb(28 28 28 / 0.28);
-}
-@utility glass-dark {
-  background-color: rgb(255 255 255 / 0.06);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgb(255 255 255 / 0.13);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 24px 60px -28px rgb(0 0 0 / 0.6);
-}
-
-/* Small uppercase label used above headings and in cards. */
+/* Small uppercase label in the mono voice, for sheet numbers and metadata. */
 @utility text-label {
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
   line-height: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 400;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-@layer utilities {
-  /* Restrained entrance motion; disabled for users who prefer less motion. */
-  @media (prefers-reduced-motion: no-preference) {
-    .motion-rise {
-      animation: pg-rise 0.9s var(--ease-out-soft) both;
-    }
-    .motion-rise-delay {
-      animation: pg-rise 0.9s var(--ease-out-soft) 0.12s both;
-    }
-
-    /* Scroll reveal, applied by InteractionEffects.tsx only to content below the fold. */
-    [data-reveal] {
-      transition:
-        opacity 0.8s var(--ease-out-soft),
-        transform 0.8s var(--ease-out-soft);
-    }
-    [data-reveal="hidden"] {
-      opacity: 0;
-      transform: translateY(28px);
-    }
-
-    /* New work in the hero drawing draws itself in: strokes marked pathLength="1". */
-    .draw-in [pathLength] {
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-      animation: pg-draw 1.6s var(--ease-out-soft) 0.25s forwards;
-    }
-  }
+/* Lede paragraph: larger, lighter, comfortably measured. */
+@utility text-lede {
+  font-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.3rem);
+  line-height: 1.55;
+  letter-spacing: -0.01em;
 }
 
 /*
- * Services filter (ServiceFilter.tsx): hide cards outside the chosen
- * category. Unlayered so it wins over the cards' own display utilities.
+ * ===== Inner pages: entrance and reveals (PageHeader, InteractionEffects) =====
+ *
+ * The first screen enters once the preloader or the page transition lifts
+ * (data-revealed): the breadcrumb fades in, the eyebrow and then each line
+ * of the title rise out of their own masks, the lead follows, a picture plate
+ * unveils upward from its bottom edge while its picture settles from 1.14,
+ * and the header rule draws across. Everything has settled by about 1.75s.
+ *
+ * Further down, InteractionEffects.tsx reveals each piece as it reaches the
+ * bottom 8% of the screen; pieces that arrive together follow one another
+ * 60ms apart (--o, in ms, written by the script), and anything already in
+ * the first screen waits for the header:
+ *   [data-reveal-lines]       a heading split into masked lines (--i per line)
+ *   [data-reveal-type="rows"] a group whose rows (li, details, tr, p, …) rise
+ *                             16px one by one; .row-rule hairlines draw across
+ *   data-reveal=""            a block: fades and rises 16px
+ *   data-reveal-type="mask"   a picture unveils upward and settles
+ *   data-reveal-type="rule"   a hairline draws across
+ *   data-reveal-type="draw"   an Ontario outline draws stroke by stroke
+ * Content is visible by default: only the script hides it, never with
+ * reduced motion, so it stays readable without JavaScript and for crawlers.
+ * The hidden states are for the screen only, so a page prints in full.
  */
-[data-filter="residential"] > [data-category="commercial"],
-[data-filter="commercial"] > [data-category="residential"] {
-  display: none;
+
+/* A row's bottom hairline, drawn by a pseudo-element so it can draw across with its row. */
+.row-rule {
+  position: relative;
 }
-@media (prefers-reduced-motion: no-preference) {
-  [data-filtered] > * {
-    animation: pg-rise 0.6s var(--ease-out-soft) both;
-  }
+.row-rule::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: var(--rule-color, var(--color-line));
+  transform-origin: left center;
+  pointer-events: none;
 }
 
-@keyframes pg-draw {
-  to {
-    stroke-dashoffset: 0;
+@media screen and (prefers-reduced-motion: no-preference) {
+  :root[data-motion] .page-crumbs {
+    animation: fade-in 0.6s var(--e-out) both;
+  }
+  :root[data-motion] .page-eyebrow {
+    animation: line-up 0.7s var(--e-out-strong) 0.05s both;
+  }
+  :root[data-motion] .page-title .split-line__inner {
+    animation: line-up 0.9s var(--e-out-strong) calc(0.12s + var(--i, 0) * 0.08s) both;
+  }
+  /* Split again after its entrance (a resize): the new lines are simply there. */
+  :root[data-motion] .page-title[data-settled] .split-line__inner {
+    animation: none;
+  }
+  :root[data-motion] .motion-rise {
+    animation: pg-rise 0.9s var(--ease-out-expo) 0.4s both;
+  }
+  :root[data-motion] .motion-rise-delay {
+    animation: pg-rise 0.9s var(--ease-out-expo) 0.52s both;
+  }
+  :root[data-motion] .motion-unveil {
+    animation: plate-in var(--unveil-duration, 1.3s) var(--unveil-ease, var(--e-sheet)) var(--unveil-delay, 0.15s) both;
+  }
+  /*
+   * A picture band starts below the fold, so only its top shows: an entrance
+   * ease brings its rising edge over the fold while the title is still
+   * landing, instead of after it. Set on the figure, so its caption keeps
+   * the same delay.
+   */
+  figure:has(.motion-unveil--band) {
+    --unveil-duration: 1.5s;
+    --unveil-ease: var(--e-out-strong);
+    --unveil-delay: 0.3s;
+  }
+  :root[data-motion] .motion-unveil img {
+    animation: plate-zoom 1.9s var(--ease-out-expo) var(--unveil-delay, 0.15s) both;
+  }
+  /* The plate's caption is a small label: it fades in once its picture is mostly up. */
+  :root[data-motion] figure:has(.motion-unveil) > figcaption {
+    animation: fade-in 0.8s var(--e-out) calc(var(--unveil-delay, 0.15s) + 0.7s) both;
+  }
+  :root[data-motion] .page-rule {
+    transform-origin: left center;
+    animation: rule-in 1.2s var(--ease-out-expo) 0.55s both;
+  }
+  :root[data-motion]:not([data-revealed]) :is(.page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule) {
+    animation-play-state: paused;
+  }
+
+  /* Blocks. */
+  [data-reveal]:not([data-reveal-type], [data-reveal-lines]) {
+    transition:
+      opacity 0.9s var(--ease-out-expo),
+      transform 0.9s var(--ease-out-expo);
+    transition-delay: calc((var(--d, 0) + var(--o, 0)) * 1ms);
+  }
+  [data-reveal="hidden"]:not([data-reveal-type], [data-reveal-lines]) {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  /* Headings: hidden until they are split, then each line rises out of its mask, 70ms apart. */
+  :root[data-motion] [data-reveal-lines]:not([data-split]) {
+    opacity: 0;
+  }
+  [data-reveal-lines] .split-line__inner {
+    transition: transform 0.9s var(--e-out-strong) calc(var(--o, 0) * 1ms + var(--i, 0) * 70ms);
+  }
+  [data-reveal-lines][data-reveal="hidden"] .split-line__inner {
+    transform: translateY(120%);
+  }
+
+  /* Rows, and the hairline under each, on the same delay. */
+  [data-reveal-type="row"] {
+    transition:
+      opacity 0.8s var(--ease-out-expo),
+      transform 0.8s var(--ease-out-expo);
+    transition-delay: calc(var(--o, 0) * 1ms);
+  }
+  [data-reveal-type="row"][data-reveal="hidden"] {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  .row-rule::after {
+    transition: transform 1s var(--ease-out-expo) calc(var(--o, 0) * 1ms);
+  }
+  .row-rule[data-reveal="hidden"]::after {
+    transform: scaleX(0);
+  }
+
+  /* Whatever holds focus is never left hidden (InteractionEffects also shows it on focus). */
+  [data-reveal="hidden"]:focus-within {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0s;
+  }
+  [data-reveal-lines][data-reveal="hidden"]:focus-within .split-line__inner,
+  .row-rule[data-reveal="hidden"]:focus-within::after {
+    transform: none;
+  }
+
+  [data-reveal-type="mask"] {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 1.3s var(--e-sheet);
+    transition-delay: calc((var(--d, 0) + var(--o, 0)) * 1ms);
+  }
+  [data-reveal-type="mask"] img {
+    transition: transform 1.9s var(--ease-out-expo);
+    transition-delay: calc((var(--d, 0) + var(--o, 0)) * 1ms);
+  }
+  [data-reveal-type="mask"][data-reveal="hidden"] {
+    clip-path: inset(100% 0 0 0);
+  }
+  [data-reveal-type="mask"][data-reveal="hidden"] img {
+    transform: scale(1.14);
+  }
+
+  [data-reveal-type="rule"] {
+    transform-origin: left center;
+    transition: transform 1.2s var(--ease-out-expo);
+    transition-delay: calc((var(--d, 0) + var(--o, 0)) * 1ms);
+  }
+  [data-reveal-type="rule"][data-reveal="hidden"] {
+    transform: scaleX(0);
+  }
+
+  /* Five strokes, 0.7s each and 0.1s apart, then the GTA dot. */
+  [data-reveal-type="draw"][data-reveal="hidden"] .ontario__stroke path {
+    stroke-dashoffset: 1;
+  }
+  [data-reveal-type="draw"][data-reveal="hidden"] .ontario__dot {
+    transform: scale(0);
+  }
+  [data-reveal-type="draw"][data-reveal="shown"] .ontario__stroke path {
+    animation: ontario-draw 0.7s var(--e-inout-2) calc(var(--o, 0) * 1ms + var(--i, 0) * 0.1s) both;
+  }
+  [data-reveal-type="draw"][data-reveal="shown"] .ontario__dot {
+    animation: dot-in 0.45s var(--e-out-strong) calc(var(--o, 0) * 1ms + 0.85s) both;
+  }
+
+  /* The 404: the numeral rises out of its mask with the title, and the outline draws beside them. */
+  :root[data-motion] .not-found__numeral {
+    animation: line-up 1.1s var(--e-out-strong) 0.1s both;
+  }
+  :root[data-motion] .not-found__map .ontario__stroke path {
+    animation: ontario-draw 0.7s var(--e-inout-2) calc(0.35s + var(--i, 0) * 0.14s) both;
+  }
+  :root[data-motion] .not-found__map .ontario__dot {
+    animation: dot-in 0.45s var(--e-out-strong) 1.3s both;
+  }
+  :root[data-motion]:not([data-revealed]) :is(.not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
+    animation-play-state: paused;
   }
 }
 
 @keyframes pg-rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes plate-in {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes plate-zoom {
+  from {
+    transform: scale(1.14);
+  }
+}
+
+@keyframes rule-in {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+
+/*
+ * ===== Motion (docs/MOTION.md) =====
+ * Track layouts use the `tracks` media query and the head script's
+ * data-motion: screen and (prefers-reduced-motion: no-preference) and
+ * (min-height: 500px). Print gets the still layouts.
+ */
+
+/* Masked lines (src/lib/motion/split.ts): each line slides from behind its own edge. */
+.split-line {
+  display: block;
+  overflow: clip;
+  overflow-clip-margin: 0.16em;
+  padding-bottom: 0.02em;
+}
+.split-line__inner {
+  display: block;
+}
+
+@keyframes line-up {
+  from {
+    transform: translateY(120%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes nav-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes ontario-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dot-in {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes dot-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.7);
+    opacity: 0;
+  }
+}
+
+/* ---- Ontario outline (OntarioOutline.tsx) ---- */
+.ontario__stroke path {
+  stroke: currentColor;
+  stroke-width: 1.4px;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.ontario__dot {
+  fill: var(--color-brand-400);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* A ring that rings out once from the dot; only the preloader plays it. */
+.ontario__pulse {
+  display: none;
+  fill: none;
+  stroke: var(--color-brand-400);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* ---- Preloader (Preloader.tsx) ---- */
+/*
+ * The iris: a hole in the screen at the GTA dot, its radius in --hole
+ * (animated by Preloader.tsx; registered, so it interpolates). At 0 the
+ * transparent stop sits at −1px, so the screen is whole.
+ */
+@property --hole {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: none;
+  place-items: center;
+  background: var(--color-charcoal-950);
+  color: var(--color-ivory);
+  mask: radial-gradient(circle at var(--iris-x, 50%) var(--iris-y, 50%), transparent calc(var(--hole) - 1px), #000 var(--hole));
+}
+/* Up until its exit has finished: data-loaded is set as the exit starts, so the page's entrance plays through the opening iris. */
+:root[data-motion]:not([data-preloaded]) .preloader {
+  display: grid;
+}
+/* The page is live from the moment the exit starts: a mask does not stop hit testing, so the opening screen lets clicks through. */
+:root[data-loaded] .preloader {
+  pointer-events: none;
+}
+.preloader__inner,
+.screen-veil__mark {
+  display: grid;
+  justify-items: center;
+  gap: 2rem;
+}
+/* Sized by the height, and by the width on narrow phones, so the whole province fits with a gutter. */
+.preloader__map {
+  height: min(52svh, 30rem, calc((100vw - 3rem) / 0.892));
+  aspect-ratio: 892 / 1000;
+  overflow: visible;
+}
+.preloader__label,
+.screen-veil__label {
+  display: flex;
+  gap: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-charcoal-300);
+}
+:is(.preloader__label, .screen-veil__label) span + span::before {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.6rem;
+  border-radius: 9999px;
+  background: var(--color-brand-400);
+  vertical-align: 0.08em;
+}
+/* The mainland draws first (0.05–0.95s), the islands overlap its end, 0.08s apart (last done at 1.19s). */
+.preloader .ontario__stroke path {
+  animation: ontario-draw 0.5s var(--e-inout-2) calc(0.45s + (var(--i) - 1) * 0.08s) both;
+}
+.preloader .ontario__stroke:first-child path {
+  animation: ontario-draw 0.9s var(--e-inout-2) 0.05s both;
+}
+/* The dot pops as the mainland closes, and rings out once: the focal point the iris opens from. */
+.preloader .ontario__dot {
+  animation: dot-in 0.45s var(--e-out-strong) 0.95s both;
+}
+.preloader .ontario__pulse {
+  display: inline;
+  /* Unseen until it rings (not filled backwards), and gone after. */
+  opacity: 0;
+  animation: dot-pulse 0.9s var(--e-out) 1s forwards;
+}
+.preloader__label {
+  animation: fade-in 0.6s var(--e-out) 0.3s both;
+}
+
+/* ---- Page transition (ScreenTransition.tsx) ---- */
+/*
+ * At rest the veil is the finished cover: the sheet over the whole screen
+ * and the outline drawn on it. A forward navigation animates its way there
+ * (the sheet rising, the outline drawing) and away (the sheet leaving
+ * through the top); back and forward and reduced motion fade the whole veil.
+ * Hidden while idle.
+ */
+.screen-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  overflow: hidden;
+  color: var(--color-ivory);
+  pointer-events: none;
+  visibility: hidden;
+}
+.screen-veil:not([data-phase="idle"]) {
+  visibility: visible;
+}
+.screen-veil:is([data-phase="cover"], [data-phase="return"], [data-phase="back"]) {
+  pointer-events: auto;
+}
+.screen-veil__underlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(17 17 16 / 0.45);
+}
+/* The drawing sheet: the outline is drawn on it, so it comes up with the sheet and leaves with it. */
+.screen-veil__panel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--color-charcoal-950);
+}
+.screen-veil__mark {
+  gap: 1.75rem;
+}
+.screen-veil__map {
+  height: min(44svh, 24rem, calc((100vw - 4rem) / 0.892));
+  aspect-ratio: 892 / 1000;
+  overflow: visible;
+}
+/* The tapped link answers at once, before the sheet has covered it. */
+[data-pressed] {
+  opacity: 0.55;
+  transition: opacity 0.12s var(--e-ui);
+}
+
+/* ---- Header and menu (MainNav.tsx) ---- */
+/* Every part of the header changes tone together, over 0.3s. */
+.site-nav {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 50;
+  color: var(--color-ink);
+  pointer-events: none;
+  transition: color 0.3s var(--e-ui);
+}
+.site-nav :is(a, button) {
+  pointer-events: auto;
+}
+.site-nav:is([data-tone="dark"], [data-open]) {
+  color: var(--color-ivory);
+}
+.site-nav__bar {
+  position: relative;
+  isolation: isolate;
+  transition:
+    background-color 0.3s var(--e-ui),
+    backdrop-filter 0.3s var(--e-ui),
+    box-shadow 0.3s var(--e-ui);
+}
+/* The phone bar's shade over the homepage's picture (below), on a layer of its own, so it fades in as the ivory fades out. */
+.site-nav__bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(rgb(17 17 16 / 0.55), rgb(17 17 16 / 0));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s var(--e-ui);
+}
+/*
+ * Both logos share one cell. Only the ivory one (on top) fades; the ink one
+ * under it is shown at once on the way to ink and leaves only once the
+ * ivory one is whole, so the red "permit" never thins or doubles mid-fade.
+ */
+.site-nav__logo-stack {
+  display: grid;
+}
+.site-nav__logo {
+  grid-area: 1 / 1;
+}
+.site-nav__logo--light {
+  opacity: 0;
+  transition: opacity 0.3s var(--e-ui);
+}
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo--light {
+  opacity: 1;
+}
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo--dark {
+  opacity: 0;
+  transition: opacity 0s linear 0.3s;
+}
+/* Over a dark ground the Contact button turns ivory, as the light link button. */
+.site-nav[data-tone="dark"] .site-nav__cta {
+  --lb-bg: var(--color-ivory);
+  --lb-fg: var(--color-ink);
+  --lb-wipe: var(--color-stone-300);
+  --lb-shine: var(--color-charcoal-600);
+}
+
+/*
+ * The row steps up and out past 80px (wide screens) from the right, Contact
+ * first (--o, 30ms apart, 0.28s on power2.in), and comes back above it from
+ * the left (--i, 40ms apart, 0.5s on power3.out) once the menu button has
+ * dropped away.
+ */
+.site-nav__item {
+  transition:
+    opacity 0.5s var(--e-out-strong),
+    transform 0.5s var(--e-out-strong),
+    visibility 0s;
+  transition-delay: calc(0.12s + var(--i, 0) * 40ms), calc(0.12s + var(--i, 0) * 40ms), 0s;
+}
+@media (min-width: 768px) {
+  .site-nav[data-collapsed] .site-nav__item,
+  .site-nav[data-open] .site-nav__item:not(.site-nav__item--logo) {
+    opacity: 0;
+    transform: translateY(-10px);
+    visibility: hidden;
+    transition:
+      opacity 0.28s var(--e-exit),
+      transform 0.28s var(--e-exit),
+      visibility 0s linear;
+    transition-delay: calc(var(--o, 0) * 30ms), calc(var(--o, 0) * 30ms), calc(0.28s + var(--o, 0) * 30ms);
+  }
+}
+/* Phones keep the row, on a ground of its own once the page has scrolled, with a hairline under it on light grounds. */
+@media (max-width: 767px) {
+  .site-nav[data-collapsed]:not([data-open]) .site-nav__bar {
+    /* The homepage writes the colour under the header here (stone under Works, dusk over Services, ivory over Contact). */
+    background: color-mix(in srgb, var(--ground, var(--color-ivory)) 88%, transparent);
+    backdrop-filter: blur(14px);
+    box-shadow: inset 0 -1px rgb(23 23 22 / 0.08);
+  }
+  .site-nav[data-collapsed][data-tone="dark"]:not([data-open]) .site-nav__bar {
+    background: rgb(25 25 24 / 0.88);
+    box-shadow: none;
+  }
+  /* Over the homepage's picture: a shade that fades into the picture, not a slab across it. The bar's colour and the shade cross over together. */
+  .site-nav[data-over-hero][data-collapsed]:not([data-open]) .site-nav__bar {
+    background-color: transparent;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .site-nav[data-over-hero][data-collapsed]:not([data-open]) .site-nav__bar::before {
+    opacity: 1;
+  }
+}
+/*
+ * Without JavaScript nothing reads the ground or opens the menu: the header
+ * stays at the top of the page, over the ground it was set for, and scrolls
+ * away with it; the menu button, which could not open anything, is left out.
+ */
+@media (scripting: none) {
+  .site-nav {
+    position: absolute;
+  }
+  .site-nav__menu-slot {
+    display: none;
+  }
+}
+
+/*
+ * Header entrance, from the moment the preloader starts to open: 0.3s on
+ * inner pages, 0.05s apart, so the page never shows a title without its
+ * header; 0.9s on the homepage, 0.06s apart, as the iris clears and the
+ * name is rising. The menu button is the last item, so on phones it comes
+ * in with the logo.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion] .nav-intro {
+    animation: nav-in 0.7s var(--e-out) calc(0.3s + var(--i, 0) * 0.05s) both;
+  }
+  :root[data-motion] .site-nav[data-entrance="home"] .nav-intro {
+    animation-duration: 0.8s;
+    animation-delay: calc(0.9s + var(--i, 0) * 0.06s);
+  }
+  :root[data-motion]:not([data-loaded]) .nav-intro {
+    animation-play-state: paused;
+  }
+}
+
+.site-nav__menu-slot {
+  position: absolute;
+  top: 50%;
+  right: 1.25rem;
+  overflow: hidden;
+  translate: 0 -50%;
+}
+@media (min-width: 640px) {
+  .site-nav__menu-slot {
+    right: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .site-nav__menu-slot {
+    right: 3rem;
+  }
+}
+@media (min-width: 1280px) {
+  .site-nav__menu-slot {
+    right: 4rem;
+  }
+}
+/*
+ * A hairline in its own colour keeps the button's edge on any ground, even
+ * its own. It rises into the corner once Contact has gone (Contact's fade
+ * is all but done at 0.26s, and the button shows in its slot from about
+ * 0.07s into its rise).
+ */
+.site-nav__menu-btn {
+  position: relative;
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+  background: var(--color-ink);
+  color: var(--color-ivory);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent);
+  transition:
+    transform 0.5s var(--e-out-strong) 0.26s,
+    background-color 0.3s var(--e-ui),
+    color 0.3s var(--e-ui),
+    box-shadow 0.3s var(--e-ui),
+    visibility 0s;
+}
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__menu-btn {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+}
+/* The slot clips the button's step in and out, and would clip a ring drawn outside it: the focus ring sits inside the square, in the red that reads on the button's own colour. */
+.site-nav__menu-btn:focus-visible {
+  outline-color: var(--color-brand-300);
+  outline-offset: -4px;
+}
+.site-nav:is([data-tone="dark"], [data-open]) .site-nav__menu-btn:focus-visible {
+  outline-color: var(--color-brand-500);
+}
+/* Wide screens at the top of the page: the button drops below its slot, out of sight, before the row comes back. */
+@media (min-width: 768px) {
+  .site-nav:not([data-collapsed], [data-open]) .site-nav__menu-btn {
+    transform: translateY(200%);
+    visibility: hidden;
+    transition:
+      transform 0.2s var(--e-exit),
+      background-color 0.3s var(--e-ui),
+      color 0.3s var(--e-ui),
+      box-shadow 0.3s var(--e-ui),
+      visibility 0s linear 0.2s;
+  }
+}
+.site-nav__icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.site-nav__icon > span {
+  position: absolute;
+  width: 1.05rem;
+  height: 1px;
+  background: currentColor;
+}
+.site-nav__icon--open > span:first-child {
+  transform: translateY(-3.5px);
+}
+.site-nav__icon--open > span:last-child {
+  transform: translateY(3.5px);
+}
+.site-nav__icon--close > span:first-child {
+  transform: rotate(45deg);
+}
+.site-nav__icon--close > span:last-child {
+  transform: rotate(-45deg);
+}
+.site-nav__icon--open {
+  transition: opacity 0.3s var(--e-out-soft) 0.2s;
+}
+.site-nav__icon--close {
+  opacity: 0;
+  transition: opacity 0.3s var(--e-out-soft);
+}
+[aria-expanded="true"] > .site-nav__icon--open {
+  opacity: 0;
+  transition-delay: 0s;
+}
+[aria-expanded="true"] > .site-nav__icon--close {
+  opacity: 1;
+  transition-delay: 0.2s;
+}
+
+/* Phones: the whole screen. Wider: a panel in the corner, over a light scrim that shows the page is behind it (and closes it when clicked). */
+.site-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  color: var(--color-ivory);
+  visibility: hidden;
+}
+.site-menu[data-shown] {
+  visibility: visible;
+}
+.site-menu::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgb(17 17 16 / 0.3);
+  opacity: 0;
+  transition: opacity 0.4s var(--e-ui);
+}
+.site-menu[data-open]::before {
+  opacity: 1;
+}
+@media (min-width: 768px) {
+  .site-menu {
+    inset: 0.75rem 0.75rem auto auto;
+    width: min(46rem, calc(100vw - 1.5rem));
+  }
+}
+.site-menu__bg {
+  position: absolute;
+  inset: 0;
+  background: var(--color-charcoal-950);
+  transform-origin: 0 0;
+}
+/*
+ * The content scrolls inside the panel on short screens; the background
+ * stays put behind it. Its top edge fades out under the logo and the close
+ * button, so nothing scrolls under them. On phones it fills the screen, the
+ * call to action at its foot.
+ */
+.site-menu__content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-height: 100svh;
+  max-height: 100svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6.5rem 1.5rem 2rem;
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 4.5rem, #000 6rem);
+}
+/* More below (a short screen; MainNav sets data-more): the foot fades too, over the last 2rem, which is the padding once the end is reached. */
+.site-menu__content[data-more] {
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 4.5rem, #000 6rem, #000 calc(100% - 2rem), transparent);
+}
+.site-menu__aside {
+  margin-top: auto;
+}
+/* A short phone (320x568) keeps the call to action on screen and drops the line about the studio. */
+@media (max-width: 767px) and (max-height: 640px) {
+  .site-menu__blurb {
+    display: none;
+  }
+}
+@media (min-width: 768px) {
+  .site-menu__content {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 2rem;
+    min-height: 0;
+    max-height: calc(100svh - 1.5rem);
+    padding: 6.5rem 2.5rem 2.5rem;
+  }
+  .site-menu__aside {
+    margin-top: 0;
+  }
+}
+
+/* ---- Roll links (RollText.tsx, driven by MotionRoot) ---- */
+.roll {
+  position: relative;
+}
+.roll__word {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  vertical-align: top;
+}
+.roll__row {
+  display: inline-flex;
+  white-space: pre;
+}
+.roll__row--bottom {
+  position: absolute;
+  inset: 0;
+}
+.roll__c {
+  display: inline-block;
+}
+.roll__row--bottom .roll__c {
+  transform: translateY(100%);
+}
+
+/* ---- Link button (LinkButton.tsx) ---- */
+/*
+ * Hover and keyboard focus: a darker sheet of the plate's own colour wipes
+ * across the label (0.45s, --e-sheet) and leaves forwards, through the far
+ * edge; a highlight passes over the label (0.6s); just after, the icon cell
+ * turns a quarter on its cube to a face whose arrow is the button's one red;
+ * both cells round their corners by 2px.
+ *
+ * The fill is one band across the plate, from --lb-a to --lb-b, and the
+ * wipe and the outline tones' second label are both clipped to it, so the
+ * label turns exactly where the fill is. The script (src/lib/motion/wipe.ts)
+ * moves the band from wherever it is, so a pointer that only passes over
+ * the button, or comes back while the fill is leaving, turns it round with
+ * no jump; data-filled is where it rests. Until the script runs (and
+ * without it) the fill simply runs back the way it came.
+ */
+@property --lb-a {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+@property --lb-b {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+.link-button[data-filled] {
+  --lb-b: 100%;
+}
+:root:not([data-wipes]) .link-button {
+  transition: --lb-b 0.45s var(--e-sheet);
+}
+:root:not([data-wipes]) .link-button:is(:hover, :focus-visible) {
+  --lb-b: 100%;
+}
+.link-button {
+  --lb-bg: var(--color-ink);
+  --lb-fg: var(--color-ivory);
+  --lb-wipe: var(--color-charcoal-700);
+  --lb-shine: #fff;
+  --lb-h: 2.75rem;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  height: var(--lb-h);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lb-fg);
+}
+.link-button:focus-visible {
+  outline-offset: 4px;
+}
+.link-button--light {
+  --lb-bg: var(--color-ivory);
+  --lb-fg: var(--color-ink);
+  --lb-wipe: var(--color-stone-300);
+  --lb-shine: var(--color-charcoal-600);
+}
+/* On paper, the quieter second action: an ink ring that fills with ink, the label turning ivory as the fill passes. */
+.link-button--outline {
+  --lb-bg: transparent;
+  --lb-fg: var(--color-ink);
+  --lb-wipe: var(--color-ink);
+  --lb-shine: var(--color-ink);
+  --lb-over: var(--color-ivory);
+  --lb-ring: rgb(23 23 22 / 0.25);
+}
+/* The same on dark grounds, in ivory. */
+.link-button--ghost {
+  --lb-bg: transparent;
+  --lb-fg: var(--color-ivory);
+  --lb-wipe: var(--color-ivory);
+  --lb-shine: var(--color-ivory);
+  --lb-over: var(--color-ink);
+  --lb-ring: rgb(244 241 235 / 0.3);
+}
+.link-button__plate,
+.link-button__icon {
+  position: relative;
+  overflow: hidden;
+  background: var(--lb-bg);
+  clip-path: inset(0 round 0);
+  transition: clip-path 0.3s var(--e-ui);
+}
+.link-button:is(.link-button--outline, .link-button--ghost) :is(.link-button__plate, .link-button__icon) {
+  box-shadow: inset 0 0 0 1px var(--lb-ring);
+}
+.link-button__plate {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 1.25rem;
+}
+.link-button__wipe {
+  position: absolute;
+  inset: 0;
+  background: var(--lb-wipe);
+  clip-path: inset(0 calc(100% - var(--lb-b)) 0 var(--lb-a));
+}
+.link-button__label {
+  position: relative;
+  background: linear-gradient(100deg, var(--lb-fg) 42%, var(--lb-shine) 50%, var(--lb-fg) 58%) 100% 0 / 300% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+/* The outline tones' second label, in the fill's opposite colour, shown where the fill is (the same band). */
+.link-button__over {
+  display: none;
+}
+.link-button:is(.link-button--outline, .link-button--ghost) .link-button__over {
+  position: absolute;
+  inset: 0;
+  display: block;
+  clip-path: inset(0 calc(100% - var(--lb-b)) 0 var(--lb-a));
+}
+.link-button__label--over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: 1.25rem;
+  background: none;
+  -webkit-text-fill-color: var(--lb-over);
+  color: var(--lb-over);
+}
+.link-button__icon {
+  width: var(--lb-h);
+  perspective: 12rem;
+}
+.link-button__cube {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--lb-h) / -2));
+  transition: transform 0.45s var(--e-out-strong) 0.06s;
+}
+.link-button__face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--lb-bg);
+  backface-visibility: hidden;
+  transform: translateZ(calc(var(--lb-h) / 2));
+}
+.link-button__face--side {
+  background: var(--lb-wipe);
+  color: var(--color-brand-400);
+  transform: rotateY(-90deg) translateZ(calc(var(--lb-h) / 2));
+}
+.link-button:is(:hover, :focus-visible) :is(.link-button__plate, .link-button__icon) {
+  clip-path: inset(0 round 2px);
+}
+:is(.link-button, [data-cube-host]):is(:hover, :focus-visible) .link-button__cube {
+  transform: translateZ(calc(var(--lb-h) / -2)) rotateY(90deg);
+}
+.link-button:is(:hover, :focus-visible) .link-button__label {
+  background-position: 0 0;
+  transition: background-position 0.6s var(--e-ui);
+}
+/* A link button's icon cell on its own (LinkRows, the footer's call to action): the cube turns as its link is hovered or focused. */
+.link-cube {
+  --lb-h: 2.75rem;
+  --lb-bg: transparent;
+  --lb-wipe: var(--color-ink);
+  position: relative;
+  width: var(--lb-h);
+  height: var(--lb-h);
+  overflow: hidden;
+  perspective: 12rem;
+  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.15);
+}
+/* The footer's call to action keeps the site's one red fill, and turns to a deeper red. */
+.site-footer__cta-cell {
+  --lb-h: 3.5rem;
+  --lb-bg: var(--color-brand-500);
+  --lb-wipe: var(--color-brand-600);
+  color: #fff;
+  box-shadow: none;
+}
+.site-footer__cta-cell .link-button__face--side {
+  color: #fff;
+}
+
+/* The notched sheet outline for framed pictures (NotchClip.tsx). */
+.notch-clip {
+  clip-path: url(#notch-clip);
+}
+
+/* ---- Footer (SiteFooter.tsx; drawn by MotionRoot, footer module) ---- */
+/* The content rises out from under the sheet above: the footer's top edge clips it. */
+.site-footer {
+  overflow: clip;
+}
+/* A page that closes on paper (the homepage's Contact, a CtaPanel, the contact form) has already asked: the footer does not ask again. */
+body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
+  display: none;
+}
+/* The 404 draws its own Ontario beside its numeral: one outline on the page is enough. */
+body:has(.not-found__map) .site-footer__place {
+  display: none;
+}
+/* Ivory at 35%; the GTA dot is the footer's one red. */
+.site-footer__map {
+  display: block;
+  width: min(100%, 15rem);
+  height: auto;
+  aspect-ratio: 892 / 1000;
+  overflow: visible;
+  color: rgb(244 241 235 / 0.35);
+}
+@media (min-width: 1024px) {
+  .site-footer__map {
+    width: 20rem;
+  }
+}
+.site-footer__region {
+  display: flex;
+  gap: 0.75rem;
+}
+.site-footer__region span + span::before {
+  content: "";
+  display: inline-block;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin-right: 0.75rem;
+  border-radius: 9999px;
+  background: currentColor;
+  vertical-align: 0.12em;
+}
+/* On the tracks the outline waits undrawn until the footer comes up (with reduced motion and on the still layout it is simply there). */
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  /* Its own layer, so redrawing the strokes repaints the outline alone, not the whole footer. */
+  :root[data-motion] .site-footer__map {
+    will-change: transform;
+  }
+  :root[data-motion] .site-footer__map .ontario__stroke path {
+    stroke-dashoffset: 1;
+  }
+  :root[data-motion] .site-footer__map .ontario__dot {
+    transform: scale(0);
+  }
+}
+
+/* ---- Homepage: hero (Hero.tsx) ---- */
+/*
+ * The iris opens from the GTA dot onto the picture, which settles from 112%
+ * around that same point (1.8s); the name rises at 0.45s (1.2s), the
+ * statement's lines from 0.85s, 0.09s apart, the caption at 1.15s. After a
+ * page transition (data-arrival="route") the same entrance runs sooner, as
+ * the cover lifts. All of it waits for data-revealed.
+ */
+@keyframes hero-settle {
+  from {
+    transform: scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion] [data-hero-image] img {
+    transform-origin: var(--iris-x, 50%) var(--iris-y, 50%);
+    animation: hero-settle 1.8s var(--ease-out-expo) backwards;
+  }
+  :root[data-motion] .hero-heading-line .split-line__inner {
+    animation: line-up 1.2s var(--ease-out-expo) 0.45s both;
+  }
+  :root[data-motion] .hero-sub-line .split-line__inner {
+    animation: line-up 0.9s var(--ease-out-expo) calc(0.85s + var(--i, 0) * 0.09s) both;
+  }
+  :root[data-motion] .hero-fig {
+    animation: fade-in 0.7s var(--e-out) 1.15s both;
+  }
+  :root[data-motion][data-arrival="route"] [data-hero-image] img {
+    animation-duration: 1.4s;
+  }
+  :root[data-motion][data-arrival="route"] .hero-heading-line .split-line__inner {
+    animation-delay: 0.2s;
+  }
+  :root[data-motion][data-arrival="route"] .hero-sub-line .split-line__inner {
+    animation-delay: calc(0.5s + var(--i, 0) * 0.07s);
+  }
+  :root[data-motion][data-arrival="route"] .hero-fig {
+    animation-delay: 0.6s;
+  }
+  :root[data-motion]:not([data-revealed]) :is([data-hero-image] img, .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig) {
+    animation-play-state: paused;
+  }
+}
+
+/* ---- Homepage: intro orbit (Intro.tsx) ---- */
+.intro-orbit {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.intro-orbit__item {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--size);
+  height: var(--size);
+  overflow: hidden;
+  background: var(--color-stone-300);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+/* The paragraphs avoid a lone last word; from tablets up their lines are balanced. */
+.intro-copy {
+  text-wrap: pretty;
+}
+@media (min-width: 768px) {
+  .intro-copy {
+    text-wrap: balance;
+  }
+}
+/* Inside the ring on wider screens (HomeMotion, orbitPath: not portrait), the copy is sized by both sides of the screen, so its five lines clear the pictures. */
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-aspect-ratio: 4/5) {
+  :root[data-motion] .intro-copy {
+    font-size: clamp(1.65rem, min(3.2vw, 5.1vh), 3.4rem);
+  }
+}
+/*
+ * The still intro (reduced motion, short screens, no JavaScript, print): the
+ * paragraphs, then the pictures as a quiet row beneath them, clear of the
+ * copy. The same rules twice: a media query cannot be combined with the
+ * missing data-motion in one selector.
+ */
+@media print, (prefers-reduced-motion: reduce), (max-height: 499.98px) {
+  .intro-orbit {
+    position: relative;
+    inset: auto;
+    display: flex;
+    justify-content: center;
+    gap: clamp(0.5rem, 1.5vw, 1rem);
+    padding: 0 1.25rem 5rem;
+  }
+  .intro-orbit__item {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: clamp(56px, 9vw, 112px);
+    height: auto;
+    aspect-ratio: 1;
+    opacity: 1;
+    transform: none;
+  }
+}
+:root:not([data-motion]) .intro-orbit {
+  position: relative;
+  inset: auto;
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+  padding: 0 1.25rem 5rem;
+}
+:root:not([data-motion]) .intro-orbit__item {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: clamp(56px, 9vw, 112px);
+  height: auto;
+  aspect-ratio: 1;
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Homepage: story (Story.tsx) ---- */
+/*
+ * The still story (reduced motion, short screens, no JavaScript, print):
+ * the label, the sheet, then the chapters as a list; from tablets up the
+ * sheet sits beside the chapters. The sheet shows the sketch over the
+ * left half of the house and the rendering on the right, meeting at a
+ * hairline, with its title block filled in.
+ */
+.story-layout {
+  display: grid;
+  grid-template-areas: "label" "figure" "toc" "chapters";
+  gap: 2.5rem;
+  padding-block: 6rem 5rem;
+}
+.story-label {
+  grid-area: label;
+}
+.story-figure {
+  grid-area: figure;
+  min-width: 0;
+}
+.story-toc {
+  grid-area: toc;
+  display: none;
+}
+.story-chapters {
+  grid-area: chapters;
+  display: grid;
+  gap: 2.75rem;
+  align-content: start;
+}
+.story-chapter__title {
+  max-width: 18ch;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.034em;
+  text-wrap: balance;
+}
+.story-chapter__body {
+  max-width: 34ch;
+  font-size: clamp(0.9375rem, 0.88rem + 0.25vw, 1.0625rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+@media (min-width: 768px) {
+  .story-layout {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas: "label label" "figure chapters";
+    column-gap: clamp(2rem, 4vw, 4.5rem);
+    align-items: start;
+  }
+}
+/*
+ * The sheet: a sheet of drawing paper on the ground, its drawing area (the
+ * plate, the rendering's own proportions) and its title block inside one
+ * ruled border. The title block runs down the right-hand side on landscape
+ * screens and the still layout's wide sheets, along the foot on portrait
+ * screens.
+ */
+.story-sheet {
+  --m: clamp(0.5rem, 1.1vw, 0.875rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--m);
+  background: var(--color-stone-50);
+  box-shadow:
+    0 1px 1px rgb(23 23 22 / 0.05),
+    0 1.25rem 2.5rem -1.5rem rgb(23 23 22 / 0.28);
+}
+.story-sheet::before {
+  content: "";
+  position: absolute;
+  inset: var(--m);
+  border: 1px solid rgb(23 23 22 / 0.55);
+  pointer-events: none;
+  z-index: 2;
+}
+.story-plate {
+  position: relative;
+  aspect-ratio: 2800 / 2479;
+  overflow: hidden;
+  background: var(--color-stone-50);
+}
+:is(.story-render, .story-veil, .story-eng, .story-lines) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.story-render {
+  overflow: hidden;
+  clip-path: inset(0 0 0 50%);
+}
+.story-veil {
+  background: var(--color-stone-50);
+  opacity: 0;
+}
+.story-eng {
+  opacity: 0;
+}
+.story-lines {
+  clip-path: inset(0 50% 0 0);
+}
+.story-lines path {
+  fill: none;
+  stroke: var(--story-stroke, var(--color-charcoal-700));
+  stroke-width: 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.story-lines [data-kind="ground"] {
+  stroke-width: 1.6;
+}
+.story-lines [data-kind="outline"] {
+  stroke-width: 1.3;
+}
+.story-lines [data-kind="detail"] {
+  stroke-width: 0.85;
+}
+.story-lines [data-kind="texture"] {
+  stroke-width: 0.6;
+  stroke-opacity: 0.7;
+}
+/* On the issued sheet the lines are ink. */
+.story-lines[data-ink] {
+  --story-stroke: var(--color-ink);
+}
+/* The still sheet's seam between drawing and picture; on the tracks, the edge of the rendering as it wipes up. */
+.story-scan {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 1px;
+  background: rgb(23 23 22 / 0.5);
+  pointer-events: none;
+}
+/* The engineering: grid and levels in graphite, the structure in the brand red, every stroke a hairline at any size. */
+.story-eng :is(path, circle) {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.story-eng__grid {
+  stroke: var(--color-charcoal-600);
+  stroke-width: 0.9;
+  stroke-dasharray: 16 5 2 5;
+}
+.story-eng__level {
+  stroke: var(--color-charcoal-600);
+  stroke-width: 0.9;
+  stroke-dasharray: 7 5;
+}
+.story-eng__bubble circle,
+.story-eng__datum circle {
+  fill: var(--color-stone-50);
+  stroke: var(--color-charcoal-700);
+  stroke-width: 1;
+}
+.story-eng__datum .story-eng__datum-fill {
+  fill: var(--color-charcoal-700);
+}
+.story-eng text {
+  fill: var(--color-charcoal-700);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.story-eng__bubble text {
+  font-size: 9px;
+  letter-spacing: 0;
+  text-anchor: middle;
+}
+/* On a small sheet (HomeMotion sets data-compact) a level's label is shortened, so it stays clear of the house. */
+.story-eng__short,
+.story-eng[data-compact] .story-eng__long {
+  display: none;
+}
+.story-eng[data-compact] .story-eng__short {
+  display: inline;
+}
+.story-eng__member {
+  stroke: var(--color-brand-500);
+  stroke-width: 1.5;
+}
+.story-eng__member--hidden {
+  stroke-width: 1;
+  stroke-dasharray: 6 4;
+}
+.story-eng .story-eng__member-label {
+  fill: var(--color-brand-500);
+}
+/* The title block: the firm's mark and the drawing's fields, ruled like a drawing sheet's. */
+.story-block {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 0.7fr;
+  border-top: 1px solid rgb(23 23 22 / 0.55);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+}
+.story-block__cell {
+  min-width: 0;
+  padding: 0.55em 0.7em 0.6em;
+}
+.story-block__cell + .story-block__cell {
+  border-left: 1px solid rgb(23 23 22 / 0.25);
+}
+.story-block__label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.story-block__value {
+  margin-top: 0.3em;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+.story-block__project,
+.story-block__status,
+.story-block__credential {
+  display: none;
+}
+@media (min-width: 768px) {
+  .story-sheet {
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 26%);
+  }
+  .story-block {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    border-top: 0;
+    border-left: 1px solid rgb(23 23 22 / 0.55);
+  }
+  .story-block__cell + .story-block__cell {
+    border-left: 0;
+    border-top: 1px solid rgb(23 23 22 / 0.25);
+  }
+  .story-block__project,
+  .story-block__status,
+  .story-block__credential {
+    display: block;
+  }
+  .story-block__credential {
+    align-self: end;
+  }
+}
+/*
+ * The pinned story (tracks). Portrait screens stack bands in one screen:
+ * the label, the sheet, the contents as four bars, then the chapter's text
+ * at the foot. The sheet is fitted to the room the other bands leave it,
+ * whatever their lines (the frame is a size container): as wide as the
+ * gutters allow, or as wide as that room's height allows, sitting on its
+ * caption. Its title block is one ruled row of one-line cells, so its
+ * height is known, and it shows the fields its width has room for. Short
+ * screens drop the label's note, and the shortest the chapters' bodies,
+ * so the drawing keeps its size. Landscape screens set the sheet on the
+ * left at most 72% of the screen high, with the label, the contents and
+ * the chapter's text in a column beside it.
+ */
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] .story-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+  :root[data-motion] .story-layout {
+    --top: 5.5rem;
+    /* The chapter's text: its label, a title of two lines and a body of up to four. */
+    --text-h: 11.75rem;
+    --block-h: 2.875rem;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding-block: var(--top) max(1.25rem, env(safe-area-inset-bottom));
+  }
+  :root[data-motion] .story-figure {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  :root[data-motion] .story-frame {
+    flex: 1 1 0;
+    min-height: 0;
+    align-self: stretch;
+    display: grid;
+    place-items: end center;
+    container: story-frame / size;
+  }
+  :root[data-motion] .story-sheet {
+    /* Without container units, an estimate of the room from the screen's height. */
+    --wp: min(100%, calc((100svh - var(--top) - var(--text-h) - var(--block-h) - 8.5rem) * 2800 / 2479), 44rem);
+    width: calc(var(--wp) + 2 * var(--m));
+    width: min(100cqw, calc((100cqh - var(--block-h) - 2 * var(--m)) * 2800 / 2479 + 2 * var(--m)), calc(44rem + 2 * var(--m)));
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    container: story-sheet / inline-size;
+  }
+  :root[data-motion] .story-block {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: none;
+    height: var(--block-h);
+    border-top: 1px solid rgb(23 23 22 / 0.55);
+    border-left: 0;
+  }
+  :root[data-motion] .story-block__cell {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  :root[data-motion] .story-block__cell + .story-block__cell {
+    border-top: 0;
+    border-left: 1px solid rgb(23 23 22 / 0.25);
+  }
+  :root[data-motion] :is(.story-block__project, .story-block__status, .story-block__credential) {
+    display: none;
+  }
+  @container story-sheet (max-width: 17.5rem) {
+    :root[data-motion] .story-block__drawing {
+      display: none;
+    }
+  }
+  @container story-sheet (min-width: 42rem) {
+    :root[data-motion] .story-block {
+      grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+    :root[data-motion] :is(.story-block__project, .story-block__status) {
+      display: block;
+    }
+  }
+  :root[data-motion] .story-plate {
+    width: 100%;
+  }
+  :root[data-motion] .story-render {
+    clip-path: inset(100% 0 0 0);
+  }
+  :root[data-motion] .story-lines {
+    clip-path: none;
+  }
+  :root[data-motion] .story-scan {
+    inset: 0 0 auto;
+    width: auto;
+    height: 1px;
+    opacity: 0;
+  }
+  /* Until the motion has drawn its first frame, the sheet shows nothing it has not drawn. */
+  :root[data-motion] [data-story]:not([data-story-live]) :is(.story-lines, .story-eng, .story-sheet) {
+    opacity: 0;
+  }
+  :root[data-motion] .story-caption {
+    align-self: stretch;
+    text-align: center;
+  }
+  :root[data-motion] .story-toc {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+  :root[data-motion] .story-toc__item {
+    display: grid;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    transition: color 0.3s var(--e-ui);
+  }
+  :root[data-motion] .story-toc__item[data-active] {
+    color: var(--color-ink);
+  }
+  :root[data-motion] .story-toc__name {
+    display: none;
+  }
+  :root[data-motion] .story-toc__bar {
+    position: relative;
+    display: block;
+    height: 1px;
+    background: var(--color-line);
+    overflow: hidden;
+  }
+  :root[data-motion] .story-toc__fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-ink);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  :root[data-motion] .story-chapters {
+    display: grid;
+    gap: 0;
+    height: var(--text-h);
+    flex: none;
+  }
+  :root[data-motion] .story-chapter {
+    grid-area: 1 / 1;
+    align-self: start;
+  }
+  :root[data-motion] .story-chapter__title {
+    font-size: min(clamp(1.45rem, 1rem + 1.6vw, 2.2rem), 4.2svh);
+  }
+  :root[data-motion] .story-chapter__body {
+    margin-top: 0.75rem;
+    max-width: 38ch;
+  }
+  :root[data-motion] :is([data-story-roll], [data-story-field], .story-chapter .split-line__inner) {
+    transform: translateY(120%);
+  }
+  :root[data-motion] :is(.story-chapter__title, .story-chapter__body):not([data-split]) {
+    opacity: 0;
+  }
+  /* Phones: the contents are four bars (the chapter's own label names it), and the bands are tighter, so the drawing keeps its size. */
+  @media (max-width: 767px) {
+    :root[data-motion] .story-layout {
+      --text-h: 9.25rem;
+      gap: 0.625rem;
+    }
+    :root[data-motion] .story-toc__item {
+      gap: 0;
+    }
+    :root[data-motion] .story-toc__num {
+      display: none;
+    }
+    :root[data-motion] .story-caption {
+      margin-top: 0.5rem;
+      line-height: 0.875rem;
+    }
+    :root[data-motion] .story-chapter__body {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+  }
+  @media (max-height: 800px) {
+    :root[data-motion] .story-note {
+      display: none;
+    }
+  }
+  @media (max-height: 619px) {
+    :root[data-motion] .story-layout {
+      --text-h: 5.25rem;
+    }
+    :root[data-motion] .story-chapter__body {
+      display: none;
+    }
+  }
+}
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 768px) and (min-aspect-ratio: 1/1) {
+  /* The composition is as tall as the sheet and centred on the screen: the label meets the sheet's border, the chapter's text its foot. */
+  :root[data-motion] .story-stage {
+    display: grid;
+    align-content: center;
+  }
+  :root[data-motion] .story-layout {
+    --g: max(3rem, calc((100vw - 100rem) / 2 + 4rem));
+    --copy-w: clamp(17rem, 27vw, 26rem);
+    --gap: clamp(2.5rem, 5vw, 5.5rem);
+    /* The plate's height: at most 72% of the screen and 44rem, and narrow enough to leave the copy its column. */
+    --hp: min(calc(72svh - 2 * var(--m-l)), 42rem, calc((100vw - 2 * var(--g) - var(--gap) - var(--copy-w) - 2 * var(--m-l)) / 1.44));
+    --m-l: clamp(0.5rem, 1.1vw, 0.875rem);
+    display: grid;
+    grid-template-columns: auto minmax(0, var(--copy-w));
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: "figure label" "figure toc" "figure chapters";
+    column-gap: var(--gap);
+    row-gap: 0;
+    height: auto;
+    max-width: none;
+    padding-inline: var(--g);
+    padding-block: 0;
+    justify-content: center;
+  }
+  :root[data-motion] .story-figure {
+    display: block;
+    align-self: center;
+  }
+  :root[data-motion] .story-frame {
+    display: block;
+    container-type: normal;
+  }
+  :root[data-motion] .story-sheet {
+    width: auto;
+    grid-template-columns: calc(var(--hp) * 2800 / 2479) calc(var(--hp) * 0.31);
+    container-type: normal;
+  }
+  /* The title block is the sheet's right-hand column again, every field and the credential in it. */
+  :root[data-motion] .story-block {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    height: auto;
+    border-top: 0;
+    border-left: 1px solid rgb(23 23 22 / 0.55);
+  }
+  :root[data-motion] .story-block__cell {
+    overflow: visible;
+    white-space: normal;
+  }
+  :root[data-motion] .story-block__cell + .story-block__cell {
+    border-top: 1px solid rgb(23 23 22 / 0.25);
+    border-left: 0;
+  }
+  :root[data-motion] :is(.story-block__project, .story-block__status, .story-block__credential) {
+    display: block;
+  }
+  :root[data-motion] :is(.story-note, .story-chapter__body) {
+    display: block;
+  }
+  :root[data-motion] .story-plate {
+    width: auto;
+    height: var(--hp);
+  }
+  :root[data-motion] .story-caption {
+    text-align: left;
+  }
+  :root[data-motion] .story-label {
+    align-self: start;
+    padding-top: calc(var(--m-l) + 0.25rem);
+  }
+  :root[data-motion] .story-toc {
+    align-self: center;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  :root[data-motion] .story-toc__item {
+    grid-template-columns: 2.25rem 1fr;
+    gap: 0;
+    padding-block: 0.7rem;
+    font-size: 0.6875rem;
+  }
+  :root[data-motion] .story-toc__bar {
+    grid-column: 1 / -1;
+    margin-bottom: 0.7rem;
+  }
+  :root[data-motion] .story-toc__name {
+    display: block;
+  }
+  :root[data-motion] .story-chapters {
+    align-self: end;
+    align-content: end;
+    height: auto;
+    min-height: min(15rem, 30svh);
+    padding-bottom: calc(var(--m-l) + 1.9rem);
+  }
+  :root[data-motion] .story-chapter {
+    align-self: end;
+  }
+  :root[data-motion] .story-chapter__label {
+    display: none;
+  }
+  :root[data-motion] .story-chapter__title {
+    margin-top: 0;
+    font-size: min(clamp(1.6rem, 0.9rem + 1.5vw, 2.5rem), 5.4svh);
+  }
+}
+
+/* ---- Homepage: works (Works.tsx) ---- */
+.works-panel {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: 3rem 1.25rem;
+}
+@media (min-width: 640px) {
+  .works-panel {
+    padding-inline: 2rem;
+  }
+}
+@media (min-width: 768px) {
+  .works-panel {
+    grid-template-columns: 5fr 6fr;
+    align-items: end;
+    gap: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+  .works-panel {
+    padding-inline: 3rem;
+  }
+}
+.works-panel__frame {
+  position: relative;
+}
+.works-panel__image {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--color-stone-300);
+}
+/*
+ * The pinned viewer (tracks only; the stage is hidden otherwise). The frame
+ * carries the notch and each shot its own wipe: two clip paths, never on
+ * one element. Shots are scaled 14% inside the frame, so the drift
+ * (HomeMotion, ±6% under that scale) never shows an edge.
+ */
+.works-shot {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-stone-300);
+  clip-path: inset(100% 0 0 0);
+}
+.works-shot img {
+  scale: 1.14;
+}
+/*
+ * The button's mask leaves room for its focus ring, only while it has
+ * keyboard focus (it is then in place: focus scrolls to its project).
+ * Otherwise a margin would show the dark plate as a bar above and below the
+ * row as it rolls.
+ */
+.works-item__button {
+  overflow-clip-margin: 0px;
+}
+.works-item__button:has(:focus-visible) {
+  overflow-clip-margin: 8px;
+}
+/*
+ * Portrait screens stack bands: the label, the frame across the screen,
+ * then the text at the bottom, so type never sits on a picture. The frame
+ * keeps to the visible screen (svh), whatever a phone's toolbar does.
+ */
+.works-stage__frame {
+  --wg: 1.25rem;
+  --wt: 15rem;
+  --wb: 15rem;
+  position: absolute;
+  inset-inline: var(--wg);
+  top: var(--wt);
+  height: clamp(11rem, calc(100svh - var(--wt) - var(--wb)), 44rem);
+}
+.works-items {
+  position: absolute;
+  inset-inline: 0;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  display: grid;
+}
+.works-item {
+  grid-area: 1 / 1;
+  align-self: start;
+}
+@media (min-width: 640px) {
+  .works-stage__frame {
+    --wg: 2rem;
+    --wt: 14rem;
+    --wb: 17rem;
+  }
+}
+/*
+ * Landscape screens set the frame on the right, centred on the screen's
+ * axis (702×562 at 1440×900; never wider than half the screen less 2rem),
+ * and the text on the label's left edge (the Container gutters), a little
+ * below the centre. The title and the label's note keep to the column the
+ * frame leaves (half the screen less the frame's 2rem, a 2rem gutter and a
+ * 1.5rem gap), so on narrow windows they wrap rather than run onto the
+ * picture. On short screens the text block sits lower, never closer than
+ * 2.5rem under the label (--works-label-b, its bottom in the stage, from
+ * HomeMotion), and the title is at most a tenth of the screen's height.
+ */
+@media (min-width: 768px) and (min-aspect-ratio: 1/1) {
+  .works-stage__frame {
+    inset-inline: auto max(4rem, calc((100vw - 100rem) / 2 + 4rem));
+    inset-block: 0;
+    height: min(78svh, 54rem, calc((50vw - 2rem) * 1.25));
+    aspect-ratio: 4 / 5;
+    margin-block: auto;
+  }
+  .works-items {
+    top: calc(50% + 2rem);
+    bottom: auto;
+    translate: 0 max(-50%, calc(var(--works-label-b, 0px) + 0.5rem - 50svh));
+  }
+  .works-item__title {
+    max-width: min(11ch, calc(50vw - 5.5rem));
+    font-size: min(var(--text-display-xl), 10svh);
+  }
+  .works-note {
+    max-width: min(20rem, calc(50vw - 5.5rem));
+  }
+}
+
+/* ---- Homepage: values (Values.tsx) ---- */
+/* Above the label layer, so a passing picture covers the label (the pinned words sit above both). */
+.values-outer {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2rem;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: 3rem 1.25rem;
+}
+@media (min-width: 768px) {
+  .values-outer {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding-inline: 2rem;
+  }
+}
+.values-frame {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  aspect-ratio: 3 / 4;
+}
+/*
+ * The pinned words (tracks only): all four words stacked in one grid cell,
+ * all four descriptions in another, so the block is as tall as the longest
+ * description and a word never shifts between values. The description
+ * stays inside the picture (--values-frame-w, set by HomeMotion).
+ */
+.values-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding-inline: 1.25rem;
+  text-align: center;
+}
+.values-text__titles,
+.values-text__descs {
+  display: grid;
+}
+.values-text__titles > *,
+.values-text__descs > * {
+  grid-area: 1 / 1;
+}
+/* Each word is its own mask, as tall as its own line: fitted words differ in size, and a mask stretched to the largest would let a smaller hidden word show below it. */
+.values-text__titles > .split-line {
+  align-self: center;
+  overflow-clip-margin: 0.12em;
+}
+.values-text__descs {
+  margin-top: 2rem;
+  max-width: min(22rem, calc(var(--values-frame-w, 26rem) - 3rem));
+}
+[data-values-mask] .values-text__descs {
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.35);
+}
+
+/* ---- Homepage: services (Services.tsx) ---- */
+.services-grid {
+  padding-block: 7rem 4rem;
+}
+@media (min-width: 1024px) {
+  .services-grid {
+    padding-block: 10rem 5rem;
+  }
+}
+.services-frame-col {
+  display: none;
+}
+@media (min-width: 768px) {
+  .services-frame-col {
+    display: block;
+  }
+}
+/* As wide as the picture and set to the right, so the caption starts under the picture's left edge. */
+.services-frame-pin {
+  position: sticky;
+  top: 15svh;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+}
+.services-frame {
+  position: relative;
+  height: min(70svh, 44rem);
+  max-width: 100%;
+  aspect-ratio: 4 / 5;
+  margin-left: auto;
+  overflow: hidden;
+  background: var(--color-charcoal-800);
+}
+/* The caption carries both notes and shows the one for the kind of picture in the frame (data-kind, set with the picture). */
+.services-caption[data-kind="study"] [data-note="project"],
+.services-caption[data-kind="project"] [data-note="study"] {
+  display: none;
+}
+/* Each row's rule is an element of its own, so drawing it across (HomeMotion) touches nothing else. */
+.services-item {
+  position: relative;
+}
+.services-item__rule {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: rgb(244 241 235 / 0.15);
+  transform-origin: left center;
+  pointer-events: none;
+}
+.services-item__rule--top {
+  top: 0;
+  bottom: auto;
+}
+/* The number column holds the active row's dot: the section's one red. */
+.services-item__num {
+  position: relative;
+}
+.services-item__num::before {
+  content: "";
+  position: absolute;
+  right: calc(100% + 0.5rem);
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 9999px;
+  background: var(--color-brand-400);
+  transform: scale(0);
+  transition: transform 0.3s var(--e-ui);
+}
+.services-item[data-active] .services-item__num::before {
+  transform: scale(1);
+}
+/*
+ * Every label at full strength at rest. Others dim only when one row is
+ * singled out: hovered or focused, or, on the pinned track, the row the
+ * picture shows (data-active, which there also follows the pointer and
+ * focus, and is the only rule, so a resting pointer never dims the row
+ * scrolled to).
+ */
+.services-item__label {
+  opacity: 1;
+  transition: opacity 0.3s var(--e-ui);
+}
+[data-services]:not([data-services-pinned]) .services-list:has(.services-item:is(:hover, :focus-within)) .services-item:not(:hover, :focus-within) .services-item__label,
+[data-services-pinned] .services-item:not([data-active]) .services-item__label {
+  opacity: 0.5;
+}
+
+/* ---- Homepage: contact (Contact.tsx) ---- */
+/*
+ * Phones stack the invitation, the picture and the title block. From 768px
+ * the invitation and the picture share a row of twelve columns and the
+ * title block runs the full width under them. The block is ruled like a
+ * drawing's title block, a frame in ink and hairlines between the cells
+ * (each cell draws the hairlines above and to the left of it, and the
+ * frame clips those on its edges). Its cells are rows on phones, three
+ * to a row from 768px, starting with the firm's mark, and all six in one
+ * row from 1440px, where each value keeps to its lines (the address and
+ * the hours are set as two). On phones the footer's logo follows straight
+ * after, so the mark is left out.
+ */
+.contact {
+  padding-block: 6rem 4rem;
+}
+.contact-grid {
+  display: grid;
+  row-gap: 3rem;
+}
+.contact-pic {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--color-stone-300);
+}
+.contact-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border: 1px solid rgb(23 23 22 / 0.55);
+  overflow: hidden;
+}
+.contact-block__cell {
+  min-width: 0;
+  padding: 0.85rem 1rem 1rem;
+  box-shadow:
+    -1px 0 0 rgb(23 23 22 / 0.16),
+    0 -1px 0 rgb(23 23 22 / 0.16);
+}
+.contact-block__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.contact-block__value {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: var(--color-ink);
+  text-wrap: pretty;
+}
+.contact-block__label + .contact-block__value,
+.contact-block__value + .contact-block__value {
+  margin-top: 0.375rem;
+}
+/* The note wraps to its cell, never widening it. */
+.contact-block__note {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-ink-muted);
+  text-wrap: pretty;
+  contain: inline-size;
+}
+.contact-block__mark {
+  display: none;
+}
+@media (min-width: 768px) {
+  .contact {
+    padding-block: 8rem 5rem;
+  }
+  .contact-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 2rem;
+    row-gap: 4.5rem;
+    align-items: start;
+  }
+  .contact-intro {
+    grid-column: 1 / span 7;
+  }
+  .contact-figure {
+    grid-column: 8 / -1;
+  }
+  .contact-block {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .contact-block__cell {
+    padding: 0.9rem 1.25rem 1.2rem;
+  }
+  .contact-block__mark {
+    display: block;
+  }
+}
+@media (min-width: 1024px) {
+  .contact-intro {
+    grid-column: 1 / span 6;
+  }
+}
+/* One row: each cell as wide as its longest line, the room left over shared out. */
+@media (min-width: 1440px) {
+  .contact-block {
+    grid-template-columns: repeat(6, auto);
+  }
+  .contact-block__cell {
+    padding-inline: 1rem;
+  }
+}
+
+/* ---- Homepage: the tracks ---- */
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] :is(.intro-copy, [data-services-heading], [data-works-title], [data-values-desc], [data-contact-heading], [data-contact-body]):not([data-split]) {
+    opacity: 0;
+  }
+  :root[data-motion] .intro-copy {
+    position: absolute;
+    inset-inline: 1.25rem;
+    top: 50%;
+    translate: 0 -50%;
+  }
+  :root[data-motion] .intro-copy .split-line__inner {
+    transform: translateY(120%);
+  }
+
+  /* Works: the panels only set the track's length; the stage shows the projects. Everything masked starts below its mask. */
+  :root[data-motion] .works-panel {
+    display: block;
+    max-width: none;
+    height: 140vh;
+    padding: 0;
+  }
+  :root[data-motion] :is([data-works-roll], .works-item .split-line__inner, [data-label-roll]) {
+    transform: translateY(120%);
+  }
+
+  :root[data-motion] .values-outer {
+    display: flex;
+    max-width: none;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  :root[data-motion] .values-frame {
+    width: auto;
+    max-width: none;
+    height: min(62svh, 40rem, 100vw);
+  }
+  :root[data-motion] [data-values-image] {
+    transform: scale(0.72);
+  }
+  :root[data-motion] :is([data-values-roll], .values-text__descs .split-line__inner) {
+    transform: translateY(120%);
+  }
+
+  /* Services: only the pictures exist (the empty frame is never seen filling in), and everything masked starts below its mask. */
+  :root[data-motion] .services-frame {
+    background: transparent;
+  }
+  :root[data-motion] :is([data-services-roll], .services-item__label .split-line__inner) {
+    transform: translateY(120%);
+  }
+  :root[data-motion] [data-services-reveal] {
+    clip-path: inset(100% 0 0 0);
+  }
+  :root[data-motion] :is([data-services-meta], [data-services-all], [data-services-caption]) {
+    opacity: 0;
+  }
+  /* Each row's number and tag, and 'All services', fade in on their own once their row is most of the way up (data-services-in, HomeMotion): small labels, left to the compositor rather than written every frame. */
+  :root[data-motion] :is([data-services-meta], [data-services-all]) {
+    transition: opacity 0.3s var(--e-ui);
+  }
+  :root[data-motion] :is([data-services-in] [data-services-meta], [data-services-all][data-services-in]) {
+    opacity: 1;
+  }
+  :root[data-motion] .services-item__rule {
+    transform: scaleX(0);
+  }
+
+  /* Contact: the lines wait below their masks, the actions and the cells below their places, the picture's sheet and the title block undrawn. */
+  :root[data-motion] :is([data-contact-roll], :is([data-contact-heading], [data-contact-body]) .split-line__inner) {
+    transform: translateY(120%);
+  }
+  :root[data-motion] :is([data-contact-actions], [data-contact-cell], [data-contact-caption]) {
+    opacity: 0;
+  }
+  :root[data-motion] .contact-pic {
+    background: transparent;
+  }
+  :root[data-motion] [data-contact-wipe] {
+    clip-path: inset(100% 0 0 0);
+  }
+  :root[data-motion] [data-contact-block] {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+/*
+ * Wide screens tall enough to hold it (720px): Services becomes a 300vh
+ * track with the whole composition pinned for two screens, the picture
+ * beside the list, centred. The heading, the rows and the spacing are
+ * capped by the screen's height (they bind below about 860px), so the
+ * eyebrow to the 'All services' link fits in about 700px at 720.
+ */
+@media screen and (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 720px) {
+  :root[data-motion] .services-track {
+    height: 300vh;
+  }
+  :root[data-motion] .services-stage {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100svh;
+    align-items: center;
+  }
+  :root[data-motion] .services-grid {
+    width: 100%;
+    align-items: center;
+    padding-block: min(5.5rem, 11svh) min(2rem, 3svh);
+  }
+  :root[data-motion] .services-frame-col {
+    container-type: inline-size;
+  }
+  :root[data-motion] .services-frame-pin {
+    position: static;
+  }
+  /* Never taller than its 4:5 at the column's width (portrait tablets), so it stays a picture rather than a sliver. */
+  :root[data-motion] .services-frame {
+    height: min(62svh, 40rem);
+    height: min(62svh, 40rem, 125cqi);
+  }
+  :root[data-motion] .services-heading {
+    max-width: 20ch;
+    font-size: min(var(--text-display-lg), 6.5svh);
+  }
+  :root[data-motion] .services-list {
+    margin-top: min(2rem, 3.5svh);
+  }
+  :root[data-motion] .services-item a {
+    padding-block: min(0.7rem, 1.4svh);
+  }
+  :root[data-motion] .services-item__label {
+    font-size: min(clamp(1.35rem, 0.9rem + 1.1vw, 2.1rem), 3.6svh);
+  }
+  :root[data-motion] .services-all {
+    margin-top: min(2rem, 2.5svh);
+  }
+}
+/*
+ * Wide screens too short to pin: the section flows, but starts close under
+ * the last Values picture, so its picture comes up through the dusk with
+ * the heading straight after it, not a screen of empty ground later.
+ */
+@media screen and (prefers-reduced-motion: no-preference) and (min-width: 768px) and (min-height: 500px) and (max-height: 719.98px) {
+  :root[data-motion] .services-grid {
+    padding-top: 2.5rem;
+  }
+}
+/*
+ * Phones from 620px tall: the same 300vh track, stacked. The picture takes
+ * whatever height the heading and the list leave (at least 6.5rem, at most
+ * a quarter of the screen), so the list is never cut off below or the
+ * picture tucked under the header; the eyebrow goes (the heading names the
+ * section) and the caption sits at the foot of the stage.
+ */
+@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) {
+  :root[data-motion] .services-track {
+    height: 300vh;
+  }
+  :root[data-motion] .services-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+  }
+  :root[data-motion] .services-grid {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    gap: 1rem;
+    padding-block: 5.5rem 1rem;
+  }
+  :root[data-motion] :is(.services-frame-col, .services-frame-pin) {
+    display: contents;
+  }
+  :root[data-motion] .services-frame {
+    order: -1;
+    width: 100%;
+    flex: 1 1 0;
+    min-height: 6.5rem;
+    max-height: 26svh;
+    aspect-ratio: auto;
+  }
+  :root[data-motion] .services-caption {
+    order: 3;
+    margin-top: auto;
+  }
+  :root[data-motion] .services-eyebrow {
+    display: none;
+  }
+  :root[data-motion] .services-heading {
+    margin-top: 0;
+  }
+  :root[data-motion] .services-list {
+    margin-top: 1rem;
+  }
+  :root[data-motion] .services-item a {
+    padding-block: 0.4rem;
+  }
+  :root[data-motion] .services-item__label {
+    font-size: clamp(1.05rem, 0.9rem + 0.9vw, 1.25rem);
+  }
+  :root[data-motion] .services-all {
+    margin-top: 0.75rem;
+  }
+}
+/*
+ * Short phones (620 to 720px tall): the stage needs about 700px as above,
+ * so it tightens to fit: smaller gaps and heading, and a picture that may
+ * shrink to 4rem. The picture still starts clear of the 80px header bar,
+ * and the rows keep their 44px.
+ */
+@media screen and (prefers-reduced-motion: no-preference) and (max-width: 767px) and (min-height: 620px) and (max-height: 719.98px) {
+  :root[data-motion] .services-grid {
+    gap: 0.5rem;
+    padding-block: 5.5rem 0.5rem;
+  }
+  :root[data-motion] .services-frame {
+    min-height: 4rem;
+  }
+  :root[data-motion] .services-heading {
+    font-size: 1.5rem;
+  }
+  :root[data-motion] .services-list {
+    margin-top: 0.25rem;
+  }
+  :root[data-motion] .services-all {
+    margin-top: 0.5rem;
+  }
+}
+
+/*
+ * Gone back to (Back or Forward, ScreenTransition sets data-returning): the
+ * page comes back where it was left, as it was, so its entrance does not
+ * play again (until the next navigation, which happens under the cover).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-motion][data-returning] :is([data-hero-image] img, .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
+    animation: none;
+  }
+}
+
+/* Reduced motion: transitions and animations end at once (the scroll engine also stands still). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Print: the page as a document. The fixed chrome (header, menu, preloader,
+ * transition) is left out, everything the motion moves or hides is put back
+ * in place (the homepage prints its still layout), and the dark grounds
+ * (the hero, Services, the map, the footer) keep their graphite so their
+ * ivory type prints.
+ */
+@media print {
+  .site-nav,
+  .site-menu,
+  .preloader,
+  .screen-veil {
+    display: none !important;
+  }
+  [data-tone="dark"],
+  .map-card__ground {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  /* Sticky boxes print where they stand in the flow, wherever the page was scrolled to. */
+  .sticky {
+    position: relative !important;
+    top: auto !important;
+  }
+  /* A project or a value stays on one sheet with its picture, a section's label and note stay with its first one, and Contact's invitation, picture and title block each stay whole. */
+  .works-panel,
+  .values-outer,
+  :is([data-works], [data-values]) h2 + p,
+  [data-contact] > *,
+  figure {
+    break-inside: avoid;
+  }
+  [data-works-panel="0"],
+  [data-values-outer="0"] {
+    break-before: avoid;
+  }
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  .site-footer__inner,
+  [data-parallax] {
+    transform: none !important;
+  }
+  .site-footer__map .ontario__stroke path {
+    stroke-dashoffset: 0 !important;
+  }
+  .site-footer__map .ontario__dot {
+    transform: none !important;
+  }
+  /* Link buttons print as an ink outline with an ink label: no fill, sheen or second label, which need background graphics. */
+  .link-button {
+    color: var(--color-ink);
+  }
+  .link-button__label {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+  .link-button__wipe,
+  .link-button__over,
+  .link-button__face--side {
+    display: none;
+  }
+  :is(.link-button__plate, .link-button__icon, .link-button__face) {
+    background: none;
+  }
+  :is(.link-button__plate, .link-button__icon) {
+    clip-path: none;
+    box-shadow: none !important;
+    outline: 1px solid currentColor;
+    outline-offset: -1px;
   }
 }

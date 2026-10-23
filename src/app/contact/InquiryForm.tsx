@@ -4,6 +4,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { cn } from "@/components/ui/cn";
+import { LinkButtonFace, linkButtonClass } from "@/components/ui/LinkButton";
 import { track } from "@/lib/analytics";
 import { ATTRIBUTION_STORAGE_KEY, sanitizeAttribution } from "@/lib/inquiry/attribution";
 import { HONEYPOT_FIELD } from "@/lib/inquiry/protection";
@@ -24,7 +25,7 @@ import { submitInquiry } from "./actions";
 
 const ERROR = "text-[#a3361f]";
 const field =
-  "mt-2 block w-full rounded-xl border border-charcoal-900/20 bg-white/85 px-4 py-3 text-base text-charcoal-900 placeholder:text-ink-muted/70 focus:border-charcoal-900 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
+  "mt-2 block w-full rounded-none border-0 border-b border-ink/25 bg-transparent px-0 py-3.5 text-lg text-ink transition-colors duration-500 placeholder:text-ink-muted/70 hover:border-ink/50 focus:border-ink focus:ring-0 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-500";
 const invalid = "border-[#a3361f]";
 
 const labels: Record<InquiryField, string> = {
@@ -60,16 +61,17 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="text-sm font-medium text-charcoal-900">
+      <label htmlFor={id} className="text-label text-ink-muted">
         {labels[id]}
         {optional ? <span className="font-normal text-ink-muted"> (optional)</span> : null}
       </label>
+      {children}
+      {/* Under the control, so the controls of a paired row line up whatever their hints say. */}
       {hint ? (
-        <p id={`${id}-hint`} className="mt-1 text-sm text-ink-muted">
+        <p id={`${id}-hint`} className="mt-2 text-sm text-ink-muted">
           {hint}
         </p>
       ) : null}
-      {children}
       <FieldError id={id} error={error} />
     </div>
   );
@@ -212,9 +214,8 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
 
   if (state.status === "sent") {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-paper-100 p-8 sm:p-10">
-        <span aria-hidden="true" className="absolute inset-y-8 left-0 w-1 rounded-r-full bg-brand-500" />
-        <h2 ref={successRef} tabIndex={-1} className="font-display text-display-sm text-charcoal-900 focus:outline-none">
+      <div className="border-l border-ink/25 py-2 pl-8">
+        <h2 ref={successRef} tabIndex={-1} className="font-display text-display-md font-light text-ink focus:outline-none">
           Thank you. Your inquiry has been sent.
         </h2>
         <p className="mt-4 text-ink-muted">
@@ -281,7 +282,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
           tabIndex={-1}
           role="alert"
           className={cn(
-            "rounded-xl p-5 text-sm leading-relaxed focus:outline-2 focus:outline-offset-2",
+            "p-5 text-sm leading-relaxed focus:outline-2 focus:outline-offset-2",
             notice.tone === "warning"
               ? "border border-dashed border-brand-500 bg-brand-500/[0.07] text-brand-700 focus:outline-brand-600"
               : "border-l-2 border-[#a3361f] bg-[#a3361f]/5 text-[#7d2914] focus:outline-[#a3361f]",
@@ -303,7 +304,8 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
       <input type="hidden" name="startedAt" defaultValue="" />
       <input type="hidden" name="attribution" defaultValue="" />
 
-      <div className="grid gap-7 sm:grid-cols-2">
+      {/* Paired fields: two columns where the form has the width (not in the narrower column beside the sidebar at lg). */}
+      <div className="grid items-start gap-7 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <Field id="name" error={errors.name}>
           <input
             id="name"
@@ -349,8 +351,9 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
           />
         </Field>
         <fieldset aria-describedby={errors.preferredContact ? "preferredContact-error" : undefined}>
-          <legend className="text-sm font-medium text-charcoal-900">{labels.preferredContact}</legend>
-          <div className="mt-2 flex gap-3">
+          <legend className="text-label text-ink-muted">{labels.preferredContact}</legend>
+          {/* A square segmented pair: the two options share their middle rule. */}
+          <div className="mt-2 flex">
             {(
               [
                 ["email", "Email"],
@@ -360,7 +363,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
               <label
                 key={value}
                 htmlFor={`preferredContact-${value}`}
-                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-xl border border-charcoal-900/20 bg-white/85 px-4 text-base text-charcoal-900 has-[:checked]:border-charcoal-900 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-600"
+                className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 px-5 text-base text-ink ring-1 ring-ink/20 transition-colors duration-300 ring-inset not-first:-ml-px has-[:checked]:bg-ink has-[:checked]:text-ivory has-[:checked]:ring-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500"
               >
                 <input
                   id={`preferredContact-${value}`}
@@ -368,7 +371,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
                   name="preferredContact"
                   value={value}
                   defaultChecked={(values.preferredContact ?? "email") === value}
-                  className="size-4 accent-charcoal-900 focus:outline-none"
+                  className="size-4 accent-brand-500 focus:outline-none"
                 />
                 {label}
               </label>
@@ -474,15 +477,9 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-brand-500 px-8 text-[0.95rem] font-semibold text-white shadow-[0_12px_32px_-12px_rgb(202_58_49/0.6)] transition-all hover:-translate-y-0.5 hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-wait disabled:opacity-70"
-        >
-          {pending ? (
-            <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-paper/40 border-t-paper motion-reduce:animate-none" />
-          ) : null}
-          {pending ? "Sending…" : "Send inquiry"}
+        {/* The site's link button, as a submit: while sending, the arrow's face shows a spinner. */}
+        <button type="submit" disabled={pending} className={linkButtonClass("dark", "self-start sm:self-auto disabled:cursor-wait disabled:opacity-70")}>
+          <LinkButtonFace front={pending ? <span className="size-4 animate-spin rounded-full border-2 border-ivory/40 border-t-ivory motion-reduce:animate-none" /> : undefined}>{pending ? "Sending…" : "Send inquiry"}</LinkButtonFace>
         </button>
         <p role="status" aria-live="polite" className="text-sm text-ink-muted">
           {pending ? "Sending your inquiry. Please keep this page open." : ""}

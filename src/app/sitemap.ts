@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { clientProjects } from "@/content/imagery";
 import { site } from "@/content/site";
 import { getGuides, getLocations, getProjects, getServices } from "@/lib/content";
 import { absoluteUrl, paths } from "@/lib/routes";
@@ -14,8 +15,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     paths.services,
     paths.serviceAreas,
     paths.guides,
-    // The projects index is listed only once it has approved case studies.
-    ...(getProjects().length ? [paths.projects] : []),
+    // The projects index is listed only once it shows client renderings or approved case studies.
+    ...(getProjects().length || clientProjects.length ? [paths.projects] : []),
     paths.howItWorks,
     paths.about,
     paths.contact,

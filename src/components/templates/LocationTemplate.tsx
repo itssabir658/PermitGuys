@@ -59,7 +59,7 @@ export function LocationTemplate({ location }: { location: Location }) {
           <ul className="space-y-3">
             {location.officialLinks.map((link) => (
               <li key={link.url}>
-                <a href={link.url} target="_blank" rel="noopener" className="inline-flex items-center gap-2 font-medium text-charcoal-900 underline decoration-line-strong underline-offset-4 hover:text-brand-700">
+                <a href={link.url} target="_blank" rel="noopener" className="inline-flex items-center gap-2 font-medium text-charcoal-900 underline decoration-line-strong underline-offset-4 transition-[text-decoration-color] duration-300 ease-(--e-ui) hover:decoration-current">
                   {link.label}
                   <ExternalIcon />
                   <span className="sr-only">(opens in a new tab)</span>

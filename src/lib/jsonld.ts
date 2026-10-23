@@ -56,7 +56,17 @@ export function organizationSchema() {
     knowsAbout: getServices().map((s) => s.name),
     ...(contact.phone ? { telephone: contact.phone } : {}),
     ...(contact.email ? { email: contact.email } : {}),
-    ...(contact.address ? { address: contact.address } : {}),
+    ...(site.postalAddress ? { address: { "@type": "PostalAddress", ...site.postalAddress } } : contact.address ? { address: contact.address } : {}),
+    ...(contact.address && site.openingHours.length
+      ? {
+          openingHoursSpecification: site.openingHours.map((h) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: h.days,
+            opens: h.opens,
+            closes: h.closes,
+          })),
+        }
+      : {}),
     ...contactPoint,
     ...(site.social.length ? { sameAs: site.social.map((s) => s.url) } : {}),
   };

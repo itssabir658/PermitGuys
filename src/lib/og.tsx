@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { site } from "@/content/site";
 
-/** Shared Open Graph and Twitter image: 1200 × 630 PNG in the brand colours. */
+/** Shared Open Graph and Twitter image: 1200 × 630 PNG in the site palette: graphite ground, ivory type, a single red rule. */
 export const ogSize = { width: 1200, height: 630 };
 export const ogContentType = "image/png";
 
@@ -20,21 +20,19 @@ export function ogImage({ eyebrow, title }: { eyebrow: string; title: string }) 
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "72px 80px",
-          background: "#1C1C1C",
-          color: "#FFFFFF",
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
+          background: "#111110",
+          color: "#F4F1EB",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse renders plain img elements. */}
         <img src={logo} alt={site.name} width={327} height={61} />
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 24, textTransform: "uppercase", letterSpacing: 4, color: "#F28B82" }}>{eyebrow}</div>
-          <div style={{ marginTop: 24, fontSize: title.length > 60 ? 54 : 64, lineHeight: 1.12, maxWidth: 1000 }}>{title}</div>
+          <div style={{ fontSize: 20, textTransform: "uppercase", letterSpacing: 4, color: "#A9A49B" }}>{eyebrow}</div>
+          <div style={{ marginTop: 28, fontSize: title.length > 60 ? 58 : 72, lineHeight: 1.04, letterSpacing: -2, maxWidth: 1000, fontWeight: 300 }}>{title}</div>
         </div>
-        <div style={{ display: "flex", borderTop: "2px solid #EE352F", paddingTop: 24, fontSize: 24, color: "rgba(255,255,255,0.8)" }}>
-          Permit drawings and permit guidance · {site.region}
+        <div style={{ display: "flex", borderTop: "1px solid rgba(244,241,235,0.2)", paddingTop: 24, fontSize: 22, color: "rgba(244,241,235,0.7)", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 5, background: "#EE352F" }} />
+          Architecture, engineering and permit drawings · {site.region}
         </div>
       </div>
     ),

@@ -71,7 +71,7 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
 
         {guide.keyTerms?.length ? (
           <ArticleSection id="key-terms" title="Key terms">
-            <dl className="max-w-3xl divide-y divide-line border-y border-line">
+            <dl className="max-w-(--measure-article) divide-y divide-line border-y border-line">
               {guide.keyTerms.map((t) => (
                 <div key={t.term} className="grid gap-2 py-5 sm:grid-cols-[12rem_1fr] sm:gap-8">
                   <dt className="font-semibold text-charcoal-900">{t.term}</dt>
@@ -94,7 +94,7 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
           intro="This guide is general information, not legal or code advice. Requirements change, and your municipality decides what applies to your property."
         >
           <SourceList sources={guide.sources} />
-          <div className="mt-10 border-t border-line pt-8 text-[0.95rem] text-ink-muted">
+          <div className="mt-10 max-w-(--measure-article) border-t border-line pt-8 text-[0.95rem] text-ink-muted">
             <h3 className="font-semibold text-charcoal-900">Reviewed by</h3>
             <p className="mt-2">
               {guide.reviewer ? (

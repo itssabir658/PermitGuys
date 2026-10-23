@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { bodyFont, headingFont } from "./fonts";
+import { headingFont, monoFont, wordmarkFont } from "./fonts";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { InteractionEffects } from "@/components/layout/InteractionEffects";
+import { MotionRoot } from "@/components/layout/MotionRoot";
+import { Preloader, motionScript } from "@/components/layout/Preloader";
+import { ScreenTransition } from "@/components/layout/ScreenTransition";
 import { SiteTelemetry } from "@/components/layout/SiteTelemetry";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
+import { NotchClipDefs } from "@/components/ui/NotchClip";
 import { site } from "@/content/site";
 import { organizationSchema, websiteSchema } from "@/lib/jsonld";
 import "./globals.css";
@@ -32,22 +36,32 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F2F5F9",
+  themeColor: "#F4F1EB",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-CA" className={`${headingFont.variable} ${bodyFont.variable} antialiased`}>
+    <html lang="en-CA" className={`${headingFont.variable} ${monoFont.variable} ${wordmarkFont.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Before first paint: turn on the preloader and scroll motion for visitors who allow motion. */}
+        <script dangerouslySetInnerHTML={{ __html: motionScript }} />
+      </head>
       <body className="flex min-h-screen flex-col">
+        {/* First in the body, so it is in place before any content paints. */}
+        <Preloader />
         <SkipLink />
         <SiteHeader />
-        <main id="main" tabIndex={-1} className="flex-1 bg-paper focus:outline-none">
+        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>
         <SiteFooter />
+        {/* The notched drawing-sheet outline for framed pictures on any page (.notch-clip). */}
+        <NotchClipDefs />
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <SiteTelemetry />
         <InteractionEffects />
+        <MotionRoot />
+        <ScreenTransition />
       </body>
     </html>
   );

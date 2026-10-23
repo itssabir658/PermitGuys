@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Container } from "./Container";
 
 export interface TocItem {
@@ -6,18 +6,23 @@ export interface TocItem {
   label: string;
 }
 
-/** Two-column body for templates: an "On this page" index and the content. */
+/**
+ * Two-column body for templates: an "On this page" index and the content.
+ * The index needs the room of an extra-wide screen; below that the content
+ * takes a wider, centred column, so charts such as StepList keep their text.
+ */
 export function ArticleLayout({ toc, children }: { toc: TocItem[]; children: ReactNode }) {
   return (
-    <Container className="py-16 sm:py-20 lg:py-24">
-      <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
-        <aside className="hidden lg:col-span-3 lg:block">
-          <nav aria-label="On this page" data-toc="" className="glass sticky top-28 rounded-2xl p-5">
-            <p className="text-label text-brand-700">On this page</p>
-            <ul className="mt-4 space-y-1 text-sm">
+    // The same handover from the page header as a first Section (pt-10 lg:pt-14).
+    <Container className="pt-10 pb-24 sm:pb-32 lg:pt-14 lg:pb-40">
+      <div className="grid gap-12 lg:grid-cols-12 lg:gap-8">
+        <aside className="hidden xl:col-span-3 xl:block">
+          <nav aria-label="On this page" data-toc="" className="sticky top-32">
+            <p className="text-label text-ink-muted">On this page</p>
+            <ul className="mt-6 border-l border-line text-[0.9375rem]">
               {toc.map((item) => (
                 <li key={item.id}>
-                  <a href={`#${item.id}`} className="block rounded-lg px-3 py-2 text-ink-muted transition-colors hover:bg-white/80 hover:text-charcoal-900 aria-[current=location]:bg-charcoal-900 aria-[current=location]:text-paper">
+                  <a href={`#${item.id}`} className="-ml-px block border-l border-transparent py-2 pl-5 text-ink-muted transition-colors duration-500 hover:text-ink aria-[current=location]:border-ink aria-[current=location]:text-ink">
                     {item.label}
                   </a>
                 </li>
@@ -25,31 +30,42 @@ export function ArticleLayout({ toc, children }: { toc: TocItem[]; children: Rea
             </ul>
           </nav>
         </aside>
-        <div className="min-w-0 space-y-20 lg:col-span-9">{children}</div>
+        <div className="min-w-0 space-y-24 lg:col-span-10 lg:col-start-2 lg:space-y-32 xl:col-span-8 xl:col-start-5">{children}</div>
       </div>
     </Container>
   );
 }
 
+/**
+ * One article section: the heading rises line by line, the intro follows it, then the body row by row. An "On this page"
+ * link glides here and then moves focus to the section (ScreenTransition), so it can take focus; with the root's
+ * scroll-padding its heading lands level with the sticky index (8rem down).
+ */
 export function ArticleSection({ id, title, children, intro }: { id: string; title: string; children: ReactNode; intro?: ReactNode }) {
   return (
-    <section aria-labelledby={`${id}-heading`} id={id} data-reveal="" className="scroll-mt-28">
-      <h2 id={`${id}-heading`} className="font-display text-display-md text-balance text-charcoal-900">
+    <section aria-labelledby={`${id}-heading`} id={id} tabIndex={-1} className="scroll-mt-8 focus:outline-none">
+      <h2 id={`${id}-heading`} data-reveal-lines="" className="font-display text-display-md font-light text-balance text-ink">
         {title}
       </h2>
-      {intro ? <div className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-muted">{intro}</div> : null}
-      <div className="mt-8">{children}</div>
+      {intro ? (
+        <div data-reveal="" style={{ "--d": 60 } as CSSProperties} className="mt-6 max-w-(--measure-article) text-lede text-ink-muted">
+          {intro}
+        </div>
+      ) : null}
+      <div data-reveal-type="rows" className="mt-10">
+        {children}
+      </div>
     </section>
   );
 }
 
-/** Bullet list in a glass card, one ruled row per item. */
+/** Hairline-ruled list, one row per item. */
 export function RuledList({ items }: { items: string[] }) {
   return (
-    <ul className="glass max-w-3xl divide-y divide-charcoal-900/[0.08] rounded-2xl px-5 sm:px-6">
+    <ul className="max-w-(--measure-article) border-t border-line">
       {items.map((item) => (
-        <li key={item} className="flex gap-4 py-4 leading-relaxed text-ink">
-          <span aria-hidden="true" className="mt-[0.6rem] size-1.5 shrink-0 rounded-full bg-brand-500" />
+        <li key={item} className="row-rule flex gap-5 py-5 leading-relaxed text-ink">
+          <span aria-hidden="true" className="mt-[0.7rem] h-px w-4 shrink-0 bg-ink" />
           <span>{item}</span>
         </li>
       ))}
@@ -58,5 +74,5 @@ export function RuledList({ items }: { items: string[] }) {
 }
 
 export function Note({ children }: { children: ReactNode }) {
-  return <p className="mt-4 max-w-3xl rounded-r-xl border-l-2 border-brand-500 bg-paper-100 py-3 pr-4 pl-5 text-[0.95rem] leading-relaxed text-ink-muted">{children}</p>;
+  return <p className="mt-6 max-w-(--measure-article) border-l border-ink/25 py-1 pl-5 text-[0.9375rem] leading-relaxed text-ink-muted">{children}</p>;
 }

@@ -1,6 +1,10 @@
 import { site } from "@/content/site";
 
-const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
+/** tel: link in international form; ten-digit North American numbers get +1. */
+const telHref = (phone: string) => {
+  const digits = phone.replace(/[^\d+]/g, "");
+  return `tel:${/^\d{10}$/.test(digits) ? `+1${digits}` : digits}`;
+};
 
 /** Phone link when a verified number exists. Clicks are reported as click_to_call. */
 export function PhoneLink({ location, className }: { location: string; className?: string }) {
