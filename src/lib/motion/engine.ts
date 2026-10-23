@@ -7,8 +7,8 @@ import Lenis from "lenis";
  *   1. Lenis advances the smoothed scroll position;
  *   2. per-frame callbacks (roll links and other small interactions);
  *   3. page modules, in their `order` (on the homepage: page ground, hero,
- *      intro, works, values, services image, services, the handover to
- *      Contact, contact; on every page: the footer, then parallax);
+ *      intro, story, works, values, services image, services, the handover
+ *      to Contact, contact; on every page: the footer, then parallax);
  *   4. the navigation.
  * Modules are pure readers of the frame: they compute styles from the
  * scroll position and write them, so scrolling back up runs everything
@@ -404,12 +404,13 @@ export const ORDER = {
   ground: 0,
   hero: 1,
   intro: 2,
-  works: 3,
-  values: 4,
-  servicesImage: 5,
-  services: 6,
-  handover: 7,
-  contact: 8,
+  story: 3,
+  works: 4,
+  values: 5,
+  servicesImage: 6,
+  services: 7,
+  handover: 8,
+  contact: 9,
   footer: 19,
   parallax: 20,
   nav: 90,

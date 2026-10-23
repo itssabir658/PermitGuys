@@ -17,7 +17,7 @@ interface PageMeta {
  * replace the root image, so it is listed explicitly here; segments with
  * their own opengraph-image file (services, guides) override it.
  */
-const defaultImage = { url: "/opengraph-image/", width: 1200, height: 630, alt: `${site.name}: permit drawings and permit guidance in the GTA` };
+const defaultImage = { url: "/opengraph-image/", width: 1200, height: 630, alt: `${site.name}: architecture, engineering and permit drawings in the GTA` };
 
 /**
  * Builds title, description, canonical URL and social metadata the same way

@@ -26,10 +26,21 @@ Preparation:
 
 Where they appear:
 
-- On the homepage: the hero, the intro ring, Selected projects, Values, custom homes in Services, and the two contact cards.
+- On the homepage: the hero, the intro ring, the story (the narrow contemporary house, under the linework traced from it), Selected projects, Values, custom homes in Services, and the two contact cards (the story's house is not repeated there).
 - The bands on the services, how it works, about and service areas pages.
 - The custom home permits page.
 - All of them on the projects page, where `clientProjects` lists each project and its views. The anchors there are linked from Selected projects, and every service page links to the page from "Examples of our work" until it has approved case studies.
+
+### The story drawing
+
+The homepage story (`Story.tsx`) draws the narrow contemporary house over its own rendering, then lays it out as an elevation on a drawing sheet. The drawing is data in `src/content/story-drawing.ts`, measured from the picture so every line lands on the rendering's own edges:
+
+- **The perspective.** The rendering is a one-point perspective: its verticals are vertical and every horizontal edge of the facade runs to one vanishing point far to the left. That point was fitted by least squares to 132 traced edges (within 0.04°).
+- **The rectification.** The homography that keeps verticals vertical and sends the vanishing point to infinity turns the facade into a true elevation. It keeps one column, near the house's right edge, at the picture's own scale. Every line was measured on the rendering rectified that way, in its pixels.
+- **Two places for every line.** Mapped back through the homography, a line lands on the picture (`p`); scaled into the sheet beside its levels and grid, it is the elevation (`q`). Where depth shows the picture something an elevation would not (the porch floor seen from above, the steps coming forward, the window deep in its surround), the sheet's line is placed where the elevation has it. The story moves every line from one place to the other.
+- **The engineering is illustrative.** The grid lines sit on the main walls, the levels on the roofs, the floors and grade, and the beams, posts and footings where a house like this would have them. They are labelled by what they are, never by a size, and the caption says the linework is drawn for illustration. Nothing on the sheet is a measurement of the project.
+
+`tests/story-drawing.test.ts` checks the geometry: the rectification and its inverse, the vanishing point, the bounds, and that the sheet is square and level.
 
 ### Rendered studies
 

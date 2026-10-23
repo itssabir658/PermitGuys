@@ -8,9 +8,9 @@
 export const site = {
   name: "PermitGuys",
   legalName: null as string | null,
-  tagline: "Permit drawings and permit guidance for GTA homeowners",
+  tagline: "Architecture, engineering and permit drawings in the Greater Toronto Area",
   description:
-    "PermitGuys prepares permit drawings and helps homeowners and property owners in the Greater Toronto Area navigate the building permit process for additions, basement apartments, decks, custom homes and commercial interiors.",
+    "PermitGuys is an architecture and engineering firm in Oakville. We take additions, custom homes, basement apartments, decks and commercial interiors across the Greater Toronto Area from the first idea to drawings ready for the building permit.",
   /** Region named in the brief. Individual municipalities are confirmed in locations.ts. */
   region: "Greater Toronto Area, Ontario",
   locale: "en_CA",

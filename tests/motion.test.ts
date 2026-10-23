@@ -13,6 +13,9 @@ import {
   SERVICES_LEAD,
   SERVICES_META_ON,
   SERVICES_WIPE,
+  STORY,
+  STORY_LINE_DUR,
+  STORY_OVERSHOOT,
   contactCard,
   contactLetter,
   headerGround,
@@ -34,6 +37,16 @@ import {
   servicesLead,
   servicesReveal,
   servicesRow,
+  storyChapter,
+  storyField,
+  storyFill,
+  storyLine,
+  storyLineDraw,
+  storyOverlay,
+  storySectionVh,
+  storySeg,
+  storySide,
+  storyState,
   swapK,
   swapLayer,
   swapSettle,
@@ -159,6 +172,11 @@ describe("motion vocabulary", () => {
     expect(worksLine(0.5, 0, 3, 3.2, 2)).toBe(0);
     expect(worksLine(2, 0, 3, 3.2, 2)).toBe(-MASK);
     expect(introLine(0, 1, 0)).toBe(MASK);
+    expect(storyLine(-1, 0, 4, 0)).toBe(MASK);
+    expect(storyLine(0.5, 0, 4, 3)).toBe(0);
+    expect(storyLine(2, 0, 4, 3)).toBe(-MASK);
+    expect(storyField(0, 0)).toBe(MASK);
+    expect(storyField(9, 3)).toBe(0);
     expect(heroState(0, 0, VH).nameRoll).toBe(0);
     expect(heroState(VH, 0, VH).nameRoll).toBe(-MASK);
     expect(heroState(VH, 0, VH).subRoll).toEqual([-MASK, -MASK]);
@@ -905,6 +923,156 @@ describe("homepage choreography", () => {
     // Opaque once its picture's sheet is 40% up.
     const at = range(0.06, 0.44, 0.001).find((s) => contactCard(s, 0).opacity === 1)!;
     expect(contactCard(at, 0).t).toBeCloseTo(0.4, 2);
+  });
+});
+
+describe("story", () => {
+  const range = (from: number, to: number, by = 0.005) => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
+  const n = STORY.chapters;
+  const step = STORY.step;
+  /** Where the stage releases. */
+  const end = n * step;
+  const keys = ["sheet", "sketch", "render", "veil", "eng", "paper", "ink", "rectify"] as const;
+
+  it("a chapter takes 1.2 screens, so the section is 580vh: one screen to arrive, then the chapters", () => {
+    expect(storySectionVh()).toBe(580);
+    expect(storySectionVh(4)).toBe(580);
+    expect(storySectionVh(2)).toBe(340);
+  });
+
+  it("every state of the drawing runs 0 → 1 once, forwards, and is done before the stage releases", () => {
+    const before = storyState(-2);
+    for (const k of keys) expect(before[k], k).toBe(0);
+    const after = storyState(end);
+    for (const k of keys) expect(after[k], k).toBe(1);
+    let last = before;
+    for (const e of range(-2, end + 1, 0.01)) {
+      const st = storyState(e);
+      for (const k of keys) expect(st[k], k).toBeGreaterThanOrEqual(last[k]);
+      last = st;
+    }
+  });
+
+  it("each change starts as its chapter's text hands over, and each state is held whole while it is read", () => {
+    // The changes start between the outgoing text's first move (0.2 before the boundary) and the boundary.
+    for (const [start, i] of [
+      [STORY.renderIn, 1],
+      [STORY.veilIn, 2],
+      [STORY.paperIn, 3],
+    ] as const) {
+      expect(start).toBeGreaterThanOrEqual(i * step - 0.2);
+      expect(start).toBeLessThanOrEqual(i * step);
+    }
+    // The sketch is whole before the rendering wipes in; the rendering for most of the Design chapter; the engineering before the paper.
+    expect(STORY.renderIn - (STORY.sketchIn + STORY.sketchVh)).toBeGreaterThanOrEqual(0.3);
+    expect(STORY.veilIn - (STORY.renderIn + STORY.renderVh)).toBeGreaterThanOrEqual(0.6);
+    expect(STORY.paperIn - (STORY.engIn + STORY.engVh)).toBeGreaterThanOrEqual(0.3);
+    // The engineering is drawn on the trace once it is mostly up, and the ink is back before the lines straighten.
+    expect(storyState(STORY.engIn).veil).toBeGreaterThan(0.5);
+    expect(STORY.rectifyIn).toBeGreaterThan(STORY.inkIn);
+    expect(storyState(STORY.rectifyIn + 0.02).ink).toBeGreaterThan(0.25);
+    // The finished sheet holds for half a screen before the release.
+    expect(end - (STORY.rectifyIn + STORY.rectifyVh)).toBeGreaterThanOrEqual(0.5);
+    expect(end - (STORY.fieldsIn + 3 * WORKS.stagger + 0.26)).toBeGreaterThanOrEqual(0.5);
+    // The sheet is up before the sketch is more than started, and the sketch begins while the stage is still arriving.
+    expect(storyState(STORY.sketchIn + 0.12).sheet).toBeGreaterThan(0.95);
+    expect(STORY.sketchIn).toBeLessThan(0);
+  });
+
+  it("the contents follow the text: a chapter turns over just before its boundary and each bar fills across its chapter", () => {
+    expect(storyChapter(-1)).toBe(0);
+    expect(storyChapter(step - 0.06)).toBe(0);
+    expect(storyChapter(step - 0.04)).toBe(1);
+    expect(storyChapter(2 * step)).toBe(2);
+    expect(storyChapter(3 * step + 0.5)).toBe(3);
+    expect(storyChapter(99)).toBe(3);
+    for (let i = 0; i < n; i++) {
+      expect(storyFill(i * step, i)).toBe(0);
+      expect(storyFill((i + 0.5) * step, i)).toBeCloseTo(0.5);
+      expect(storyFill((i + 1) * step, i)).toBeCloseTo(1, 9);
+    }
+  });
+
+  it("the sketch draws its lines one after another, the first from the start and the last by the end", () => {
+    const lines = 145;
+    expect(storyLineDraw(0, 0, lines)).toBe(0);
+    expect(storyLineDraw(STORY_LINE_DUR, 0, lines)).toBe(1);
+    expect(storyLineDraw(1 - STORY_LINE_DUR, lines - 1, lines)).toBe(0);
+    expect(storyLineDraw(1, lines - 1, lines)).toBe(1);
+    for (const t of range(0, 1, 0.01)) for (let i = 1; i < lines; i += 12) expect(storyLineDraw(t, i, lines)).toBeLessThanOrEqual(storyLineDraw(t, i - 1, lines));
+    // A single line takes the whole sketch's first share.
+    expect(storyLineDraw(STORY_LINE_DUR, 0, 1)).toBe(1);
+  });
+
+  it("a line runs past its ends while sketched, draws from its first end, and moves from the picture to the sheet", () => {
+    const p = [100, 200, 500, 200] as const;
+    const q = [300, 400, 300, 900] as const;
+    expect(storySeg(p, q, 0, 0, 1)).toEqual([100, 200, 500, 200]);
+    expect(storySeg(p, q, 1, 0, 1)).toEqual([300, 400, 300, 900]);
+    expect(storySeg(p, q, 0.5, 0, 1)).toEqual([200, 300, 400, 550]);
+    // Half drawn: from its first end to its middle.
+    expect(storySeg(p, q, 0, 0, 0.5)).toEqual([100, 200, 300, 200]);
+    expect(storySeg(p, q, 0, 0, 0)).toEqual([100, 200, 100, 200]);
+    // The overshoot: STORY_OVERSHOOT past each end, or a quarter of a short line.
+    expect(storySeg(p, q, 0, STORY_OVERSHOOT, 1)).toEqual([100 - STORY_OVERSHOOT, 200, 500 + STORY_OVERSHOOT, 200]);
+    expect(storySeg([0, 0, 0, 40], [0, 0, 0, 40], 0, STORY_OVERSHOOT, 1)).toEqual([0, -10, 0, 50]);
+    // A point stays a point.
+    expect(storySeg([5, 5, 5, 5], [5, 5, 5, 5], 0, STORY_OVERSHOOT, 1)).toEqual([5, 5, 5, 5]);
+  });
+
+  it("the engineering is drawn grid first, then the levels, then the structure round its outline, labels behind", () => {
+    const none = storyOverlay(0, 7);
+    expect([...none.grid, ...none.bubbles, ...none.levels, ...none.levelLabels, ...none.members, none.memberLabels].every((v) => v === 0)).toBe(true);
+    const done = storyOverlay(1, 7);
+    expect([...done.grid, ...done.bubbles, ...done.levels, ...done.levelLabels, ...done.members, done.memberLabels].every((v) => v === 1)).toBe(true);
+    for (const t of range(0, 1, 0.01)) {
+      const o = storyOverlay(t, 7);
+      for (let i = 1; i < 3; i++) expect(o.grid[i]).toBeLessThanOrEqual(o.grid[i - 1]);
+      for (let i = 1; i < 4; i++) expect(o.levels[i]).toBeLessThanOrEqual(o.levels[i - 1]);
+      for (let k = 1; k < 7; k++) expect(o.members[k]).toBeLessThanOrEqual(o.members[k - 1]);
+      // A level starts once the grid is under way, and the structure once the levels are.
+      if (o.levels[0] > 0) expect(o.grid[0]).toBeGreaterThan(0.3);
+      if (o.members[0] > 0) expect(o.levels[3]).toBeGreaterThan(0.3);
+    }
+    // A member's sides draw one after another, round its outline.
+    expect([0, 1, 2, 3].map((s) => storySide(0, s))).toEqual([0, 0, 0, 0]);
+    expect([0, 1, 2, 3].map((s) => storySide(0.5, s))).toEqual([1, 1, 0, 0]);
+    expect([0, 1, 2, 3].map((s) => storySide(0.625, s))).toEqual([1, 1, 0.5, 0]);
+    expect([0, 1, 2, 3].map((s) => storySide(1, s))).toEqual([1, 1, 1, 1]);
+  });
+
+  it("chapter text: composed for 0.6 screens or more, two chapters' lines never moving in one rank, and never an empty column", () => {
+    // Label, two title lines and up to four body lines: k 0 to 6.
+    const ks = [0, 1, 2, 3, 4, 5, 6];
+    for (let i = 0; i < n; i++) {
+      const composed = range(i * step - 0.5, (i + 1) * step, 0.002).filter((e) => ks.every((k) => storyLine(e, i, n, k) === 0)).length * 0.002;
+      expect(composed, `chapter ${i}`).toBeGreaterThanOrEqual(0.6);
+    }
+    // The first chapter is in place as the stage pins (give or take a tenth of a screen); the last never leaves.
+    for (const k of ks) expect(storyLine(0.12, 0, n, k)).toBe(0);
+    for (const k of ks) expect(storyLine(end + 1, n - 1, n, k)).toBe(0);
+    for (let b = 1; b < n; b++) {
+      const at = b * step;
+      for (const e of range(at - 0.3, at + 0.5, 0.002)) {
+        for (const k of ks) {
+          // An incoming line on its way up: the outgoing line of its rank, and of the next (whose clip margin reaches into it), have gone.
+          if (storyLine(e, b, n, k) < MASK - 1e-9) {
+            expect(storyLine(e, b - 1, n, k)).toBeCloseTo(-MASK);
+            expect(storyLine(e, b - 1, n, k + 1)).toBeCloseTo(-MASK);
+          }
+        }
+        // Some text is always on screen through the handover.
+        expect([b - 1, b].some((i) => ks.some((k) => Math.abs(storyLine(e, i, n, k)) < MASK - 1e-9))).toBe(true);
+      }
+    }
+  });
+
+  it("the title block's values roll in one after another as the drawing finishes straightening", () => {
+    for (let k = 0; k < 4; k++) {
+      expect(storyField(STORY.fieldsIn + k * WORKS.stagger, k)).toBe(MASK);
+      expect(storyField(STORY.fieldsIn + k * WORKS.stagger + 0.26, k)).toBe(0);
+    }
+    expect(storyState(STORY.fieldsIn).rectify).toBeGreaterThan(0.5);
   });
 });
 

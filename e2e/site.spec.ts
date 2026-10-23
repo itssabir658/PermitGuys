@@ -375,6 +375,49 @@ test.describe("interactive pieces", () => {
     await expect(caption).toHaveText(/^rendered study for illustration, not a client project\.$/i, { useInnerText: true });
   });
 
+  test("the story follows one house from idea to permit, and plays backwards on the way up", async ({ page }) => {
+    await page.goto("/");
+    const story = page.locator("[aria-labelledby=story-heading]");
+    await expect(story.getByRole("heading", { level: 2 })).toHaveText("From idea to permit");
+    await expect(story.getByRole("heading", { level: 3 })).toHaveText(["Every project starts with an idea.", "Designed around you.", "Engineered to be built.", "Ready for the building permit."]);
+    await expect(story.locator("figcaption")).toHaveText("Rendering of a client project, with linework drawn over it for illustration.");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    // e screens of scroll since the stage pinned.
+    const at = async (e: number) => {
+      const y = await page.evaluate((e) => {
+        let top = 0;
+        for (let n = document.querySelector<HTMLElement>("[data-story]"); n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop;
+        const y = Math.round(top + e * window.innerHeight);
+        window.scrollTo(0, y);
+        return y;
+      }, e);
+      await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(y);
+    };
+    // The title block's drawing name, shown at every width: in place, or parked below its mask.
+    const drawingName = () => story.locator(".story-block__drawing [data-story-field]").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42);
+    // The issued sheet: the lines in ink, the title block filled in, the last chapter marked.
+    await at(4.6);
+    await expect(story.locator("[data-story-lines]")).toHaveAttribute("data-ink", "");
+    await expect(story.locator("[data-story-toc='3']")).toHaveAttribute("data-active", "");
+    await expect.poll(drawingName).toBe(0);
+    // Back at the sketch: no ink, the first chapter marked, the title block empty again.
+    await at(0.3);
+    await expect(story.locator("[data-story-lines]")).not.toHaveAttribute("data-ink", "");
+    await expect(story.locator("[data-story-toc='0']")).toHaveAttribute("data-active", "");
+    await expect.poll(drawingName).toBeGreaterThan(0);
+  });
+
+  test("with reduced motion the story is a still sheet beside its four chapters", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const story = page.locator("[aria-labelledby=story-heading]");
+    await story.scrollIntoViewIfNeeded();
+    for (const title of await story.getByRole("heading", { level: 3 }).all()) await expect(title).toBeVisible();
+    await expect(story.locator("[data-story-sheet]")).toBeVisible();
+    await expect(story.locator("[data-story-toc='0']")).toBeHidden();
+    expect(await story.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(3 * (page.viewportSize()?.height ?? 900));
+  });
+
   test("a project link on the homepage lands on that project's renderings", async ({ page }) => {
     await page.goto("/projects/#stone-house");
     const project = page.locator("#stone-house");

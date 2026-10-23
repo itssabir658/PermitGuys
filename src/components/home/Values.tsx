@@ -29,12 +29,12 @@ import { escapeHtml } from "@/lib/html";
 const values: { title: string; body: string; plate: Plate }[] = [
   {
     title: "Clarity",
-    body: "Before drawing anything, we look at what you want to build against the zoning and Building Code considerations we can identify for your lot.",
+    body: "Before we design anything, we weigh what you want to build against the zoning and Building Code considerations we can identify for your lot.",
     plate: plates.prairieCorner,
   },
   {
     title: "Candour",
-    body: "Some projects also need an engineer, a survey or a planning approval. When yours does, we flag it at the start.",
+    body: "Some projects also need a survey, a planning approval or another specialist. When yours does, we tell you at the start.",
     plate: plates.farmhouse,
   },
   {

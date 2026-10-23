@@ -41,11 +41,12 @@ References studied (as text only; see the note at the end): Storey Architecture 
 The full choreography, scroll map and checks are in [MOTION.md](MOTION.md).
 
 1. **Hero** (`Hero.tsx`): the name set very large over a full-bleed client rendering under a graded veil (a tall crop of it on phones), the statement at the bottom left. The preloader's iris opens onto it; the intro's ivory sheet then rises over it.
-2. **Intro** (`Intro.tsx`): an ivory sheet with six client renderings travelling one squircle path around the centre while the introduction rises through it, paragraph by paragraph; the ring is flung out at the end.
-3. **Selected projects** (`Works.tsx`): one pinned, notched frame on a stone ground; renderings of three client projects, labelled as renderings, wipe up over one another, each leading to its renderings on the projects page. Approved case studies are listed above them when they exist.
-4. **Our values** (`Values.tsx`): four values; the words roll like an odometer between the pictures and change colour where they cross them.
-5. **Services** (`Services.tsx`): the ground turns to night; a numbered list beside one notched frame, pinned while scrolling walks the rows and the picture follows the active row (or the one hovered or focused). "All services" closes the list.
-6. **Contact** (`Contact.tsx`): an ivory sheet over Services; the word CONTACT cut in letter by letter, then two cards of equal height that share their rows, so their foot rules line up: start a project, and call or visit (address, hours, phone, email, Google rating, credentials).
+2. **Intro** (`Intro.tsx`): an ivory sheet with six client renderings travelling one squircle path around the centre while the introduction (who PermitGuys is: an architecture and engineering firm in Oakville) rises through it, paragraph by paragraph; the ring is flung out at the end.
+3. **The story** (`Story.tsx`): "From idea to permit". One client house on one drawing sheet, pinned while it goes through four chapters: Vision (its elevation sketched by hand), Design (the rendering wipes up over the sketch), Engineering (grid, levels and the structure drawn on trace over the picture) and Permit (the drawing straightens into a true elevation, in ink, and the title block is filled in for the building permit). The chapters' text rolls through masks beside the sheet; the caption says the linework is drawn for illustration.
+4. **Selected projects** (`Works.tsx`): one pinned, notched frame on a stone ground; renderings of three client projects, labelled as renderings, wipe up over one another, each leading to its renderings on the projects page. Approved case studies are listed above them when they exist.
+5. **Our values** (`Values.tsx`): four values; the words roll like an odometer between the pictures and change colour where they cross them.
+6. **Services** (`Services.tsx`): the ground turns to night; a numbered list beside one notched frame, pinned while scrolling walks the rows and the picture follows the active row (or the one hovered or focused). "All services" closes the list.
+7. **Contact** (`Contact.tsx`): an ivory sheet over Services; the word CONTACT cut in letter by letter, then two cards of equal height that share their rows, so their foot rules line up: start a project, and call or visit (address, hours, phone, email, Google rating, credentials).
 
 The footer is the page's one charcoal band. Process, service areas and guides live on their own pages; the footer carries the confirmed contact details and the Ontario outline with the Greater Toronto Area marked (except on the 404, which draws its own).
 
@@ -65,6 +66,7 @@ The footer is the page's one charcoal band. Process, service areas and guides li
 - Placeholders stay visible (`Placeholder`) until the business supplies the fact. Never fill them with sample content.
 - Reviews are never written by hand, and Google review structured data is never added (Google does not allow it for a business's own reviews).
 - Client renderings are captioned as renderings, never as photographs of finished buildings, and never with an address. Rendered studies are always captioned as studies and never presented as client projects.
+- The site presents PermitGuys as architects: an architecture and engineering firm, whose work is design and engineering and whose drawings take a project to its building permit. Permits are the outcome, never the identity, so no headline calls the firm a drafting or permit-drawing service. See "Positioning and titles" in [CONTENT.md](CONTENT.md).
 
 ## What could not be inspected
 

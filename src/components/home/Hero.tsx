@@ -2,7 +2,7 @@ import { getImageProps } from "next/image";
 import type { CSSProperties } from "react";
 import { coverWidthByHeight, plateNote, plates } from "@/content/imagery";
 
-const sub = ["Clarity in every detail.", "Confidence in every permit."];
+const sub = ["Beautifully designed.", "Precisely engineered."];
 
 const plate = plates.terrace;
 /** Phones held upright get the tall crop (cut around the umbrella, 55% across); every wider screen the whole picture. Keep in step with the img's object-position variant. */
@@ -71,7 +71,7 @@ export function Hero() {
                 <span className="split-line__inner">PermitGuys</span>
               </span>
             </span>
-            <span className="sr-only"> — permit drawings and permit guidance in the Greater Toronto Area</span>
+            <span className="sr-only"> — architecture, engineering and permit drawings in the Greater Toronto Area</span>
           </h1>
         </div>
 

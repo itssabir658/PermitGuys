@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { LINE_KINDS, STORY_W, storyGrid, storyLevels, storyLines, storyMembers } from "@/content/story-drawing";
 import { ORDER, engine, hso, measureRange, setStyle, sso, type Frame, type MotionModule, type Range } from "@/lib/motion/engine";
 import {
   contactCard,
@@ -23,6 +24,17 @@ import {
   servicesReveal,
   SERVICES_META_ON,
   servicesRow,
+  STORY,
+  STORY_OVERSHOOT,
+  storyChapter,
+  storyField,
+  storyFill,
+  storyLine,
+  storyLineDraw,
+  storyOverlay,
+  storySeg,
+  storySide,
+  storyState,
   swapK,
   swapLayer,
   swapSettle,
@@ -53,6 +65,7 @@ import { resplitIfNeeded, unsplit } from "@/lib/motion/split";
 
 const one = (sel: string, root: ParentNode = document) => root.querySelector<HTMLElement>(sel);
 const all = (sel: string, root: ParentNode = document) => [...root.querySelectorAll<HTMLElement>(sel)];
+const svgAll = (sel: string, root: ParentNode) => [...root.querySelectorAll<SVGElement>(sel)];
 const px = (n: number) => `${n.toFixed(2)}px`;
 const num = (n: number) => n.toFixed(4);
 const lift = (y: number) => `translate3d(0, ${px(y)}, 0)`;
@@ -60,8 +73,24 @@ const liftPercent = (y: number) => `translate3d(0, ${y.toFixed(2)}%, 0)`;
 /** A masked line parked below its mask, hidden. */
 const PARKED = liftPercent(MASK);
 
-function clear(el: HTMLElement, ...props: string[]) {
+function clear(el: HTMLElement | SVGElement, ...props: string[]) {
   for (const p of props) setStyle(el, p, "");
+}
+
+const attrs = new WeakMap<Element, Record<string, string>>();
+
+/** Write an attribute only when it changed since the last frame (setStyle's twin, for SVG geometry). */
+function setAttr(el: Element, name: string, value: string) {
+  let cache = attrs.get(el);
+  if (!cache) attrs.set(el, (cache = {}));
+  if (cache[name] === value) return;
+  cache[name] = value;
+  el.setAttribute(name, value);
+}
+
+/** Sets or removes a boolean attribute, only when it changes. */
+function flag(el: Element, name: string, on: boolean) {
+  if (el.hasAttribute(name) !== on) el.toggleAttribute(name, on);
 }
 
 /** Sets or removes data-services-in, only when it changes: small labels that fade in on their own once their row is up (a CSS transition, so no frame writes them). */
@@ -247,11 +276,239 @@ function labelRoll(labels: HTMLElement[], r: Range, f: Frame, from: number) {
 }
 
 /*
+ * Story: one client house through four states on one drawing sheet, under
+ * a stage pinned for 1.2 screens a chapter (storyState). The sheet wipes up
+ * with the stage and the elevation is sketched on it line by line, each
+ * line run a little past its ends; the rendering wipes up from the ground
+ * line with the sketch clipped above its edge, so every line gives way to
+ * the edge it was traced from; trace rises over the picture and the grid,
+ * levels and structure are drawn on it; then the trace turns to paper, the
+ * structure goes, the lines come back in ink, exact, and everything
+ * straightens into a true elevation as the title block fills in. Beside
+ * it the chapters' lines roll through their masks and the contents mark
+ * the chapter being told.
+ *
+ * Lines and markers are SVG drawn with non-scaling strokes, so a hairline
+ * stays a hairline at any size; a line draws by its path being rewritten
+ * up to the pen (never a dash pattern, which the grid's and levels' own
+ * dashes need), and only while it changes. Lines of one sort are the
+ * subpaths of one path (Story.tsx), so a frame rewrites nine paths rather
+ * than two hundred. The markers (bubbles, datums, labels) are drawn in
+ * screen px inside groups scaled by the drawing's units per px.
+ */
+const segD = (s: readonly number[]) => `M${s[0].toFixed(1)} ${s[1].toFixed(1)}L${s[2].toFixed(1)} ${s[3].toFixed(1)}`;
+const markAt = (x: number, y: number, unit: number) => `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${unit.toFixed(3)})`;
+/** A path with nothing to draw (a zero-length line would leave a round cap's dot). */
+const NOTHING = "M0 0";
+/** Below this width (px) the sheet's level labels are shortened (globals.css), so they keep clear of the house. */
+const STORY_COMPACT_PX = 560;
+
+function story(): MotionModule | null {
+  const section = one("[data-story]");
+  const stage = section && one("[data-story-stage]", section);
+  const sheet = section && one("[data-story-sheet]", section);
+  const plate = section && one("[data-story-plate]", section);
+  const render = section && one("[data-story-render]", section);
+  const veil = section && one("[data-story-veil]", section);
+  const scan = section && one("[data-story-scan]", section);
+  const eng = section?.querySelector<SVGElement>("[data-story-eng]");
+  const ink = section?.querySelector<SVGElement>("[data-story-lines]");
+  if (!section || !stage || !sheet || !plate || !render || !veil || !scan || !eng || !ink) return null;
+  // The sketch's lines, a path for each kind; each line keeps its place in the sketch's order.
+  const strokes = LINE_KINDS.map((kind) => ({
+    el: ink.querySelector<SVGElement>(`path[data-kind="${kind}"]`),
+    lines: storyLines.flatMap((l, i) => (l.kind === kind ? [{ l, i }] : [])),
+  }));
+  // The engineering's lines (grid, levels, the structure's outlines, solid and hidden), then its markers over them.
+  const axes = eng.querySelector<SVGElement>("[data-story-axes]");
+  const levels = eng.querySelector<SVGElement>("[data-story-levels]");
+  const structure = eng.querySelector<SVGElement>("[data-story-structure]");
+  const solid = eng.querySelector<SVGElement>('[data-story-members="solid"]');
+  const hidden = eng.querySelector<SVGElement>('[data-story-members="hidden"]');
+  const bubbles = svgAll("[data-story-bubble]", eng);
+  const datums = svgAll("[data-story-datum]", eng);
+  const memberLabels = svgAll("[data-story-member-label]", eng).map((el) => ({ el, k: Number(el.getAttribute("data-story-member-label")) }));
+  const chapters = all("[data-story-chapter]", section).map((li) => ({ label: one("[data-story-roll]", li), title: one("[data-story-title]", li), body: one("[data-story-body]", li) }));
+  const toc = all("[data-story-toc]", section).map((li) => ({ li, fill: one("[data-story-fill]", li) }));
+  const fields = all("[data-story-field]", section);
+  const labels = all("[data-label-roll]", section);
+  const caption = one("[data-story-caption]", section);
+  const n = chapters.length;
+  // The geometry as rendered (the still sheet's), put back when the tracks go.
+  const geometry = [...svgAll("path", ink), ...svgAll("path, g[transform], text[transform]", eng)].map((el) => ({ el, d: el.getAttribute("d"), transform: el.getAttribute("transform") }));
+  let r: Range;
+  let stageH = 0;
+  let sheetTop = 0;
+  let sheetH = 0;
+  let plateH = 0;
+  /** The drawing's units per screen px. */
+  let unit = 1;
+  let titleLines: HTMLElement[][] = chapters.map(() => []);
+  let bodyLines: HTMLElement[][] = chapters.map(() => []);
+  /** Each chapter's masked lines, top first: its label, its title's lines, its body's. */
+  let lines: HTMLElement[][] = chapters.map(() => []);
+  let live = false;
+
+  const still = () => {
+    labels.forEach((el) => clear(el, "transform"));
+    clear(sheet, "clipPath");
+    if (caption) clear(caption, "opacity");
+    clear(render, "clipPath");
+    clear(ink, "clipPath", "opacity");
+    flag(ink, "data-ink", false);
+    clear(scan, "transform", "opacity");
+    clear(veil, "clipPath", "opacity");
+    clear(eng, "opacity");
+    for (const g of geometry) {
+      if (g.d != null) setAttr(g.el, "d", g.d);
+      if (g.transform != null) setAttr(g.el, "transform", g.transform);
+    }
+    [...bubbles, ...datums, structure, ...memberLabels.map((l) => l.el)].forEach((el) => el && clear(el, "opacity"));
+    lines.forEach((ls) => ls.forEach((line) => clear(line, "transform")));
+    toc.forEach((t) => {
+      flag(t.li, "data-active", false);
+      if (t.fill) clear(t.fill, "transform");
+    });
+    fields.forEach((el) => clear(el, "transform"));
+    if (live) {
+      live = false;
+      section.removeAttribute("data-story-live");
+    }
+  };
+
+  return {
+    order: ORDER.story,
+    measure(f) {
+      r = measureRange(section);
+      stageH = stage.offsetHeight;
+      sheetH = sheet.offsetHeight;
+      plateH = plate.offsetHeight;
+      unit = STORY_W / Math.max(1, plate.offsetWidth);
+      flag(eng, "data-compact", plate.offsetWidth < STORY_COMPACT_PX);
+      // The sheet's place in the stage (the stage may be stuck, so from the rects rather than the offsets).
+      sheetTop = sheet.getBoundingClientRect().top - stage.getBoundingClientRect().top;
+      if (f.tracks) {
+        titleLines = chapters.map((c, i) => (c.title ? resplitIfNeeded(c.title, titleLines[i]) : []));
+        bodyLines = chapters.map((c, i) => (c.body ? resplitIfNeeded(c.body, bodyLines[i]) : []));
+      } else if (titleLines.some((l) => l.length) || bodyLines.some((l) => l.length)) {
+        chapters.forEach((c) => [c.title, c.body].forEach((el) => el && unsplit(el)));
+        titleLines = chapters.map(() => []);
+        bodyLines = chapters.map(() => []);
+      }
+      lines = chapters.map((c, i) => [...(c.label ? [c.label] : []), ...titleLines[i], ...bodyLines[i]]);
+    },
+    update(f) {
+      if (!f.tracks) return still();
+      // As the sheet comes up, before the first chapter's lines.
+      labelRoll(labels, r, f, 0.32);
+      const e = sso(r, f) - 1;
+      const st = storyState(e);
+
+      // The sheet wipes up from its bottom edge, or from the bottom of the screen while that edge is still below it (its shadow kept clear of the clip).
+      const top = Math.min(Math.max(r.top - f.scroll, 0), r.top + r.height - f.scroll - stageH) + sheetTop;
+      setStyle(sheet, "clipPath", st.sheet < 1 ? `inset(${riseInset(st.sheet, top, sheetH, f.vh).toFixed(2)}% -2rem -3rem)` : "");
+      if (caption) setStyle(caption, "opacity", num(st.sheet));
+
+      // The rendering wipes up from the ground line. Until the ink, the lines are the sketch, clipped above the picture's edge; after it they are the drawing, exact.
+      const cut = (1 - st.render) * 100;
+      setStyle(render, "clipPath", `inset(${cut.toFixed(2)}% 0 0 0)`);
+      const inked = st.ink > 0;
+      flag(ink, "data-ink", inked);
+      setStyle(ink, "clipPath", !inked && st.render > 0 ? `inset(0 0 ${(100 - cut).toFixed(2)}% 0)` : "");
+      setStyle(ink, "opacity", inked ? num(st.ink) : "1");
+      if (inked || st.render < 1) {
+        for (const { el, lines: kind } of strokes) {
+          if (!el) continue;
+          let d = "";
+          for (const { l, i } of kind) {
+            const draw = inked ? 1 : storyLineDraw(st.sketch, i, storyLines.length);
+            if (draw > 0) d += segD(storySeg(l.p, l.q, st.rectify, inked ? 0 : STORY_OVERSHOOT, draw));
+          }
+          setAttr(el, "d", d || NOTHING);
+        }
+      }
+
+      // A hairline rides the edge of whichever layer is wiping up: the rendering, then the trace.
+      const edge = st.render < 1 ? st.render : st.veil;
+      setStyle(scan, "transform", `translate3d(0, ${px((1 - edge) * plateH)}, 0)`);
+      setStyle(scan, "opacity", num(clamp(Math.min(edge, 1 - edge) * 10)));
+
+      // The trace lets the picture through until it turns to paper.
+      setStyle(veil, "clipPath", `inset(${((1 - st.veil) * 100).toFixed(2)}% 0 0 0)`);
+      setStyle(veil, "opacity", st.veil > 0 ? num(mix(STORY.trace, 1, st.paper)) : "0");
+
+      setStyle(eng, "opacity", st.eng > 0 ? "1" : "0");
+      if (st.eng > 0) {
+        const o = storyOverlay(st.eng, storyMembers.length);
+        const t = st.rectify;
+        let grid = "";
+        storyGrid.forEach((g, i) => {
+          if (o.grid[i] > 0) grid += segD(storySeg(g.p, g.q, t, 0, o.grid[i]));
+          if (bubbles[i]) {
+            setAttr(bubbles[i], "transform", markAt(mix(g.pb[0], g.qb[0], t), mix(g.pb[1], g.qb[1], t), unit));
+            setStyle(bubbles[i], "opacity", num(o.bubbles[i]));
+          }
+        });
+        if (axes) setAttr(axes, "d", grid || NOTHING);
+        let lv = "";
+        storyLevels.forEach((l, i) => {
+          const s = storySeg(l.p, l.q, t, 0, o.levels[i]);
+          if (o.levels[i] > 0) lv += segD(s);
+          if (datums[i]) {
+            setAttr(datums[i], "transform", markAt(s[0], s[1], unit));
+            setStyle(datums[i], "opacity", num(o.levelLabels[i]));
+          }
+        });
+        if (levels) setAttr(levels, "d", lv || NOTHING);
+        // The structure is the engineer's: it goes as the trace turns to paper.
+        const kept = 1 - st.paper;
+        if (structure) setStyle(structure, "opacity", num(kept));
+        if (kept > 0) {
+          const out = { solid: "", hidden: "" };
+          storyMembers.forEach((m, k) => {
+            m.p.forEach((p, j) => {
+              const side = storySide(o.members[k], j);
+              const q = m.q[j];
+              if (side > 0 && q) out[m.hidden ? "hidden" : "solid"] += segD(storySeg(p, q, t, 0, side));
+            });
+          });
+          if (solid) setAttr(solid, "d", out.solid || NOTHING);
+          if (hidden) setAttr(hidden, "d", out.hidden || NOTHING);
+        }
+        memberLabels.forEach(({ el, k }) => {
+          const m = storyMembers[k];
+          if (!m) return;
+          setAttr(el, "transform", markAt(mix(m.pl[0], m.ql[0], t), mix(m.pl[1], m.ql[1], t), unit));
+          setStyle(el, "opacity", num(o.memberLabels * kept));
+        });
+      }
+
+      // The chapters' lines, and the contents.
+      lines.forEach((ls, i) => ls.forEach((line, k) => setStyle(line, "transform", liftPercent(storyLine(e, i, n, k)))));
+      const active = storyChapter(e, n);
+      toc.forEach((c, i) => {
+        flag(c.li, "data-active", i === active);
+        if (c.fill) setStyle(c.fill, "transform", `scaleX(${num(storyFill(e, i))})`);
+      });
+      fields.forEach((el, k) => setStyle(el, "transform", liftPercent(storyField(e, k))));
+
+      if (!live) {
+        live = true;
+        section.setAttribute("data-story-live", "");
+      }
+    },
+    destroy() {
+      section.removeAttribute("data-story-live");
+    },
+  };
+}
+
+/*
  * Works: a pinned viewer. One frame holds the three pictures; at each
  * handover the next wipes up from the bottom over the last, which dims as
  * it is covered, and the lines roll through their masks: eyebrow, title
  * lines, button. The first picture rises from the bottom of the screen
- * while the stage is still arriving, so it overlaps the intro's fling.
+ * while the stage is still arriving, as the story's stage leaves.
  */
 function works(): MotionModule | null {
   const section = one("[data-works]");
@@ -311,7 +568,7 @@ function works(): MotionModule | null {
         }
         return;
       }
-      // With the first picture, under the end of the intro's fling.
+      // With the first picture, as the story's stage leaves.
       labelRoll(labels, r, f, 0.3);
       const e = sso(r, f) - 1;
       // Where the frame is on the screen: the stage rides with the section until it pins, and after it releases.
@@ -822,7 +1079,7 @@ function contact(): MotionModule | null {
 export function HomeMotion() {
   useEffect(() => {
     const shared: Shared = { fade: 0 };
-    const modules = [ground(shared), hero(), intro(), works(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
+    const modules = [ground(shared), hero(), intro(), story(), works(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
     const offs = modules.map((m) => engine.register(m));
     return () => offs.forEach((off) => off());
   }, []);

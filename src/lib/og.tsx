@@ -32,7 +32,7 @@ export function ogImage({ eyebrow, title }: { eyebrow: string; title: string }) 
         </div>
         <div style={{ display: "flex", borderTop: "1px solid rgba(244,241,235,0.2)", paddingTop: 24, fontSize: 22, color: "rgba(244,241,235,0.7)", alignItems: "center", gap: 16 }}>
           <div style={{ width: 10, height: 10, borderRadius: 5, background: "#EE352F" }} />
-          Permit drawings and permit guidance · {site.region}
+          Architecture, engineering and permit drawings · {site.region}
         </div>
       </div>
     ),

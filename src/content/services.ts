@@ -6,9 +6,13 @@ import type { Faq, ProcessStep, Service } from "./types";
  *   municipality. No permit requirement is stated as universal.
  * - No prices, durations or approval promises. Cost and timeline sections
  *   list the factors only.
- * - Process steps name who owns each step. PermitGuys prepares drawings and
- *   permit documentation and supports the application; it does not issue
- *   permits, perform construction or provide engineering unless confirmed.
+ * - Process steps name who owns each step. PermitGuys designs the project,
+ *   works out its engineering, prepares the drawings and permit documentation
+ *   and supports the application (the firm presents itself as an
+ *   architecture and engineering firm, October 2026); it does not issue
+ *   permits or perform construction. The firm may be called architects (the
+ *   business confirmed it, 23 October 2026); no one is called an engineer,
+ *   professional engineer or P.Eng. until the business confirms who is.
  */
 
 const coreProcess = (projectNoun: string): ProcessStep[] => [
@@ -23,8 +27,8 @@ const coreProcess = (projectNoun: string): ProcessStep[] => [
     owner: "PermitGuys",
   },
   {
-    title: "Prepare drawings and documentation",
-    body: "We prepare the permit drawings and assemble the documentation the application needs, coordinating with any engineers or specialists the project requires.",
+    title: "Design, engineering and drawings",
+    body: "We design the project, work out the engineering it needs, prepare the permit drawings and assemble the documentation, coordinating with any other specialists the project requires.",
     owner: "PermitGuys",
   },
   {

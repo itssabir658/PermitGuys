@@ -27,8 +27,9 @@ const responsibilities = [
     who: "PermitGuys",
     items: [
       "Assess the project scope and the requirements we can identify.",
+      "Design the project and work out the engineering it needs.",
       "Prepare the permit drawings and assemble the documentation.",
-      "Coordinate with engineers or specialists the project needs.",
+      "Coordinate with any other specialists the project needs.",
       "Help you understand review comments and revise our drawings.",
     ],
   },

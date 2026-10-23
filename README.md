@@ -1,6 +1,6 @@
 # PermitGuys website
 
-Marketing website for PermitGuys, a building permit consulting and permit drawing service for homeowners and property owners in the Greater Toronto Area.
+Marketing website for PermitGuys, an architecture and engineering firm in Oakville that designs projects for homeowners, landlords and businesses across the Greater Toronto Area and prepares their drawings for the building permit.
 
 Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS 4
 

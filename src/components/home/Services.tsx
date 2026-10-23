@@ -8,7 +8,7 @@ import { escapeHtml } from "@/lib/html";
 import { getServices } from "@/lib/content";
 import { paths } from "@/lib/routes";
 
-const LEAD = "Permit drawings and guidance for every kind of project.";
+const LEAD = "Design, engineering and permits for every kind of project.";
 
 /*
  * Services on the night ground: the list of services beside one framed

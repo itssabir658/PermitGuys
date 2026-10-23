@@ -71,7 +71,7 @@ export function heroState(scroll: number, top: number, vh: number) {
  * (e = 0; it rises over the hero from e = −1). Paragraph i is composed at
  * firstCopy + i × copyStepVh; the ring is flung outward from exitAfter past
  * the last one, over exitVh, and the stage releases releaseIntoExit into
- * the fling, so the images are still leaving as Works comes up beneath.
+ * the fling, so the images are still leaving as the story comes up beneath.
  */
 export const ORBIT = { firstCopy: 1.0, copyStepVh: 1.75, exitAfter: 0.95, exitVh: 1, releaseIntoExit: 0.4, exitRadius: 1.9, turnsPerScreen: 0.075 };
 
@@ -247,6 +247,160 @@ export function introLine(e: number, n: number, line: number) {
   return roll(inP, outP);
 }
 
+/* ---- Story (580vh track: four 1.2-screen chapters under one pinned 100vh stage) ---- */
+
+/**
+ * The story's timeline, in screens of scroll since its stage pinned (e,
+ * sso − 1). Chapter i owns [i, i + 1] × `step` and the stage releases at
+ * e = chapters × step. One house goes through four states on one drawing
+ * sheet:
+ *   - Vision: the sheet rises with the stage (`sheet`) and the elevation is
+ *     sketched on it line by line (`sketch`);
+ *   - Design: the rendering wipes up from the ground line (`render`); the
+ *     sketch gives way to the picture as the edge passes each line;
+ *   - Engineering: trace rises over the picture (`veil`) and the grid,
+ *     levels and structure are drawn on it (`eng`);
+ *   - Permit: the trace turns to paper and the structure goes (`paper`),
+ *     the lines come back in ink (`ink`) and straighten from the picture's
+ *     perspective into a true elevation (`rectify`), and the title block
+ *     is filled in (storyField).
+ * Each change starts as its chapter's text hands over, so word and picture
+ * turn together, and each state is held, whole, while its text is read: a
+ * chapter's text is composed for 0.6 screens or more.
+ */
+export const STORY = {
+  chapters: 4,
+  step: 1.2,
+  sheetIn: -0.9,
+  sheetVh: 0.6,
+  sketchIn: -0.42,
+  sketchVh: 1.12,
+  renderIn: 1.02,
+  renderVh: 0.48,
+  veilIn: 2.24,
+  veilVh: 0.36,
+  engIn: 2.46,
+  engVh: 0.66,
+  paperIn: 3.44,
+  paperVh: 0.26,
+  inkIn: 3.54,
+  inkVh: 0.22,
+  rectifyIn: 3.58,
+  rectifyVh: 0.5,
+  fieldsIn: 3.86,
+  /** How much of the picture the trace lets through. */
+  trace: 0.84,
+} as const;
+
+/** The section's length in vh: `step` screens per chapter, and one for the stage to arrive. */
+export function storySectionVh(chapters: number = STORY.chapters) {
+  return Math.round((chapters * STORY.step + 1) * 100);
+}
+
+/** Every state of the drawing at `e` (see STORY), each 0 → 1. */
+export function storyState(e: number) {
+  return {
+    sheet: tween(e, STORY.sheetIn, STORY.sheetVh, ease.power3Out),
+    sketch: tween(e, STORY.sketchIn, STORY.sketchVh),
+    render: tween(e, STORY.renderIn, STORY.renderVh, ease.power2InOut),
+    veil: tween(e, STORY.veilIn, STORY.veilVh, ease.power2InOut),
+    eng: tween(e, STORY.engIn, STORY.engVh),
+    paper: tween(e, STORY.paperIn, STORY.paperVh, ease.power2InOut),
+    ink: tween(e, STORY.inkIn, STORY.inkVh, ease.power2Out),
+    rectify: tween(e, STORY.rectifyIn, STORY.rectifyVh, ease.power2InOut),
+  };
+}
+
+/** Field k of the title block (project, drawing, sheet, issued): its value rolls in through its mask as the drawing finishes straightening, the masked-line rhythm. */
+export function storyField(e: number, k: number) {
+  return roll(tween(e, STORY.fieldsIn + k * WORKS.stagger, 0.26, ease.power3Out), 0);
+}
+
+/** The chapter the reader is in: it turns over with the text, just before the boundary. */
+export function storyChapter(e: number, n: number = STORY.chapters) {
+  return Math.min(n - 1, Math.max(0, Math.floor((e + 0.05) / STORY.step)));
+}
+
+/** How far through chapter i the reader is, 0 → 1 (the contents' bars). */
+export function storyFill(e: number, i: number) {
+  return clamp((e - i * STORY.step) / STORY.step);
+}
+
+/** A share of the sketch each line takes to draw. */
+export const STORY_LINE_DUR = 0.14;
+
+/** Line i of n of the sketch, 0 → 1: the lines start one after another through the sketch, each drawn on power1InOut, as a hand draws. */
+export function storyLineDraw(sketch: number, i: number, n: number) {
+  const start = n > 1 ? (i / (n - 1)) * (1 - STORY_LINE_DUR) : 0;
+  return tween(sketch, start, STORY_LINE_DUR, ease.power1InOut);
+}
+
+/** How far a sketched line runs past its ends, in the drawing's units (2800 across): a quarter of its length at most, so small details stay neat. */
+export const STORY_OVERSHOOT = 30;
+
+type Seg4 = readonly [number, number, number, number];
+
+/**
+ * Where a line is drawn: `t` of the way from its place over the picture
+ * (`p`) to its place on the sheet (`q`), run past both ends by `over`
+ * (sketching), and drawn `draw` of the way from its first end.
+ */
+export function storySeg(p: Seg4, q: Seg4, t: number, over: number, draw: number): [number, number, number, number] {
+  let x1 = mix(p[0], q[0], t);
+  let y1 = mix(p[1], q[1], t);
+  let x2 = mix(p[2], q[2], t);
+  let y2 = mix(p[3], q[3], t);
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const o = Math.min(over, len / 4);
+  if (o > 0) {
+    const ux = ((x2 - x1) / len) * o;
+    const uy = ((y2 - y1) / len) * o;
+    x1 -= ux;
+    y1 -= uy;
+    x2 += ux;
+    y2 += uy;
+  }
+  return [x1, y1, mix(x1, x2, draw), mix(y1, y2, draw)];
+}
+
+/**
+ * The engineering, drawn as `eng` runs 0 → 1: the three grid lines from
+ * their bubbles down (0.06 apart), the four levels from their markers
+ * across, then, once the levels are well under way, each structural member
+ * round its outline, and the labels fading in behind them (they are
+ * labels, so they may fade).
+ */
+export function storyOverlay(eng: number, members: number) {
+  return {
+    grid: [0, 1, 2].map((i) => tween(eng, i * 0.06, 0.34, ease.power2InOut)),
+    bubbles: [0, 1, 2].map((i) => tween(eng, 0.04 + i * 0.06, 0.18)),
+    levels: [0, 1, 2, 3].map((i) => tween(eng, 0.18 + i * 0.06, 0.34, ease.power2InOut)),
+    levelLabels: [0, 1, 2, 3].map((i) => tween(eng, 0.26 + i * 0.06, 0.2)),
+    members: Array.from({ length: members }, (_, k) => tween(eng, 0.52 + k * (0.26 / Math.max(1, members - 1)), 0.22, ease.power1InOut)),
+    memberLabels: tween(eng, 0.72, 0.22),
+  };
+}
+
+/** Side s (0–3) of a member drawn `m` of the way round its outline. */
+export function storySide(m: number, s: number) {
+  return clamp(m * 4 - s);
+}
+
+/**
+ * One masked line of chapter i's text (k: 0 the chapter's label, then its
+ * title's lines, then its body's), on the Works rhythm: the lines rise
+ * 0.035 apart from just before the chapter's boundary and leave 0.02 apart
+ * from 0.2 before the next, so in any rank one line has gone before the
+ * next one moves. The first chapter rises with the stage; the last never
+ * leaves.
+ */
+export function storyLine(e: number, i: number, n: number, k: number) {
+  const a = i * STORY.step;
+  const inP = i === 0 ? tween(e, -0.36 + k * WORKS.stagger, 0.26, ease.power3Out) : tween(e, a - 0.03 + k * WORKS.stagger, 0.22, ease.power3Out);
+  const outP = i === n - 1 ? 0 : tween(e, a + STORY.step - 0.2 + k * WORKS.outStagger, 0.14, ease.power2In);
+  return roll(inP, outP);
+}
+
 /* ---- Works (420vh track: three 140vh panels under one pinned 100vh stage) ---- */
 
 /**
@@ -257,10 +411,10 @@ export function introLine(e: number, n: number, line: number) {
  * boundary. A project's lines rise `stagger` apart and leave `outStagger`
  * apart, top line first both ways (eyebrow, title lines, button).
  *
- * The first project arrives while the stage is still coming up under the
- * intro's fling, so the two overlap: its picture rises from the bottom of
- * the screen from `firstIn` (power3Out, an entrance) over `firstInVh`, and
- * its lines from `firstLines`.
+ * The first project arrives while the stage is still coming up and the
+ * story's stage is leaving above it, so the two overlap: its picture rises
+ * from the bottom of the screen from `firstIn` (power3Out, an entrance)
+ * over `firstInVh`, and its lines from `firstLines`.
  */
 export const WORKS = { hand: 0.3, stagger: 0.035, outStagger: 0.02, firstIn: -0.92, firstInVh: 0.6, firstLines: -0.3 };
 

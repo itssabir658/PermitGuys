@@ -6,8 +6,8 @@ import { introPhases } from "@/lib/motion/home";
 
 /** The two paragraphs that cut in and out at the centre. */
 const copy = [
-  "PermitGuys is a permit drawing and consulting practice based in Oakville, working with homeowners, landlords and businesses across the Greater Toronto Area.",
-  "We prepare permit drawings and application documents, and support you through the municipality’s review, from a deck in the backyard to a tenant fit-out on a main street.",
+  "PermitGuys is an architecture and engineering firm in Oakville, working with homeowners, landlords and businesses across the Greater Toronto Area.",
+  "From a deck in the backyard to a custom home or a tenant fit-out on a main street, one team handles the design, the engineering and the drawings for the permit.",
 ];
 
 /** Orbit slots 0 to 5, clockwise from the top centre (ORBIT_SLOTS): six client projects, none of them shown again before Values. */

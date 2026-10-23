@@ -1514,6 +1514,567 @@ body:has(.not-found__map) .site-footer__place {
   transform: none;
 }
 
+/* ---- Homepage: story (Story.tsx) ---- */
+/*
+ * The still story (reduced motion, short screens, no JavaScript, print):
+ * the label, the sheet, then the chapters as a list; from tablets up the
+ * sheet sits beside the chapters. The sheet shows the sketch over the
+ * left half of the house and the rendering on the right, meeting at a
+ * hairline, with its title block filled in.
+ */
+.story-layout {
+  display: grid;
+  grid-template-areas: "label" "figure" "toc" "chapters";
+  gap: 2.5rem;
+  padding-block: 6rem 5rem;
+}
+.story-label {
+  grid-area: label;
+}
+.story-figure {
+  grid-area: figure;
+  min-width: 0;
+}
+.story-toc {
+  grid-area: toc;
+  display: none;
+}
+.story-chapters {
+  grid-area: chapters;
+  display: grid;
+  gap: 2.75rem;
+  align-content: start;
+}
+.story-chapter__title {
+  max-width: 18ch;
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.034em;
+  text-wrap: balance;
+}
+.story-chapter__body {
+  max-width: 34ch;
+  font-size: clamp(0.9375rem, 0.88rem + 0.25vw, 1.0625rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+@media (min-width: 768px) {
+  .story-layout {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas: "label label" "figure chapters";
+    column-gap: clamp(2rem, 4vw, 4.5rem);
+    align-items: start;
+  }
+}
+/*
+ * The sheet: a sheet of drawing paper on the ground, its drawing area (the
+ * plate, the rendering's own proportions) and its title block inside one
+ * ruled border. The title block runs down the right-hand side on landscape
+ * screens and the still layout's wide sheets, along the foot on portrait
+ * screens.
+ */
+.story-sheet {
+  --m: clamp(0.5rem, 1.1vw, 0.875rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--m);
+  background: var(--color-stone-50);
+  box-shadow:
+    0 1px 1px rgb(23 23 22 / 0.05),
+    0 1.25rem 2.5rem -1.5rem rgb(23 23 22 / 0.28);
+}
+.story-sheet::before {
+  content: "";
+  position: absolute;
+  inset: var(--m);
+  border: 1px solid rgb(23 23 22 / 0.55);
+  pointer-events: none;
+  z-index: 2;
+}
+.story-plate {
+  position: relative;
+  aspect-ratio: 2800 / 2479;
+  overflow: hidden;
+  background: var(--color-stone-50);
+}
+:is(.story-render, .story-veil, .story-eng, .story-lines) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.story-render {
+  overflow: hidden;
+  clip-path: inset(0 0 0 50%);
+}
+.story-veil {
+  background: var(--color-stone-50);
+  opacity: 0;
+}
+.story-eng {
+  opacity: 0;
+}
+.story-lines {
+  clip-path: inset(0 50% 0 0);
+}
+.story-lines path {
+  fill: none;
+  stroke: var(--story-stroke, var(--color-charcoal-700));
+  stroke-width: 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.story-lines [data-kind="ground"] {
+  stroke-width: 1.6;
+}
+.story-lines [data-kind="outline"] {
+  stroke-width: 1.3;
+}
+.story-lines [data-kind="detail"] {
+  stroke-width: 0.85;
+}
+.story-lines [data-kind="texture"] {
+  stroke-width: 0.6;
+  stroke-opacity: 0.7;
+}
+/* On the issued sheet the lines are ink. */
+.story-lines[data-ink] {
+  --story-stroke: var(--color-ink);
+}
+/* The still sheet's seam between drawing and picture; on the tracks, the edge of the rendering as it wipes up. */
+.story-scan {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 1px;
+  background: rgb(23 23 22 / 0.5);
+  pointer-events: none;
+}
+/* The engineering: grid and levels in graphite, the structure in the brand red, every stroke a hairline at any size. */
+.story-eng :is(path, circle) {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.story-eng__grid {
+  stroke: var(--color-charcoal-600);
+  stroke-width: 0.9;
+  stroke-dasharray: 16 5 2 5;
+}
+.story-eng__level {
+  stroke: var(--color-charcoal-600);
+  stroke-width: 0.9;
+  stroke-dasharray: 7 5;
+}
+.story-eng__bubble circle,
+.story-eng__datum circle {
+  fill: var(--color-stone-50);
+  stroke: var(--color-charcoal-700);
+  stroke-width: 1;
+}
+.story-eng__datum .story-eng__datum-fill {
+  fill: var(--color-charcoal-700);
+}
+.story-eng text {
+  fill: var(--color-charcoal-700);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.story-eng__bubble text {
+  font-size: 9px;
+  letter-spacing: 0;
+  text-anchor: middle;
+}
+/* On a small sheet (HomeMotion sets data-compact) a level's label is shortened, so it stays clear of the house. */
+.story-eng__short,
+.story-eng[data-compact] .story-eng__long {
+  display: none;
+}
+.story-eng[data-compact] .story-eng__short {
+  display: inline;
+}
+.story-eng__member {
+  stroke: var(--color-brand-500);
+  stroke-width: 1.5;
+}
+.story-eng__member--hidden {
+  stroke-width: 1;
+  stroke-dasharray: 6 4;
+}
+.story-eng .story-eng__member-label {
+  fill: var(--color-brand-500);
+}
+/* The title block: the firm's mark and the drawing's fields, ruled like a drawing sheet's. */
+.story-block {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 0.7fr;
+  border-top: 1px solid rgb(23 23 22 / 0.55);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+}
+.story-block__cell {
+  min-width: 0;
+  padding: 0.55em 0.7em 0.6em;
+}
+.story-block__cell + .story-block__cell {
+  border-left: 1px solid rgb(23 23 22 / 0.25);
+}
+.story-block__label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.story-block__value {
+  margin-top: 0.3em;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+.story-block__project,
+.story-block__status,
+.story-block__credential {
+  display: none;
+}
+@media (min-width: 768px) {
+  .story-sheet {
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 26%);
+  }
+  .story-block {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    border-top: 0;
+    border-left: 1px solid rgb(23 23 22 / 0.55);
+  }
+  .story-block__cell + .story-block__cell {
+    border-left: 0;
+    border-top: 1px solid rgb(23 23 22 / 0.25);
+  }
+  .story-block__project,
+  .story-block__status,
+  .story-block__credential {
+    display: block;
+  }
+  .story-block__credential {
+    align-self: end;
+  }
+}
+/*
+ * The pinned story (tracks). Portrait screens stack bands in one screen:
+ * the label, the sheet, the contents as four bars, then the chapter's text
+ * at the foot. The sheet is fitted to the room the other bands leave it,
+ * whatever their lines (the frame is a size container): as wide as the
+ * gutters allow, or as wide as that room's height allows, sitting on its
+ * caption. Its title block is one ruled row of one-line cells, so its
+ * height is known, and it shows the fields its width has room for. Short
+ * screens drop the label's note, and the shortest the chapters' bodies,
+ * so the drawing keeps its size. Landscape screens set the sheet on the
+ * left at most 72% of the screen high, with the label, the contents and
+ * the chapter's text in a column beside it.
+ */
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] .story-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+  :root[data-motion] .story-layout {
+    --top: 5.5rem;
+    /* The chapter's text: its label, a title of two lines and a body of up to four. */
+    --text-h: 11.75rem;
+    --block-h: 2.875rem;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding-block: var(--top) max(1.25rem, env(safe-area-inset-bottom));
+  }
+  :root[data-motion] .story-figure {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  :root[data-motion] .story-frame {
+    flex: 1 1 0;
+    min-height: 0;
+    align-self: stretch;
+    display: grid;
+    place-items: end center;
+    container: story-frame / size;
+  }
+  :root[data-motion] .story-sheet {
+    /* Without container units, an estimate of the room from the screen's height. */
+    --wp: min(100%, calc((100svh - var(--top) - var(--text-h) - var(--block-h) - 8.5rem) * 2800 / 2479), 44rem);
+    width: calc(var(--wp) + 2 * var(--m));
+    width: min(100cqw, calc((100cqh - var(--block-h) - 2 * var(--m)) * 2800 / 2479 + 2 * var(--m)), calc(44rem + 2 * var(--m)));
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    container: story-sheet / inline-size;
+  }
+  :root[data-motion] .story-block {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: none;
+    height: var(--block-h);
+    border-top: 1px solid rgb(23 23 22 / 0.55);
+    border-left: 0;
+  }
+  :root[data-motion] .story-block__cell {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  :root[data-motion] .story-block__cell + .story-block__cell {
+    border-top: 0;
+    border-left: 1px solid rgb(23 23 22 / 0.25);
+  }
+  :root[data-motion] :is(.story-block__project, .story-block__status, .story-block__credential) {
+    display: none;
+  }
+  @container story-sheet (max-width: 17.5rem) {
+    :root[data-motion] .story-block__drawing {
+      display: none;
+    }
+  }
+  @container story-sheet (min-width: 42rem) {
+    :root[data-motion] .story-block {
+      grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+    :root[data-motion] :is(.story-block__project, .story-block__status) {
+      display: block;
+    }
+  }
+  :root[data-motion] .story-plate {
+    width: 100%;
+  }
+  :root[data-motion] .story-render {
+    clip-path: inset(100% 0 0 0);
+  }
+  :root[data-motion] .story-lines {
+    clip-path: none;
+  }
+  :root[data-motion] .story-scan {
+    inset: 0 0 auto;
+    width: auto;
+    height: 1px;
+    opacity: 0;
+  }
+  /* Until the motion has drawn its first frame, the sheet shows nothing it has not drawn. */
+  :root[data-motion] [data-story]:not([data-story-live]) :is(.story-lines, .story-eng, .story-sheet) {
+    opacity: 0;
+  }
+  :root[data-motion] .story-caption {
+    align-self: stretch;
+    text-align: center;
+  }
+  :root[data-motion] .story-toc {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+  :root[data-motion] .story-toc__item {
+    display: grid;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    transition: color 0.3s var(--e-ui);
+  }
+  :root[data-motion] .story-toc__item[data-active] {
+    color: var(--color-ink);
+  }
+  :root[data-motion] .story-toc__name {
+    display: none;
+  }
+  :root[data-motion] .story-toc__bar {
+    position: relative;
+    display: block;
+    height: 1px;
+    background: var(--color-line);
+    overflow: hidden;
+  }
+  :root[data-motion] .story-toc__fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-ink);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  :root[data-motion] .story-chapters {
+    display: grid;
+    gap: 0;
+    height: var(--text-h);
+    flex: none;
+  }
+  :root[data-motion] .story-chapter {
+    grid-area: 1 / 1;
+    align-self: start;
+  }
+  :root[data-motion] .story-chapter__title {
+    font-size: min(clamp(1.45rem, 1rem + 1.6vw, 2.2rem), 4.2svh);
+  }
+  :root[data-motion] .story-chapter__body {
+    margin-top: 0.75rem;
+    max-width: 38ch;
+  }
+  :root[data-motion] :is([data-story-roll], [data-story-field], .story-chapter .split-line__inner) {
+    transform: translateY(120%);
+  }
+  :root[data-motion] :is(.story-chapter__title, .story-chapter__body):not([data-split]) {
+    opacity: 0;
+  }
+  /* Phones: the contents are four bars (the chapter's own label names it), and the bands are tighter, so the drawing keeps its size. */
+  @media (max-width: 767px) {
+    :root[data-motion] .story-layout {
+      --text-h: 9.25rem;
+      gap: 0.625rem;
+    }
+    :root[data-motion] .story-toc__item {
+      gap: 0;
+    }
+    :root[data-motion] .story-toc__num {
+      display: none;
+    }
+    :root[data-motion] .story-caption {
+      margin-top: 0.5rem;
+      line-height: 0.875rem;
+    }
+    :root[data-motion] .story-chapter__body {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+  }
+  @media (max-height: 800px) {
+    :root[data-motion] .story-note {
+      display: none;
+    }
+  }
+  @media (max-height: 619px) {
+    :root[data-motion] .story-layout {
+      --text-h: 5.25rem;
+    }
+    :root[data-motion] .story-chapter__body {
+      display: none;
+    }
+  }
+}
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 768px) and (min-aspect-ratio: 1/1) {
+  /* The composition is as tall as the sheet and centred on the screen: the label meets the sheet's border, the chapter's text its foot. */
+  :root[data-motion] .story-stage {
+    display: grid;
+    align-content: center;
+  }
+  :root[data-motion] .story-layout {
+    --g: max(3rem, calc((100vw - 100rem) / 2 + 4rem));
+    --copy-w: clamp(17rem, 27vw, 26rem);
+    --gap: clamp(2.5rem, 5vw, 5.5rem);
+    /* The plate's height: at most 72% of the screen and 44rem, and narrow enough to leave the copy its column. */
+    --hp: min(calc(72svh - 2 * var(--m-l)), 42rem, calc((100vw - 2 * var(--g) - var(--gap) - var(--copy-w) - 2 * var(--m-l)) / 1.44));
+    --m-l: clamp(0.5rem, 1.1vw, 0.875rem);
+    display: grid;
+    grid-template-columns: auto minmax(0, var(--copy-w));
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: "figure label" "figure toc" "figure chapters";
+    column-gap: var(--gap);
+    row-gap: 0;
+    height: auto;
+    max-width: none;
+    padding-inline: var(--g);
+    padding-block: 0;
+    justify-content: center;
+  }
+  :root[data-motion] .story-figure {
+    display: block;
+    align-self: center;
+  }
+  :root[data-motion] .story-frame {
+    display: block;
+    container-type: normal;
+  }
+  :root[data-motion] .story-sheet {
+    width: auto;
+    grid-template-columns: calc(var(--hp) * 2800 / 2479) calc(var(--hp) * 0.31);
+    container-type: normal;
+  }
+  /* The title block is the sheet's right-hand column again, every field and the credential in it. */
+  :root[data-motion] .story-block {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    height: auto;
+    border-top: 0;
+    border-left: 1px solid rgb(23 23 22 / 0.55);
+  }
+  :root[data-motion] .story-block__cell {
+    overflow: visible;
+    white-space: normal;
+  }
+  :root[data-motion] .story-block__cell + .story-block__cell {
+    border-top: 1px solid rgb(23 23 22 / 0.25);
+    border-left: 0;
+  }
+  :root[data-motion] :is(.story-block__project, .story-block__status, .story-block__credential) {
+    display: block;
+  }
+  :root[data-motion] :is(.story-note, .story-chapter__body) {
+    display: block;
+  }
+  :root[data-motion] .story-plate {
+    width: auto;
+    height: var(--hp);
+  }
+  :root[data-motion] .story-caption {
+    text-align: left;
+  }
+  :root[data-motion] .story-label {
+    align-self: start;
+    padding-top: calc(var(--m-l) + 0.25rem);
+  }
+  :root[data-motion] .story-toc {
+    align-self: center;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  :root[data-motion] .story-toc__item {
+    grid-template-columns: 2.25rem 1fr;
+    gap: 0;
+    padding-block: 0.7rem;
+    font-size: 0.6875rem;
+  }
+  :root[data-motion] .story-toc__bar {
+    grid-column: 1 / -1;
+    margin-bottom: 0.7rem;
+  }
+  :root[data-motion] .story-toc__name {
+    display: block;
+  }
+  :root[data-motion] .story-chapters {
+    align-self: end;
+    align-content: end;
+    height: auto;
+    min-height: min(15rem, 30svh);
+    padding-bottom: calc(var(--m-l) + 1.9rem);
+  }
+  :root[data-motion] .story-chapter {
+    align-self: end;
+  }
+  :root[data-motion] .story-chapter__label {
+    display: none;
+  }
+  :root[data-motion] .story-chapter__title {
+    margin-top: 0;
+    font-size: min(clamp(1.6rem, 0.9rem + 1.5vw, 2.5rem), 5.4svh);
+  }
+}
+
 /* ---- Homepage: works (Works.tsx) ---- */
 .works-panel {
   position: relative;

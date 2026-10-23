@@ -10,9 +10,9 @@ import type { ReviewSummary } from "@/lib/reviews";
 
 const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZone: "UTC" });
 
-/* The cards' pictures: a whole house beside the first card's invitation, an entrance beside the address. */
+/* The cards' pictures: a whole house beside the first card's invitation, a porch and its steps beside the address (the narrow house is the story's). */
 const start = plates.greenBatten;
-const visit = plates.narrow;
+const visit = plates.whiteBatten;
 const cardSizes = (plate: Plate) => `(min-width: 768px) ${coverWidth(plate, 1.6, "45vw")}, ${coverWidth(plate, 1.6, "90vw")}`;
 
 /**

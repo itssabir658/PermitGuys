@@ -8,6 +8,12 @@ All content lives in `src/content`. Change the data, not the templates. `npm run
 - Describe requirements as typical and defer to the municipality.
 - Every factual claim in a guide should be traceable to a listed source. Set a source's `checked` date only after a person has opened it and confirmed it.
 
+## Positioning and titles
+
+- PermitGuys is presented as an architecture and engineering firm: it designs projects, works out their engineering and prepares the drawings for the building permit (the client's direction, October 2026). Lead with design and engineering; the permit is what the work achieves.
+- "Architect" and "engineer" are protected titles in Ontario (the Ontario Association of Architects and Professional Engineers Ontario). The business confirmed on 23 October 2026 that the site may call the firm architects. It has not confirmed who holds an engineering licence, so the site describes engineering as work the firm does but never calls anyone an engineer, professional engineer or P.Eng. Change that only when the business confirms it.
+- Credentials are the ones in `site.credentials`, as the business worded them.
+
 ## Business facts: `site.ts`
 
 Replace `null` values with real details. Placeholders disappear automatically and structured data picks the values up.

@@ -429,7 +429,7 @@ export function MainNav({
               </ul>
             </div>
             <div className="space-y-5">
-              <p className="site-menu__blurb max-w-xs text-[0.9375rem] leading-relaxed text-charcoal-300">Permit drawings and permit guidance for homeowners, landlords and businesses across the {site.region}.</p>
+              <p className="site-menu__blurb max-w-xs text-[0.9375rem] leading-relaxed text-charcoal-300">Architecture, engineering and permit drawings for homeowners, landlords and businesses across the {site.region}.</p>
               <LinkButton href={ctaHref} tone="light">
                 Start a project
               </LinkButton>
