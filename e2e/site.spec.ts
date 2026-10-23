@@ -82,6 +82,8 @@ test.describe("navigation", () => {
     await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
     const menu = page.getByRole("navigation", { name: "Site menu" });
     await expect(menu.getByRole("link", { name: "Home" })).toBeFocused();
+    // The links are words alone, with no numbers before them.
+    await expect(menu).not.toContainText(/\d/);
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
     await expect(menu).toBeHidden();
