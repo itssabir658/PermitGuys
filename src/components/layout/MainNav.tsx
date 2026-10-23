@@ -88,6 +88,7 @@ export function MainNav({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(false);
   const baseId = useId();
 
@@ -254,6 +255,29 @@ export function MainNav({
     return () => window.removeEventListener("resize", forget);
   }, []);
 
+  // On a short screen the menu's content scrolls inside the panel: while there is more of it below, its foot fades out as
+  // well as its top (globals.css), so the last line showing reads as more to come rather than as cut off.
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!shown || !content) return;
+    const check = () => {
+      // From the layout, not scrollHeight, which counts the call to action still risen below its place as the menu opens.
+      const end = Math.max(0, ...[...content.children].map((el) => (el instanceof HTMLElement ? el.offsetTop + el.offsetHeight : 0))) + parseFloat(getComputedStyle(content).paddingBottom);
+      const more = content.scrollTop + content.clientHeight < end - 1;
+      if (more !== "more" in content.dataset) {
+        if (more) content.dataset.more = "";
+        else delete content.dataset.more;
+      }
+    };
+    check();
+    content.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check, { passive: true });
+    return () => {
+      content.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, [shown]);
+
   // Escape, focus trap and a click outside, while open.
   useEffect(() => {
     if (!open) return;
@@ -366,18 +390,18 @@ export function MainNav({
         className="site-menu"
       >
         <div ref={bgRef} aria-hidden="true" className="site-menu__bg" />
-        <div className="site-menu__content">
+        <div ref={contentRef} className="site-menu__content">
           <nav aria-label="Site menu">
             <ol className="space-y-0.5">
               {menu.map((link, i) => (
                 <li key={link.href}>
-                  {/* The mask the link rises in; the link's focus ring is drawn inside it, so the mask never clips it. */}
+                  {/* The mask the link rises in; it lets 4px past its edge, where the link's focus ring is drawn (clear of the numeral). */}
                   <span className="block overflow-clip" style={{ overflowClipMargin: 4 }}>
                     <Link
                       href={link.href}
                       data-menu-item=""
                       aria-current={isActive(pathname, link.href) && (link.href !== "/" || pathname === "/") ? "page" : undefined}
-                      className="group flex items-baseline gap-4 py-1 outline-offset-[-3px]"
+                      className="group flex items-baseline gap-4 py-1 outline-offset-1"
                     >
                       <span aria-hidden="true" className="w-7 text-label text-charcoal-300 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
                       <span className="font-display text-[clamp(1.9rem,1.3rem+1.9vw,2.85rem)] leading-[1.08] font-light tracking-[-0.04em] text-ivory/90 group-hover:text-ivory group-focus-visible:text-ivory group-aria-[current=page]:text-ivory">

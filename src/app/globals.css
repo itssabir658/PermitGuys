@@ -801,10 +801,22 @@
 }
 .site-nav__bar {
   position: relative;
+  isolation: isolate;
   transition:
     background-color 0.3s var(--e-ui),
     backdrop-filter 0.3s var(--e-ui),
     box-shadow 0.3s var(--e-ui);
+}
+/* The phone bar's shade over the homepage's picture (below), on a layer of its own, so it fades in as the ivory fades out. */
+.site-nav__bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(rgb(17 17 16 / 0.55), rgb(17 17 16 / 0));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s var(--e-ui);
 }
 /*
  * Both logos share one cell. Only the ivory one (on top) fades; the ink one
@@ -874,11 +886,14 @@
     background: rgb(25 25 24 / 0.88);
     box-shadow: none;
   }
-  /* Over the homepage's picture: a shade that fades into the picture, not a slab across it. */
+  /* Over the homepage's picture: a shade that fades into the picture, not a slab across it. The bar's colour and the shade cross over together. */
   .site-nav[data-over-hero][data-collapsed]:not([data-open]) .site-nav__bar {
-    background: linear-gradient(rgb(17 17 16 / 0.55), rgb(17 17 16 / 0));
+    background-color: transparent;
     backdrop-filter: none;
     box-shadow: none;
+  }
+  .site-nav[data-over-hero][data-collapsed]:not([data-open]) .site-nav__bar::before {
+    opacity: 1;
   }
 }
 /*
@@ -937,7 +952,12 @@
     right: 4rem;
   }
 }
-/* A hairline in its own colour keeps the button's edge on any ground, even its own. It rises into the corner once Contact has gone. */
+/*
+ * A hairline in its own colour keeps the button's edge on any ground, even
+ * its own. It rises into the corner once Contact has gone (Contact's fade
+ * is all but done at 0.26s, and the button shows in its slot from about
+ * 0.07s into its rise).
+ */
 .site-nav__menu-btn {
   position: relative;
   display: block;
@@ -947,7 +967,7 @@
   color: var(--color-ivory);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent);
   transition:
-    transform 0.5s var(--e-out-strong) 0.18s,
+    transform 0.5s var(--e-out-strong) 0.26s,
     background-color 0.3s var(--e-ui),
     color 0.3s var(--e-ui),
     box-shadow 0.3s var(--e-ui),
@@ -1070,6 +1090,10 @@
   padding: 6.5rem 1.5rem 2rem;
   mask-image: linear-gradient(to bottom, transparent 0, transparent 4.5rem, #000 6rem);
 }
+/* More below (a short screen; MainNav sets data-more): the foot fades too, over the last 2rem, which is the padding once the end is reached. */
+.site-menu__content[data-more] {
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 4.5rem, #000 6rem, #000 calc(100% - 2rem), transparent);
+}
 .site-menu__aside {
   margin-top: auto;
 }
@@ -1122,11 +1146,37 @@
 /*
  * Hover and keyboard focus: a darker sheet of the plate's own colour wipes
  * across the label (0.45s, --e-sheet) and leaves forwards, through the far
- * edge (the origin flips only while the wipe is empty or full, so the flip
- * is never seen); a highlight passes over the label (0.6s); just after, the
- * icon cell turns a quarter on its cube to a face whose arrow is the
- * button's one red; both cells round their corners by 2px.
+ * edge; a highlight passes over the label (0.6s); just after, the icon cell
+ * turns a quarter on its cube to a face whose arrow is the button's one red;
+ * both cells round their corners by 2px.
+ *
+ * The fill is one band across the plate, from --lb-a to --lb-b, and the
+ * wipe and the outline tones' second label are both clipped to it, so the
+ * label turns exactly where the fill is. The script (src/lib/motion/wipe.ts)
+ * moves the band from wherever it is, so a pointer that only passes over
+ * the button, or comes back while the fill is leaving, turns it round with
+ * no jump; data-filled is where it rests. Until the script runs (and
+ * without it) the fill simply runs back the way it came.
  */
+@property --lb-a {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+@property --lb-b {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+.link-button[data-filled] {
+  --lb-b: 100%;
+}
+:root:not([data-wipes]) .link-button {
+  transition: --lb-b 0.45s var(--e-sheet);
+}
+:root:not([data-wipes]) .link-button:is(:hover, :focus-visible) {
+  --lb-b: 100%;
+}
 .link-button {
   --lb-bg: var(--color-ink);
   --lb-fg: var(--color-ivory);
@@ -1190,12 +1240,7 @@
   position: absolute;
   inset: 0;
   background: var(--lb-wipe);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.45s var(--e-sheet);
-}
-.link-button:not(:hover, :focus-visible) .link-button__wipe {
-  transform-origin: right center;
+  clip-path: inset(0 calc(100% - var(--lb-b)) 0 var(--lb-a));
 }
 .link-button__label {
   position: relative;
@@ -1204,13 +1249,7 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-/*
- * The outline tones' second label, in the fill's opposite colour, shown
- * where the fill is. Two clips, as the wipe flips its origin: on the way in
- * the outer one opens from the left while the inner one is open; on the way
- * out the inner one closes towards the right, and only then does the outer
- * one shut (unseen) for the next time.
- */
+/* The outline tones' second label, in the fill's opposite colour, shown where the fill is (the same band). */
 .link-button__over {
   display: none;
 }
@@ -1218,8 +1257,7 @@
   position: absolute;
   inset: 0;
   display: block;
-  clip-path: inset(0 100% 0 0);
-  transition: clip-path 0s linear 0.45s;
+  clip-path: inset(0 calc(100% - var(--lb-b)) 0 var(--lb-a));
 }
 .link-button__label--over {
   position: absolute;
@@ -1230,17 +1268,6 @@
   background: none;
   -webkit-text-fill-color: var(--lb-over);
   color: var(--lb-over);
-  clip-path: inset(0 0 0 100%);
-  transition: clip-path 0.45s var(--e-sheet);
-}
-.link-button:is(.link-button--outline, .link-button--ghost):is(:hover, :focus-visible) :is(.link-button__over, .link-button__label--over) {
-  clip-path: inset(0);
-}
-.link-button:is(.link-button--outline, .link-button--ghost):is(:hover, :focus-visible) .link-button__over {
-  transition: clip-path 0.45s var(--e-sheet);
-}
-.link-button:is(.link-button--outline, .link-button--ghost):is(:hover, :focus-visible) .link-button__label--over {
-  transition: none;
 }
 .link-button__icon {
   width: var(--lb-h);
@@ -1269,9 +1296,6 @@
 }
 .link-button:is(:hover, :focus-visible) :is(.link-button__plate, .link-button__icon) {
   clip-path: inset(0 round 2px);
-}
-.link-button:is(:hover, :focus-visible) .link-button__wipe {
-  transform: scaleX(1);
 }
 :is(.link-button, [data-cube-host]):is(:hover, :focus-visible) .link-button__cube {
   transform: translateZ(calc(var(--lb-h) / -2)) rotateY(90deg);
@@ -2070,5 +2094,27 @@ body:has(.not-found__map) .site-footer__place {
   }
   .site-footer__map .ontario__dot {
     transform: none !important;
+  }
+  /* Link buttons print as an ink outline with an ink label: no fill, sheen or second label, which need background graphics. */
+  .link-button {
+    color: var(--color-ink);
+  }
+  .link-button__label {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+  .link-button__wipe,
+  .link-button__over,
+  .link-button__face--side {
+    display: none;
+  }
+  :is(.link-button__plate, .link-button__icon, .link-button__face) {
+    background: none;
+  }
+  :is(.link-button__plate, .link-button__icon) {
+    clip-path: none;
+    box-shadow: none !important;
+    outline: 1px solid currentColor;
+    outline-offset: -1px;
   }
 }

@@ -49,6 +49,7 @@ import {
 } from "@/lib/motion/home";
 import { footerDot, footerDraw, footerLift, footerProgress, footerStroke } from "@/lib/motion/footer";
 import { clamp, cssEase, damp, ease, fit, fromOklab, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
+import { WIPE_MS, wipeStep } from "@/lib/motion/wipe";
 
 /* The homepage choreography, measured at 1440×900. */
 const VW = 1440;
@@ -951,5 +952,34 @@ describe("footer", () => {
     expect(footerDot(0.9)).toBe(1);
     // The dot lands after the mainland is drawn.
     expect(footerStroke(0.7, 0)).toBeLessThan(0.05);
+  });
+});
+
+describe("link button fill", () => {
+  it("runs across the plate on hover and leaves forwards, its near edge chasing the far one", () => {
+    expect(wipeStep({ a: 0, b: 0 }, true)).toEqual({ a: 0, b: 100, ms: WIPE_MS });
+    expect(wipeStep({ a: 0, b: 100 }, false)).toEqual({ a: 100, b: 100, ms: WIPE_MS });
+    // Nothing to do where it already rests.
+    expect(wipeStep({ a: 0, b: 100 }, true)).toBeNull();
+    expect(wipeStep({ a: 0, b: 0 }, false)).toBeNull();
+  });
+
+  it("a pointer that only passes over leaves a sliver that runs out ahead, never one that jumps to the far edge", () => {
+    // Left 11% of the way in: the far edge stays where it is and the near edge runs up to it.
+    const out = wipeStep({ a: 0, b: 11 }, false);
+    expect(out).toMatchObject({ a: 11, b: 11 });
+    // A short way takes a short time, a third of a full run at least.
+    expect(out?.ms).toBe(Math.round(WIPE_MS / 3));
+    const half = wipeStep({ a: 0, b: 60 }, false);
+    expect(half?.ms).toBe(Math.round(WIPE_MS * 0.6));
+  });
+
+  it("coming back while the fill leaves turns it round from where it is", () => {
+    // Leaving, its near edge 70% across: the band grows back from that edge to the whole plate.
+    const back = wipeStep({ a: 70, b: 100 }, true);
+    expect(back).toMatchObject({ a: 0, b: 100 });
+    expect(back?.ms).toBe(Math.round(WIPE_MS * 0.7));
+    // Leaving a partial fill and coming back: both edges run out to the plate's.
+    expect(wipeStep({ a: 30, b: 50 }, true)).toMatchObject({ a: 0, b: 100, ms: Math.round(WIPE_MS * 0.5) });
   });
 });

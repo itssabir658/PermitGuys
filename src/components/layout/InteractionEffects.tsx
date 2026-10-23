@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { engine } from "@/lib/motion/engine";
 import { REVEAL_SETTLE, ROW_SELECTOR, readingOrder, revealDelay } from "@/lib/motion/reveal";
 import { resplitIfNeeded, splitLines } from "@/lib/motion/split";
+import { linkButtonWipes } from "@/lib/motion/wipe";
 
 interface Arrival {
   el: HTMLElement;
@@ -32,9 +33,13 @@ interface Arrival {
  *   reduced motion, and on a page gone back to (data-returning), which
  *   comes back as it was left.
  * - Section tracking: the "On this page" index marks the section being read.
+ * - Link buttons: the fill under the label follows hover and keyboard focus
+ *   from wherever it is (src/lib/motion/wipe.ts).
  */
 export function InteractionEffects() {
   const pathname = usePathname();
+
+  useEffect(() => linkButtonWipes(), []);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -111,11 +116,19 @@ export function InteractionEffects() {
     document.addEventListener("pointerover", uncover, { passive: true });
 
     // An observer never reports a piece that went from below the screen to above it without crossing it (a glide or a
-    // jump to a section further down): every tenth frame, whatever hidden piece is wholly above the screen is shown.
+    // jump to a section further down): every tenth frame, if the page has moved since the last look, whatever hidden piece
+    // is wholly above the screen is shown. Once nothing is left hidden, the sweep stops.
     let tick = 0;
-    const offSweep = engine.onFrame(() => {
-      if (++tick % 10) return;
-      for (const el of document.querySelectorAll<HTMLElement>('[data-reveal="hidden"]')) {
+    let swept = Number.NaN;
+    const offSweep = engine.onFrame((f) => {
+      if (++tick % 10 || f.scroll === swept) return;
+      swept = f.scroll;
+      const hidden = document.querySelectorAll<HTMLElement>('[data-reveal="hidden"]');
+      if (hidden.length === 0) {
+        offSweep();
+        return;
+      }
+      for (const el of hidden) {
         if (el.getBoundingClientRect().bottom >= 0) continue;
         observer.unobserve(el);
         waiting = waiting.filter((arrival) => arrival.el !== el);

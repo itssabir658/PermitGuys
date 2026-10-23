@@ -19,12 +19,15 @@ import { OntarioOutline } from "./OntarioOutline";
  * (about 0.85s), so React's commit never freezes a line half drawn.
  * Hold: two frames, and the new page's opening picture decoded (0.9s at
  * most).
- * Out: the mark lifts away (0.18s, power2.in) and from 0.04s the sheet leaves
- * through the top (0.6s, --e-sheet) as the dimming clears (0.3s), so the new
- * page is never seen through a grey veil. As it starts,
- * focus moves to the new page's main content and its entrance starts (the
- * document gets data-revealed again, and data-arrival="route", which hard
- * loads never have, so the entrance runs on its shorter route timing).
+ * Out: the sheet leaves through the top (0.6s, power2.inOut, which gets
+ * going sooner than the cover's ease) as the dimming clears (0.3s), so the
+ * new page is never seen through a grey veil. The drawing stays on the
+ * sheet, drifting up a little with it, until the sheet's edge passes over
+ * it, so the exit never opens on a plain graphite screen. The pressed link
+ * lets go. As it starts, focus moves to the new page's main content and its
+ * entrance starts (the document gets data-revealed again, and
+ * data-arrival="route", which hard loads never have, so the entrance runs on
+ * its shorter route timing).
  *
  * Each navigation has an id, and every timer and animation callback checks
  * it, so a late timer from an earlier click can never lift the sheet over
@@ -41,9 +44,12 @@ import { OntarioOutline } from "./OntarioOutline";
  * Links to the page itself glide to its top, and in-page links to their
  * section, which then takes focus; either closes the menu first. A link
  * that only changes the query is swapped in place by the router, with no
- * cover. With reduced motion every cover is a 0.3s crossfade and every glide
- * a jump. Clicks with a modifier key, new-tab links and downloads are left
- * alone.
+ * cover, and glides to the top too (the position it left is kept for Back).
+ * From the keyboard, a link that goes to the top of the page moves focus to
+ * the page's content, as a navigation does (on wide screens the menu button
+ * is put away at the top). With reduced motion every cover is a 0.3s
+ * crossfade and every glide a jump. Clicks with a modifier key, new-tab
+ * links and downloads are left alone.
  */
 
 type Phase = "idle" | "cover" | "return" | "back" | "reveal";
@@ -63,10 +69,9 @@ const DOT_AT = 550;
 const DOT_MS = 300;
 /** At most this long for the new page's opening picture. */
 const HOLD_CAP_MS = 900;
-const MARK_OUT_MS = 180;
-/** The sheet starts up as the mark goes, and the dimming clears with it, so the new page is never shown grey. */
-const SHEET_OUT_AT = 40;
-const UNDERLAY_OUT_AT = 40;
+/** On the way out the drawing rides up this far with the sheet, which clears it as its edge goes by. */
+const MARK_LIFT_PX = 16;
+/** The dimming clears with the sheet, so the new page is never shown grey. */
 const UNDERLAY_OUT_MS = 300;
 const QUICK_MS = 300;
 const BACK_IN_MS = 280;
@@ -124,10 +129,15 @@ function linkOf(event: MouseEvent): HTMLAnchorElement | null {
   return new URL(link.href, location.href).origin === location.origin ? link : null;
 }
 
-/** Close the menu if it is open, and let a pointer click leave no focus behind (the header would read it as someone tabbing). */
-function settle(pointer: boolean) {
-  window.dispatchEvent(new CustomEvent("pg:close-menu", { detail: { keyboard: !pointer } }));
+/**
+ * Close the menu if it is open, and let a pointer click leave no focus behind (the header would read it as someone
+ * tabbing). From the keyboard, focus goes to `focus` when one is given (the page's content, for a link that goes to the
+ * top of the page, where wide screens put the menu button away), or else back to the menu button.
+ */
+function settle(pointer: boolean, focus?: HTMLElement | null) {
+  window.dispatchEvent(new CustomEvent("pg:close-menu", { detail: { keyboard: !pointer && !focus } }));
   if (pointer) (document.activeElement as HTMLElement | null)?.blur?.();
+  else focus?.focus({ preventScroll: true });
 }
 
 const frames = (n: number) => new Promise<void>((resolve) => {
@@ -176,6 +186,8 @@ export function ScreenTransition() {
     (id: number, exit: Exit) => {
       if (navId.current !== id) return;
       const html = document.documentElement;
+      // Whatever way the cover goes (an arrival, the safety, a step back to where it started), the pressed link lets go.
+      document.querySelectorAll<HTMLElement>("[data-pressed]").forEach((el) => delete el.dataset.pressed);
       // The new page's entrance runs on its route timing (sooner than after the preloader), as the cover lifts.
       html.dataset.arrival = "route";
       html.dataset.revealed = "";
@@ -188,9 +200,9 @@ export function ScreenTransition() {
       const anims =
         exit === "sheet"
           ? [
-              mark.current?.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-8px)" }], { duration: MARK_OUT_MS, easing: cssEase.exit, fill }),
-              panel.current?.animate([{ clipPath: "inset(0 0 0% 0)" }, { clipPath: "inset(0 0 100% 0)" }], { duration: SHEET_MS, delay: SHEET_OUT_AT, easing: cssEase.sheet, fill }),
-              underlay.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: UNDERLAY_OUT_MS, delay: UNDERLAY_OUT_AT, easing: cssEase.power1InOut, fill }),
+              mark.current?.animate([{ transform: "none" }, { transform: `translateY(-${MARK_LIFT_PX}px)` }], { duration: SHEET_MS, easing: cssEase.power2InOut, fill }),
+              panel.current?.animate([{ clipPath: "inset(0 0 0% 0)" }, { clipPath: "inset(0 0 100% 0)" }], { duration: SHEET_MS, easing: cssEase.power2InOut, fill }),
+              underlay.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: UNDERLAY_OUT_MS, easing: cssEase.power1InOut, fill }),
             ]
           : [veil.current?.animate([{ opacity: 1 }, { opacity: 0 }], exit === "quick" ? { duration: QUICK_MS, easing: cssEase.power2InOut, fill } : { duration: BACK_OUT_MS, easing: cssEase.power2Out, fill })];
       const out = anims.filter((a): a is Animation => Boolean(a));
@@ -256,11 +268,12 @@ export function ScreenTransition() {
         // A jump within the page is handled on the way back up, after the link's own handlers (onFragment).
         if (url.search === location.search && url.hash.length > 1) return;
         const busy = phaseNow.current !== "idle" || pending.current !== null;
+        const main = document.getElementById("main");
         if (url.search === location.search) {
           // The page itself: glide to its top (a navigation would only reload what is already here).
           event.preventDefault();
           if (busy) return;
-          settle(pointer);
+          settle(pointer, main);
           engine.afterUnlock(() => engine.glideTo(0));
           return;
         }
@@ -269,8 +282,20 @@ export function ScreenTransition() {
           event.preventDefault();
           return;
         }
-        settle(pointer);
+        // Back comes here again: keep the place, under this entry's own key.
+        keepPosition(entry(), window.scrollY);
+        settle(pointer, main);
         engine.afterUnlock(() => engine.glideTo(0));
+        // The router writes the new entry once the new query's page is in: from then on it is the page showing.
+        const next = url.pathname + url.search;
+        const until = performance.now() + SAFETY_MS;
+        const watch = () => {
+          if (page() === next) {
+            shown.current = page();
+            shownEntry.current = entry();
+          } else if (performance.now() < until) requestAnimationFrame(watch);
+        };
+        requestAnimationFrame(watch);
         return;
       }
       event.preventDefault();
@@ -369,6 +394,7 @@ export function ScreenTransition() {
       const saved = positions.get(key);
       if (location.pathname === new URL(shownEntry.current || location.href, location.href).pathname) {
         // The same page (another fragment or query): glide back to where the reader was, or to the section.
+        shown.current = page();
         shownEntry.current = key;
         if (phaseNow.current !== "idle") return;
         const target = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
@@ -436,7 +462,6 @@ export function ScreenTransition() {
     pending.current = null;
     shown.current = page();
     shownEntry.current = entry();
-    document.querySelectorAll<HTMLElement>("[data-pressed]").forEach((el) => delete el.dataset.pressed);
     if (p.restore != null) engine.restore(p.restore);
     // Start the new page at the top (a link to a fragment is left to the router).
     else if (!p.hash) engine.scrollTo(0, true);

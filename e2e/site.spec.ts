@@ -166,6 +166,100 @@ test.describe("interactive pieces", () => {
     await expect(projectType).toHaveValue(preset);
   });
 
+  test("Back and Forward over a link that only changes the query return to each place the reader left", async ({ page }) => {
+    const y = () => page.evaluate(() => Math.round(window.scrollY));
+    await page.goto("/contact/?service=deck-permits");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await expect.poll(y).toBe(1500);
+    // Clicked in place: a test click would first scroll the footer into view.
+    await page.locator("footer").getByRole("link", { name: "Contact", exact: true }).evaluate((a: HTMLElement) => a.click());
+    await expect(page).toHaveURL(/\/contact\/$/);
+    await expect.poll(y).toBe(0);
+    await page.evaluate(() => window.scrollTo(0, 700));
+    await expect.poll(y).toBe(700);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/contact\/\?service=deck-permits$/);
+    await expect.poll(y).toBe(1500);
+    await page.goForward();
+    await expect(page).toHaveURL(/\/contact\/$/);
+    await expect.poll(y).toBe(700);
+  });
+
+  test("from the keyboard, a menu link to the page showing moves focus to the page's content", async ({ page, isMobile }) => {
+    test.skip(isMobile, "Keyboard test");
+    await page.goto("/services/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await expect(page.locator(".site-nav")).toHaveAttribute("data-collapsed", "");
+    await page.locator(".site-nav__menu-btn").focus();
+    await page.keyboard.press("Enter");
+    const menu = page.getByRole("navigation", { name: "Site menu" });
+    await expect(menu.getByRole("link", { name: "Home" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(menu.getByRole("link", { name: "Services" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".site-nav__menu-btn")).toHaveAttribute("aria-expanded", "false");
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+    // Not the menu button, which wide screens put away at the top of the page (focus would fall to the body).
+    await expect(page.locator("main")).toBeFocused();
+  });
+
+  test("a link button's fill leaves forwards from wherever it is, the outline label turning exactly where it is", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "Pointer hover");
+    await page.goto("/no-such-page/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    const button = page.locator("main .link-button--outline").first();
+    const box = (await button.boundingBox())!;
+    await page.mouse.move(5, 5);
+    await button.evaluate((el) => {
+      const log: number[][] = [];
+      (window as unknown as { band: number[][] }).band = log;
+      const wipe = el.querySelector(".link-button__wipe")!;
+      const over = el.querySelector(".link-button__over")!;
+      const t0 = performance.now();
+      const sample = () => {
+        const style = getComputedStyle(el);
+        log.push([parseFloat(style.getPropertyValue("--lb-a")), parseFloat(style.getPropertyValue("--lb-b")), getComputedStyle(wipe).clipPath === getComputedStyle(over).clipPath ? 1 : 0]);
+        if (performance.now() - t0 < 1400) requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+    // A pointer that only passes over the button.
+    await page.mouse.move(box.x + 30, box.y + box.height / 2);
+    await page.waitForTimeout(150);
+    await page.mouse.move(5, 5);
+    await page.waitForTimeout(1500);
+    const band = await page.evaluate(() => (window as unknown as { band: number[][] }).band);
+    expect(band.every(([, , same]) => same === 1)).toBe(true);
+    const peak = Math.max(...band.map(([, b]) => b));
+    expect(peak).toBeGreaterThan(0);
+    // Leaving: the far edge holds where it was while the near edge runs up to it (never a jump to the other end).
+    const leaving = band.filter(([a]) => a > 0);
+    expect(leaving.length).toBeGreaterThan(0);
+    leaving.forEach(([a, b], i) => {
+      expect(b).toBeCloseTo(peak, 2);
+      expect(a).toBeLessThanOrEqual(b);
+      if (i) expect(a).toBeGreaterThanOrEqual(leaving[i - 1][0]);
+    });
+    expect(band.at(-1)!.slice(0, 2)).toEqual([0, 0]);
+  });
+
+  test("link buttons print as an outlined ink label", async ({ page }) => {
+    await page.goto("/no-such-page/");
+    await page.emulateMedia({ media: "print" });
+    for (const button of await page.locator("main .link-button").all()) {
+      const print = await button.evaluate((el) => ({
+        color: getComputedStyle(el).color,
+        fill: getComputedStyle(el.querySelector(".link-button__label")!).getPropertyValue("-webkit-text-fill-color"),
+        outline: getComputedStyle(el.querySelector(".link-button__plate")!).outlineStyle,
+      }));
+      expect(print.fill).toBe(print.color);
+      expect(print.fill).not.toBe("rgba(0, 0, 0, 0)");
+      expect(print.outline).toBe("solid");
+    }
+  });
+
   test("Back returns to the scroll position the reader left", async ({ page }) => {
     await page.goto("/services/");
     await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
