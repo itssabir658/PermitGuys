@@ -5,19 +5,23 @@ import { usePathname } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { ArrowRight } from "@/components/ui/Icons";
 import { cn } from "@/components/ui/cn";
-import { officialHosts } from "@/content/gta-permits";
+import { gtaPermits, officialHosts } from "@/content/gta-permits";
 import { site } from "@/content/site";
 import { track } from "@/lib/analytics";
+import { ASK_EVENT, askSuggestions, type AskDetail } from "@/lib/chat/ask";
 import { chatLimits, type ChatEvent, type ChatTurn } from "@/lib/chat/conversation";
 import { HANDOFF_EVENT, HANDOFF_STORAGE_KEY, type Handoff } from "@/lib/chat/handoff";
 import { engine } from "@/lib/motion/engine";
 import { paths } from "@/lib/routes";
+import "./chat.css";
 
 /*
- * The website assistant: a quiet launcher in the corner and a panel that
- * answers questions about permits and PermitGuys, then fills in the project
- * half of the inquiry form when the visitor is ready. The transcript lives in
- * this tab (sessionStorage) and is sent to /api/chat on every turn.
+ * The website assistant: a launcher in the corner, ringed by a slow red
+ * sweep, and a panel that answers questions about permits and PermitGuys,
+ * then fills in the project half of the inquiry form when the visitor is
+ * ready. The homepage's showcase (AskShowcase.tsx) opens it with a question
+ * (ASK_EVENT). The transcript lives in this tab (sessionStorage) and is sent
+ * to /api/chat on every turn.
  */
 
 interface Entry extends ChatTurn {
@@ -28,13 +32,6 @@ interface Entry extends ChatTurn {
 
 const STORAGE_KEY = "pg_chat";
 const PHONE_QUERY = "(max-width: 639px)";
-
-const suggestions = [
-  "Do I need a permit for a deck?",
-  "How do I make a basement apartment legal?",
-  "What does PermitGuys do?",
-  "I'm planning a second-storey addition",
-];
 
 const failures: Record<Extract<ChatEvent, { type: "error" }>["reason"], string> = {
   not_configured: "The assistant is not available right now.",
@@ -142,6 +139,18 @@ export function ChatAssistant() {
     }
   }, [entries, busy]);
 
+  // The launcher steps aside while the homepage's showcase, which asks the same assistant, is on screen.
+  const [showcaseInView, setShowcaseInView] = useState(false);
+  useEffect(() => {
+    const showcase = document.querySelector("[data-ask]");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowcaseInView(false);
+    if (!showcase) return;
+    const io = new IntersectionObserver(([entry]) => setShowcaseInView(entry.isIntersecting), { rootMargin: "-15% 0px -15% 0px" });
+    io.observe(showcase);
+    return () => io.disconnect();
+  }, [pathname]);
+
   // Phones get a full-screen sheet, so the page behind it is held still.
   useEffect(() => {
     if (!open || !window.matchMedia(PHONE_QUERY).matches) return;
@@ -162,8 +171,10 @@ export function ChatAssistant() {
 
   const close = useCallback(() => {
     setOpen(false);
-    requestAnimationFrame(() => launcherRef.current?.focus({ preventScroll: true }));
-  }, []);
+    // Back to where the visitor asked from: the launcher, or the showcase's field while the launcher is stepped aside.
+    const target = showcaseInView ? document.getElementById("ask-input") : launcherRef.current;
+    requestAnimationFrame(() => target?.focus({ preventScroll: true }));
+  }, [showcaseInView]);
 
   // Escape closes the panel wherever focus is, as long as it is not inside another dialog.
   useEffect(() => {
@@ -263,6 +274,23 @@ export function ChatAssistant() {
     }
   };
 
+  // The latest send, for the showcase's questions (ASK_EVENT).
+  const sendRef = useRef(send);
+  useEffect(() => {
+    sendRef.current = send;
+  });
+
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const { question, source } = (e as CustomEvent<AskDetail>).detail ?? { source: "unknown" };
+      setOpen(true);
+      track("chat_open", { page: window.location.pathname, source });
+      if (question?.trim()) void sendRef.current(question);
+    };
+    window.addEventListener(ASK_EVENT, onAsk);
+    return () => window.removeEventListener(ASK_EVENT, onAsk);
+  }, []);
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     void send(draft);
@@ -292,17 +320,32 @@ export function ChatAssistant() {
         type="button"
         aria-expanded={open}
         aria-controls="pg-chat"
+        aria-hidden={!open && showcaseInView ? true : undefined}
+        tabIndex={!open && showcaseInView ? -1 : undefined}
         onClick={() => {
           if (!open) track("chat_open", { page: pathname });
           setOpen((o) => !o);
         }}
         className={cn(
-          "chat-launcher fixed right-4 bottom-4 z-30 flex items-center gap-2.5 bg-charcoal-900 py-3 pr-5 pl-4 text-[0.9375rem] text-ivory shadow-[0_10px_30px_-12px_rgb(17_17_16/0.55)] transition-[transform,opacity,background-color] duration-300 ease-(--e-ui) hover:bg-charcoal-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-500 sm:right-6 sm:bottom-6",
-          open && "max-sm:pointer-events-none max-sm:translate-y-3 max-sm:opacity-0",
+          "chat-launcher group fixed right-4 bottom-4 z-30 p-px shadow-[0_18px_40px_-16px_rgb(17_17_16/0.7)] transition-[transform,opacity] duration-300 ease-(--e-ui) hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-500 sm:right-6 sm:bottom-6",
+          open && "chat-launcher--open max-sm:pointer-events-none max-sm:translate-y-3 max-sm:opacity-0",
+          !open && showcaseInView && "pointer-events-none translate-y-3 opacity-0",
         )}
       >
-        <span aria-hidden="true" className="size-2 rounded-full bg-brand-400" />
-        {open ? "Close assistant" : "Ask PermitGuys"}
+        <span aria-hidden="true" className="chat-launcher__sweep" />
+        <span className="relative flex items-center gap-3 bg-charcoal-900 py-2.5 pr-5 pl-2.5 text-ivory transition-colors duration-300 group-hover:bg-charcoal-800">
+          <span aria-hidden="true" className="chat-mark">
+            <span className="chat-live" />
+          </span>
+          {open ? (
+            <span className="text-[0.9375rem]">Close assistant</span>
+          ) : (
+            <span className="flex flex-col text-left leading-tight">
+              <span className="text-[0.9375rem]">Ask PermitGuys AI</span>
+              <span className="mt-0.5 text-[0.75rem] text-charcoal-300 max-sm:sr-only">Permit questions, answered</span>
+            </span>
+          )}
+        </span>
       </button>
 
       <div
@@ -311,25 +354,26 @@ export function ChatAssistant() {
         role="dialog"
         aria-labelledby="pg-chat-title"
         hidden={!open}
-        className="chat-panel fixed inset-0 z-[60] flex flex-col bg-ivory text-ink sm:inset-auto sm:right-6 sm:bottom-22 sm:h-[min(40rem,calc(100dvh-8rem))] sm:w-[25rem] sm:border sm:border-line sm:shadow-[0_30px_80px_-30px_rgb(17_17_16/0.45)]"
+        className="chat-panel fixed inset-0 z-[60] flex flex-col bg-ivory text-ink sm:inset-auto sm:right-6 sm:bottom-24 sm:h-[min(44rem,calc(100dvh-8.5rem))] sm:w-[27rem] sm:border sm:border-charcoal-900 sm:shadow-[0_40px_90px_-30px_rgb(17_17_16/0.6)]"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
-          <div>
-            <p className="text-label text-ink-muted">
-              <span aria-hidden="true" className="mr-2 inline-block size-1.5 rounded-full bg-brand-500 align-middle" />
-              Assistant
+        <div className="chat-head relative flex items-start justify-between gap-4 overflow-hidden bg-charcoal-900 px-5 pt-[max(1.1rem,env(safe-area-inset-top))] pb-5 text-ivory">
+          <div className="relative">
+            <p className="flex items-center gap-2.5 text-label text-charcoal-300">
+              <span aria-hidden="true" className="chat-live" />
+              PermitGuys AI
             </p>
-            <h2 id="pg-chat-title" className="mt-1.5 font-display text-display-sm text-ink">
+            <h2 id="pg-chat-title" className="mt-2 font-display text-display-sm text-ivory">
               Ask about your project
             </h2>
+            <p className="mt-1.5 text-xs leading-relaxed text-charcoal-300">Our guides, and the permit pages of {gtaPermits.length} GTA municipalities.</p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="relative flex items-center gap-1">
             {entries.length ? (
-              <button type="button" onClick={restart} className="px-2 py-2 text-sm whitespace-nowrap text-ink-muted underline-offset-4 hover:text-ink hover:underline">
+              <button type="button" onClick={restart} className="px-2 py-2 text-sm whitespace-nowrap text-charcoal-300 underline-offset-4 hover:text-ivory hover:underline">
                 New chat
               </button>
             ) : null}
-            <button type="button" onClick={close} aria-label="Close assistant" className="-mr-2 grid size-11 place-items-center text-ink-muted hover:text-ink">
+            <button type="button" onClick={close} aria-label="Close assistant" className="-mr-2 grid size-11 place-items-center text-charcoal-300 hover:text-ivory">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-5" aria-hidden="true" focusable="false">
                 <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
               </svg>
@@ -345,7 +389,7 @@ export function ChatAssistant() {
 
           {entries.length === 0 ? (
             <ul className="mt-6 flex flex-wrap gap-2" aria-label="Suggested questions">
-              {suggestions.map((s) => (
+              {askSuggestions.map((s) => (
                 <li key={s}>
                   <button
                     type="button"
@@ -440,7 +484,7 @@ export function ChatAssistant() {
               type="submit"
               disabled={busy || !draft.trim()}
               aria-label="Send"
-              className="grid size-11 shrink-0 place-items-center bg-charcoal-900 text-ivory transition-opacity duration-300 hover:bg-charcoal-800 disabled:opacity-35"
+              className="grid size-11 shrink-0 place-items-center bg-brand-500 text-white transition-[opacity,background-color] duration-300 hover:bg-brand-600 disabled:bg-charcoal-900 disabled:opacity-35"
             >
               <ArrowRight className="size-4.5" />
             </button>
