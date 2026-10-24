@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import { Container } from "@/components/ui/Container";
 import { site } from "@/content/site";
-import { MK_H, MK_W, mkElevation, mkPlan, mkSite, mkStructure } from "@/content/making-drawing";
+import { MK_H, MK_W, mkCallouts, mkElevation, mkPlan, mkSite, mkStructure } from "@/content/making-drawing";
 import { escapeHtml } from "@/lib/html";
 import { makingSectionVh } from "@/lib/motion/home";
 
@@ -164,11 +164,17 @@ export function Making() {
                 <svg data-mk-fade="eng" className="mk-svg" viewBox={view} aria-hidden="true">
                   <path data-mk-draw="engHidden" className="mk-red-hidden" d={mkStructure.hidden} />
                   <path data-mk-draw="engSolid" className="mk-red" d={mkStructure.solid} />
+                  {/* The callouts in two layouts, one shown for the board's width (globals.css). */}
                   <g data-mk-fade="engLabels">
-                    {mkStructure.labels.map((l) => (
-                      <text key={l.text} x={l.x} y={l.y} className="mk-eng-label">
-                        {l.text}
-                      </text>
+                    {(["wide", "narrow"] as const).map((k) => (
+                      <g key={k} className={`mk-callouts mk-callouts--${k}`}>
+                        <path className="mk-red-hidden" d={mkCallouts[k].d} />
+                        {mkCallouts[k].labels.map((l) => (
+                          <text key={l.text} x={l.x} y={l.y} className="mk-eng-label">
+                            {l.text}
+                          </text>
+                        ))}
+                      </g>
                     ))}
                   </g>
                 </svg>
