@@ -110,4 +110,30 @@ test.describe("website assistant", () => {
     await expect(panel).toBeHidden();
     await expect(page.getByRole("button", { name: "Ask PermitGuys" })).toBeFocused();
   });
+
+  test("the homepage showcase puts the visitor's question to the assistant", async ({ page }) => {
+    const console = watchConsole(page);
+    const sent = await mockChat(page, lines({ type: "text", text: "Usually, yes. Sheds over a certain size need one." }, { type: "done" }));
+    await page.goto("/");
+    const field = page.getByLabel("Your question for the PermitGuys assistant");
+    test.skip((await field.count()) === 0, "The assistant is off in this build (no ANTHROPIC_API_KEY at build time).");
+    await field.scrollIntoViewIfNeeded();
+    await expect(field).toBeVisible();
+    // The entrance has finished (its lines fade as they rise, which axe would read as low contrast).
+    await page.waitForFunction(() => [...document.querySelectorAll("[data-ask] .ask-rise")].every((el) => getComputedStyle(el).opacity === "1"));
+    const results = await new AxeBuilder({ page }).include("[data-ask]").analyze();
+    expect(results.violations).toEqual([]);
+    await expectNoHorizontalOverflow(page);
+
+    await field.fill("Do I need a permit for a shed?");
+    await field.press("Enter");
+    const panel = page.getByRole("dialog", { name: "Ask about your project" });
+    await expect(panel).toBeVisible();
+    await expect(panel.getByText("Usually, yes.")).toBeVisible();
+    expect(sent).toEqual([{ messages: [{ role: "user", content: "Do I need a permit for a shed?" }] }]);
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(field).toBeFocused();
+    console.expectNone();
+  });
 });

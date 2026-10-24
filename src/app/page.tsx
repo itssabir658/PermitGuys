@@ -1,3 +1,4 @@
+import { AskShowcase } from "@/components/chat/AskShowcase";
 import { Contact } from "@/components/home/Contact";
 import { Hero } from "@/components/home/Hero";
 import { HomeMotion } from "@/components/home/HomeMotion";
@@ -8,6 +9,7 @@ import { Values } from "@/components/home/Values";
 import { Works } from "@/components/home/Works";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { site } from "@/content/site";
+import { chatConfigured } from "@/lib/chat/config";
 import { webPageSchema } from "@/lib/jsonld";
 import { getGoogleReviews } from "@/lib/reviews";
 import { pageMetadata } from "@/lib/seo";
@@ -37,6 +39,7 @@ export default async function HomePage() {
       <Intro />
       <Story />
       <Works />
+      {chatConfigured(process.env) ? <AskShowcase /> : null}
       <Values />
       <Services />
       <Contact reviews={reviews} />
