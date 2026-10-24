@@ -810,6 +810,8 @@ function making(): MotionModule | null {
   let live = false;
   let playing = false;
   const sleep = sleeper();
+  const onPlaying = () => flag(section, "data-mk-film-on", playing);
+  film?.addEventListener("playing", onPlaying);
 
   const rest = () => {
     if (!film) return;
@@ -886,8 +888,8 @@ function making(): MotionModule | null {
         const on = e >= MAKING_FILM_AT;
         if (on && !playing) {
           playing = true;
-          flag(section, "data-mk-film-on", true);
-          void film.play().catch(() => flag(section, "data-mk-film-on", false));
+          // Shown once it is really playing (onPlaying), so a browser that cannot play it keeps the still.
+          void film.play().catch(() => undefined);
         } else if (!on && playing) rest();
       }
 
@@ -910,6 +912,7 @@ function making(): MotionModule | null {
     },
     destroy() {
       rest();
+      film?.removeEventListener("playing", onPlaying);
       section.removeAttribute("data-mk-live");
     },
   };

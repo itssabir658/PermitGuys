@@ -57,7 +57,8 @@ const sizes = "(min-width: 768px) and (min-aspect-ratio: 1/1) 62vw, 100vw";
  * is the floor plan; the front elevation, traced from the rendering, so
  * the lit windows and then the rendering itself come up in its lines; the
  * structure over a paper veil; the sheet's border and title block; and the
- * house again, at dusk.
+ * house again, at dusk, where a short film animated from the rendering
+ * (a slow push in) plays once.
  *
  * Tracks: an 820vh track with one pinned stage (MAKING in
  * src/lib/motion/home.ts; HomeMotion, making module). Drawings are drafted
@@ -109,6 +110,12 @@ export function Making() {
                     sizes={sizes}
                     quality={78}
                   />
+                  <video data-mk-film="" className="mk-film" aria-hidden="true" muted playsInline preload="none" poster={dusk.src} disablePictureInPicture>
+                    <source src="/videos/making/front-dusk-1080.mp4" type='video/mp4; codecs="avc1.640032"' media="(min-width: 1024px)" />
+                    <source src="/videos/making/front-dusk-1080.webm" type='video/webm; codecs="vp9"' media="(min-width: 1024px)" />
+                    <source src="/videos/making/front-dusk-720.mp4" type='video/mp4; codecs="avc1.64001f"' />
+                    <source src="/videos/making/front-dusk-720.webm" type='video/webm; codecs="vp9"' />
+                  </video>
                 </div>
                 <div data-mk-fade="glass" className="mk-pic" aria-hidden="true">
                   <Image src={glass.src} alt="" fill sizes={sizes} quality={78} />
@@ -190,7 +197,7 @@ export function Making() {
               </div>
             </div>
             <figcaption data-mk-caption="" className="mk-caption text-label text-pretty text-ink-muted">
-              Renderings of a client project<span className="max-sm:hidden">. The site, plan and structure are drawn to illustrate each stage</span>.
+              Renderings and a film of a client project<span className="max-sm:hidden">. The site, plan and structure are drawn to illustrate each stage</span>.
             </figcaption>
           </figure>
 

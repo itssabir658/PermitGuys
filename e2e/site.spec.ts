@@ -502,7 +502,7 @@ test.describe("interactive pieces", () => {
       "Engineered to be built as drawn.",
       "One set, ready for the permit.",
     ]);
-    await expect(section.locator("figcaption")).toContainText("Renderings of a client project");
+    await expect(section.locator("figcaption")).toContainText("Renderings and a film of a client project");
     await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
     // e screens of scroll since the stage pinned; each place is one the page may rest at.
     const at = async (e: number) => {
@@ -539,10 +539,17 @@ test.describe("interactive pieces", () => {
     await at(7);
     await expect.poll(() => shown("dusk")).toBe(1);
     await expect.poll(() => shown("title")).toBe(0);
+    // Its film plays from the still it starts on (H.264, or VP9 where a browser has no H.264, as the test browser has
+    // not), and rests at its first frame once scrolled back.
+    const film = section.locator("[data-mk-film]");
+    await expect(section).toHaveAttribute("data-mk-film-on", "");
+    await expect.poll(() => film.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0);
     // Back at the site.
     await at(0.6);
     await expect.poll(() => shown("site")).toBe(1);
     await expect.poll(() => shown("dusk")).toBe(0);
+    await expect(section).not.toHaveAttribute("data-mk-film-on", "");
+    expect(await film.evaluate((v: HTMLVideoElement) => v.currentTime)).toBe(0);
   });
 
   test("with reduced motion the house is shown at dusk beside its five chapters", async ({ page }) => {
