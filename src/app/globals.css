@@ -635,9 +635,9 @@
  * Shown up until its crossfade has finished, for visitors who allow motion
  * (data-motion, set by the head script). Each piece takes its delay and
  * duration from --at and --ms, set inline from the timeline. The map and its
- * pictures play only on the first full load in a tab (data-intro, when the
- * pictures start loading); they start moving at data-intro="play", once the
- * page has hydrated; later loads show the bare screen.
+ * pictures play on every full load (data-intro, when the pictures start
+ * loading); they start moving at data-intro="play", once the page has
+ * hydrated.
  */
 .preloader {
   position: fixed;
@@ -658,10 +658,6 @@
 .intro {
   position: relative;
   width: min(calc(85vw - 2rem), calc(71svh * 1000 / 1096.7), 39rem);
-}
-/* A later load in the tab shows the finished lines and the label, without the pictures, until the page is ready. */
-:root:not([data-intro]) .intro__stroke {
-  stroke-dashoffset: 0;
 }
 /* On the intro, the label waits for the timeline. */
 :root[data-intro]:not([data-intro="play"]) .intro__label {
@@ -710,7 +706,7 @@
   background-size: cover;
 }
 /*
- * Only during the intro, so a later load never fetches them. Phones take the
+ * Only during the intro, so a page shown without it never fetches them. Phones take the
  * smaller cut, or the middle one on high-density screens; larger screens the
  * middle cut, or the full-resolution one on high-density screens; screens
  * 1920px wide and up (4K monitors included) always the full one.
@@ -851,10 +847,35 @@
 .screen-veil__mark {
   gap: 1.75rem;
 }
-/* The intro's map, smaller and lines only: the outline, then the borders between its regions. */
+/* The intro's map, smaller: the regions' pictures under the outline and the borders between them. */
 .screen-veil__map {
+  position: relative;
   height: min(44svh, 24rem, calc((100vw - 4rem) * 1096.4 / 1000));
   aspect-ratio: 1000 / 1096.4;
+}
+.gta__region {
+  position: absolute;
+  overflow: hidden;
+  /* What a region shows if its picture never arrives. */
+  background: #1e1e1e;
+}
+.gta__picture {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+}
+/* Only while the veil is up, so a page that is never left never fetches them (the intro has usually cached them). */
+.screen-veil:not([data-phase="idle"]) .gta__picture {
+  background-image: var(--picture-medium);
+  background-image: -webkit-image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
+  background-image: image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
+}
+.gta__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: visible;
 }
 .gta__stroke {

@@ -3,7 +3,7 @@ import { watchConsole } from "./helpers";
 
 /*
  * The Greater Toronto Area intro (Preloader.tsx, docs/MOTION.md "Load
- * sequence"): once per tab, the map draws and its five regions come in west
+ * sequence"): on every full load, the map draws and its five regions come in west
  * to east, each aligned with its region of the map; then the page.
  */
 test.describe("GTA intro", () => {
@@ -39,13 +39,28 @@ test.describe("GTA intro", () => {
     console.expectNone();
   });
 
-  test("plays once per tab: a later load shows no map and fetches none of its pictures", async ({ page }) => {
+  test("plays again, pictures and all, on a later load in the same tab", async ({ page }) => {
     await page.goto("/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await page.reload();
-    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
-    expect(await page.evaluate(() => "intro" in document.documentElement.dataset)).toBe(false);
-    expect(await page.evaluate(() => performance.getEntriesByType("resource").filter((e) => e.name.includes("/images/intro/")).length)).toBe(0);
+    await page.waitForFunction(() => document.documentElement.dataset.intro === "play");
+    // Every region's picture is set, and every region comes up.
+    const pictures = await page.locator(".intro__picture").evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
+    expect(pictures).toHaveLength(5);
+    for (const p of pictures) expect(p).toContain("/images/intro/");
+    await page.waitForFunction(() => [...document.querySelectorAll(".intro__region")].every((el) => Number(getComputedStyle(el).opacity) > 0.99), null, { timeout: 6000 });
+  });
+
+  test("the page transition shows the same map, its five pictures coming up in their regions", async ({ page }) => {
+    await page.goto("/services/");
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
+    await page.getByRole("link", { name: /deck permit/i }).first().click();
+    await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "cover");
+    const pictures = await page.locator(".screen-veil .gta__picture").evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
+    expect(pictures).toHaveLength(5);
+    for (const p of pictures) expect(p).toContain("/images/intro/");
+    await page.waitForFunction(() => [...document.querySelectorAll(".screen-veil .gta__region")].every((el) => Number(getComputedStyle(el).opacity) > 0.99));
+    await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
   });
 
   test("with reduced motion there is no screen at all", async ({ page }) => {

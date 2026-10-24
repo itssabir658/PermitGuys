@@ -133,7 +133,7 @@ test.describe("navigation", () => {
 });
 
 test.describe("interactive pieces", () => {
-  test("in-site links pass through the Ontario screen transition", async ({ page }) => {
+  test("in-site links pass through the GTA screen transition", async ({ page }) => {
     await page.goto("/services/");
     await page.getByRole("link", { name: /deck permit/i }).first().click();
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "cover");
