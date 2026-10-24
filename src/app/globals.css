@@ -2561,10 +2561,28 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   fill: var(--color-brand-600);
   text-anchor: start;
 }
-/* Room names and notes only where the board is big enough to read them. */
+.mk-callouts--narrow {
+  display: none;
+}
+/*
+ * Room names and notes only where the board is big enough to read them. The
+ * structure's callouts stay: they switch to their narrow layout, in type
+ * big enough to read on a phone (mkCallouts).
+ */
 @container mk-board (max-width: 34rem) {
   .mk-svg text {
     display: none;
+  }
+  .mk-callouts--wide {
+    display: none;
+  }
+  .mk-callouts--narrow {
+    display: inline;
+  }
+  .mk-svg .mk-callouts--narrow text {
+    display: inline;
+    font-size: 90px;
+    letter-spacing: 0.12em;
   }
 }
 /* The title block: in the board's lower right corner, in % of the board. */
