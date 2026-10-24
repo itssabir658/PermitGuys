@@ -657,7 +657,7 @@
 /* Sized by the height, and by the width on narrow screens, with a gutter all round. */
 .intro {
   position: relative;
-  width: min(calc(100vw - 2.5rem), calc(84svh * 1000 / 1096.7), 46rem);
+  width: min(calc(85vw - 2rem), calc(71svh * 1000 / 1096.7), 39rem);
   visibility: hidden;
 }
 :root[data-intro] .intro {
