@@ -7,6 +7,8 @@ A chat assistant in the corner of every page. It answers questions about PermitG
 1. Create an API key in the Anthropic Console and add it to the Vercel project as `ANTHROPIC_API_KEY` (Production, and Preview if you want it on branch previews).
 2. Redeploy. The layout decides at build time whether to include the assistant, so a key added later appears after the next deployment.
 
+To check it after the deployment: open any page and look for "Ask PermitGuys" in the bottom-right corner, then ask a question. If the button is missing, the deployment was built before the key was added, or the key is not enabled for that environment (Preview deployments need it ticked for Preview). If the button shows but replies fail with "couldn't reach our assistant", look at the function logs in Vercel for `/api/chat`: an invalid key or an account without credit shows there.
+
 Without a key the launcher is not rendered at all and `/api/chat` answers every request with `not_configured`, so nothing breaks and nothing is sent anywhere.
 
 Optional settings (`.env.example`): `CHAT_MODEL` (default `claude-opus-5-5`), `CHAT_RATE_LIMIT_MAX` and `CHAT_RATE_LIMIT_WINDOW_MINUTES` (default 30 messages per visitor IP per 10 minutes).
