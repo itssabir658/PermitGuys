@@ -491,6 +491,61 @@ test.describe("interactive pieces", () => {
     expect(await story.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(3 * (page.viewportSize()?.height ?? 900));
   });
 
+  test("from the ground up: the house is drawn layer by layer, closes up, and comes apart again on the way up", async ({ page }) => {
+    await page.goto("/");
+    const section = page.locator("[aria-labelledby=groundup-heading]");
+    await expect(section.getByRole("heading", { level: 2 })).toHaveText("From the ground up");
+    await expect(section.getByRole("heading", { level: 3 })).toHaveText(["It starts below ground.", "A frame that carries it all.", "Rooms around how you live.", "Every layer fits the next."]);
+    await expect(section.locator("figcaption")).toContainText("An illustrative house");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    // e screens of scroll since the stage pinned; each place is one the page may rest at.
+    const at = async (e: number) => {
+      const y = await page.evaluate((e) => {
+        let top = 0;
+        for (let n = document.querySelector<HTMLElement>("[data-groundup]"); n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop;
+        const y = Math.round(top + e * window.innerHeight);
+        window.scrollTo(0, y);
+        return y;
+      }, e);
+      await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(y);
+    };
+    /** How far layer i has filled in, and how far it is moved down from its place in the exploded drawing (px). */
+    const solid = (i: number) => section.locator(`[data-gu-layer='${i}'] [data-gu-solid]`).evaluate((el) => Number(getComputedStyle(el).opacity));
+    const lowered = (i: number) => section.locator(`[data-gu-layer='${i}']`).evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42);
+    // Both floors in, the roof still to come.
+    await at(3.1);
+    await expect.poll(() => solid(3)).toBe(1);
+    await expect.poll(() => solid(4)).toBe(0);
+    await expect(section.locator("[data-gu-toc='2']")).toHaveAttribute("data-active", "");
+    // The house together: every layer in, and the roof come down onto the walls.
+    await at(5.1);
+    for (let i = 0; i < 5; i++) await expect.poll(() => solid(i)).toBe(1);
+    await expect.poll(() => lowered(4)).toBeGreaterThan(0);
+    await expect(section.locator("[data-gu-toc='3']")).toHaveAttribute("data-active", "");
+    // Back at the foundation: one layer, the rest not yet drawn, the first chapter marked.
+    await at(0.5);
+    await expect.poll(() => solid(0)).toBe(1);
+    await expect.poll(() => solid(1)).toBe(0);
+    await expect.poll(() => lowered(4)).toBeLessThan(0);
+    await expect(section.locator("[data-gu-toc='0']")).toHaveAttribute("data-active", "");
+  });
+
+  test("with reduced motion the house is a still exploded drawing beside its four chapters", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const section = page.locator("[aria-labelledby=groundup-heading]");
+    await section.scrollIntoViewIfNeeded();
+    for (const title of await section.getByRole("heading", { level: 3 }).all()) await expect(title).toBeVisible();
+    for (let i = 0; i < 5; i++) {
+      const layer = section.locator(`[data-gu-layer='${i}']`);
+      expect(await layer.locator("[data-gu-solid]").evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1);
+      await expect(layer.locator("[data-gu-draft]")).toBeHidden();
+      await expect(layer.locator("[data-gu-tag]")).toBeVisible();
+    }
+    await expect(section.locator("[data-gu-toc='0']")).toBeHidden();
+    expect(await section.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(3 * (page.viewportSize()?.height ?? 900));
+  });
+
   test("contact closes on the firm's title block, drawn in as it comes up and whole at the end of the page", async ({ page }, info) => {
     await page.goto("/");
     const contact = page.locator("[aria-labelledby=contact-heading]");

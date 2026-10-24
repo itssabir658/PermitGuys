@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CREAM,
+  GROUND_UP,
+  GROUND_UP_LINE_DUR,
   HERO_DEPTH,
   MASK,
   NIGHT,
@@ -24,6 +26,14 @@ import {
   contactLine,
   contactPicture,
   contactRise,
+  groundUpChapter,
+  groundUpClose,
+  groundUpFill,
+  groundUpLayer,
+  groundUpLine,
+  groundUpSectionVh,
+  groundUpTag,
+  groundUpView,
   headerGround,
   heroState,
   introCopy,
@@ -183,6 +193,12 @@ describe("motion vocabulary", () => {
     expect(storyLine(2, 0, 4, 3)).toBe(-MASK);
     expect(storyField(0, 0)).toBe(MASK);
     expect(storyField(9, 3)).toBe(0);
+    expect(groundUpLine(-1, 0, 4, 0)).toBe(MASK);
+    expect(groundUpLine(0.5, 0, 4, 6)).toBe(0);
+    expect(groundUpLine(2, 0, 4, 6)).toBe(-MASK);
+    expect(groundUpTag(-1, 0, 5)).toBe(MASK);
+    expect(groundUpTag(4, 0, 5)).toBe(0);
+    expect(groundUpTag(9, 0, 5)).toBe(-MASK);
     expect(heroState(0, 0, VH).nameRoll).toBe(0);
     expect(heroState(VH, 0, VH).nameRoll).toBe(-MASK);
     expect(heroState(VH, 0, VH).subRoll).toEqual([-MASK, -MASK]);
@@ -1125,6 +1141,117 @@ describe("story", () => {
       expect(storyField(STORY.fieldsIn + k * WORKS.stagger + 0.26, k)).toBe(0);
     }
     expect(storyState(STORY.fieldsIn).rectify).toBeGreaterThan(0.5);
+  });
+});
+
+describe("from the ground up", () => {
+  const range = (from: number, to: number, by = 0.005) => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
+  const { starts, release, draft, solid, solidVh, close, closeVh } = GROUND_UP;
+  const n = starts.length;
+  const L = solid.length;
+  /** The layers each chapter draws: the foundation, the floor framing, the two floors, the roof. */
+  const chapterLayers = [[0], [1], [2, 3], [4]];
+
+  it("the section is 630vh: one screen to arrive, the four chapters, and the house held together before the release", () => {
+    expect(groundUpSectionVh()).toBe(630);
+    expect(release - (close + closeVh)).toBeCloseTo(0.3, 9);
+  });
+
+  it("the house is drawn from the ground up: each layer drafted and filled in after the one below, and every state runs 0 → 1 once, forwards", () => {
+    for (let i = 1; i < L; i++) {
+      expect(draft[i][0]).toBeGreaterThan(draft[i - 1][0]);
+      expect(solid[i]).toBeGreaterThan(solid[i - 1]);
+    }
+    for (let i = 0; i < L; i++) {
+      const before = groundUpLayer(-2, i);
+      expect([before.draft, before.solid, before.settle]).toEqual([0, 0, 0]);
+      const after = groundUpLayer(release, i);
+      expect([after.draft, after.solid, after.settle]).toEqual([1, 1, 1]);
+      let last = before;
+      for (const e of range(-2, release, 0.01)) {
+        const st = groundUpLayer(e, i);
+        for (const k of ["draft", "solid", "settle"] as const) expect(st[k], `${i} ${k}`).toBeGreaterThanOrEqual(last[k]);
+        last = st;
+      }
+    }
+    expect(groundUpClose(close)).toBe(0);
+    expect(groundUpClose(close + closeVh)).toBe(1);
+  });
+
+  it("a layer fills in once most of its draft is drawn, and its draft is whole before it has filled in", () => {
+    for (let i = 0; i < L; i++) {
+      expect(groundUpLayer(solid[i], i).draft, `layer ${i}`).toBeGreaterThanOrEqual(0.5);
+      expect(groundUpLayer(solid[i] + solidVh / 2, i).draft, `layer ${i}`).toBeGreaterThanOrEqual(0.8);
+      expect(draft[i][0] + draft[i][1]).toBeLessThanOrEqual(solid[i] + solidVh);
+    }
+  });
+
+  it("each chapter's layers come as its text hands over, the view moving up just ahead of each draft", () => {
+    for (let c = 1; c < n; c++) {
+      const first = draft[chapterLayers[c][0]][0];
+      expect(first).toBeGreaterThanOrEqual(starts[c] - 0.2);
+      expect(first).toBeLessThanOrEqual(starts[c]);
+    }
+    for (let i = 1; i < L; i++) {
+      expect(groundUpView(draft[i][0] - 0.12, i)).toBe(0);
+      expect(groundUpView(draft[i][0], i)).toBeGreaterThan(0);
+      expect(groundUpView(solid[i] + solidVh, i)).toBe(1);
+    }
+  });
+
+  it("once the roof is in, the whole exploded drawing is held for about half a screen, then the layers close up as the tags leave, the top one first", () => {
+    expect(close - (solid[L - 1] + solidVh)).toBeGreaterThanOrEqual(0.45);
+    for (let i = 0; i < L; i++) {
+      expect(groundUpTag(solid[i], i, L)).toBe(MASK);
+      expect(groundUpTag(solid[i] + solidVh, i, L)).toBe(0);
+      expect(groundUpTag(close - 0.02, i, L)).toBe(0);
+      expect(groundUpTag(close + closeVh, i, L)).toBe(-MASK);
+    }
+    for (const e of range(close, close + closeVh, 0.01)) for (let i = 1; i < L; i++) expect(groundUpTag(e, i, L)).toBeLessThanOrEqual(groundUpTag(e, i - 1, L));
+  });
+
+  it("the contents follow the text: a chapter turns over just before its boundary and each bar fills across its chapter", () => {
+    expect(groundUpChapter(-1)).toBe(0);
+    for (let c = 1; c < n; c++) {
+      expect(groundUpChapter(starts[c] - 0.06)).toBe(c - 1);
+      expect(groundUpChapter(starts[c] - 0.04)).toBe(c);
+    }
+    expect(groundUpChapter(99)).toBe(n - 1);
+    for (let c = 0; c < n; c++) {
+      const b = starts[c + 1] ?? release;
+      expect(groundUpFill(starts[c], c)).toBe(0);
+      expect(groundUpFill((starts[c] + b) / 2, c)).toBeCloseTo(0.5);
+      expect(groundUpFill(b, c)).toBeCloseTo(1, 9);
+    }
+  });
+
+  it("chapter text: composed for 0.6 screens or more, two chapters' lines never moving in one rank, and never an empty column", () => {
+    const ks = [0, 1, 2, 3, 4, 5, 6];
+    for (let c = 0; c < n; c++) {
+      const composed = range(starts[c] - 0.5, starts[c + 1] ?? release, 0.002).filter((e) => ks.every((k) => groundUpLine(e, c, n, k) === 0)).length * 0.002;
+      expect(composed, `chapter ${c}`).toBeGreaterThanOrEqual(0.6);
+    }
+    for (const k of ks) expect(groundUpLine(0.12, 0, n, k)).toBe(0);
+    for (const k of ks) expect(groundUpLine(release + 1, n - 1, n, k)).toBe(0);
+    for (let b = 1; b < n; b++) {
+      for (const e of range(starts[b] - 0.3, starts[b] + 0.5, 0.002)) {
+        for (const k of ks) {
+          if (groundUpLine(e, b, n, k) < MASK - 1e-9) {
+            expect(groundUpLine(e, b - 1, n, k)).toBeCloseTo(-MASK);
+            expect(groundUpLine(e, b - 1, n, k + 1)).toBeCloseTo(-MASK);
+          }
+        }
+        expect([b - 1, b].some((i) => ks.some((k) => Math.abs(groundUpLine(e, i, n, k)) < MASK - 1e-9))).toBe(true);
+      }
+    }
+  });
+
+  it("a draft draws its lines one after another, each over its share", () => {
+    const lines = 278;
+    expect(storyLineDraw(0, 0, lines, GROUND_UP_LINE_DUR)).toBe(0);
+    expect(storyLineDraw(GROUND_UP_LINE_DUR, 0, lines, GROUND_UP_LINE_DUR)).toBe(1);
+    expect(storyLineDraw(1 - GROUND_UP_LINE_DUR, lines - 1, lines, GROUND_UP_LINE_DUR)).toBe(0);
+    expect(storyLineDraw(1, lines - 1, lines, GROUND_UP_LINE_DUR)).toBe(1);
   });
 });
 

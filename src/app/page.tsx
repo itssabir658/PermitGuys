@@ -1,4 +1,5 @@
 import { Contact } from "@/components/home/Contact";
+import { GroundUp } from "@/components/home/GroundUp";
 import { Hero } from "@/components/home/Hero";
 import { HomeMotion } from "@/components/home/HomeMotion";
 import { Intro } from "@/components/home/Intro";
@@ -25,9 +26,10 @@ export const revalidate = 86400;
 
 /**
  * The homepage, section by section: hero, intro orbit, the story (one
- * house from idea to permit), works, values, services, contact. HomeMotion
- * drives all of it from the scroll engine, including the page ground (stone
- * under Works, dusk falling over the start of Services).
+ * house from idea to permit), works, from the ground up (a house drawn
+ * layer by layer), values, services, contact. HomeMotion drives all of it
+ * from the scroll engine, including the page ground (stone under Works,
+ * dusk falling over the start of Services).
  */
 export default async function HomePage() {
   const reviews = await getGoogleReviews();
@@ -37,6 +39,7 @@ export default async function HomePage() {
       <Intro />
       <Story />
       <Works />
+      <GroundUp />
       <Values />
       <Services />
       <Contact reviews={reviews} />

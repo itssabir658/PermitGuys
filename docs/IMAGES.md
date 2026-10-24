@@ -52,6 +52,16 @@ The homepage story (`Story.tsx`) draws the narrow contemporary house over its ow
 
 `tests/story-drawing.test.ts` checks the geometry: the rectification and its inverse, the vanishing point, the bounds, and that the sheet is square and level.
 
+### The ground-up drawing
+
+The house in "From the ground up" (`GroundUp.tsx`) is neither a picture nor a client project: it is an illustrative two-storey house with a basement, modelled in `src/content/ground-up-drawing.ts` and painted in code when the site is built.
+
+- **The model.** Boxes and the roof's planes in metres (7.2 m across the front, 11.4 m deep), with their openings: footings and foundation walls, two steel posts, a steel beam and joists, the floors' walls with doors, windows and a stair, and a gable roof. It is a plausible house of its kind, not a design: no sizes are drawn and none of it should be read as one.
+- **The view.** Orthographic, the plan turned 30° and seen from 35° above the horizon, 100 drawing units to the metre. Each layer is painted on its own with its hidden lines removed: parts back to front, an edge between two faces of one surface left out, reveals and glass clipped to their openings, and parts that cannot hide one another painted together, so a layer is a few dozen paths. Path data is in whole units (a centimetre, well under a pixel at any size the drawing is shown).
+- **The draft.** Every edge of a layer, the hidden ones too, once each, from the ground up, as one path the motion draws line by line.
+
+`tests/ground-up-drawing.test.ts` checks the layers, their paths and bounds, and the tags.
+
 ### Rendered studies
 
 `public/images/studies/` holds original renders made for this website. They are kept only for kinds of project that no client rendering shows: a rear addition, a basement second unit, main-street commercial units and a storefront, a rear deck, and an infill house for landlord permits.

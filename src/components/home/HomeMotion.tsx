@@ -13,6 +13,17 @@ import {
   contactRise,
   contactRiseAt,
   duskPartWay,
+  GROUND_UP,
+  GROUND_UP_LINE_DUR,
+  GROUND_UP_OVERSHOOT,
+  groundUpChapter,
+  groundUpClose,
+  groundUpFill,
+  groundUpLayer,
+  groundUpLine,
+  groundUpPartWay,
+  groundUpTag,
+  groundUpView,
   headerGround,
   HERO_DEPTH,
   heroPartWay,
@@ -25,6 +36,7 @@ import {
   orbitItem,
   orbitPath,
   pageGround,
+  partWay,
   riseInset,
   servicesHandover,
   servicesHeading,
@@ -748,6 +760,181 @@ function works(): MotionModule | null {
 }
 
 /*
+ * From the ground up: one illustrative house drawn in five layers under a
+ * stage pinned for 5.3 screens (GROUND_UP). Each layer's draft is drawn
+ * line by line in its place in the exploded drawing (its path rewritten up
+ * to the pen, as the story's sketch, each line run a little past its
+ * ends), then the layer fills in over it as the draft goes, settling into
+ * place; the plane rises in its window to take in each new layer, and once
+ * the roof is in, the layers close up into the house and the plane comes
+ * down with them. Layers and the plane move as whole pictures, a layer of
+ * their own only while they move, and a layer's fill fades as a layer of
+ * its own, so of the drawing only a draft being drawn is ever repainted.
+ */
+const numbers = (d: string) => (d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+type Seg4 = [number, number, number, number];
+
+function groundUp(): MotionModule | null {
+  const section = one("[data-groundup]");
+  const frame = section && one("[data-gu-frame]", section);
+  const plane = section && one("[data-gu-plane]", section);
+  if (!section || !frame || !plane) return null;
+  const layers = all("[data-gu-layer]", section).map((el) => {
+    const draft = el.querySelector<SVGElement>("[data-gu-draft]");
+    const path = draft?.querySelector<SVGPathElement>("path") ?? null;
+    const d = path?.getAttribute("d") ?? "";
+    const n = numbers(d);
+    const segs: Seg4[] = [];
+    for (let k = 0; k + 3 < n.length; k += 4) segs.push([n[k], n[k + 1], n[k + 2], n[k + 3]]);
+    return { el, solid: el.querySelector<SVGElement>("[data-gu-solid]"), draft, path, d, segs, whole: "", tag: one("[data-gu-tag]", el), lift: Number(el.dataset.guLift) || 0 };
+  });
+  /** A layer's draft drawn `t` of the way, its lines run past their ends. */
+  const drafted = (l: (typeof layers)[number], t: number) => {
+    let d = "";
+    l.segs.forEach((s, j) => {
+      const draw = storyLineDraw(t, j, l.segs.length, GROUND_UP_LINE_DUR);
+      if (draw > 0) d += segD(storySeg(s, s, 0, GROUND_UP_OVERSHOOT, draw));
+    });
+    return d || NOTHING;
+  };
+  const chapters = all("[data-gu-chapter]", section).map((li) => ({ label: one("[data-gu-roll]", li), title: one("[data-gu-title]", li), body: one("[data-gu-body]", li) }));
+  for (const c of chapters) splitting.push(...[c.title, c.body].filter((el) => el !== null));
+  const toc = all("[data-gu-toc]", section).map((li) => ({ li, fill: one("[data-gu-fill]", li) }));
+  const labels = all("[data-label-roll]", section);
+  const caption = one("[data-gu-caption]", section);
+  const n = chapters.length;
+  const L = layers.length;
+  let r: Range;
+  let frameH = 0;
+  /** The plane's px per metre of height, and each layer's place in it (px): its top and height in the exploded drawing, and how far it is lifted there. */
+  let rise = 0;
+  let slots: { top: number; h: number; lift: number }[] = [];
+  /** Where the plane sits in its window (px) with layers 0 to k in, and with the house assembled. */
+  let views: number[] = [];
+  let assembled = 0;
+  let titleLines: HTMLElement[][] = chapters.map(() => []);
+  let bodyLines: HTMLElement[][] = chapters.map(() => []);
+  /** Each chapter's masked lines, top first: its label, its title's lines, its body's. */
+  let lines: HTMLElement[][] = chapters.map(() => []);
+  let live = false;
+  const sleep = sleeper();
+
+  /** The plane's offset that shows the stretch from `top` to `bottom` (px in the plane): centred if it fits the window, else its top a little under the window's top (clear of its fade), the rest running off below. */
+  const fit = (top: number, bottom: number) => {
+    const m = 0.03 * frameH;
+    return bottom - top <= frameH - 2 * m ? (frameH - top - bottom) / 2 : Math.max(2 * m, 28) - top;
+  };
+
+  const still = () => {
+    labels.forEach((el) => clear(el, "transform"));
+    clear(plane, "transform");
+    if (caption) clear(caption, "opacity");
+    for (const l of layers) {
+      clear(l.el, "transform");
+      if (l.solid) clear(l.solid, "opacity", "willChange");
+      if (l.draft) clear(l.draft, "opacity", "visibility");
+      if (l.path) setAttr(l.path, "d", l.d);
+      if (l.tag) clear(l.tag, "transform");
+    }
+    lines.forEach((ls) => ls.forEach((line) => clear(line, "transform")));
+    toc.forEach((t) => {
+      flag(t.li, "data-active", false);
+      if (t.fill) clear(t.fill, "transform");
+    });
+    if (live) {
+      live = false;
+      section.removeAttribute("data-gu-live");
+    }
+  };
+
+  return {
+    order: ORDER.groundUp,
+    measure(f) {
+      sleep.wake();
+      r = measureRange(section);
+      frameH = frame.clientHeight;
+      const planeH = plane.offsetHeight;
+      rise = (Number(plane.dataset.guRise) || 0) * planeH;
+      slots = layers.map((l) => ({ top: l.el.offsetTop, h: l.el.offsetHeight, lift: l.lift * planeH }));
+      // The views: the exploded drawing from the ground to layer k (the newest drafted a settle higher), and the house.
+      views = slots.map((_, k) => {
+        const s = slots.slice(0, k + 1);
+        return fit(Math.min(...s.map((q, j) => q.top - (j === k && k > 0 ? GROUND_UP.settle * rise : 0))), Math.max(...s.map((q) => q.top + q.h)));
+      });
+      assembled = fit(Math.min(...slots.map((q) => q.top + q.lift)), Math.max(...slots.map((q) => q.top + q.lift + q.h)));
+      if (f.tracks) {
+        titleLines = chapters.map((c, i) => (c.title ? resplitIfNeeded(c.title, titleLines[i]) : []));
+        bodyLines = chapters.map((c, i) => (c.body ? resplitIfNeeded(c.body, bodyLines[i]) : []));
+      } else if (titleLines.some((l) => l.length) || bodyLines.some((l) => l.length)) {
+        chapters.forEach((c) => [c.title, c.body].forEach((el) => el && unsplit(el)));
+        titleLines = chapters.map(() => []);
+        bodyLines = chapters.map(() => []);
+      }
+      lines = chapters.map((c, i) => [...(c.label ? [c.label] : []), ...titleLines[i], ...bodyLines[i]]);
+    },
+    update(f) {
+      if (sleep.skip(r, f)) return;
+      if (!f.tracks) return still();
+      labelRoll(labels, r, f, LABEL_IN.groundUp);
+      const e = sso(r, f) - 1;
+      const close = groundUpClose(e);
+
+      // The view: up to take in each layer as its draft starts, down with the closing; a layer of its own only while it moves.
+      let y = views[0] ?? 0;
+      let moving = partWay(close);
+      for (let k = 1; k < L; k++) {
+        const v = groundUpView(e, k);
+        y += ((views[k] ?? 0) - (views[k - 1] ?? 0)) * v;
+        moving ||= partWay(v);
+      }
+      y += (assembled - (views[L - 1] ?? 0)) * close;
+      setStyle(plane, "transform", moving ? `translate3d(0, ${px(y)}, 0)` : `translate(0, ${px(y)})`);
+
+      layers.forEach((l, i) => {
+        const st = groundUpLayer(e, i);
+        const slot = slots[i];
+        // Drafted a settle above its place, it comes down into it as it fills in; then down by its lift as the gaps close.
+        const dy = (slot?.lift ?? 0) * close - (i > 0 ? GROUND_UP.settle * rise * (1 - st.settle) : 0);
+        const moves = partWay(close) || (i > 0 && partWay(st.settle));
+        setStyle(l.el, "transform", Math.abs(dy) < 0.005 ? "none" : moves ? `translate3d(0, ${px(dy)}, 0)` : `translate(0, ${px(dy)})`);
+        if (l.solid) {
+          setStyle(l.solid, "opacity", num(st.solid));
+          setStyle(l.solid, "willChange", partWay(st.solid) ? "opacity" : "");
+        }
+        if (l.draft && l.path) {
+          const shown = st.draft > 0 && st.solid < 1;
+          setStyle(l.draft, "visibility", shown ? "" : "hidden");
+          setStyle(l.draft, "opacity", num(1 - st.solid));
+          if (shown) setAttr(l.path, "d", st.draft < 1 ? drafted(l, st.draft) : (l.whole ||= drafted(l, 1)));
+        }
+        if (l.tag) setStyle(l.tag, "transform", liftPercent(groundUpTag(e, i, L)));
+      });
+      if (caption) setStyle(caption, "opacity", num(groundUpLayer(e, 0).solid));
+
+      // The chapters' lines, and the contents.
+      lines.forEach((ls, i) => ls.forEach((line, k) => setStyle(line, "transform", liftPercent(groundUpLine(e, i, n, k)))));
+      const active = groundUpChapter(e);
+      toc.forEach((c, i) => {
+        flag(c.li, "data-active", i === active);
+        if (c.fill) setStyle(c.fill, "transform", `scaleX(${num(groundUpFill(e, i))})`);
+      });
+
+      if (!live) {
+        live = true;
+        section.setAttribute("data-gu-live", "");
+      }
+    },
+    zones(f) {
+      const counts = lines.map((ls) => ls.length);
+      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => groundUpPartWay(sso(r, g) - 1, counts, layers.filter((l) => l.tag).length, labels.length > 0));
+    },
+    destroy() {
+      section.removeAttribute("data-gu-live");
+    },
+  };
+}
+
+/*
  * Values: a word on screen all the way through. Every word and description
  * is set (twice: ink, and ivory clipped to the pictures), stacked, and each
  * rolls through its own mask at its value's moment, an odometer between
@@ -1354,7 +1541,7 @@ export function HomeMotion() {
   useEffect(() => {
     const shared: Shared = { fade: 0 };
     splitting = [];
-    const modules = [ground(shared), hero(), intro(), story(), works(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
+    const modules = [ground(shared), hero(), intro(), story(), works(), groundUp(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
     modules.push(splitter(splitting));
     const offs = modules.map((m) => engine.register(m));
     return () => offs.forEach((off) => off());
