@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headingFont, monoFont, wordmarkFont } from "./fonts";
+import { ChatAssistant } from "@/components/chat/ChatAssistant";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { InteractionEffects } from "@/components/layout/InteractionEffects";
@@ -11,6 +12,7 @@ import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { NotchClipDefs } from "@/components/ui/NotchClip";
 import { site } from "@/content/site";
+import { chatConfigured } from "@/lib/chat/config";
 import { organizationSchema, websiteSchema } from "@/lib/jsonld";
 import "./globals.css";
 
@@ -62,6 +64,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <InteractionEffects />
         <MotionRoot />
         <ScreenTransition />
+        {/* The website assistant, on only when ANTHROPIC_API_KEY is set (docs/CHAT.md). */}
+        {chatConfigured(process.env) ? <ChatAssistant /> : null}
       </body>
     </html>
   );

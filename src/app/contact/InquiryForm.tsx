@@ -6,6 +6,7 @@ import { useActionState, useEffect, useRef, useState, type FormEvent, type React
 import { cn } from "@/components/ui/cn";
 import { LinkButtonFace, linkButtonClass } from "@/components/ui/LinkButton";
 import { track } from "@/lib/analytics";
+import { HANDOFF_EVENT, HANDOFF_STORAGE_KEY, sanitizeHandoff, type Handoff } from "@/lib/chat/handoff";
 import { ATTRIBUTION_STORAGE_KEY, sanitizeAttribution } from "@/lib/inquiry/attribution";
 import { HONEYPOT_FIELD } from "@/lib/inquiry/protection";
 import type { InquiryState } from "@/lib/inquiry/state";
@@ -155,6 +156,18 @@ declare global {
 
 const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
+/** Writes the website assistant's draft into the fields the visitor has not filled in yet. */
+function applyHandoff(form: HTMLFormElement, handoff: Handoff) {
+  const fill = (name: string, value: string) => {
+    const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+    if (el && value && !el.value.trim()) el.value = value;
+  };
+  fill("projectType", handoff.projectType);
+  fill("municipality", handoff.municipality);
+  fill("stage", handoff.stage);
+  fill("details", handoff.details);
+}
+
 export function InquiryForm({ directContact }: { directContact: ReactNode }) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(submitInquiry, { status: "idle" });
   const [clientErrors, setClientErrors] = useState<InquiryErrors | null>(null);
@@ -188,6 +201,13 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
       const preset = projectTypeForService(service);
       const select = form.elements.namedItem("projectType") as HTMLSelectElement | null;
       if (preset && select && !select.value) select.value = preset;
+      let handoff: Handoff | null = null;
+      try {
+        handoff = sanitizeHandoff(sessionStorage.getItem(HANDOFF_STORAGE_KEY) ?? "");
+      } catch {
+        handoff = null;
+      }
+      if (handoff) applyHandoff(form, handoff);
     }
     const set = (name: string, value: string) => {
       const el = form.elements.namedItem(name) as HTMLInputElement | null;
@@ -198,6 +218,26 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
     set("attribution", meta.current.attribution);
     if (state.status !== "idle" && state.status !== "sent") window.turnstile?.reset();
   }, [state]);
+
+  // The assistant can fill in the form while it is open on this page.
+  useEffect(() => {
+    const onHandoff = (e: Event) => {
+      const handoff = sanitizeHandoff((e as CustomEvent<unknown>).detail);
+      if (handoff && formRef.current) applyHandoff(formRef.current, handoff);
+    };
+    window.addEventListener(HANDOFF_EVENT, onHandoff);
+    return () => window.removeEventListener(HANDOFF_EVENT, onHandoff);
+  }, []);
+
+  // Once the inquiry is sent, the assistant's draft has done its job.
+  useEffect(() => {
+    if (state.status !== "sent") return;
+    try {
+      sessionStorage.removeItem(HANDOFF_STORAGE_KEY);
+    } catch {
+      // Nothing to clear without storage.
+    }
+  }, [state.status]);
 
   // Move focus to whatever the visitor needs to read next.
   useEffect(() => {
