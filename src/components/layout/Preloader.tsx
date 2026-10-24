@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, type CSSProperties } from "react";
 import { GTA_BORDERS, GTA_HEIGHT, GTA_OUTLINE, GTA_REGIONS, GTA_WIDTH } from "@/content/gta-map";
-import { WORDMARK_LETTERS, WORDMARK_VIEWBOX } from "@/content/intro-wordmark";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
-import { INTRO_COMPLETE_MS, INTRO_EXIT_MS, INTRO_REPEAT_EXIT_MS, borderTiming, outlineTiming, revealTiming, wordmarkTiming } from "@/lib/motion/intro";
+import { INTRO_COMPLETE_MS, INTRO_EXIT_MS, INTRO_REPEAT_EXIT_MS, borderTiming, outlineTiming, revealTiming } from "@/lib/motion/intro";
 import { openingAssets } from "@/lib/motion/opening";
 
 /*
@@ -17,8 +16,7 @@ import { openingAssets } from "@/lib/motion/opening";
  * between its five regions follow, and the regions come to life west to
  * east: Halton, Peel, York, Toronto, Durham, each a client rendering fading
  * up and settling inside its region's shape, under the white lines. The
- * finished map holds, then the screen crossfades onto the page. Under the
- * map the name, PermitGuys, draws itself in white line with the outline. All of it is
+ * finished map holds, then the screen crossfades onto the page. All of it is
  * CSS; the screen and the pictures' loading start before first paint, and
  * the timeline starts (data-intro="play") two frames after hydration, since
  * the drawing is painted on the main thread and the hydration would stall a
@@ -111,7 +109,7 @@ export function Preloader() {
         html.dataset.revealed = "";
         const ms = full ? INTRO_EXIT_MS : INTRO_REPEAT_EXIT_MS;
         const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: cssEase.power1InOut, fill: "forwards" });
-        el.querySelector(".intro-stage")?.animate([{ transform: "scale(1)" }, { transform: "scale(1.035)" }], { duration: ms, easing: cssEase.power2Out, fill: "forwards" });
+        el.querySelector(".intro")?.animate([{ transform: "scale(1)" }, { transform: "scale(1.035)" }], { duration: ms, easing: cssEase.power2Out, fill: "forwards" });
         release = window.setTimeout(() => {
           if (!cancelled) engine.unlock("preloader");
         }, 0.6 * ms);
@@ -130,63 +128,55 @@ export function Preloader() {
 
   return (
     <div ref={ref} aria-hidden="true" className="preloader">
-      <div className="intro-stage">
-        <div className="intro" style={{ aspectRatio: `${GTA_WIDTH} / ${GTA_HEIGHT}` }}>
-          {GTA_REGIONS.map((r, i) => {
-            const [x, y, w, h] = r.box;
-            return (
+      <div className="intro" style={{ aspectRatio: `${GTA_WIDTH} / ${GTA_HEIGHT}` }}>
+        {GTA_REGIONS.map((r, i) => {
+          const [x, y, w, h] = r.box;
+          return (
+            <div
+              key={r.key}
+              className="intro__region"
+              style={{
+                left: pct(x, GTA_WIDTH),
+                top: pct(y, GTA_HEIGHT),
+                width: pct(w, GTA_WIDTH),
+                height: pct(h, GTA_HEIGHT),
+                clipPath: `url(#intro-clip-${r.key})`,
+                ...timing(revealTiming(i)),
+              }}
+            >
               <div
-                key={r.key}
-                className="intro__region"
-                style={{
-                  left: pct(x, GTA_WIDTH),
-                  top: pct(y, GTA_HEIGHT),
-                  width: pct(w, GTA_WIDTH),
-                  height: pct(h, GTA_HEIGHT),
-                  clipPath: `url(#intro-clip-${r.key})`,
-                  ...timing(revealTiming(i)),
-                }}
-              >
-                <div
-                  className="intro__picture"
-                  style={
-                    {
-                      "--picture-small": `url(${r.picture.small})`,
-                      "--picture-medium": `url(${r.picture.medium})`,
-                      "--picture-full": `url(${r.picture.full})`,
-                      transformOrigin: `${pct(r.centre[0] - x, w)} ${pct(r.centre[1] - y, h)}`,
-                    } as CSSProperties
-                  }
-                />
-              </div>
-            );
-          })}
-          <svg className="intro__lines" viewBox={`0 0 ${GTA_WIDTH} ${GTA_HEIGHT}`} fill="none" focusable="false">
-            <defs>
-              {GTA_REGIONS.map((r) => (
-                <clipPath key={r.key} id={`intro-clip-${r.key}`} clipPathUnits="objectBoundingBox">
-                  <path d={r.clip} />
-                </clipPath>
-              ))}
-            </defs>
-            {/* A soft dark line under the white ones, for the pictures' pale skies. */}
-            <g className="intro__keyline" style={timing(revealTiming(1))}>
-              {[...GTA_OUTLINE, ...GTA_BORDERS].map((d) => (
-                <path key={d.slice(0, 32)} d={d} />
-              ))}
-            </g>
-            {GTA_BORDERS.map((d, i) => (
-              <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke intro__stroke--border" style={timing(borderTiming(i))} />
+                className="intro__picture"
+                style={
+                  {
+                    "--picture-small": `url(${r.picture.small})`,
+                    "--picture-medium": `url(${r.picture.medium})`,
+                    "--picture-full": `url(${r.picture.full})`,
+                    transformOrigin: `${pct(r.centre[0] - x, w)} ${pct(r.centre[1] - y, h)}`,
+                  } as CSSProperties
+                }
+              />
+            </div>
+          );
+        })}
+        <svg className="intro__lines" viewBox={`0 0 ${GTA_WIDTH} ${GTA_HEIGHT}`} fill="none" focusable="false">
+          <defs>
+            {GTA_REGIONS.map((r) => (
+              <clipPath key={r.key} id={`intro-clip-${r.key}`} clipPathUnits="objectBoundingBox">
+                <path d={r.clip} />
+              </clipPath>
             ))}
-            {GTA_OUTLINE.map((d, i) => (
-              <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke" style={timing(outlineTiming(i))} />
+          </defs>
+          {/* A soft dark line under the white ones, for the pictures' pale skies. */}
+          <g className="intro__keyline" style={timing(revealTiming(1))}>
+            {[...GTA_OUTLINE, ...GTA_BORDERS].map((d) => (
+              <path key={d.slice(0, 32)} d={d} />
             ))}
-          </svg>
-        </div>
-        {/* The name under the map, its letters drawn in white line alongside the outline. */}
-        <svg className="intro__name" viewBox={WORDMARK_VIEWBOX} fill="none" focusable="false">
-          {WORDMARK_LETTERS.map((d, i) => (
-            <path key={i} d={d} pathLength={1} className="intro__stroke intro__stroke--letter" style={timing(wordmarkTiming(i))} />
+          </g>
+          {GTA_BORDERS.map((d, i) => (
+            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke intro__stroke--border" style={timing(borderTiming(i))} />
+          ))}
+          {GTA_OUTLINE.map((d, i) => (
+            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke" style={timing(outlineTiming(i))} />
           ))}
         </svg>
       </div>
