@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { WORDMARK_LETTERS } from "@/content/intro-wordmark";
 import { GTA_BORDERS, GTA_HEIGHT, GTA_OUTLINE, GTA_REGIONS, GTA_WIDTH } from "@/content/gta-map";
-import { INTRO_COMPLETE_MS, INTRO_REVEAL_STAGGER_MS, borderTiming, introExitAt, outlineTiming, revealTiming } from "@/lib/motion/intro";
+import { INTRO_COMPLETE_MS, INTRO_REVEAL_STAGGER_MS, borderTiming, introExitAt, outlineTiming, revealTiming, wordmarkTiming } from "@/lib/motion/intro";
 
 /** Width and height of a lossy WebP (VP8 chunk). */
 function webpSize(src: string) {
@@ -78,6 +79,14 @@ describe("intro timeline", () => {
     expect(outlineTiming(0).ms).toBeLessThanOrEqual(1500);
     expect(borderTiming(0).at).toBeLessThan(outlineTiming(0).at + outlineTiming(0).ms);
     expect(revealTiming(0).at).toBeGreaterThan(outlineTiming(0).at + outlineTiming(0).ms * 0.8);
+  });
+
+  it("writes the name, PERMITGUYS, letter by letter while the outline draws", () => {
+    expect(WORDMARK_LETTERS).toHaveLength(10);
+    const last = wordmarkTiming(WORDMARK_LETTERS.length - 1);
+    expect(wordmarkTiming(0).at).toBeGreaterThanOrEqual(outlineTiming(0).at);
+    expect(wordmarkTiming(0).at).toBeLessThan(outlineTiming(0).at + outlineTiming(0).ms);
+    expect(last.at + last.ms).toBeLessThan(revealTiming(4).at + revealTiming(4).ms);
   });
 
   it("reveals the regions one by one, 150 to 250ms apart", () => {

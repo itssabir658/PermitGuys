@@ -42,6 +42,16 @@ export function outlineTiming(index: number): IntroStroke {
   return index === 0 ? { at: INTRO_HOLD_MS, ms: INTRO_OUTLINE_MS } : { at: INTRO_HOLD_MS + INTRO_OUTLINE_MS - INTRO_ISLAND_MS * 0.5, ms: INTRO_ISLAND_MS };
 }
 
+/** The name under the map draws letter by letter alongside the edge, 60ms apart. */
+export const INTRO_WORDMARK_AT_MS = 600;
+export const INTRO_WORDMARK_STAGGER_MS = 60;
+export const INTRO_LETTER_MS = 900;
+
+/** When each letter of the name draws. */
+export function wordmarkTiming(index: number): IntroStroke {
+  return { at: INTRO_WORDMARK_AT_MS + index * INTRO_WORDMARK_STAGGER_MS, ms: INTRO_LETTER_MS };
+}
+
 /** When each border draws. */
 export function borderTiming(index: number): IntroStroke {
   return { at: INTRO_BORDERS_AT_MS + index * INTRO_BORDER_STAGGER_MS, ms: INTRO_BORDER_MS };
@@ -53,8 +63,9 @@ export function revealTiming(index: number): IntroStroke {
 }
 
 /** From first paint, when the finished map has been held and the crossfade starts. */
-export function introExitAt(regions: number, borders: number, outlines: number) {
+export function introExitAt(regions: number, borders: number, outlines: number, letters = 0) {
   const ends = [
+    ...Array.from({ length: letters }, (_, i) => wordmarkTiming(i)),
     ...Array.from({ length: outlines }, (_, i) => outlineTiming(i)),
     ...Array.from({ length: borders }, (_, i) => borderTiming(i)),
     ...Array.from({ length: regions }, (_, i) => revealTiming(i)),

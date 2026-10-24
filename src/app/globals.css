@@ -654,14 +654,25 @@
 :root[data-loaded] .preloader {
   pointer-events: none;
 }
-/* Sized by the height, and by the width on narrow screens, with a gutter all round. */
-.intro {
-  position: relative;
-  width: min(calc(85vw - 2rem), calc(71svh * 1000 / 1096.7), 39rem);
+/* The map and the name under it, centred together. */
+.intro-stage {
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.25rem, 3.5svh, 2.25rem);
   visibility: hidden;
 }
-:root[data-intro] .intro {
+:root[data-intro] .intro-stage {
   visibility: visible;
+}
+/* Sized by the height (leaving room for the name), and by the width on narrow screens, with a gutter all round. */
+.intro {
+  position: relative;
+  width: min(calc(85vw - 2rem), calc(66svh * 1000 / 1096.7), 39rem);
+}
+/* About three fifths of the map's width. */
+.intro__name {
+  width: 62%;
+  overflow: visible;
 }
 .intro__region {
   position: absolute;
@@ -706,7 +717,7 @@
   height: 100%;
   overflow: visible;
 }
-.intro__lines path {
+:is(.intro__lines, .intro__name) path {
   vector-effect: non-scaling-stroke;
   stroke-linejoin: miter;
   stroke-linecap: butt;
@@ -716,6 +727,10 @@
   stroke-width: 1.5px;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
+}
+.intro__name .intro__stroke--letter {
+  stroke-width: 1px;
+  stroke-linejoin: round;
 }
 .intro__stroke--border {
   stroke-width: 1.25px;
