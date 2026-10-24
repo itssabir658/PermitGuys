@@ -1435,51 +1435,6 @@
 body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   display: none;
 }
-/* The 404 draws its own Ontario beside its numeral: one outline on the page is enough. */
-body:has(.not-found__map) .site-footer__place {
-  display: none;
-}
-/* Ivory at 35%; the GTA dot is the footer's one red. */
-.site-footer__map {
-  display: block;
-  width: min(100%, 15rem);
-  height: auto;
-  aspect-ratio: 892 / 1000;
-  overflow: visible;
-  color: rgb(244 241 235 / 0.35);
-}
-@media (min-width: 1024px) {
-  .site-footer__map {
-    width: 20rem;
-  }
-}
-.site-footer__region {
-  display: flex;
-  gap: 0.75rem;
-}
-.site-footer__region span + span::before {
-  content: "";
-  display: inline-block;
-  width: 0.3rem;
-  height: 0.3rem;
-  margin-right: 0.75rem;
-  border-radius: 9999px;
-  background: currentColor;
-  vertical-align: 0.12em;
-}
-/* On the tracks the outline waits undrawn until the footer comes up (with reduced motion and on the still layout it is simply there). */
-@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
-  /* Its own layer, so redrawing the strokes repaints the outline alone, not the whole footer. */
-  :root[data-motion] .site-footer__map {
-    will-change: transform;
-  }
-  :root[data-motion] .site-footer__map .ontario__stroke path {
-    stroke-dashoffset: 1;
-  }
-  :root[data-motion] .site-footer__map .ontario__dot {
-    transform: scale(0);
-  }
-}
 
 /* ---- Homepage: hero (Hero.tsx) ---- */
 /*
@@ -3539,12 +3494,6 @@ body:has(.not-found__map) .site-footer__place {
   }
   .site-footer__inner,
   [data-parallax] {
-    transform: none !important;
-  }
-  .site-footer__map .ontario__stroke path {
-    stroke-dashoffset: 0 !important;
-  }
-  .site-footer__map .ontario__dot {
     transform: none !important;
   }
   /* Link buttons print as an ink outline with an ink label: no fill, sheen or second label, which need background graphics. */
