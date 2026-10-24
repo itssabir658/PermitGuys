@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { LINE_KINDS, STORY_W, storyGrid, storyLevels, storyLines, storyMembers } from "@/content/story-drawing";
+import { MK_SITE_ZOOM } from "@/content/making-drawing";
 import { ORDER, engine, hso, measureRange, setStyle, sleeper, sso, type Frame, type MotionModule, type Range } from "@/lib/motion/engine";
 import {
   LABEL_IN,
@@ -13,6 +14,18 @@ import {
   contactRise,
   contactRiseAt,
   duskPartWay,
+  MAKING_FILM_AT,
+  MAKING_LINE_DUR,
+  MAKING_OVERSHOOT,
+  type MakingDraw,
+  type MakingFade,
+  makingChapter,
+  makingDraw,
+  makingFade,
+  makingFill,
+  makingLine,
+  makingPartWay,
+  makingZoom,
   headerGround,
   HERO_DEPTH,
   heroPartWay,
@@ -25,6 +38,7 @@ import {
   orbitItem,
   orbitPath,
   pageGround,
+  partWay,
   riseInset,
   servicesHandover,
   servicesHeading,
@@ -88,8 +102,8 @@ import { resplitIfNeeded, splitAll, unsplit } from "@/lib/motion/split";
  * up with the page instead, so their entrances play on their own clock.
  */
 
-const one = (sel: string, root: ParentNode = document) => root.querySelector<HTMLElement>(sel);
-const all = (sel: string, root: ParentNode = document) => [...root.querySelectorAll<HTMLElement>(sel)];
+const one = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
+const all = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => [...root.querySelectorAll<T>(sel)];
 const svgAll = (sel: string, root: ParentNode) => [...root.querySelectorAll<SVGElement>(sel)];
 const px = (n: number) => `${n.toFixed(2)}px`;
 const num = (n: number) => n.toFixed(4);
@@ -748,6 +762,163 @@ function works(): MotionModule | null {
 }
 
 /*
+ * The making of a house: one board under a stage pinned for 6.75 screens
+ * (MAKING). Its drawings are drafted a segment at a time (each path
+ * rewritten up to the pen, as the story's sketch, each line run a little
+ * past its ends, and only while it is drafted), and its layers fade by
+ * their keyframes, a layer of their own only while they fade; the site
+ * plan is drawn in, as one picture, until its house is the floor plan.
+ * Once the house is shown at dusk its film, if it has one, plays from its
+ * first frame; scrolled back, it rests there again.
+ */
+const numbers = (d: string) => (d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+type Seg4 = [number, number, number, number];
+
+function making(): MotionModule | null {
+  const section = one("[data-making]");
+  const board = section && one("[data-mk-board]", section);
+  if (!section || !board) return null;
+  const draws = all<SVGPathElement>("[data-mk-draw]", section).map((path) => {
+    const d = path.getAttribute("d") ?? "";
+    const n = numbers(d);
+    const segs: Seg4[] = [];
+    for (let k = 0; k + 3 < n.length; k += 4) segs.push([n[k], n[k + 1], n[k + 2], n[k + 3]]);
+    return { path, d, segs, key: path.dataset.mkDraw as MakingDraw, last: -1 };
+  });
+  const fades = all("[data-mk-fade]", section).map((el) => ({ el, key: el.dataset.mkFade as MakingFade }));
+  const zoomEl = one("[data-mk-zoom]", section);
+  const film = one<HTMLVideoElement>("[data-mk-film]", section);
+  /** A drawing drafted `t` of the way, its lines run past their ends. */
+  const drafted = (x: (typeof draws)[number], t: number) => {
+    let d = "";
+    x.segs.forEach((s, j) => {
+      const draw = storyLineDraw(t, j, x.segs.length, MAKING_LINE_DUR);
+      if (draw > 0) d += segD(storySeg(s, s, 0, MAKING_OVERSHOOT, draw));
+    });
+    return d || NOTHING;
+  };
+  const chapters = all("[data-mk-chapter]", section).map((li) => ({ label: one("[data-mk-roll]", li), title: one("[data-mk-title]", li), body: one("[data-mk-body]", li) }));
+  for (const c of chapters) splitting.push(...[c.title, c.body].filter((el) => el !== null));
+  const toc = all("[data-mk-toc]", section).map((li) => ({ li, fill: one("[data-mk-fill]", li) }));
+  const labels = all("[data-label-roll]", section);
+  const n = chapters.length;
+  let r: Range;
+  let titleLines: HTMLElement[][] = chapters.map(() => []);
+  let bodyLines: HTMLElement[][] = chapters.map(() => []);
+  /** Each chapter's masked lines, top first: its label, its title's lines, its body's. */
+  let lines: HTMLElement[][] = chapters.map(() => []);
+  let live = false;
+  let playing = false;
+  const sleep = sleeper();
+  const onPlaying = () => flag(section, "data-mk-film-on", playing);
+  film?.addEventListener("playing", onPlaying);
+
+  const rest = () => {
+    if (!film) return;
+    if (playing) {
+      film.pause();
+      playing = false;
+    }
+    if (film.currentTime > 0) film.currentTime = 0;
+    flag(section, "data-mk-film-on", false);
+  };
+
+  const still = () => {
+    labels.forEach((el) => clear(el, "transform"));
+    for (const x of draws) {
+      setAttr(x.path, "d", x.d);
+      x.last = -1;
+    }
+    for (const f of fades) clear(f.el, "opacity", "willChange");
+    if (zoomEl) clear(zoomEl, "transform", "willChange");
+    lines.forEach((ls) => ls.forEach((line) => clear(line, "transform")));
+    toc.forEach((t) => {
+      flag(t.li, "data-active", false);
+      if (t.fill) clear(t.fill, "transform");
+    });
+    rest();
+    if (live) {
+      live = false;
+      section.removeAttribute("data-mk-live");
+    }
+  };
+
+  return {
+    order: ORDER.making,
+    measure(f) {
+      sleep.wake();
+      r = measureRange(section);
+      if (f.tracks) {
+        titleLines = chapters.map((c, i) => (c.title ? resplitIfNeeded(c.title, titleLines[i]) : []));
+        bodyLines = chapters.map((c, i) => (c.body ? resplitIfNeeded(c.body, bodyLines[i]) : []));
+      } else if (titleLines.some((l) => l.length) || bodyLines.some((l) => l.length)) {
+        chapters.forEach((c) => [c.title, c.body].forEach((el) => el && unsplit(el)));
+        titleLines = chapters.map(() => []);
+        bodyLines = chapters.map(() => []);
+      }
+      lines = chapters.map((c, i) => [...(c.label ? [c.label] : []), ...titleLines[i], ...bodyLines[i]]);
+    },
+    update(f) {
+      if (sleep.skip(r, f)) {
+        rest();
+        return;
+      }
+      if (!f.tracks) return still();
+      labelRoll(labels, r, f, LABEL_IN.making);
+      const e = sso(r, f) - 1;
+
+      // The drawings: a path is rewritten only while it is drafted (and once more as it ends).
+      for (const x of draws) {
+        const t = makingDraw(e, x.key);
+        if (t === x.last) continue;
+        x.last = t;
+        setAttr(x.path, "d", t <= 0 ? NOTHING : t >= 1 ? x.d : drafted(x, t));
+      }
+      for (const fd of fades) {
+        const { value, moving } = makingFade(e, fd.key);
+        setStyle(fd.el, "opacity", num(value));
+        setStyle(fd.el, "willChange", moving ? "opacity" : "");
+      }
+      if (zoomEl) {
+        const z = makingZoom(e);
+        const k = 1 + (MK_SITE_ZOOM - 1) * z;
+        setStyle(zoomEl, "transform", z <= 0 ? "none" : partWay(z) ? `scale3d(${num(k)}, ${num(k)}, 1)` : `scale(${num(k)})`);
+      }
+      if (film) {
+        const on = e >= MAKING_FILM_AT;
+        if (on && !playing) {
+          playing = true;
+          // Shown once it is really playing (onPlaying), so a browser that cannot play it keeps the still.
+          void film.play().catch(() => undefined);
+        } else if (!on && playing) rest();
+      }
+
+      // The chapters' lines, and the contents.
+      lines.forEach((ls, i) => ls.forEach((line, k) => setStyle(line, "transform", liftPercent(makingLine(e, i, n, k)))));
+      const active = makingChapter(e);
+      toc.forEach((c, i) => {
+        flag(c.li, "data-active", i === active);
+        if (c.fill) setStyle(c.fill, "transform", `scaleX(${num(makingFill(e, i))})`);
+      });
+
+      if (!live) {
+        live = true;
+        section.setAttribute("data-mk-live", "");
+      }
+    },
+    zones(f) {
+      const counts = lines.map((ls) => ls.length);
+      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => makingPartWay(sso(r, g) - 1, counts, labels.length > 0));
+    },
+    destroy() {
+      rest();
+      film?.removeEventListener("playing", onPlaying);
+      section.removeAttribute("data-mk-live");
+    },
+  };
+}
+
+/*
  * Values: a word on screen all the way through. Every word and description
  * is set (twice: ink, and ivory clipped to the pictures), stacked, and each
  * rolls through its own mask at its value's moment, an odometer between
@@ -1354,7 +1525,7 @@ export function HomeMotion() {
   useEffect(() => {
     const shared: Shared = { fade: 0 };
     splitting = [];
-    const modules = [ground(shared), hero(), intro(), story(), works(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
+    const modules = [ground(shared), hero(), intro(), story(), works(), making(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
     modules.push(splitter(splitting));
     const offs = modules.map((m) => engine.register(m));
     return () => offs.forEach((off) => off());

@@ -6,8 +6,10 @@ import {
   contactPictureAt,
   contactRise,
   contactRiseAt,
+  MAKING,
   dusk,
   duskPartWay,
+  makingPartWay,
   heroPartWay,
   introPartWay,
   lineCut,
@@ -149,6 +151,16 @@ describe("where a scene is part way", () => {
       const { rests, zones } = settled(-1, 4.8, (e) => storyPartWay(e, lines, 4));
       for (let i = 0; i < 4; i++) expect(longest(rests, i * 1.2, (i + 1) * 1.2)).toBeGreaterThanOrEqual(0.6);
       for (const [a, b] of zones) expect([storyPartWay(a, lines, 4), storyPartWay(b, lines, 4)]).toEqual([false, false]);
+    }
+  });
+
+  it("the making of a house: every chapter keeps half a screen or more with its text and board whole, and so does the house at dusk", () => {
+    const { starts, release } = MAKING;
+    for (const lines of [[4, 4, 4, 4, 4], [7, 7, 7, 7, 7]]) {
+      const { rests, zones } = settled(-1, release, (e) => makingPartWay(e, lines));
+      for (let i = 0; i < starts.length; i++) expect(longest(rests, starts[i], starts[i + 1] ?? release), `chapter ${i}`).toBeGreaterThanOrEqual(0.5);
+      expect(longest(rests, MAKING.fade.dusk[1][0], release)).toBeGreaterThan(0.5);
+      for (const [a, b] of zones) expect([makingPartWay(a, lines), makingPartWay(b, lines)]).toEqual([false, false]);
     }
   });
 

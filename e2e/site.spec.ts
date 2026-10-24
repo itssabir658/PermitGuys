@@ -41,6 +41,8 @@ test.describe("accessibility", () => {
     await page.goto("/contact/");
     await page.getByRole("button", { name: "Send inquiry" }).click();
     await expect(page.getByRole("heading", { name: /problems? with your inquiry/ })).toBeVisible();
+    // Not through the intro's crossfade, which axe would read as the form's background.
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
     const results = await new AxeBuilder({ page }).include("form").analyze();
     expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
   });
@@ -171,7 +173,8 @@ test.describe("interactive pieces", () => {
   test("Back and Forward over a link that only changes the query return to each place the reader left", async ({ page }) => {
     const y = () => page.evaluate(() => Math.round(window.scrollY));
     await page.goto("/contact/?service=deck-permits");
-    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    // The page is held still until the intro has mostly faded.
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
     await page.evaluate(() => window.scrollTo(0, 1500));
     await expect.poll(y).toBe(1500);
     // Clicked in place: a test click would first scroll the footer into view.
@@ -340,6 +343,8 @@ test.describe("interactive pieces", () => {
   test("the name stands behind the house: the roof hides the foot of R to T, never of E or G, and the house moves against a mouse", async ({ page }, info) => {
     await page.goto("/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
+    // The name has risen and the planes have settled (the intro's crossfade is shorter than their entrance).
+    await page.waitForFunction(() => document.querySelector("[data-hero-stage]")!.getAnimations({ subtree: true }).every((a) => a.playState !== "running"));
     // The sky behind the name, the rendering in front of it, cut out in its own picture (no mask), and the scroll's darkening over both.
     const order = await page.locator("[data-hero-stage] > *").evaluateAll((els) => els.map((el) => el.getAttribute("data-hero-layer") ?? el.tagName.toLowerCase()));
     expect(order.slice(0, 4)).toEqual(["far", "h1", "near", "div"]);
@@ -489,6 +494,78 @@ test.describe("interactive pieces", () => {
     await expect(story.locator("[data-story-sheet]")).toBeVisible();
     await expect(story.locator("[data-story-toc='0']")).toBeHidden();
     expect(await story.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(3 * (page.viewportSize()?.height ?? 900));
+  });
+
+  test("the making of a house: one client house drawn from its site to its permit set, ending at dusk, and back again on the way up", async ({ page }) => {
+    await page.goto("/");
+    const section = page.locator("[aria-labelledby=making-heading]");
+    await expect(section.getByRole("heading", { level: 2 })).toHaveText("The making of a house");
+    await expect(section.getByRole("heading", { level: 3 })).toHaveText([
+      "It starts with the land.",
+      "Rooms around the way you live.",
+      "Proportion, material and light.",
+      "Engineered to be built as drawn.",
+      "One set, ready for the permit.",
+    ]);
+    await expect(section.locator("figcaption")).toContainText("Renderings and a film of a client project");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    // e screens of scroll since the stage pinned; each place is one the page may rest at.
+    const at = async (e: number) => {
+      const y = await page.evaluate((e) => {
+        let top = 0;
+        for (let n = document.querySelector<HTMLElement>("[data-making]"); n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop;
+        const y = Math.round(top + e * window.innerHeight);
+        window.scrollTo(0, y);
+        return y;
+      }, e);
+      await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(y);
+    };
+    const shown = (k: string) => section.locator(`[data-mk-fade='${k}']`).first().evaluate((el) => Number(getComputedStyle(el).opacity));
+    // The site plan.
+    await at(0.6);
+    await expect.poll(() => shown("site")).toBe(1);
+    await expect.poll(() => shown("planPoche")).toBe(0);
+    await expect(section.locator("[data-mk-toc='0']")).toHaveAttribute("data-active", "");
+    // The floor plan, the site gone.
+    await at(1.9);
+    await expect.poll(() => shown("planPoche")).toBe(1);
+    await expect.poll(() => shown("site")).toBe(0);
+    await expect(section.locator("[data-mk-toc='1']")).toHaveAttribute("data-active", "");
+    // The rendering by day under the elevation's lines.
+    await at(3.7);
+    await expect.poll(() => shown("day")).toBe(1);
+    await expect.poll(() => shown("plan")).toBe(0);
+    await expect(section.locator("[data-mk-toc='2']")).toHaveAttribute("data-active", "");
+    // The permit set: the structure, the sheet and its title block.
+    await at(6);
+    for (const k of ["eng", "sheet", "title"]) await expect.poll(() => shown(k)).toBe(1);
+    await expect(section.locator("[data-mk-toc='4']")).toHaveAttribute("data-active", "");
+    // The house at dusk.
+    await at(7);
+    await expect.poll(() => shown("dusk")).toBe(1);
+    await expect.poll(() => shown("title")).toBe(0);
+    // Its film plays from the still it starts on (H.264, or VP9 where a browser has no H.264, as the test browser has
+    // not), and rests at its first frame once scrolled back.
+    const film = section.locator("[data-mk-film]");
+    await expect(section).toHaveAttribute("data-mk-film-on", "");
+    await expect.poll(() => film.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0);
+    // Back at the site.
+    await at(0.6);
+    await expect.poll(() => shown("site")).toBe(1);
+    await expect.poll(() => shown("dusk")).toBe(0);
+    await expect(section).not.toHaveAttribute("data-mk-film-on", "");
+    expect(await film.evaluate((v: HTMLVideoElement) => v.currentTime)).toBe(0);
+  });
+
+  test("with reduced motion the house is shown at dusk beside its five chapters", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const section = page.locator("[aria-labelledby=making-heading]");
+    await section.scrollIntoViewIfNeeded();
+    for (const title of await section.getByRole("heading", { level: 3 }).all()) await expect(title).toBeVisible();
+    await expect(section.getByRole("img", { name: /Rendering of a large contemporary house/ })).toBeVisible();
+    await expect(section.locator("[data-mk-toc='0']")).toBeHidden();
+    expect(await section.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(3 * (page.viewportSize()?.height ?? 900));
   });
 
   test("contact closes on the firm's title block, drawn in as it comes up and whole at the end of the page", async ({ page }, info) => {

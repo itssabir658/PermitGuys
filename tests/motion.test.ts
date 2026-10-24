@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CREAM,
+  MAKING,
+  MAKING_FILM_AT,
+  MAKING_LINE_DUR,
   HERO_DEPTH,
   MASK,
   NIGHT,
@@ -24,6 +27,13 @@ import {
   contactLine,
   contactPicture,
   contactRise,
+  makingChapter,
+  makingDraw,
+  makingFade,
+  makingFill,
+  makingLine,
+  makingSectionVh,
+  makingZoom,
   headerGround,
   heroState,
   introCopy,
@@ -183,6 +193,9 @@ describe("motion vocabulary", () => {
     expect(storyLine(2, 0, 4, 3)).toBe(-MASK);
     expect(storyField(0, 0)).toBe(MASK);
     expect(storyField(9, 3)).toBe(0);
+    expect(makingLine(-1, 0, 5, 0)).toBe(MASK);
+    expect(makingLine(0.5, 0, 5, 6)).toBe(0);
+    expect(makingLine(2, 0, 5, 6)).toBe(-MASK);
     expect(heroState(0, 0, VH).nameRoll).toBe(0);
     expect(heroState(VH, 0, VH).nameRoll).toBe(-MASK);
     expect(heroState(VH, 0, VH).subRoll).toEqual([-MASK, -MASK]);
@@ -1125,6 +1138,114 @@ describe("story", () => {
       expect(storyField(STORY.fieldsIn + k * WORKS.stagger + 0.26, k)).toBe(0);
     }
     expect(storyState(STORY.fieldsIn).rectify).toBeGreaterThan(0.5);
+  });
+});
+
+describe("the making of a house", () => {
+  const range = (from: number, to: number, by = 0.005) => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
+  const { starts, release, draw, fade } = MAKING;
+  const n = starts.length;
+  const draws = Object.keys(draw) as (keyof typeof draw)[];
+  const fades = Object.keys(fade) as (keyof typeof fade)[];
+  /** The drawings each chapter drafts: the site, the plan, the elevation, the structure, the sheet. */
+  const chapterDraws = ["site", "plan", "elev", "eng", "sheet"];
+
+  it("the section is 820vh: one screen to arrive and the stage pinned until it releases", () => {
+    expect(makingSectionVh()).toBe(820);
+    expect(starts[0]).toBe(0);
+    for (let c = 1; c < n; c++) expect(starts[c]).toBeGreaterThan(starts[c - 1]);
+    expect(release).toBeGreaterThan(starts[n - 1]);
+  });
+
+  it("each chapter drafts its own drawings, within the chapter, and every drawing is whole well before the next chapter starts", () => {
+    for (const k of draws) {
+      const c = chapterDraws.findIndex((p) => k.startsWith(p));
+      expect(c, k).toBeGreaterThanOrEqual(0);
+      const [a, len] = draw[k];
+      expect(a, k).toBeGreaterThanOrEqual((starts[c] ?? 0) - 0.45);
+      expect(a + len, k).toBeLessThanOrEqual((starts[c + 1] ?? release) - 0.5);
+      expect(makingDraw(a, k)).toBe(0);
+      expect(makingDraw(a + len, k)).toBeCloseTo(1, 9);
+      let last = 0;
+      for (const e of range(a - 0.2, a + len + 0.2, 0.01)) {
+        const d = makingDraw(e, k);
+        expect(d).toBeGreaterThanOrEqual(last);
+        last = d;
+      }
+    }
+  });
+
+  it("every layer fades between its keyframes, in order, and rests on each keyframe's value", () => {
+    for (const k of fades) {
+      const keys = fade[k] as readonly (readonly [number, number])[];
+      for (let i = 1; i < keys.length; i++) expect(keys[i][0], k).toBeGreaterThan(keys[i - 1][0]);
+      expect(makingFade(-5, k)).toEqual({ value: keys[0][1], moving: false });
+      expect(makingFade(99, k)).toEqual({ value: keys[keys.length - 1][1], moving: false });
+      for (const [at, v] of keys) expect(makingFade(at + 1e-9, k).value, k).toBeCloseTo(v, 6);
+    }
+  });
+
+  it("before the stage and after the release only the house at dusk is shown; the drawings, the day and the veil are gone", () => {
+    expect(makingFade(release, "dusk").value).toBe(1);
+    for (const k of ["lines", "veil", "eng", "sheet", "title", "plan", "site"] as const) {
+      expect(makingFade(release, k).value, k).toBe(0);
+    }
+    expect(makingFade(-1, "dusk").value).toBe(0);
+    expect(makingFade(-1, "site").value).toBe(1);
+  });
+
+  it("the site plan is drawn in to the floor plan while both are shown, and the film waits for the house at dusk", () => {
+    const [a, len] = MAKING.zoom;
+    expect(makingZoom(a)).toBe(0);
+    expect(makingZoom(a + len)).toBe(1);
+    expect(a + len).toBeLessThanOrEqual(fade.site[1][0]);
+    expect(a).toBeGreaterThanOrEqual(fade.siteLabels[2][0]);
+    expect(MAKING_FILM_AT).toBeGreaterThanOrEqual(fade.dusk[1][0]);
+    expect(MAKING_FILM_AT).toBeLessThan(release);
+  });
+
+  it("the contents follow the text: a chapter turns over just before its boundary and each bar fills across its chapter", () => {
+    expect(makingChapter(-1)).toBe(0);
+    for (let c = 1; c < n; c++) {
+      expect(makingChapter(starts[c] - 0.06)).toBe(c - 1);
+      expect(makingChapter(starts[c] - 0.04)).toBe(c);
+    }
+    expect(makingChapter(99)).toBe(n - 1);
+    for (let c = 0; c < n; c++) {
+      const b = starts[c + 1] ?? release;
+      expect(makingFill(starts[c], c)).toBe(0);
+      expect(makingFill((starts[c] + b) / 2, c)).toBeCloseTo(0.5);
+      expect(makingFill(b, c)).toBeCloseTo(1, 9);
+    }
+  });
+
+  it("chapter text: composed for 0.6 screens or more, two chapters' lines never moving in one rank, and never an empty column", () => {
+    const ks = [0, 1, 2, 3, 4, 5, 6];
+    for (let c = 0; c < n; c++) {
+      const composed = range(starts[c] - 0.5, starts[c + 1] ?? release, 0.002).filter((e) => ks.every((k) => makingLine(e, c, n, k) === 0)).length * 0.002;
+      expect(composed, `chapter ${c}`).toBeGreaterThanOrEqual(0.6);
+    }
+    for (const k of ks) expect(makingLine(0.12, 0, n, k)).toBe(0);
+    for (const k of ks) expect(makingLine(release + 1, n - 1, n, k)).toBe(0);
+    for (let b = 1; b < n; b++) {
+      for (const e of range(starts[b] - 0.3, starts[b] + 0.5, 0.002)) {
+        for (const k of ks) {
+          if (makingLine(e, b, n, k) < MASK - 1e-9) {
+            expect(makingLine(e, b - 1, n, k)).toBeCloseTo(-MASK);
+            expect(makingLine(e, b - 1, n, k + 1)).toBeCloseTo(-MASK);
+          }
+        }
+        expect([b - 1, b].some((i) => ks.some((k) => Math.abs(makingLine(e, i, n, k)) < MASK - 1e-9))).toBe(true);
+      }
+    }
+  });
+
+  it("a draft draws its lines one after another, each over its share", () => {
+    const lines = 300;
+    expect(storyLineDraw(0, 0, lines, MAKING_LINE_DUR)).toBe(0);
+    expect(storyLineDraw(MAKING_LINE_DUR, 0, lines, MAKING_LINE_DUR)).toBe(1);
+    expect(storyLineDraw(1 - MAKING_LINE_DUR, lines - 1, lines, MAKING_LINE_DUR)).toBe(0);
+    expect(storyLineDraw(1, lines - 1, lines, MAKING_LINE_DUR)).toBe(1);
   });
 });
 

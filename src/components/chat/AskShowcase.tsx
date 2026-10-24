@@ -9,15 +9,15 @@ import { chatLimits } from "@/lib/chat/conversation";
 import "./chat.css";
 
 /*
- * The homepage's showcase for the website assistant, between the projects
- * and the values: an invitation on the left, and on the right a console, a
- * charcoal sheet ruled like drawing paper, that types out the kind of
- * question visitors ask, runs the names of the building departments whose
- * pages the assistant can link, and takes the visitor's own question.
+ * The homepage's showcase for the website assistant, after the making of a
+ * house and before the values: an invitation on the left, and on the right
+ * a console, a charcoal sheet ruled like drawing paper, that types out the
+ * kind of question visitors ask, runs the names of the building departments
+ * whose pages the assistant can link, and takes the visitor's own question.
  * Asking opens the assistant with it (ASK_EVENT).
  *
- * It sits on the page ground, which turns from Works' stone back to cream
- * as it comes up, so the handover from the projects stays one surface. Its lines rise once as it comes into view and always finish; the
+ * It sits on the page ground (cream there), so the handover stays one
+ * surface. Its lines rise once as it comes into view and always finish; the
  * typing and the ticker run only while it is on screen, and stand still
  * with reduced motion (chat.css).
  */
