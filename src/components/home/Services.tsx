@@ -189,10 +189,10 @@ export function Services() {
         <Container className="pb-16 lg:pb-24">
           <div className="grid gap-6 border-t border-ivory/15 pt-10 md:grid-cols-12 md:gap-8">
             <p className="text-label text-charcoal-300 md:col-span-4">Also within our scope</p>
-            <ul className="flex flex-wrap gap-x-7 gap-y-3 text-[0.9375rem] text-ivory/75 pointer-coarse:-mt-2.5 pointer-coarse:gap-y-0 md:col-span-8">
+            <ul className="flex flex-wrap gap-x-7 gap-y-3 text-[0.9375rem] text-ivory/75 md:col-span-8">
               {otherWork.map((item) => (
                 <li key={item.label}>
-                  <Link href={item.href} className="link-draw tap-line hover:text-ivory">
+                  <Link href={item.href} className="link-draw hover:text-ivory">
                     {item.label}
                   </Link>
                 </li>

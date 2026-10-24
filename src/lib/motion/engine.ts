@@ -1,4 +1,6 @@
 import Lenis from "lenis";
+import { clamp } from "./math";
+import { mergeSpans, SETTLE_JOIN, SETTLE_WAIT, settleAt, settleDuration, settleTarget, type Span } from "./settle";
 
 /*
  * The scroll engine (docs/MOTION.md, "Scroll engine").
@@ -12,7 +14,10 @@ import Lenis from "lenis";
  *   4. the navigation.
  * Modules are pure readers of the frame: they compute styles from the
  * scroll position and write them, so scrolling back up runs everything
- * backwards exactly. Nothing fires once.
+ * backwards exactly. Nothing fires once. A module whose section is a screen
+ * or more off the screen has nothing to change (`sleeper`): it writes its
+ * frame once as the section leaves, then sleeps until it comes back, so a
+ * phone spends each frame only on what it shows.
  *
  * `dt` is clamped to 1/20 s so a stalled or hidden tab cannot make the
  * exponential smoothers jump.
@@ -21,15 +26,6 @@ import Lenis from "lenis";
  * unit the tracks are sized in, so a phone's toolbar showing or hiding never
  * rescales the choreography; height-only resizes on touch screens are
  * ignored for the same reason.
- *
- * Phones held upright (the tracks on, under 768px wide) keep only the
- * hero's and the story's pins: the intro, Works and Values flow there, so a
- * thumb's swipe always moves the page (`pins`).
- *
- * A module whose section is a screen or more off the screen has nothing to
- * change (`sleeper`): it writes its frame once as the section leaves, then
- * sleeps until the section comes back, so a phone spends each frame only on
- * what it shows.
  *
  * The page is held still (menu open, page transition, preloader) by a
  * reference-counted lock: Lenis stops wheel and touch, and the scrolling
@@ -49,6 +45,13 @@ import Lenis from "lenis";
  *
  * A page being printed takes the still layout: the tracks are off from
  * beforeprint to afterprint, so every module clears what it wrote first.
+ *
+ * Where a touch screen is the main way in, the page scrolls natively, and
+ * a flick ends wherever its momentum runs out. Once it has come to rest
+ * inside a change on a scene (a module's `zones`: lines part out of their
+ * masks, a picture part wiped), the engine glides it on to the end of the
+ * change in the direction it was going (settle.ts), so the page only ever
+ * rests where every scene is whole.
  */
 
 export interface Frame {
@@ -68,13 +71,12 @@ export interface Frame {
    */
   tracks: boolean;
   /**
-   * The long pinned stages are on: the intro's ring, Works' viewer and the
-   * Values words. The tracks, on a screen at least 768px wide (the `pins`
-   * variant in globals.css). On narrower screens those sections flow, their
-   * pieces arriving as they come into view, and the story moves a third
-   * faster.
+   * A touch screen is the main way in, so the page scrolls natively and
+   * settles (settle.ts). Pieces that come up with the page, rather than on a
+   * pinned stage, play on their own clock once their start is reached, so
+   * they are never left part way either.
    */
-  pins: boolean;
+  touch: boolean;
 }
 
 export interface MotionModule {
@@ -82,6 +84,12 @@ export interface MotionModule {
   /** Re-read layout after a resize, a font load or a route change. */
   measure?(frame: Frame): void;
   update(frame: Frame): void;
+  /**
+   * Touch screens, after a measure: the spans of scroll (px) where something
+   * of this module is part way through a change, a line part out of its
+   * mask or a picture part wiped, so the page must not come to rest there.
+   */
+  zones?(frame: Frame): Span[];
   /** Remove listeners when the page goes away. */
   destroy?(): void;
 }
@@ -90,8 +98,6 @@ type Callback = (frame: Frame) => void;
 
 /** Keep in step with the `tracks` custom variant in globals.css (which also limits the tracks to screens; printing sets `printing` here). */
 export const TRACKS_QUERY = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
-/** Keep in step with the `pins` custom variant in globals.css. */
-export const PINS_QUERY = `${TRACKS_QUERY} and (min-width: 768px)`;
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 /** Phones and tablets: a touch screen is the main way in, and nothing hovers. */
 const TOUCH_QUERY = "(pointer: coarse) and (hover: none)";
@@ -184,7 +190,7 @@ export function clearStyleCache(el: HTMLElement | SVGElement) {
 
 class Engine {
   lenis: Lenis | null = null;
-  frame: Frame = { time: 0, dt: 0, scroll: 0, vw: 0, vh: 0, reduced: false, tracks: false, pins: false };
+  frame: Frame = { time: 0, dt: 0, scroll: 0, vw: 0, vh: 0, reduced: false, tracks: false, touch: false };
   private modules: MotionModule[] = [];
   private callbacks = new Set<Callback>();
   private raf = 0;
@@ -214,6 +220,16 @@ class Engine {
   private holds = 0;
   /** Waiting for the next measure (`measureAfter`). */
   private measuredWaiting: (() => void)[] = [];
+  /** Touch screens: where the page must not rest (the modules' zones, joined; found when the page first comes to rest after a measure, so never in a frame that moves), and the settle under way. */
+  private zones: Span[] | null = null;
+  private glide: { from: number; to: number; t0: number; duration: number; at: number } | null = null;
+  /** A finger is down. */
+  private touching = false;
+  /** The page's last position, which way it last moved, since when it has been still (ms), and whether it has moved (or its zones have) since it was last judged at rest. */
+  private lastY = 0;
+  private dir = 1;
+  private stillAt = 0;
+  private moved = false;
 
   boot() {
     if (this.booted || typeof window === "undefined") return;
@@ -233,6 +249,9 @@ class Engine {
         easing: reduced ? (n) => n : expoOut,
       });
       if (this.locks.size) this.lenis.stop();
+    } else {
+      // Watched, never held: passive, so a touch never waits for the script.
+      for (const type of ["touchstart", "touchend", "touchcancel"]) window.addEventListener(type, this.onTouch as EventListener, { capture: true, passive: true });
     }
     const probe = document.createElement("div");
     probe.setAttribute("aria-hidden", "true");
@@ -252,7 +271,6 @@ class Engine {
       { passive: true },
     );
     matchMedia(TRACKS_QUERY).addEventListener("change", layoutChanged);
-    matchMedia(PINS_QUERY).addEventListener("change", layoutChanged);
     new ResizeObserver(layoutChanged).observe(document.body);
     // A printed page takes the still layout (the tracks are for screens), so the modules clear what they wrote before it prints, and write it again after.
     const printing = (on: boolean) => () => {
@@ -278,6 +296,7 @@ class Engine {
     if (this.holds) return;
     const measured = this.needsMeasure;
     if (measured) this.measure();
+    this.settle(now);
     this.run();
     // Note the reading position against the layout the sections were measured in.
     if (!measured) this.anchor = this.readAnchor(f);
@@ -310,9 +329,12 @@ class Engine {
     this.lastW = window.innerWidth;
     f.reduced = matchMedia(REDUCED_QUERY).matches;
     f.tracks = !this.printing && "motion" in document.documentElement.dataset && matchMedia(TRACKS_QUERY).matches;
-    f.pins = f.tracks && matchMedia(PINS_QUERY).matches;
+    f.touch = !this.lenis && matchMedia(TOUCH_QUERY).matches;
+    // A layout change moves every change on the page: a settle under way is dropped, and the page judged again on the new zones once it is still.
+    this.glide = null;
+    this.moved = true;
     // Only a new screen moves the reader; content growing within the page (a disclosure opening) keeps the pixel position.
-    const view = `${f.vw}x${f.vh} ${f.tracks} ${f.pins}`;
+    const view = `${f.vw}x${f.vh} ${f.tracks}`;
     const keep = this.keepPlace && view !== this.view ? this.anchor : null;
     this.keepPlace = false;
     this.view = view;
@@ -324,11 +346,59 @@ class Engine {
     if (restore != null) this.jump(restore);
     f.scroll = this.lenis ? this.lenis.scroll : window.scrollY;
     for (const m of this.modules) m.measure?.(f);
+    this.zones = null;
     this.sections = [...document.querySelectorAll<HTMLElement>("main > :not(script), body > footer")].map(measureRange);
     // After a resize or rotation: the same point of the same section, wherever it now is.
     const r = restore == null && keep && this.sections[keep.i];
     if (keep && r && r.height > 0) this.jump(Math.max(0, Math.round(r.top + keep.p * r.height)));
   }
+
+  /**
+   * Touch screens: carry on with a settle under way; else note how the page
+   * is moving, and once it has come to rest inside a change (no finger
+   * down, still for SETTLE_WAIT), set off for its end (settleTarget). Runs
+   * before the modules, so they draw the frame where the glide has put it.
+   */
+  private settle(now: number) {
+    if (!this.frame.touch) return;
+    const g = this.glide;
+    // Anything else that scrolls the page (a key, a link, focus, the last of a flick's momentum) takes over from the settle; the page is judged again once it is still.
+    if (g && Math.abs(window.scrollY - g.at) > 2) this.glide = null;
+    else if (g) {
+      const elapsed = (now - g.t0) / 1000;
+      window.scrollTo({ top: settleAt(g.from, g.to, elapsed, g.duration), behavior: "instant" });
+      g.at = window.scrollY;
+      if (elapsed >= g.duration) this.glide = null;
+      this.lastY = g.at;
+      this.stillAt = now;
+      return;
+    }
+    const y = window.scrollY;
+    if (Math.abs(y - this.lastY) > 0.5) {
+      this.dir = y > this.lastY ? 1 : -1;
+      this.lastY = y;
+      this.stillAt = now;
+      this.moved = true;
+      return;
+    }
+    if (!this.moved || this.touching || this.locks.size || now - this.stillAt < SETTLE_WAIT) return;
+    this.moved = false;
+    const f = this.frame;
+    if (!this.zones) this.zones = f.tracks ? mergeSpans(this.modules.flatMap((m) => m.zones?.(f) ?? []), SETTLE_JOIN * f.vh) : [];
+    const to = settleTarget(y, this.dir, this.zones);
+    if (to === null) return;
+    // Whole px, rounded away from the change, within the page.
+    const target = clamp(to > y ? Math.ceil(to) : Math.floor(to), 0, Math.max(0, document.documentElement.scrollHeight - window.innerHeight));
+    if (Math.abs(target - y) >= 1) this.glide = { from: y, to: target, t0: now, duration: settleDuration(target - y, f.vh), at: y };
+  }
+
+  /** A finger down stops any settle; the page is judged again once it has come to rest after it. */
+  private onTouch = (e: TouchEvent) => {
+    this.touching = e.touches.length > 0;
+    if (e.type !== "touchstart" || !this.glide) return;
+    this.glide = null;
+    this.moved = true;
+  };
 
   private jump(y: number) {
     if (this.lenis) {
@@ -376,6 +446,7 @@ class Engine {
     this.requestMeasure();
     return () => {
       this.modules = this.modules.filter((m) => m !== module);
+      this.zones = null;
       module.destroy?.();
     };
   }
@@ -395,6 +466,10 @@ class Engine {
   lock(reason: string) {
     this.locks.add(reason);
     this.lenis?.stop();
+    if (this.glide) {
+      this.glide = null;
+      this.moved = true;
+    }
     window.addEventListener("keydown", this.blockKeys, { capture: true });
     window.addEventListener("wheel", this.blockPanels, { capture: true, passive: false });
     window.addEventListener("touchmove", this.blockPanels, { capture: true, passive: false });
@@ -475,7 +550,7 @@ function scrollsWithin(el: Element, root: HTMLElement) {
 
 export const engine = new Engine();
 
-/** Module order on the homepage; the lines are split before anything measures, the page ground runs first because Values reads its fade, and the phones' arrivals measure once the modules have put their sections back. */
+/** Module order on the homepage; the lines are split before anything measures, and the page ground runs first because Values reads its fade. */
 export const ORDER = {
   lines: -1,
   ground: 0,
@@ -488,7 +563,6 @@ export const ORDER = {
   services: 7,
   handover: 8,
   contact: 9,
-  arrivals: 10,
   footer: 19,
   parallax: 20,
   nav: 90,

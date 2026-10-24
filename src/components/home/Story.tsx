@@ -5,7 +5,7 @@ import { plates } from "@/content/imagery";
 import { site } from "@/content/site";
 import { LINE_KINDS, STORY_H, STORY_W, storyGrid, storyLevels, storyLines, storyMembers } from "@/content/story-drawing";
 import { escapeHtml } from "@/lib/html";
-import { STORY, storySectionVh } from "@/lib/motion/home";
+import { storySectionVh } from "@/lib/motion/home";
 
 /** The four chapters: what happens to a project at each, never a promise of the municipality's decision. */
 const chapters = [
@@ -79,8 +79,7 @@ function Field({ label, value, className }: { label: string; value: string; clas
  * projects.
  *
  * Tracks: a 580vh track with one pinned stage, 1.2 screens per chapter
- * (storyState in src/lib/motion/home.ts; HomeMotion, story module); on
- * phones held upright 460vh, 0.9 screens a chapter (storyProgress). The
+ * (storyState in src/lib/motion/home.ts; HomeMotion, story module). The
  * sheet rises with the stage and the house's elevation is sketched on it
  * (Vision); the rendering wipes up from the ground line, the sketch giving
  * way to the picture as the edge passes (Design); trace rises over the
@@ -104,8 +103,8 @@ export function Story() {
     <section
       data-story=""
       aria-labelledby="story-heading"
-      className="story relative tracks:h-(--story-h-phone) pins:h-(--story-h)"
-      style={{ "--story-h": `${storySectionVh(chapters.length)}vh`, "--story-h-phone": `${storySectionVh(chapters.length, STORY.phoneStep)}vh` } as CSSProperties}
+      className="story relative tracks:h-(--story-h)"
+      style={{ "--story-h": `${storySectionVh(chapters.length)}vh` } as CSSProperties}
     >
       <div data-story-stage="" className="story-stage">
         <Container className="story-layout">

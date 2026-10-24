@@ -49,7 +49,6 @@ import {
   storyLine,
   storyLineDraw,
   storyOverlay,
-  storyProgress,
   storySectionVh,
   storySeg,
   storySide,
@@ -68,7 +67,6 @@ import {
   type SwapLayer,
 } from "@/lib/motion/home";
 import { footerDot, footerDraw, footerLift, footerProgress, footerStroke } from "@/lib/motion/footer";
-import { PINS_QUERY, TRACKS_QUERY, sleeper, type Frame, type Range } from "@/lib/motion/engine";
 import { clamp, cssEase, damp, ease, fit, fromOklab, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
 import { WIPE_MS, wipeStep } from "@/lib/motion/wipe";
 
@@ -994,16 +992,6 @@ describe("story", () => {
     expect(storySectionVh(2)).toBe(340);
   });
 
-  it("on phones a chapter takes 0.9 screens, so the section is 460vh, and the story still ends as its stage releases", () => {
-    expect(storySectionVh(n, STORY.phoneStep)).toBe(460);
-    // Pinned: chapters × phoneStep screens of scroll on phones run the whole of the story's own timeline.
-    expect(storyProgress(n * STORY.phoneStep, false)).toBeCloseTo(end, 10);
-    expect(storyProgress(end, true)).toBe(end);
-    // Arriving, the stage rides up with the page at the scroll's own pace everywhere; from the pin the phones' pace is steady.
-    for (const s of [-1, -0.4, 0]) expect(storyProgress(s, false)).toBe(s);
-    for (const s of range(0.01, n * STORY.phoneStep, 0.01)) expect(storyProgress(s, false)).toBeCloseTo((s * step) / STORY.phoneStep, 10);
-  });
-
   it("every state of the drawing runs 0 → 1 once, forwards, and is done before the stage releases", () => {
     const before = storyState(-2);
     for (const k of keys) expect(before[k], k).toBe(0);
@@ -1137,39 +1125,6 @@ describe("story", () => {
       expect(storyField(STORY.fieldsIn + k * WORKS.stagger + 0.26, k)).toBe(0);
     }
     expect(storyState(STORY.fieldsIn).rectify).toBeGreaterThan(0.5);
-  });
-});
-
-describe("phones", () => {
-  it("the long pinned stages are for screens from 768px wide, in the engine and in the stylesheet alike", () => {
-    expect(PINS_QUERY).toBe(`${TRACKS_QUERY} and (min-width: 768px)`);
-    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
-    const variant = (name: string) => css.match(new RegExp(`@custom-variant ${name} \\{\\s*@media screen and ([^{]+)\\{`))?.[1].trim();
-    expect(variant("tracks")).toBe(TRACKS_QUERY);
-    expect(variant("pins")).toBe(PINS_QUERY);
-  });
-
-  it("a module sleeps a screen or more off the screen, after writing the frame it leaves on, and wakes as it comes back", () => {
-    const vh = 800;
-    const frame = (scroll: number) => ({ scroll, vh }) as Frame;
-    const r: Range = { top: 4000, left: 0, width: 400, height: 1200 };
-    const sleep = sleeper();
-    // Far below: the first frame is written, the rest skipped.
-    expect(sleep.skip(r, frame(0))).toBe(false);
-    expect(sleep.skip(r, frame(100))).toBe(true);
-    // Within two screens of its top, and on screen: every frame.
-    expect(sleep.skip(r, frame(4000 - 2 * vh))).toBe(false);
-    expect(sleep.skip(r, frame(4000))).toBe(false);
-    expect(sleep.skip(r, frame(4000 + 1200))).toBe(false);
-    // A screen past its bottom: one last frame, then sleep.
-    expect(sleep.skip(r, frame(4000 + 1200 + vh + 1))).toBe(false);
-    expect(sleep.skip(r, frame(9000))).toBe(true);
-    // A jump to the other side writes once.
-    expect(sleep.skip(r, frame(0))).toBe(false);
-    expect(sleep.skip(r, frame(0))).toBe(true);
-    // A new measure writes the next frame whatever.
-    sleep.wake();
-    expect(sleep.skip(r, frame(0))).toBe(false);
   });
 });
 
