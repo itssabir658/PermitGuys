@@ -41,6 +41,8 @@ test.describe("accessibility", () => {
     await page.goto("/contact/");
     await page.getByRole("button", { name: "Send inquiry" }).click();
     await expect(page.getByRole("heading", { name: /problems? with your inquiry/ })).toBeVisible();
+    // Not through the intro's crossfade, which axe would read as the form's background.
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
     const results = await new AxeBuilder({ page }).include("form").analyze();
     expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
   });
@@ -171,7 +173,8 @@ test.describe("interactive pieces", () => {
   test("Back and Forward over a link that only changes the query return to each place the reader left", async ({ page }) => {
     const y = () => page.evaluate(() => Math.round(window.scrollY));
     await page.goto("/contact/?service=deck-permits");
-    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    // The page is held still until the intro has mostly faded.
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
     await page.evaluate(() => window.scrollTo(0, 1500));
     await expect.poll(y).toBe(1500);
     // Clicked in place: a test click would first scroll the footer into view.
@@ -340,6 +343,8 @@ test.describe("interactive pieces", () => {
   test("the name stands behind the house: the roof hides the foot of R to T, never of E or G, and the house moves against a mouse", async ({ page }, info) => {
     await page.goto("/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
+    // The name has risen and the planes have settled (the intro's crossfade is shorter than their entrance).
+    await page.waitForFunction(() => document.querySelector("[data-hero-stage]")!.getAnimations({ subtree: true }).every((a) => a.playState !== "running"));
     // The sky behind the name, the rendering in front of it, cut out in its own picture (no mask), and the scroll's darkening over both.
     const order = await page.locator("[data-hero-stage] > *").evaluateAll((els) => els.map((el) => el.getAttribute("data-hero-layer") ?? el.tagName.toLowerCase()));
     expect(order.slice(0, 4)).toEqual(["far", "h1", "near", "div"]);
