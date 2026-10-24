@@ -52,6 +52,18 @@ The homepage story (`Story.tsx`) draws the narrow contemporary house over its ow
 
 `tests/story-drawing.test.ts` checks the geometry: the rectification and its inverse, the vanishing point, the bounds, and that the sheet is square and level.
 
+### The making-of drawings
+
+The section "The making of a house" (`Making.tsx`) is told on the big contemporary house the homepage opens on, with its client renderings from the front.
+
+- **The pictures.** `public/images/projects/making/`: the front view by day and at dusk, both cropped to 16:9 from the same pixel-aligned renderings (2560 × 1440), and `front-glass.webp`, the dusk picture with only its glass kept (an alpha mask from the elevation's openings), so the lit windows can come up in the drawing before the whole rendering does. The renderings' file names carry the project's address; the copies here do not.
+- **The elevation** is traced from the front rendering line by line, in its pixels (the 16:9 crop starts 126 px in), so every line lands on the edge it was traced from: the ground, the volumes and parapets, the dark panel boxes, the openings with their mullions and transoms, the joints and boards. The garage wing's side wall, seen at an angle in the rendering, is drawn as seen.
+- **The plan, the site and the structure are illustrations**, drawn to show each stage, not the project's drawings: the floor plan sits at the elevation's scale with every front opening under the opening it makes in the elevation; the site plan is the plan's footprint 2.4 times farther off about the board's centre, so zooming in lands it on the plan; the beams, posts and footings sit where a house like this would have them, labelled by what they are and never by a size. The caption says so.
+- Paths are straight lines in whole units, generated into `src/content/making-drawing.ts`.
+- **The film.** `public/videos/making/front-dusk-*`: an 8-second image-to-video clip made with Higgsfield (Wan) from the dusk picture, a gentle push in of about 10% with the sky, trees and birds drifting and the architecture unchanged (checked frame by frame; takes that changed the house or the sky's colour were rejected). Its first frame matches the dusk picture. Encoded as H.264 (CRF 26, faststart, no audio) at 1080p and 720p, plus VP9 WebM copies. The caption says the section has a film.
+
+`tests/making-drawing.test.ts` checks the path data, the bounds and the labels.
+
 ### Rendered studies
 
 `public/images/studies/` holds original renders made for this website. They are kept only for kinds of project that no client rendering shows: a rear addition, a basement second unit, main-street commercial units and a storefront, a rear deck, and an infill house for landlord permits.

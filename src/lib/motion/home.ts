@@ -43,10 +43,12 @@ export function roll(inP: number, outP: number) {
  * Where each section's label (its heading and note, each one mask) starts
  * to roll in, as its section's sso: the story's as its sheet comes up,
  * before the first chapter's lines; Works' with the first picture, as the
- * story's stage leaves; Values' as the stage pins, with the first word;
- * Services' eyebrow from its track, as the ground passes night.
+ * story's stage leaves; the making-of board's as its stage comes up,
+ * before its first lines are drawn; Values' as the stage pins, with the
+ * first word; Services' eyebrow from its track, as the ground passes
+ * night.
  */
-export const LABEL_IN = { story: 0.32, works: 0.3, values: 0.62, services: 0.34 } as const;
+export const LABEL_IN = { story: 0.32, works: 0.3, making: 0.32, values: 0.62, services: 0.34 } as const;
 
 /** A section label at its section's sso `s`, as a yPercent: it rolls in over 0.3 screens from `from` (LABEL_IN), and leaves with the released stage. */
 export function sectionLabel(s: number, from: number) {
@@ -360,10 +362,10 @@ export function storyFill(e: number, i: number) {
 /** A share of the sketch each line takes to draw. */
 export const STORY_LINE_DUR = 0.14;
 
-/** Line i of n of the sketch, 0 → 1: the lines start one after another through the sketch, each drawn on power1InOut, as a hand draws. */
-export function storyLineDraw(sketch: number, i: number, n: number) {
-  const start = n > 1 ? (i / (n - 1)) * (1 - STORY_LINE_DUR) : 0;
-  return tween(sketch, start, STORY_LINE_DUR, ease.power1InOut);
+/** Line i of n of the sketch, 0 → 1: the lines start one after another through the sketch, each drawn on power1InOut over `dur` of it, as a hand draws. */
+export function storyLineDraw(sketch: number, i: number, n: number, dur: number = STORY_LINE_DUR) {
+  const start = n > 1 ? (i / (n - 1)) * (1 - dur) : 0;
+  return tween(sketch, start, dur, ease.power1InOut);
 }
 
 /** How far a sketched line runs past its ends, in the drawing's units (2800 across): a quarter of its length at most, so small details stay neat. */
@@ -499,6 +501,141 @@ export const WORKS_BUTTON = 1.3;
 export function worksButton(y: number) {
   const shown = clamp(1 - Math.abs(y * WORKS_BUTTON) / 100);
   return { y: y * WORKS_BUTTON, opacity: smoothstep(shown, 0.36, 0.72) };
+}
+
+/* ---- The making of a house (820vh track: five chapters under one pinned 100vh stage) ---- */
+
+/**
+ * The making-of section's timeline, in screens of scroll since its stage
+ * pinned (e, sso − 1). The chapters start at `starts` and the stage
+ * releases at `release`. One board shows the big house's project from its
+ * site to its permit set:
+ *   - `draw`: when a line drawing is drafted, a segment at a time (start,
+ *     length): the site plan, the floor plan, the front elevation, the
+ *     structure over it, the sheet's border and title block;
+ *   - `fade`: each layer's opacity as keyframes [e, opacity], eased from
+ *     one to the next: the site's footprint, the plan's poché and room
+ *     names, the windows lit, the rendering by day, the paper veil laid
+ *     over it for the engineering, the title block, the rendering at dusk;
+ *   - `zoom`: the site plan drawn closer until its house is the floor plan
+ *     (MK_SITE_ZOOM), as it fades.
+ * Each chapter's changes come together as its text hands over, and what
+ * they leave is held whole while it is read: each chapter's text is
+ * composed for 0.6 screens or more, and the board rests for 0.4 screens or
+ * more after each chapter's changes and 0.6 after the house is shown at
+ * dusk, so a touch screen settling the page never carries it past one
+ * (settle.ts). A drawing being drafted is whole at every moment.
+ */
+export const MAKING = {
+  starts: [0, 1.15, 2.45, 4.2, 5.45],
+  release: 7.2,
+  draw: {
+    siteLot: [-0.42, 0.4],
+    siteFine: [-0.24, 0.36],
+    siteWays: [-0.08, 0.26],
+    planWalls: [1.2, 0.26],
+    planOpenings: [1.3, 0.18],
+    planDoors: [1.34, 0.16],
+    planFittings: [1.38, 0.14],
+    elevGround: [2.38, 0.12],
+    elevOutline: [2.41, 0.26],
+    elevPanels: [2.53, 0.22],
+    elevOpenings: [2.62, 0.24],
+    elevMullions: [2.72, 0.2],
+    elevJoints: [2.78, 0.18],
+    engSolid: [4.22, 0.3],
+    engHidden: [4.28, 0.28],
+    sheet: [5.45, 0.24],
+  },
+  fade: {
+    siteHouse: [[0.14, 0], [0.3, 1], [1.22, 1], [1.38, 0]],
+    siteLabels: [[0.16, 0], [0.3, 1], [0.98, 1], [1.1, 0]],
+    site: [[1.22, 1], [1.38, 0]],
+    planPoche: [[1.46, 0], [1.58, 1]],
+    planLabels: [[1.48, 0], [1.6, 1]],
+    plan: [[2.35, 1], [2.53, 0]],
+    glass: [[2.94, 0], [3.08, 1]],
+    day: [[3.08, 0], [3.28, 1]],
+    lines: [[3.22, 1], [3.4, 0], [4.12, 0], [4.26, 0.5], [6.3, 0.5], [6.48, 0]],
+    veil: [[4.12, 0], [4.26, 0.86], [6.3, 0.86], [6.5, 0]],
+    engLabels: [[4.5, 0], [4.64, 1]],
+    eng: [[6.3, 1], [6.48, 0]],
+    sheet: [[6.3, 1], [6.48, 0]],
+    title: [[5.61, 0], [5.75, 1], [6.3, 1], [6.48, 0]],
+    dusk: [[6.3, 0], [6.55, 1]],
+  },
+  zoom: [1.0, 0.38],
+} as const;
+
+export type MakingDraw = keyof typeof MAKING.draw;
+export type MakingFade = keyof typeof MAKING.fade;
+
+/** A share of a drawing each line takes to draw (storyLineDraw). */
+export const MAKING_LINE_DUR = 0.08;
+/** How far a drafted line runs past its ends, in the board's units (3547 across). */
+export const MAKING_OVERSHOOT = 14;
+/** From here the house at dusk may play its film; below it the film rests at its first frame. */
+export const MAKING_FILM_AT = 6.55;
+
+/** The section's length in vh: the stage pinned until it releases, and one screen for it to arrive. */
+export function makingSectionVh() {
+  return Math.round((MAKING.release + 1) * 100);
+}
+
+/** How much of drawing `k` is drafted at `e`, 0 → 1. */
+export function makingDraw(e: number, k: MakingDraw) {
+  const [start, length] = MAKING.draw[k];
+  return tween(e, start, length);
+}
+
+/** Layer `k`'s opacity at `e`, eased between its keyframes, and whether it is changing there. */
+export function makingFade(e: number, k: MakingFade): { value: number; moving: boolean } {
+  const keys = MAKING.fade[k] as readonly (readonly [number, number])[];
+  if (e <= keys[0][0]) return { value: keys[0][1], moving: false };
+  for (let i = 0; i + 1 < keys.length; i++) {
+    const [a, va] = keys[i];
+    const [b, vb] = keys[i + 1];
+    if (e < b) {
+      if (va === vb) return { value: va, moving: false };
+      return { value: mix(va, vb, ease.power2InOut(clamp((e - a) / (b - a)))), moving: true };
+    }
+  }
+  return { value: keys[keys.length - 1][1], moving: false };
+}
+
+/** How far the site plan has been drawn in to the floor plan, 0 → 1. */
+export function makingZoom(e: number) {
+  return tween(e, MAKING.zoom[0], MAKING.zoom[1], ease.power2InOut);
+}
+
+/**
+ * One masked line of chapter i's text (k: 0 the chapter's label, then its
+ * title's lines, then its body's), on the story's rhythm: the lines rise
+ * 0.035 apart from just before the chapter starts and leave 0.02 apart
+ * from 0.2 before the next; the first chapter rises with the stage, the
+ * last never leaves.
+ */
+export function makingLine(e: number, i: number, n: number, k: number) {
+  const a = MAKING.starts[i] ?? 0;
+  const inP = i === 0 ? tween(e, -0.36 + k * WORKS.stagger, 0.26, ease.power3Out) : tween(e, a - 0.03 + k * WORKS.stagger, 0.22, ease.power3Out);
+  const outP = i === n - 1 ? 0 : tween(e, (MAKING.starts[i + 1] ?? Infinity) - 0.2 + k * WORKS.outStagger, 0.14, ease.power2In);
+  return roll(inP, outP);
+}
+
+/** The chapter the reader is in: it turns over with the text, just before the boundary. */
+export function makingChapter(e: number) {
+  let c = 0;
+  MAKING.starts.forEach((a, i) => {
+    if (e + 0.05 >= a) c = i;
+  });
+  return c;
+}
+
+/** How far through chapter i the reader is, 0 → 1 (the contents' bars): the last runs to the release. */
+export function makingFill(e: number, i: number) {
+  const a = MAKING.starts[i] ?? 0;
+  const b = MAKING.starts[i + 1] ?? MAKING.release;
+  return clamp((e - a) / (b - a));
 }
 
 /*
@@ -861,6 +998,22 @@ export function storyPartWay(e: number, lines: readonly number[], fields: number
     [st.sheet, st.render, st.veil, st.paper, st.ink, st.rectify].some((p) => partWay(p)) ||
     lines.some((count, i) => anyOf(count, (k) => lineCut(storyLine(e, i, n, k)))) ||
     anyOf(fields, (k) => lineCut(storyField(e, k)))
+  );
+}
+
+/**
+ * The making-of board at `e` (MAKING), with `lines[i]` masked lines in
+ * chapter i: the section's label (if it has one) or a line part out of its
+ * mask; or a layer part faded, or the site part drawn in. A drawing part
+ * drafted is whole.
+ */
+export function makingPartWay(e: number, lines: readonly number[], label = true) {
+  const n = lines.length;
+  return (
+    (label && lineCut(sectionLabel(e + 1, LABEL_IN.making))) ||
+    (Object.keys(MAKING.fade) as MakingFade[]).some((k) => makingFade(e, k).moving) ||
+    partWay(makingZoom(e)) ||
+    lines.some((count, i) => anyOf(count, (k) => lineCut(makingLine(e, i, n, k))))
   );
 }
 
