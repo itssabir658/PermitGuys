@@ -5,6 +5,7 @@ import { chatLimits, parseConversation, type ChatEvent } from "@/lib/chat/conver
 import { HANDOFF_TOOL, handoffTool, sanitizeHandoff } from "@/lib/chat/handoff";
 import { systemPrompt } from "@/lib/chat/knowledge";
 import { respond, type ChatDeps } from "@/lib/chat/respond";
+import { gtaPermits, officialHosts, ontarioPermitFacts } from "@/content/gta-permits";
 import { site } from "@/content/site";
 import { projectStages, projectTypes } from "@/lib/validation/inquiry";
 
@@ -118,6 +119,32 @@ describe("assistant instructions", () => {
     expect(prompt).toContain("/permit-guides/do-i-need-a-building-permit/");
     expect(systemPrompt()).toBe(prompt);
     expect(prompt).not.toMatch(/\b20\d\d-\d\d-\d\dT/);
+  });
+});
+
+describe("GTA permit reference", () => {
+  const all = [ontarioPermitFacts, ...gtaPermits];
+
+  it("cites an official https page for every entry", () => {
+    for (const entry of all) {
+      expect(entry.sources.length).toBeGreaterThan(0);
+      for (const s of entry.sources) expect(s.url).toMatch(/^https:\/\/[^/]*(ontario\.ca|oaa\.on\.ca|trca\.ca|toronto\.ca|mississauga\.ca|brampton\.ca|caledon\.ca|oakville\.ca|burlington\.ca|milton\.ca|haltonhills\.ca|vaughan\.ca|markham\.ca|richmondhill\.ca|aurora\.ca|newmarket\.ca|pickering\.ca|ajax\.ca|whitby\.ca|oshawa\.ca)\//);
+    }
+    expect(officialHosts).toContain("toronto.ca");
+  });
+
+  it("quotes no fees, and the municipalities are unique", () => {
+    for (const entry of all) for (const f of entry.facts) expect(f).not.toMatch(/\$\s?\d/);
+    const names = gtaPermits.map((m) => m.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("is in the assistant's knowledge with the rule to cite it", () => {
+    const prompt = systemPrompt();
+    expect(prompt).toContain("### Toronto (City of Toronto)");
+    expect(prompt).toContain("https://www.toronto.ca/services-payments/building-construction/building-permit/before-you-apply-for-a-building-permit/when-do-i-need-a-building-permit/");
+    expect(prompt).toMatch(/say that it is what that municipality's website says, link the official page/);
+    expect(prompt).toMatch(/Knowing a municipality's rules is not the same as working there/);
   });
 });
 

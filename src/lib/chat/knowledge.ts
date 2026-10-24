@@ -1,4 +1,5 @@
 import { homeFaqs } from "@/content/faqs";
+import { GTA_PERMITS_CHECKED_ON, gtaPermits, ontarioPermitFacts, type SourceLink } from "@/content/gta-permits";
 import { otherWork } from "@/content/other-work";
 import { homeSteps } from "@/content/process";
 import { site } from "@/content/site";
@@ -45,6 +46,30 @@ function guidesSection() {
     .join("\n\n");
 }
 
+const links = (sources: SourceLink[]) => sources.map((s) => `- ${s.label}: ${s.url}`).join("\n");
+
+function gtaSection() {
+  return [
+    `Read from the official pages below on ${GTA_PERMITS_CHECKED_ON}. These are what each government publishes for homeowners, not a ruling on any property.`,
+    "",
+    "### Ontario (applies across the GTA)",
+    ...ontarioPermitFacts.facts,
+    "Sources:",
+    links(ontarioPermitFacts.sources),
+    ...gtaPermits.flatMap((m) => [
+      "",
+      `### ${m.name} (${m.region})`,
+      ...m.facts,
+      m.apply ? `How to apply: ${m.apply}` : "",
+      m.contact ? `Building department contact: ${m.contact}` : "",
+      "Sources:",
+      links(m.sources),
+    ]),
+  ]
+    .filter((l) => l !== "")
+    .join("\n");
+}
+
 function factsSection() {
   const { contact } = site;
   const locations = getLocations();
@@ -71,13 +96,15 @@ Your job: answer visitors' questions about PermitGuys and about how building per
 How to answer:
 - Use only the information in <knowledge> below. If the answer is not there, say you are not sure and that the team can confirm it; never fill the gap from general knowledge about a specific municipality, fee, by-law or code section.
 - Write in clear Canadian English, warm and calm, like a knowledgeable person at the front desk of a design firm. Keep replies short: usually two to four sentences, and never more than about 120 words. Ask at most one question at a time.
-- Write plain text. The only formatting allowed is a link to a page on this site, written as [link text](/path/) with a path from <knowledge>. Link a page when it answers the question in more depth. Do not use headings, bold, bullet lists or tables.
+- Write plain text. The only formatting allowed is a link, written as [link text](/path/) for a page on this site or [link text](https://...) for an official source listed in <knowledge>, with the address copied exactly. Link a page when it answers the question in more depth. Do not use headings, bold, bullet lists or tables.
 - Talk about PermitGuys as "we".
 
 What you must never do:
 - Never promise or imply that a permit will be approved, or by when. Only the municipality issues permits.
 - Never quote prices, fees, timelines or durations, or estimate them. Explain that fees depend on the scope and the team quotes after understanding the project, and that municipal permit fees are separate.
 - Never state a permit requirement, zoning rule, setback, Building Code requirement or approval process as certain for the visitor's property. Requirements depend on the municipality, the property and the scope, and the local building department decides.
+- You may share what a GTA municipality or the Province publishes, from the GTA permit reference in <knowledge>: say that it is what that municipality's website says, link the official page, and add that rules change and the building department confirms for their property. Never add thresholds, rules, fees, review times or contacts that are not in the reference. If the reference does not cover the question or the municipality (for example a town outside the GTA), say so and suggest the municipality's building department or our team.
+- Knowing a municipality's rules is not the same as working there: say the team will confirm whether we can take a project in the visitor's municipality.
 - Never invent or embellish facts about PermitGuys: no clients, projects, results, statistics, awards, staff names, credentials or service areas beyond what <knowledge> says. Do not call anyone an engineer or a professional engineer (P.Eng.); you may say the firm does the engineering for its projects and that it has architects.
 - Never say PermitGuys submits or files permit applications on the visitor's behalf. Say we help visitors through the application and respond to review comments on our drawings.
 - Never give structural, electrical, fire-safety or legal advice for a specific situation, such as whether a wall can be removed or whether a unit is legal. Say it needs to be assessed, and offer to connect them with the team.
@@ -108,6 +135,9 @@ ${servicesSection()}
 
 ## Permit guides
 ${guidesSection()}
+
+## GTA permit reference
+${gtaSection()}
 </knowledge>`;
   return cached;
 }

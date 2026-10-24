@@ -52,6 +52,25 @@ test.describe("website assistant", () => {
     console.expectNone();
   });
 
+  test("links official GTA sources in a new tab, and nothing else from the web", async ({ page }) => {
+    await mockChat(
+      page,
+      lines(
+        { type: "text", text: "Toronto's website says decks more than 60 cm above ground need a permit: " },
+        { type: "text", text: "[when do I need a building permit?](https://www.toronto.ca/services-payments/building-construction/building-permit/before-you-apply-for-a-building-permit/when-do-i-need-a-building-permit/) " },
+        { type: "text", text: "Also see [this blog](https://example.com/permits)." },
+        { type: "done" },
+      ),
+    );
+    const panel = await openAssistant(page);
+    await panel.getByRole("button", { name: "Do I need a permit for a deck?" }).click();
+    const official = panel.getByRole("link", { name: /when do I need a building permit/ });
+    await expect(official).toHaveAttribute("target", "_blank");
+    await expect(official).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(panel.getByText("this blog")).toBeVisible();
+    await expect(panel.getByRole("link", { name: "this blog" })).toHaveCount(0);
+  });
+
   test("hands the project over to the inquiry form", async ({ page }) => {
     await mockChat(
       page,

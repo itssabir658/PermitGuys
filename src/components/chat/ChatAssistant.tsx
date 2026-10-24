@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { ArrowRight } from "@/components/ui/Icons";
 import { cn } from "@/components/ui/cn";
+import { officialHosts } from "@/content/gta-permits";
 import { site } from "@/content/site";
 import { track } from "@/lib/analytics";
 import { chatLimits, type ChatEvent, type ChatTurn } from "@/lib/chat/conversation";
@@ -54,9 +55,19 @@ const readStored = (): Entry[] => {
   }
 };
 
+/** Official sources the assistant may link to (src/content/gta-permits.ts). Any other web address stays plain text. */
+const isOfficial = (href: string) => {
+  try {
+    const host = new URL(href).hostname.replace(/^www\./, "");
+    return href.startsWith("https://") && officialHosts.some((h) => host === h || host.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+};
+
 /** Turns the reply's paragraphs and [text](/path/) links into elements. Anything else stays text. */
 function renderReply(text: string, onNavigate: () => void): ReactNode {
-  const link = /\[([^\]\n]{1,120})\]\(((?:\/[\w\-./#?=&%]*)|(?:tel:[+\d\s()-]{7,20})|(?:mailto:[^\s)]{3,120}))\)/g;
+  const link = /\[([^\]\n]{1,160})\]\(((?:\/[\w\-./#?=&%]*)|(?:https:\/\/[^\s)]{4,400})|(?:tel:[+\d\s()-]{7,20})|(?:mailto:[^\s)]{3,120}))\)/g;
   return text
     .split(/\n+/)
     .filter((p) => p.trim())
@@ -66,14 +77,25 @@ function renderReply(text: string, onNavigate: () => void): ReactNode {
       for (const m of p.matchAll(link)) {
         parts.push(p.slice(last, m.index));
         const [, label, href] = m;
+        if (href.startsWith("https://") && !isOfficial(href)) {
+          parts.push(label);
+          last = m.index + m[0].length;
+          continue;
+        }
         parts.push(
           href.startsWith("/") ? (
             <Link key={m.index} href={href as never} onClick={onNavigate} className="text-ink underline decoration-brand-500/60 underline-offset-4 hover:decoration-brand-500">
               {label}
             </Link>
           ) : (
-            <a key={m.index} href={href} className="text-ink underline decoration-brand-500/60 underline-offset-4 hover:decoration-brand-500">
+            <a
+              key={m.index}
+              href={href}
+              {...(href.startsWith("https://") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="text-ink underline decoration-brand-500/60 underline-offset-4 hover:decoration-brand-500"
+            >
               {label}
+              {href.startsWith("https://") ? <span className="sr-only"> (opens in a new tab)</span> : null}
             </a>
           ),
         );

@@ -17,6 +17,7 @@ Optional settings (`.env.example`): `CHAT_MODEL` (default `claude-opus-5-5`), `C
 - `src/app/api/chat/route.ts`: rejects other sites' pages (Origin check) and streams the reply as newline-delimited JSON events.
 - `src/lib/chat/respond.ts`: rate limit, input checks (`conversation.ts`), and the call to Claude. Low effort for short, quick answers; the server-side fallback is on, so a request the model declines for policy reasons is retried on its default fallback model. Earlier turns are sent back as plain text only.
 - `src/lib/chat/knowledge.ts`: the instructions and the knowledge, built from the same content files as the pages (`site.ts`, services, guides, FAQs, process, other work). Edit the content files and the assistant knows the change after the next deployment. The prompt is identical on every request, so it is served from the prompt cache.
+- `src/content/gta-permits.ts`: the GTA permit reference. What the Province, the OAA, TRCA and 17 GTA municipalities (Toronto; Mississauga, Brampton, Caledon; Oakville, Burlington, Milton, Halton Hills; Vaughan, Markham, Richmond Hill, Aurora, Newmarket; Pickering, Ajax, Whitby, Oshawa) publish for homeowners: what needs a permit, extra units, how to apply and who to call. Each line comes from the official page listed with it, as read on the date in `GTA_PERMITS_CHECKED_ON`. Fees and review times are left out on purpose. The assistant says where a rule comes from, links that page, and only links official sources listed there. **Have someone at PermitGuys review it, and re-check the pages every few months**: municipalities change these pages without notice. Vaughan's pages could not be read when the reference was built, so the assistant only links them.
 - `src/lib/chat/handoff.ts`: the `prepare_inquiry` tool. The model can only choose project types and stages the form offers; everything is checked again before it reaches the browser. The contact form reads the draft from sessionStorage (or a window event if the form is already open) and fills only fields the visitor has not touched.
 
 ## Rules the assistant follows
@@ -28,7 +29,7 @@ When a business fact changes (for example a confirmed list of municipalities in 
 ## Privacy and cost
 
 - Messages go to Anthropic to generate replies. The site stores no conversations; server logs record only errors. The privacy policy says so.
-- A typical reply reads about 7,000 cached prompt tokens and writes a short answer. Watch usage in the Anthropic Console and set a monthly spend limit there.
+- A typical reply reads about 13,000 cached prompt tokens and writes a short answer. Watch usage in the Anthropic Console and set a monthly spend limit there.
 - The rate limit is in memory per server instance, like the inquiry form's. For stronger guarantees, back it with a shared store.
 
 ## Analytics
