@@ -1,55 +1,57 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
+import { GTA_BORDERS, GTA_HEIGHT, GTA_OUTLINE, GTA_REGIONS, GTA_WIDTH } from "@/content/gta-map";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
+import { INTRO_COMPLETE_MS, INTRO_EXIT_MS, INTRO_REPEAT_EXIT_MS, borderTiming, outlineTiming, revealTiming } from "@/lib/motion/intro";
 import { openingAssets } from "@/lib/motion/opening";
-import { OntarioOutline } from "./OntarioOutline";
 
 /*
- * The load sequence, on every full page load.
+ * The load sequence: the Greater Toronto Area intro. docs/MOTION.md, "Load
+ * sequence"; the timeline is in src/lib/motion/intro.ts.
  *
- * A graphite screen is in place before first paint and the outline of
- * Ontario draws itself (CSS, so it starts before any script runs): the
- * mainland over 0.9s, the islands overlapping its end; the GTA dot pops at
- * 0.95s and rings out once. The screen waits for the strokes (about 1.35s;
- * the dot finishes popping as the exit sets off), the fonts and the opening
- * pictures (openingAssets), and for at least 1.25s from navigation. The
- * page underneath is first measured only once the strokes are drawn and
- * the fonts are in, and the screen waits for that too: on a phone the
- * measure takes the main thread for a few frames, which would stall the
- * strokes mid-line (the dot's pop and ring run on the compositor).
+ * Once per tab (sessionStorage), a charcoal screen holds, the outline of the
+ * Greater Toronto Area draws itself up the lakeshore and round, the borders
+ * between its five regions follow, and the regions come to life west to
+ * east: Halton, Peel, York, Toronto, Durham, each a client rendering fading
+ * up and settling inside its region's shape, under the white lines. The
+ * finished map holds, then the screen crossfades onto the page. All of it is
+ * CSS; the screen and the pictures' loading start before first paint, and
+ * the timeline starts (data-intro="play") two frames after hydration, since
+ * the drawing is painted on the main thread and the hydration would stall a
+ * line mid-stroke. The head script starts it anyway after 1.5s. The pictures
+ * fade and settle on the compositor, and the page underneath is first
+ * measured only once the map is complete (engine.measureAfter), in the hold.
  *
- * Then, T₀: the page is put back at the top and the document gets
- * data-loaded and data-revealed, so the page's own entrance (the hero, the
- * header, an inner page's title) plays as the screen opens. The drawing
- * grows 2.4× around the dot and fades (0.7s, accelerating), and from 0.25s
- * an iris opens from the dot itself (1s, --e-sheet; a registered --hole
- * radius in the screen's mask, globals.css). The hero picture settles from
- * the same point. data-preloaded marks the end and removes the screen.
- * Browsers without registered custom properties get a 0.6s fade instead.
+ * A later full load in the same tab shows only the charcoal screen, which
+ * fades as soon as the page is ready. The pictures are CSS backgrounds that
+ * apply only during the intro, so a later load never fetches them; one that
+ * fails to load leaves its region in a dark tone.
  *
- * The page is held still while the screen is up (an impatient wheel would
- * otherwise scroll the hero away before its entrance) and released at 70%
- * of the iris, when it no longer looks held, or 8s after navigation
- * whatever happens. From data-loaded on, the screen lets the pointer through
- * to the page (globals.css).
+ * The screen waits for the fonts and the page's opening pictures as before
+ * (openingAssets, capped at 3.5s). Then, T₀: the page is put back at the
+ * top, the document gets data-loaded and data-revealed so the page's own
+ * entrance plays through the crossfade, and data-preloaded marks the end and
+ * removes the screen. The page is held still while the screen is up and
+ * released at 60% of the crossfade, or 8s after navigation whatever happens.
  *
  * `motionScript` runs in the document head before first paint. It turns the
- * sequence on only for visitors who allow motion and have JavaScript, and
- * sets every flag after 8s whatever happens, so the page can never be held.
+ * sequence on only for visitors who allow motion and have JavaScript, marks
+ * the first full load in the tab for the intro (data-intro), starts it
+ * after 1.5s should the page not have hydrated by then, and sets every
+ * flag after 8s whatever happens, so the page can never be held. With
+ * reduced motion there is no screen at all: the page is simply there.
  */
-export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else d.dataset.motion="";setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
+export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else{d.dataset.motion="";try{if(!sessionStorage.getItem("pg_intro")){sessionStorage.setItem("pg_intro","1");d.dataset.intro="";setTimeout(function(){d.dataset.intro="play"},1500)}}catch(e){}}setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
 
-/** From navigation start, the shortest the drawing is shown (it finishes at about 1.35s; the dot's pop ends during the exit's slow start). */
-const MIN_MS = 1250;
 /** From navigation start, as the head script: the page is released by then whatever happens. */
 const SAFETY_MS = 8000;
 /** Never hold the page for slow assets longer than this. */
 const ASSET_CAP_MS = 3500;
-const SHRINK_MS = 700;
-const IRIS_DELAY_MS = 250;
-const IRIS_MS = 1000;
+
+const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(3)}%`;
+const timing = (t: { at: number; ms: number }) => ({ "--at": `${t.at}ms`, "--ms": `${t.ms}ms` }) as CSSProperties;
 
 export function Preloader() {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,61 +66,58 @@ export function Preloader() {
     const safety = window.setTimeout(() => engine.unlock("preloader"), Math.max(0, SAFETY_MS - performance.now()));
     let release = 0;
     let cancelled = false;
+    const full = "intro" in html.dataset;
     const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
-    // Only the strokes are waited for: the dot pops as the mainland closes and finishes during the exit's slow start, and its ring rings out through the exit.
-    const drawing = el.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation && (a.animationName === "dot-in" || a.animationName === "dot-pulse")));
-    const drawn = Promise.all(drawing.map((a) => a.finished.catch(() => undefined)));
+    const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const settled = (list: Animation[]) => Promise.all(list.map((a) => a.finished.catch(() => undefined)));
+    let composedAt = 0;
+    // Two frames on, so every effect of the hydration has run and nothing heavy is left to stall the drawing.
+    const composed = (full ? frame().then(frame) : Promise.resolve()).then(() => {
+      if (full) html.dataset.intro = "play";
+      // Reading them brings the styles up to date, which starts the animations.
+      return settled(el.getAnimations({ subtree: true })).then(() => {
+        composedAt = performance.now();
+      });
+    });
     const fonts = Promise.race([document.fonts?.ready, wait(ASSET_CAP_MS)]);
-    // The page underneath is first measured once the strokes are drawn and the fonts are in (engine.measureAfter), and the screen waits for that measure.
-    const measured = engine.measureAfter(Promise.race([Promise.all([drawn, fonts]), wait(Math.max(0, SAFETY_MS - performance.now()))]));
+    // The page is first measured once the map is complete, so the measure lands in the hold, not on a line being drawn.
+    const measured = engine.measureAfter(Promise.race([Promise.all([composed, fonts]), wait(Math.max(0, SAFETY_MS - performance.now()))]));
     const assets = Promise.all([document.fonts?.ready, ...openingAssets()]);
 
-    Promise.all([drawn, measured, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
-      if (cancelled) return;
-      // Too late: the head script has already revealed the page (8s), so leave the page where the visitor has it.
-      if ("preloaded" in html.dataset) {
-        engine.unlock("preloader");
-        return;
-      }
-      // The iris and the hero's settle open from the dot, wherever the drawing put it.
-      const dot = el.querySelector(".ontario__dot")?.getBoundingClientRect();
-      const x = dot ? dot.left + dot.width / 2 : window.innerWidth / 2;
-      const y = dot ? dot.top + dot.height / 2 : window.innerHeight / 2;
-      // On the screen and the hero's stage only: set on the root, a custom property restyles the whole document, just as the screen opens.
-      for (const target of [el, ...document.querySelectorAll<HTMLElement>("[data-hero-stage]")]) {
-        target.style.setProperty("--iris-x", `${x.toFixed(1)}px`);
-        target.style.setProperty("--iris-y", `${y.toFixed(1)}px`);
-      }
-      // Back at the top before anything shows (data-loaded is what scripts and tests wait for).
-      engine.scrollTo(0, true);
-      html.dataset.loaded = "";
-      html.dataset.revealed = "";
-      const done = () => {
-        html.dataset.preloaded = "";
-      };
-      const unlockAt = (ms: number) => {
+    Promise.all([composed, measured, Promise.race([assets, wait(ASSET_CAP_MS)])])
+      // The finished map is held a moment, however long the page took to be ready.
+      .then(() => (full ? wait(Math.max(0, INTRO_COMPLETE_MS - (performance.now() - composedAt))) : undefined))
+      .then(() => {
+        if (cancelled) return;
+        // Too late: the head script has already revealed the page (8s), so leave the page where the visitor has it.
+        if ("preloaded" in html.dataset) {
+          engine.unlock("preloader");
+          return;
+        }
+        // The hero's picture settles from where Toronto was on the map.
+        const map = el.querySelector(".intro")?.getBoundingClientRect();
+        const toronto = GTA_REGIONS.find((r) => r.key === "toronto");
+        const x = map && toronto ? map.left + (toronto.centre[0] / GTA_WIDTH) * map.width : window.innerWidth / 2;
+        const y = map && toronto ? map.top + (toronto.centre[1] / GTA_HEIGHT) * map.height : window.innerHeight / 2;
+        for (const target of document.querySelectorAll<HTMLElement>("[data-hero-stage]")) {
+          target.style.setProperty("--iris-x", `${x.toFixed(1)}px`);
+          target.style.setProperty("--iris-y", `${y.toFixed(1)}px`);
+        }
+        // Back at the top before anything shows (data-loaded is what scripts and tests wait for).
+        engine.scrollTo(0, true);
+        html.dataset.loaded = "";
+        html.dataset.revealed = "";
+        const ms = full ? INTRO_EXIT_MS : INTRO_REPEAT_EXIT_MS;
+        const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: cssEase.power1InOut, fill: "forwards" });
+        el.querySelector(".intro")?.animate([{ transform: "scale(1)" }, { transform: "scale(1.035)" }], { duration: ms, easing: cssEase.power2Out, fill: "forwards" });
         release = window.setTimeout(() => {
           if (!cancelled) engine.unlock("preloader");
-        }, ms);
-      };
-      if (!("registerProperty" in CSS)) {
-        const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, delay: 100, easing: cssEase.power1Out, fill: "forwards" });
-        unlockAt(100 + 0.7 * 600);
+        }, 0.6 * ms);
+        const done = () => {
+          html.dataset.preloaded = "";
+        };
         fade.finished.then(done, done);
-        return;
-      }
-      const inner = el.querySelector<HTMLElement>(".preloader__inner");
-      if (inner) {
-        const box = inner.getBoundingClientRect();
-        inner.style.transformOrigin = `${(x - box.left).toFixed(1)}px ${(y - box.top).toFixed(1)}px`;
-        inner.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(2.4)", opacity: 0 }], { duration: SHRINK_MS, easing: "cubic-bezier(0.7, 0, 0.84, 0)", fill: "forwards" });
-      }
-      // Just past the farthest corner, so the whole of the ease is seen.
-      const reach = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)) + 2;
-      const iris = el.animate([{ "--hole": "0px" }, { "--hole": `${Math.ceil(reach)}px` }], { duration: IRIS_MS, delay: IRIS_DELAY_MS, easing: cssEase.sheet, fill: "forwards" });
-      unlockAt(IRIS_DELAY_MS + 0.7 * IRIS_MS);
-      iris.finished.then(done, done);
-    });
+      });
     return () => {
       cancelled = true;
       window.clearTimeout(safety);
@@ -129,12 +128,56 @@ export function Preloader() {
 
   return (
     <div ref={ref} aria-hidden="true" className="preloader">
-      <div className="preloader__inner">
-        <OntarioOutline className="preloader__map" />
-        <p className="preloader__label">
-          <span>Ontario</span>
-          <span>Greater Toronto Area</span>
-        </p>
+      <div className="intro" style={{ aspectRatio: `${GTA_WIDTH} / ${GTA_HEIGHT}` }}>
+        {GTA_REGIONS.map((r, i) => {
+          const [x, y, w, h] = r.box;
+          return (
+            <div
+              key={r.key}
+              className="intro__region"
+              style={{
+                left: pct(x, GTA_WIDTH),
+                top: pct(y, GTA_HEIGHT),
+                width: pct(w, GTA_WIDTH),
+                height: pct(h, GTA_HEIGHT),
+                clipPath: `url(#intro-clip-${r.key})`,
+                ...timing(revealTiming(i)),
+              }}
+            >
+              <div
+                className="intro__picture"
+                style={
+                  {
+                    "--picture": `url(${r.picture.src})`,
+                    "--picture-small": `url(${r.picture.small})`,
+                    transformOrigin: `${pct(r.centre[0] - x, w)} ${pct(r.centre[1] - y, h)}`,
+                  } as CSSProperties
+                }
+              />
+            </div>
+          );
+        })}
+        <svg className="intro__lines" viewBox={`0 0 ${GTA_WIDTH} ${GTA_HEIGHT}`} fill="none" focusable="false">
+          <defs>
+            {GTA_REGIONS.map((r) => (
+              <clipPath key={r.key} id={`intro-clip-${r.key}`} clipPathUnits="objectBoundingBox">
+                <path d={r.clip} />
+              </clipPath>
+            ))}
+          </defs>
+          {/* A soft dark line under the white ones, for the pictures' pale skies. */}
+          <g className="intro__keyline" style={timing(revealTiming(1))}>
+            {[...GTA_OUTLINE, ...GTA_BORDERS].map((d) => (
+              <path key={d.slice(0, 32)} d={d} />
+            ))}
+          </g>
+          {GTA_BORDERS.map((d, i) => (
+            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke intro__stroke--border" style={timing(borderTiming(i))} />
+          ))}
+          {GTA_OUTLINE.map((d, i) => (
+            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke" style={timing(outlineTiming(i))} />
+          ))}
+        </svg>
       </div>
     </div>
   );

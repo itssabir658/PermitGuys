@@ -616,17 +616,6 @@
   }
 }
 
-@keyframes dot-pulse {
-  from {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  to {
-    transform: scale(2.7);
-    opacity: 0;
-  }
-}
-
 /* ---- Ontario outline (OntarioOutline.tsx) ---- */
 .ontario__stroke path {
   stroke: currentColor;
@@ -641,59 +630,123 @@
   transform-box: fill-box;
   transform-origin: center;
 }
-/* A ring that rings out once from the dot; only the preloader plays it. */
-.ontario__pulse {
-  display: none;
-  fill: none;
-  stroke: var(--color-brand-400);
-  stroke-width: 1px;
-  vector-effect: non-scaling-stroke;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-/* ---- Preloader (Preloader.tsx) ---- */
+/* ---- Intro (Preloader.tsx; timeline in src/lib/motion/intro.ts) ---- */
 /*
- * The iris: a hole in the screen at the GTA dot, its radius in --hole
- * (animated by Preloader.tsx; registered, so it interpolates). At 0 the
- * transparent stop sits at −1px, so the screen is whole.
+ * Shown up until its crossfade has finished, for visitors who allow motion
+ * (data-motion, set by the head script). Each piece takes its delay and
+ * duration from --at and --ms, set inline from the timeline. The map and its
+ * pictures play only on the first full load in a tab (data-intro, when the
+ * pictures start loading); they start moving at data-intro="play", once the
+ * page has hydrated; later loads show the bare screen.
  */
-@property --hole {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
 .preloader {
   position: fixed;
   inset: 0;
   z-index: 120;
   display: none;
   place-items: center;
-  background: var(--color-charcoal-950);
-  color: var(--color-ivory);
-  mask: radial-gradient(circle at var(--iris-x, 50%) var(--iris-y, 50%), transparent calc(var(--hole) - 1px), #000 var(--hole));
+  background: #171717;
 }
-/* Up until its exit has finished: data-loaded is set as the exit starts, so the page's entrance plays through the opening iris. */
 :root[data-motion]:not([data-preloaded]) .preloader {
   display: grid;
 }
-/* The page is live from the moment the exit starts: a mask does not stop hit testing, so the opening screen lets clicks through. */
+/* The page is live from the moment the crossfade starts. */
 :root[data-loaded] .preloader {
   pointer-events: none;
 }
-.preloader__inner,
+/* Sized by the height, and by the width on narrow screens, with a gutter all round. */
+.intro {
+  position: relative;
+  width: min(calc(100vw - 2.5rem), calc(84svh * 1000 / 1096.7), 46rem);
+  visibility: hidden;
+}
+:root[data-intro] .intro {
+  visibility: visible;
+}
+.intro__region {
+  position: absolute;
+  overflow: hidden;
+  /* What a region shows if its picture never arrives. */
+  background: #232323;
+  opacity: 0;
+}
+.intro__picture {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+}
+/* Only during the intro, so a later load never fetches them. */
+:root[data-intro] .intro__picture {
+  background-image: var(--picture-small);
+}
+@media (min-width: 40rem) {
+  :root[data-intro] .intro__picture {
+    background-image: var(--picture);
+  }
+}
+.intro__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.intro__lines path {
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.intro__stroke {
+  stroke: #fff;
+  stroke-width: 1.5px;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.intro__stroke--border {
+  stroke-width: 1.25px;
+}
+.intro__keyline {
+  stroke: #000;
+  stroke-opacity: 0.4;
+  stroke-width: 4px;
+  opacity: 0;
+}
+:root[data-intro="play"] .intro__stroke {
+  animation: intro-draw var(--ms) var(--e-inout-2) var(--at) both;
+}
+/* A region comes in as its picture fades up and settles from 106% around the region's heart. */
+:root[data-intro="play"] .intro__region {
+  animation: fade-in var(--ms) var(--e-out) var(--at) both;
+  opacity: 1;
+}
+:root[data-intro="play"] .intro__picture {
+  animation: intro-settle var(--ms) var(--e-out) var(--at) both;
+}
+:root[data-intro="play"] .intro__keyline {
+  animation: fade-in var(--ms) var(--e-out) var(--at) both;
+  opacity: 1;
+}
+@keyframes intro-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes intro-settle {
+  from {
+    transform: scale(1.06);
+  }
+}
+
+/* The page transition's mark (ScreenTransition.tsx). */
 .screen-veil__mark {
   display: grid;
   justify-items: center;
   gap: 2rem;
 }
-/* Sized by the height, and by the width on narrow phones, so the whole province fits with a gutter. */
-.preloader__map {
-  height: min(52svh, 30rem, calc((100vw - 3rem) / 0.892));
-  aspect-ratio: 892 / 1000;
-  overflow: visible;
-}
-.preloader__label,
 .screen-veil__label {
   display: flex;
   gap: 1.5rem;
@@ -703,7 +756,7 @@
   text-transform: uppercase;
   color: var(--color-charcoal-300);
 }
-:is(.preloader__label, .screen-veil__label) span + span::before {
+.screen-veil__label span + span::before {
   content: "";
   display: inline-block;
   width: 0.4rem;
@@ -712,26 +765,6 @@
   border-radius: 9999px;
   background: var(--color-brand-400);
   vertical-align: 0.08em;
-}
-/* The mainland draws first (0.05–0.95s), the islands overlap its end, 0.08s apart (last done at 1.19s). */
-.preloader .ontario__stroke path {
-  animation: ontario-draw 0.5s var(--e-inout-2) calc(0.45s + (var(--i) - 1) * 0.08s) both;
-}
-.preloader .ontario__stroke:first-child path {
-  animation: ontario-draw 0.9s var(--e-inout-2) 0.05s both;
-}
-/* The dot pops as the mainland closes, and rings out once: the focal point the iris opens from. */
-.preloader .ontario__dot {
-  animation: dot-in 0.45s var(--e-out-strong) 0.95s both;
-}
-.preloader .ontario__pulse {
-  display: inline;
-  /* Unseen until it rings (not filled backwards), and gone after. */
-  opacity: 0;
-  animation: dot-pulse 0.9s var(--e-out) 1s forwards;
-}
-.preloader__label {
-  animation: fade-in 0.6s var(--e-out) 0.3s both;
 }
 
 /* ---- Page transition (ScreenTransition.tsx) ---- */

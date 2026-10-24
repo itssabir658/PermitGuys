@@ -104,3 +104,22 @@ Both take a `scale` for pictures zoomed inside their frame (drift, the Works sho
 4. For a client rendering, add the plate to its project in `clientProjects`, which takes one or two views per project. For a photo of a completed project, published with the client's permission, add a case study in `src/content/projects.ts` instead. Approved case studies are listed on the projects page and the homepage.
 
 Do not present stock photos or studies as PermitGuys projects.
+
+## The intro's map
+
+The intro (`Preloader.tsx`) fills the five regions of the Greater Toronto Area with five client renderings, one per region, in `public/images/intro/`. The pairing is a mood, not a claim: nothing says or implies that a house is in the region it fills.
+
+| Region | Rendering |
+|---|---|
+| Halton | Classical house at dusk, behind clipped hedges and a pond (supplied 24 October 2026; `public/images/projects/classical-house-dusk.jpg`, converted from Adobe RGB to sRGB, 3800px, quality 84) |
+| Peel | Contemporary house at dusk, its exterior lighting on |
+| York | Stone house with three gables |
+| Toronto | Narrow contemporary house between tall trees |
+| Durham | Farmhouse bungalow on a wide lawn |
+
+`scripts/gta-map/build.py` makes both the map and the pictures (Python 3 with shapely and Pillow, and Node for mapshaper):
+
+- **Boundaries.** Statistics Canada, 2021 Census cartographic boundary file, census divisions (Durham 3518, York 3519, Toronto 3520, Peel 3521, Halton 3524), from its ArcGIS map service, under the Open Government Licence - Canada. The cartographic file follows the Lake Ontario shoreline; the regions' own lines run out into Lake Simcoe in the north, as the census divisions do. Kept in Statistics Canada's Lambert conformal conic projection (EPSG:3347), north up, and simplified with mapshaper (110m), so neighbouring regions share exactly the same edge. Islands under 1 km² are dropped; Toronto Island stays. Written to `src/content/gta-map.ts`.
+- **Pictures.** Each rendering is cropped to its region's bounding box, centred as far as the picture allows on the region's deepest point, given one quiet grade (less colour and light) so daylight and dusk sit together on the charcoal, and saved as WebP at two widths (about 1000 and 560px on the long edge).
+
+The pictures carry no alt text: the intro is decorative and hidden from assistive technology. File names describe the house, never an address.

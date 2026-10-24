@@ -1,6 +1,6 @@
 # Homepage motion
 
-How the site moves, as built. Code comments point here by section name. The choreography is pure functions of scroll in `src/lib/motion/home.ts` (and `footer.ts`), unit tested in `tests/motion.test.ts`, and how touch screens settle is in `settle.ts` (`tests/settle.test.ts`); the components that drive them are `HomeMotion.tsx` (homepage), `MotionRoot.tsx` (every page), `Preloader.tsx`, `ScreenTransition.tsx` and `MainNav.tsx`.
+How the site moves, as built. Code comments point here by section name. The choreography is pure functions of scroll in `src/lib/motion/home.ts` (and `footer.ts`), unit tested in `tests/motion.test.ts`, and how touch screens settle is in `settle.ts` (`tests/settle.test.ts`); the components that drive them are `HomeMotion.tsx` (homepage), `MotionRoot.tsx` (every page), `Preloader.tsx` (the GTA intro), `ScreenTransition.tsx` and `MainNav.tsx`.
 
 The Studio Foundry motion specification Sebra supplied (MOTION-SPEC.md, 22 October 2026) was the early reference for the engine and the section order. The site has since moved away from it in most details (see "Where this differs from the spec"); this file describes the site, not the spec.
 
@@ -17,7 +17,7 @@ One set of rules for the whole site (`home.ts` header; the CSS side is in `globa
 ## Scroll engine
 
 - **Lenis 1.3.27** (`src/lib/motion/engine.ts`) smooths the wheel: duration 1.2 on an exponential ease-out, vertical. With reduced motion: duration 0, linear, no wheel smoothing. Touch-first screens (a coarse pointer and no hover: phones and tablets) run without it and scroll natively, since Lenis's touch listeners cannot be passive: with it, every touch waited for the page's script before the page could move. There the engine reads the scroll position each frame, and while the page is held (the menu, a page change, the preloader) it cancels the gestures itself (`blockPanels`), except over a panel that scrolls by itself.
-- **One frame loop** runs everything in a fixed order: Lenis, frame callbacks (roll links), then the modules by `ORDER`: the line splitter, ground, hero, intro, the story, works, values, the Services picture, the Services copy, the Services to Contact handover, contact, the footer, parallax, and the header last. `dt` is clamped to 50ms, so a tab left in the background does not jump when it comes back. Until the preloader's outline is drawn the loop neither measures nor writes (`measureAfter`; see the load sequence).
+- **One frame loop** runs everything in a fixed order: Lenis, frame callbacks (roll links), then the modules by `ORDER`: the line splitter, ground, hero, intro, the story, works, values, the Services picture, the Services copy, the Services to Contact handover, contact, the footer, parallax, and the header last. `dt` is clamped to 50ms, so a tab left in the background does not jump when it comes back. Until the intro's map is complete the loop neither measures nor writes (`measureAfter`; see the load sequence).
 - **Lines.** Every block of text the homepage reveals line by line is split into masked lines (`split.ts`) before any module measures, all together (`splitAll`): every block's words are written, every break read, every line written, then every new width read, so the first measure lays the page out about eight times in all rather than twice a block (on a phone it had laid it out 52 times, in a frame of a quarter of a second at four times CPU throttle). Values splits its descriptions itself, together, once it has set the width they wrap to. A split is made again only when its block's width changes, or when it was made before the fonts had loaded.
 - **Progress values.** `sso` (0 when an element's top meets the bottom of the screen, 1 at the top) and `hso` (−1 when its bottom meets the bottom of the screen, 0 at the top). Ranges come from the `offsetTop` chain, so transforms never feed back into them, and are re-measured on resize, font load, body resize and route change. The screen unit is `100lvh`, so a phone's toolbar does not change the timeline.
 - **Writes.** `setStyle` writes only when a value changes, and the modules write transforms, opacity and clip-path, so a frame never invalidates more than the elements that move. The one custom property written per frame (`--ground`, on the phone header bar) is registered as not inherited.
@@ -36,18 +36,26 @@ A flick on a phone ends wherever its momentum runs out, and on the scrubbed scen
 
 ## Load sequence
 
-| Time | What happens |
-|---|---|
-| Before first paint | The head script (`motionScript`) sets `data-motion` for visitors who allow motion, and sets every flag after 8s whatever happens, so the page can never be held. A graphite screen is in place. |
-| 0 to about 1.35s | The outline of Ontario draws itself in CSS (the mainland over 0.9s, the islands overlapping its end). The GTA dot pops at 0.95s and rings out once. |
-| At least 1.25s from navigation | The screen waits for the strokes, the fonts and the opening pictures (capped at 3.5s; `openingAssets`): on the homepage the hero's two planes. The page underneath is first measured only once the strokes are drawn and the fonts are in (`measureAfter`), and the screen waits for that measure too: on a phone it takes the main thread for a few frames, which would otherwise stall the strokes mid-line (the dot's pop and ring run on the compositor). Should the house still be loading when the screen opens (a slow connection), the hero holds the sky back until it arrives and fades both in together once both pictures are decoded (`data-waiting`), since the sky plate alone is a half-built background and decoding the pictures as they appear stalled that frame for a quarter of a second. |
-| T₀ | The page is put back at the top, and the document gets `data-loaded` and `data-revealed`. The drawing grows 2.4 times around the dot and fades (0.7s, accelerating). From 0.25s an iris opens from the dot itself (1s, `--e-sheet`, a registered `--hole` radius in the screen's mask). The dot's place (`--iris-x`, `--iris-y`) is set on the screen and the hero's stage only: set on the root, it restyled the whole document just as the screen opened. |
-| T₀ + 0.45s | The hero picture's planes have been settling from 112% around the same point (1.8s), together, so they stay in register. The name rises out of its mask (1.2s). |
-| T₀ + 0.85s | The statement's two lines rise, 0.09s apart; the caption fades in at 1.15s. |
-| T₀ + 0.9s | The header's row comes in item by item (from 0.3s on other pages). |
-| End of the iris | `data-preloaded` is set and the screen is removed. Scrolling is released at 70% of the iris (or 8s after navigation). |
+The screen on a full page load is the Greater Toronto Area intro (`Preloader.tsx`; timeline in `src/lib/motion/intro.ts`, unit tested in `tests/intro.test.ts`; browser tests in `e2e/intro.spec.ts`). It plays once per tab: the head script marks the first full load in a tab (`sessionStorage` key `pg_intro`) with `data-intro`. A later full load in the same tab shows only the charcoal screen, which fades (0.45s) as soon as the page is ready, and never fetches the intro's pictures. Moving between pages in the site never reloads, so it uses the page transition instead.
 
-Browsers without registered custom properties get a 0.6s fade instead of the iris. After a page transition the hero entrance runs sooner, as the cover lifts (`data-arrival="route"`, which hard loads never have). The hero's CSS entrance moves each line's inner span and the scroll moves the span around it, so neither overrides the other.
+The map is the five census divisions of the GTA from Statistics Canada's 2021 cartographic boundary file, simplified with shared edges kept shared, north up (`src/content/gta-map.ts`, generated by `scripts/gta-map/build.py`; see `docs/IMAGES.md`). Each region is an HTML layer sized to its bounding box and clipped to its shape (`clip-path: url(#intro-clip-…)`, a clip path in the box's own units), so its picture fades and settles on the compositor; the white lines are one SVG over all five, drawn with `stroke-dashoffset` on `pathLength=1` paths at a constant width (`vector-effect: non-scaling-stroke`), with a soft dark line under them for pale skies.
+
+| From `data-intro="play"` | What happens |
+|---|---|
+| Before first paint | The head script sets `data-motion` for visitors who allow motion, `data-intro` on the first load in a tab, and every flag after 8s whatever happens, so the page can never be held. A `#171717` screen is in place and the five pictures start loading (CSS backgrounds that apply only with `data-intro`; a smaller cut below 40rem). |
+| 0 | Two frames after hydration the Preloader sets `data-intro="play"` and the CSS timeline starts (the head script starts it anyway 1.5s after navigation). The drawing is painted on the main thread, so it waits until hydration is over: started at first paint, a phone at four times CPU throttle stalled the first line for up to 180ms. |
+| 0 to 0.4s | The dark screen holds. |
+| 0.4 to 1.7s | The outer edge draws as one stroke from the south-west tip, up the lakeshore first and round (1.3s, `--e-inout-2`). Toronto Island draws as it closes. |
+| 1.05 to 2.05s | The five borders between the regions draw from their lakeward ends, 70ms apart (0.65s each). |
+| 1.55 to 3.33s | The regions come in west to east, 220ms apart: Halton, Peel, York, Toronto, Durham. Each fades up (0.9s, `--e-out`) while its picture settles from 106% around the region's deepest point; the pictures never move across the screen. |
+| Once the map is complete | The page underneath is measured (`measureAfter`): on a phone this takes the main thread for a few frames, and nothing is moving now. The finished map holds 0.6s from the last picture settling, longer only if the fonts, the measure or the page's opening pictures (`openingAssets`, capped at 3.5s from navigation) are not ready. |
+| T₀ (about 3.9s) | The page is put back at the top and the document gets `data-loaded` and `data-revealed`, so the page's own entrance plays through the crossfade. The screen fades (0.8s, `power1InOut`) as the map grows to 103.5%. The hero's planes settle from where Toronto was on the map (`--iris-x`, `--iris-y` on the hero's stage). The pointer goes through the screen from T₀. |
+| T₀ + 0.48s | Scrolling is released (60% of the crossfade, or 8s after navigation). |
+| T₀ + 0.8s | `data-preloaded` is set and the screen is removed: about 4.7s in all on a desktop. |
+
+If a picture fails to load, its region stays a dark tone and the intro goes on. After a page transition the hero entrance runs sooner, as the cover lifts (`data-arrival="route"`, which hard loads never have). The hero's CSS entrance moves each line's inner span and the scroll moves the span around it, so neither overrides the other.
+
+Measured with Playwright at 390x844, DPR 3, four times CPU throttle: no frame over 33ms while the lines draw or the pictures come in; the measure's one long frame (about 130ms) falls in the hold.
 
 ## Sections (scroll map at 1440×900)
 
@@ -124,7 +132,7 @@ Contact is a quiet close, under one screen tall at 1440×900: an invitation besi
 
 ### The footer
 
-On every page the footer's content rises out from under the sheet above it, lagging by up to 0.3 of its height (or of a screen) and in place once it is all on screen or the page ends (`footerProgress`, `footerLift`). The Ontario outline draws itself stroke by stroke as it comes into view, the GTA dot landing last (`footerDraw`, `footerStroke`, `footerDot`): a bookend to the preloader. On a touch screen it draws itself over 1.6s once it is 0.08 screen up (`FOOTER_DRAW_S`), so it is never left half drawn. The footer's own call to action stands down on pages that already close on one (the homepage's Contact, an inner page's `CtaPanel`, the contact form). The 404 draws its own outline beside its numeral, so the footer's stands down there.
+On every page the footer's content rises out from under the sheet above it, lagging by up to 0.3 of its height (or of a screen) and in place once it is all on screen or the page ends (`footerProgress`, `footerLift`). The Ontario outline draws itself stroke by stroke as it comes into view, the GTA dot landing last (`footerDraw`, `footerStroke`, `footerDot`): a bookend to the page transition's outline. On a touch screen it draws itself over 1.6s once it is 0.08 screen up (`FOOTER_DRAW_S`), so it is never left half drawn. The footer's own call to action stands down on pages that already close on one (the homepage's Contact, an inner page's `CtaPanel`, the contact form). The 404 draws its own outline beside its numeral, so the footer's stands down there.
 
 ## Navigation and page transitions
 
@@ -140,7 +148,7 @@ On every page the footer's content rises out from under the sheet above it, lagg
 
 ## Reduced motion and still layouts
 
-With `prefers-reduced-motion: reduce`: Lenis duration 0 and no wheel smoothing; no preloader; every homepage section shows its still layout with all content visible; the Services picture follows a hover or focus at once; Contact's lines, picture and title block and the footer outline are simply there; roll links, parallax and the inner-page reveals are off; page transitions and Back and forward are a 0.3s crossfade, and glides are jumps; CSS durations collapse to 0.01ms.
+With `prefers-reduced-motion: reduce`: Lenis duration 0 and no wheel smoothing; no intro screen at all (the page is simply there); every homepage section shows its still layout with all content visible; the Services picture follows a hover or focus at once; Contact's lines, picture and title block and the footer outline are simply there; roll links, parallax and the inner-page reveals are off; page transitions and Back and forward are a 0.3s crossfade, and glides are jumps; CSS durations collapse to 0.01ms.
 
 Screens under 500px tall (a phone on its side) and visitors without JavaScript get the same still layouts, with motion otherwise allowed. So does a printed page, from wherever it was scrolled to: the tracks CSS applies to screens only, and the engine turns the tracks off from `beforeprint` to `afterprint`, so every module clears what it wrote before the page prints and writes it again after. In print a project or a value stays on one sheet with its picture, the making of a house shares one with its label and chapters, dark grounds keep their graphite, and sticky boxes print in the flow. Every split line keeps its text for screen readers once.
 
@@ -149,7 +157,7 @@ Screens under 500px tall (a phone on its side) and visitors without JavaScript g
 - **Choreography.** The spec's section behaviours were replaced section by section: the hero is covered by the intro's sheet rather than fading, the orbit is one squircle path rather than seven orbit slots, Works is one pinned viewer with wipes rather than resolving panels, Values is an odometer with a union mask, Services pins beside its list on wide screens and flows on phones, and Contact is a sheet that closes on the firm's title block. The story, one house drawn from sketch to permit sheet, and the making of a house, one client house from its site to its permit set, are new. Display type never fades.
 - **No WebGL layer.** Its shaders were never captured, so nothing of them is guessed. The `homeCard` FLIP between a works card and its page belongs to that layer and is not built either.
 - **Colours** are PermitGuys' ivory (`#f4f1eb`), stone and graphite (`#191918`), and the ground goes through dusk into night for Services.
-- **The preloader** draws Ontario's outline and opens with an iris from the GTA dot rather than the arch logo; the transition panel and the footer carry the same outline.
+- **The intro** draws the Greater Toronto Area's five regions and fills them with client renderings rather than showing the arch logo; the transition panel and the footer carry Ontario's outline.
 - **Link button corners** round by 2px with a CSS `clip-path` rather than the reference's hand-built path morph, and the buttons stay square-cornered at rest, in the brand's ink, ivory and stone; red is only the turned arrow and the footer's one square.
 - **Short screens** get the still layout rather than the reference's short-landscape variant.
 
