@@ -199,15 +199,24 @@ export type PlateKey = keyof typeof plates;
 
 /**
  * The homepage hero's planes, cut from the terrace rendering at its own size
- * and crops (docs/IMAGES.md, "The hero's layers"). The sky is the rendering
- * with the house, the pine and the garden taken out and the sky rebuilt
- * behind them; the matte is the alpha of what stands in front of the name
- * (the house, the pine, the trees on the left and the ground), which masks
- * the rendering itself. Both have a tall crop, as the rendering does.
+ * and crops (docs/IMAGES.md, "The hero's layers"), each with the hero's veil
+ * (darker at the top for the header and at the foot for the statement)
+ * drawn in. The far plane is the rendering with the house, the pine and the
+ * garden taken out and the sky rebuilt behind them. The near plane is what
+ * stands in front of the name (the house, the pine, the trees on the left
+ * and the ground), cut out of the rendering: a transparent WebP, served as
+ * it is at the picture's width and at three quarters and half of it (the
+ * image optimizer's AVIF of a transparent picture is larger, and slow to
+ * make). Both have a tall crop, as the rendering does.
  */
 export const heroLayers = {
-  sky: { src: "/images/projects/contemporary-house-terrace-sky.jpg", tall: "/images/projects/contemporary-house-terrace-tall-sky.jpg" },
-  matte: { src: "/images/projects/contemporary-house-terrace-matte.webp", tall: "/images/projects/contemporary-house-terrace-tall-matte.webp" },
+  far: { src: "/images/projects/contemporary-house-terrace-far.jpg", tall: "/images/projects/contemporary-house-terrace-tall-far.jpg" },
+  near: {
+    src: "/images/projects/contemporary-house-terrace-near.webp",
+    threeQuarter: "/images/projects/contemporary-house-terrace-near-three-quarter.webp",
+    half: "/images/projects/contemporary-house-terrace-near-half.webp",
+    tall: "/images/projects/contemporary-house-terrace-tall-near.webp",
+  },
 };
 
 /**
