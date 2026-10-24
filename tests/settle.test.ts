@@ -6,10 +6,10 @@ import {
   contactPictureAt,
   contactRise,
   contactRiseAt,
-  GROUND_UP,
+  MAKING,
   dusk,
   duskPartWay,
-  groundUpPartWay,
+  makingPartWay,
   heroPartWay,
   introPartWay,
   lineCut,
@@ -154,15 +154,13 @@ describe("where a scene is part way", () => {
     }
   });
 
-  it("from the ground up: every chapter keeps half a screen or more with its text and drawing whole, and so do the exploded house and the house put together", () => {
-    const { starts, release, close } = GROUND_UP;
-    for (const lines of [[4, 4, 4, 4], [7, 7, 7, 7]]) {
-      const { rests, zones } = settled(-1, release, (e) => groundUpPartWay(e, lines, 5));
-      for (let i = 0; i < 3; i++) expect(longest(rests, starts[i], starts[i + 1]), `chapter ${i}`).toBeGreaterThanOrEqual(0.55);
-      // The roof's chapter: the whole exploded drawing, then the house put together, held until the stage releases.
-      expect(longest(rests, starts[3], close)).toBeGreaterThan(0.5);
-      expect(longest(rests, close, release)).toBeGreaterThan(0.3);
-      for (const [a, b] of zones) expect([groundUpPartWay(a, lines, 5), groundUpPartWay(b, lines, 5)]).toEqual([false, false]);
+  it("the making of a house: every chapter keeps half a screen or more with its text and board whole, and so does the house at dusk", () => {
+    const { starts, release } = MAKING;
+    for (const lines of [[4, 4, 4, 4, 4], [7, 7, 7, 7, 7]]) {
+      const { rests, zones } = settled(-1, release, (e) => makingPartWay(e, lines));
+      for (let i = 0; i < starts.length; i++) expect(longest(rests, starts[i], starts[i + 1] ?? release), `chapter ${i}`).toBeGreaterThanOrEqual(0.5);
+      expect(longest(rests, MAKING.fade.dusk[1][0], release)).toBeGreaterThan(0.5);
+      for (const [a, b] of zones) expect([makingPartWay(a, lines), makingPartWay(b, lines)]).toEqual([false, false]);
     }
   });
 

@@ -2362,51 +2362,50 @@ body:has(.not-found__map) .site-footer__place {
   }
 }
 
-/* ---- Homepage: from the ground up (GroundUp.tsx) ---- */
+/* ---- Homepage: the making of a house (Making.tsx) ---- */
 /*
  * The still drawing (reduced motion, short screens, no JavaScript, print):
- * the label, the exploded drawing with every layer tagged, then the
- * chapters as a list; from tablets up the chapters sit on the drawing's
- * left.
+ * the label, the house at dusk, then the chapters as a list; from tablets
+ * up the chapters sit on the picture's left.
  */
-.gu-layout {
+.mk-layout {
   display: grid;
   grid-template-areas: "label" "figure" "toc" "chapters";
   gap: 2.5rem;
   padding-block: 6rem 5rem;
 }
-.gu-label {
+.mk-label {
   grid-area: label;
 }
-.gu-figure {
+.mk-figure {
   grid-area: figure;
   min-width: 0;
 }
-.gu-toc {
+.mk-toc {
   grid-area: toc;
   display: none;
 }
-.gu-chapters {
+.mk-chapters {
   grid-area: chapters;
   display: grid;
   gap: 2.75rem;
   align-content: start;
 }
-.gu-chapter__title {
+.mk-chapter__title {
   max-width: 18ch;
   font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.6rem);
   line-height: 1.06;
   letter-spacing: -0.034em;
   text-wrap: balance;
 }
-.gu-chapter__body {
+.mk-chapter__body {
   max-width: 34ch;
   font-size: clamp(0.9375rem, 0.88rem + 0.25vw, 1.0625rem);
   line-height: 1.55;
   text-wrap: pretty;
 }
 @media (min-width: 768px) {
-  .gu-layout {
+  .mk-layout {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     grid-template-areas: "label label" "chapters figure";
     column-gap: clamp(2rem, 4vw, 4.5rem);
@@ -2414,169 +2413,180 @@ body:has(.not-found__map) .site-footer__place {
   }
 }
 /*
- * The drawing: the layers in one plane, each in its place in the exploded
- * drawing (GroundUp.tsx places them in % of the plane), every line a
- * hairline at any size. The faces are washed as on a presentation
- * drawing: paper walls, a shade on the sides away from the light, the cut
- * tops of walls near black, the ground in stone with its cut faces
- * hatched, steel picked out in the brand red, glass a cool grey.
+ * The board: one 16:9 sheet the shape of the house's front view
+ * (src/content/making-drawing.ts), every drawing on it in the board's
+ * units, so the elevation lands on the rendering's own edges. Still, it
+ * shows the house at dusk; on the tracks HomeMotion drafts the drawings and
+ * fades the layers (MAKING in src/lib/motion/home.ts).
  */
-.gu-plane {
+.mk-board {
   position: relative;
-  width: min(100%, 30rem);
-  margin-inline: auto;
-  aspect-ratio: var(--gu-ar);
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--color-ivory);
+  container: mk-board / inline-size;
 }
-.gu-caption {
-  max-width: 30rem;
-  margin-inline: auto;
-}
-.gu-layer {
+.mk-pic {
   position: absolute;
+  inset: 0;
 }
-:is(.gu-solid, .gu-draft) {
+.mk-pic img {
+  object-fit: cover;
+}
+.mk-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--color-ivory);
+}
+.mk-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   overflow: visible;
 }
-:is(.gu-solid, .gu-draft) path {
+.mk-svg path {
   vector-effect: non-scaling-stroke;
-}
-.gu-solid [class^="f-"] {
-  fill-rule: evenodd;
-  stroke-width: 0.6;
-  stroke-linejoin: round;
-}
-.gu-solid :is(.f-lit, .f-floor) {
-  fill: var(--color-stone-50);
-  stroke: var(--color-stone-50);
-}
-.gu-solid .f-shade {
-  fill: #e8e3da;
-  stroke: #e8e3da;
-}
-.gu-solid .f-cut {
-  fill: var(--color-charcoal-800);
-  stroke: var(--color-charcoal-800);
-}
-.gu-solid .f-ground {
-  fill: var(--color-stone-100);
-  stroke: var(--color-stone-100);
-}
-.gu-solid .f-earth {
-  fill: var(--color-ivory);
-  stroke: var(--color-ivory);
-}
-.gu-solid .f-steel {
-  fill: #f5e2dd;
-  stroke: #f5e2dd;
-}
-.gu-solid .f-timber {
-  fill: #f2ebdf;
-  stroke: #f2ebdf;
-}
-.gu-solid .f-roof {
-  fill: #d8d1c5;
-  stroke: #d8d1c5;
-}
-.gu-solid .f-glass {
-  fill: #dfe1df;
-  stroke: #dfe1df;
-}
-.gu-solid [class^="l-"] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.gu-solid .l-edge {
+.mk-svg .mk-heavy {
   stroke: var(--color-ink);
-  stroke-width: 1;
+  stroke-width: 1.5;
 }
-.gu-solid .l-fine {
+.mk-svg .mk-mid {
+  stroke: var(--color-ink);
+  stroke-width: 1.05;
+}
+.mk-svg .mk-thin {
   stroke: var(--color-charcoal-600);
-  stroke-width: 0.6;
+  stroke-width: 0.7;
 }
-.gu-solid .l-hatch {
-  stroke: var(--color-stone-400);
-  stroke-width: 0.6;
+.mk-svg .mk-hair {
+  stroke: var(--color-ink-muted);
+  stroke-width: 0.5;
 }
-.gu-solid .l-steel {
+.mk-svg .mk-red {
   stroke: var(--color-brand-500);
-  stroke-width: 1.2;
+  stroke-width: 1.3;
 }
-.gu-draft {
-  display: none;
+.mk-svg .mk-red-hidden {
+  stroke: var(--color-brand-500);
+  stroke-width: 0.8;
 }
-.gu-draft path {
-  fill: none;
-  stroke: var(--color-charcoal-700);
-  stroke-width: 0.85;
-  stroke-linecap: round;
+.mk-svg .mk-poche {
+  fill: var(--color-charcoal-800);
+  fill-rule: evenodd;
+  stroke: none;
 }
-/* A layer's tag: its name at the plane's left edge, knocked out of the drawing behind it, and a hairline leader to the layer's side, ending in a dot. */
-.gu-tag {
-  position: absolute;
-  translate: 0 -50%;
+.mk-svg .mk-cut {
+  fill: var(--color-ivory);
+  stroke: none;
+}
+.mk-svg text {
   font-family: var(--font-mono);
-  font-size: 0.5625rem;
-  line-height: 1.3;
+  font-size: 34px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--color-ink-muted);
+  fill: var(--color-ink-muted);
+  text-anchor: middle;
 }
-.gu-tag__row {
-  display: flex;
-  align-items: center;
-  gap: 0.25em;
+.mk-svg .mk-eng-label {
+  fill: var(--color-brand-600);
+  text-anchor: start;
 }
-.gu-tag__name {
-  padding-inline: 0 0.35em;
-  background: var(--color-ivory);
-}
-.gu-tag__leader {
-  position: relative;
-  flex: 1 1 0;
-  min-width: 0.75rem;
-  height: 1px;
-  background: var(--color-ink-muted);
-}
-.gu-tag__leader::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: -2px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--color-ink);
-}
-@media (min-width: 640px) {
-  .gu-tag {
-    font-size: 0.625rem;
+/* Room names and notes only where the board is big enough to read them. */
+@container mk-board (max-width: 34rem) {
+  .mk-svg text {
+    display: none;
   }
+}
+/* The title block: in the board's lower right corner, in % of the board. */
+.mk-title {
+  position: absolute;
+  left: 66.5%;
+  top: 78.5%;
+  width: 32.3%;
+  height: 19.5%;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  grid-template-rows: repeat(3, 1fr);
+  border: 1px solid var(--color-ink);
+  background: var(--color-ivory);
+  font-family: var(--font-mono);
+  font-size: clamp(0.4375rem, 1.05cqw, 0.6875rem);
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+.mk-title > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 0.7em;
+  border-left: 1px solid var(--color-line);
+  border-top: 1px solid var(--color-line);
+}
+.mk-title__mark {
+  grid-row: 1 / -1;
+  border: 0 !important;
+}
+.mk-title__label {
+  color: var(--color-ink-muted);
+  font-size: 0.82em;
+}
+.mk-title__brand {
+  font-size: 1.25em;
+  letter-spacing: 0;
+}
+.mk-title__brand + .mk-title__label {
+  margin-top: 0.3em;
+}
+.mk-title .mk-title__issued {
+  color: var(--color-brand-600);
+}
+@container mk-board (max-width: 34rem) {
+  .mk-title {
+    left: 52%;
+    width: 46.5%;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .mk-title__mark,
+  .mk-title__set {
+    display: none !important;
+  }
+  .mk-title > div {
+    border-left: 0;
+  }
+}
+/* Still: the house at dusk, nothing drawn over it. */
+.mk-board :is(.mk-svg, .mk-veil, .mk-title, [data-mk-fade="day"], [data-mk-fade="glass"]) {
+  display: none;
+}
+.mk-caption {
+  margin-top: 0.75rem;
 }
 /*
  * The pinned drawing (tracks). Portrait screens stack bands in one screen:
- * the label, the drawing's window, the contents as four bars, then the
- * chapter's text at the foot. The window is a size container: the plane is
- * fitted so the house, assembled, fills it (--gu-fit, the plane's width
- * over the assembled house's height), and HomeMotion moves the plane in it
- * as the drawing grows; it fades out at the window's top and bottom edges.
+ * the label, the board's window, the contents as five bars, then the
+ * chapter's text at the foot. The window is a size container the board is
+ * fitted in, centred.
  * Landscape screens set the text in a column on the left, the label at
- * its top and the chapter's text at its foot, and the window on the right,
- * the screen's full height.
+ * its top and the chapter's text at its foot, and the window on the right.
  */
 @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
-  :root[data-motion] .gu-stage {
+  :root[data-motion] .mk-stage {
     position: sticky;
     top: 0;
     height: 100svh;
     overflow: hidden;
   }
-  :root[data-motion] .gu-layout {
+  :root[data-motion] .mk-layout {
     --top: 5.5rem;
     /* The chapter's text: its label, a title of two lines and a body of up to four. */
     --text-h: 11.75rem;
@@ -2587,50 +2597,50 @@ body:has(.not-found__map) .site-footer__place {
     gap: 0.75rem;
     padding-block: var(--top) max(1.25rem, env(safe-area-inset-bottom));
   }
-  :root[data-motion] .gu-figure {
+  :root[data-motion] .mk-figure {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
-  :root[data-motion] .gu-frame {
+  :root[data-motion] .mk-frame {
     position: relative;
     flex: 1 1 0;
     min-height: 0;
-    container: gu-frame / size;
-    -webkit-mask-image: linear-gradient(transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
-    mask-image: linear-gradient(transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+    container: mk-frame / size;
   }
-  :root[data-motion] .gu-plane {
+  :root[data-motion] .mk-board {
     position: absolute;
-    top: 0;
+    top: 50%;
     left: 50%;
-    width: calc(min(100cqw, 100cqh * var(--gu-fit)) * 0.94);
-    margin: 0;
-    translate: -50% 0;
+    width: min(100cqw, 100cqh * 16 / 9);
+    translate: -50% -50%;
   }
-  :root[data-motion] .gu-draft {
+  :root[data-motion] .mk-board :is(.mk-svg, .mk-veil, .mk-title, [data-mk-fade="day"], [data-mk-fade="glass"]) {
     display: block;
   }
-  :root[data-motion] .gu-solid {
+  :root[data-motion] .mk-title {
+    display: grid;
+  }
+  :root[data-motion] .mk-board [data-mk-fade] {
     opacity: 0;
   }
-  /* Until the motion has drawn its first frame, the window shows nothing it has not drawn. */
-  :root[data-motion] [data-groundup]:not([data-gu-live]) .gu-plane {
-    opacity: 0;
+  /* Until the motion has drawn its first frame, the board is blank paper. */
+  :root[data-motion] [data-making]:not([data-mk-live]) .mk-board > * {
+    visibility: hidden;
   }
-  :root[data-motion] .gu-caption {
+  :root[data-motion] .mk-caption {
     max-width: none;
     margin-inline: 0;
     margin-top: 0.5rem;
     text-align: center;
   }
-  :root[data-motion] .gu-toc {
+  :root[data-motion] .mk-toc {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.5rem;
   }
-  :root[data-motion] .gu-toc__item {
+  :root[data-motion] .mk-toc__item {
     display: grid;
     gap: 0.4rem;
     font-family: var(--font-mono);
@@ -2640,86 +2650,86 @@ body:has(.not-found__map) .site-footer__place {
     color: var(--color-ink-muted);
     transition: color 0.3s var(--e-ui);
   }
-  :root[data-motion] .gu-toc__item[data-active] {
+  :root[data-motion] .mk-toc__item[data-active] {
     color: var(--color-ink);
   }
-  :root[data-motion] .gu-toc__name {
+  :root[data-motion] .mk-toc__name {
     display: none;
   }
-  :root[data-motion] .gu-toc__bar {
+  :root[data-motion] .mk-toc__bar {
     position: relative;
     display: block;
     height: 1px;
     background: var(--color-line);
     overflow: hidden;
   }
-  :root[data-motion] .gu-toc__fill {
+  :root[data-motion] .mk-toc__fill {
     position: absolute;
     inset: 0;
     background: var(--color-ink);
     transform: scaleX(0);
     transform-origin: left;
   }
-  :root[data-motion] .gu-chapters {
+  :root[data-motion] .mk-chapters {
     display: grid;
     gap: 0;
     height: var(--text-h);
     flex: none;
   }
-  :root[data-motion] .gu-chapter {
+  :root[data-motion] .mk-chapter {
     grid-area: 1 / 1;
     align-self: start;
   }
-  :root[data-motion] .gu-chapter__title {
+  :root[data-motion] .mk-chapter__title {
     font-size: min(clamp(1.45rem, 1rem + 1.6vw, 2.2rem), 4.2svh);
   }
-  :root[data-motion] .gu-chapter__body {
+  :root[data-motion] .mk-chapter__body {
     margin-top: 0.75rem;
     max-width: 38ch;
   }
-  :root[data-motion] :is([data-gu-roll], [data-gu-tag], .gu-chapter .split-line__inner) {
+  :root[data-motion] :is([data-mk-roll], .mk-chapter .split-line__inner) {
     transform: translateY(120%);
   }
-  :root[data-motion] :is(.gu-chapter__title, .gu-chapter__body):not([data-split]) {
+  :root[data-motion] :is(.mk-chapter__title, .mk-chapter__body):not([data-split]) {
     opacity: 0;
   }
-  /* Phones: the contents are four bars (the chapter's own label names it), and the bands are tighter, so the drawing keeps its size. */
+  /* Phones: the contents are five bars (the chapter's own label names it), and the bands are tighter, so the drawing keeps its size. */
   @media (max-width: 767px) {
-    :root[data-motion] .gu-layout {
+    :root[data-motion] .mk-layout {
       --text-h: 9.25rem;
       gap: 0.625rem;
     }
-    :root[data-motion] .gu-toc__item {
+    :root[data-motion] .mk-toc__item {
       gap: 0;
     }
-    :root[data-motion] .gu-toc__num {
+    :root[data-motion] .mk-toc__num {
       display: none;
     }
-    :root[data-motion] .gu-caption {
+    :root[data-motion] .mk-caption {
       line-height: 0.875rem;
     }
-    :root[data-motion] .gu-chapter__body {
+    :root[data-motion] .mk-chapter__body {
       margin-top: 0.5rem;
       font-size: 0.875rem;
       line-height: 1.5;
     }
   }
   @media (max-height: 800px) {
-    :root[data-motion] .gu-note {
+    :root[data-motion] .mk-note {
       display: none;
     }
   }
   @media (max-height: 619px) {
-    :root[data-motion] .gu-layout {
+    :root[data-motion] .mk-layout {
       --text-h: 5.25rem;
     }
-    :root[data-motion] .gu-chapter__body {
+    :root[data-motion] .mk-chapter__body {
       display: none;
     }
   }
 }
 @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 768px) and (min-aspect-ratio: 1/1) {
-  :root[data-motion] .gu-layout {
+  :root[data-motion] .mk-layout {
     --g: max(3rem, calc((100vw - 100rem) / 2 + 4rem));
     --copy-w: clamp(17rem, 27vw, 26rem);
     display: grid;
@@ -2732,50 +2742,50 @@ body:has(.not-found__map) .site-footer__place {
     padding-inline: var(--g);
     padding-block: 6.5rem 2.5rem;
   }
-  :root[data-motion] .gu-figure {
+  :root[data-motion] .mk-figure {
     height: 100%;
   }
-  :root[data-motion] .gu-caption {
+  :root[data-motion] .mk-caption {
     text-align: right;
   }
-  :root[data-motion] .gu-note {
+  :root[data-motion] .mk-note {
     display: block;
   }
-  :root[data-motion] .gu-toc {
+  :root[data-motion] .mk-toc {
     align-self: center;
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
-  :root[data-motion] .gu-toc__item {
+  :root[data-motion] .mk-toc__item {
     grid-template-columns: 2.25rem 1fr;
     gap: 0;
     padding-block: 0.7rem;
     font-size: 0.6875rem;
   }
-  :root[data-motion] .gu-toc__bar {
+  :root[data-motion] .mk-toc__bar {
     grid-column: 1 / -1;
     margin-bottom: 0.7rem;
   }
-  :root[data-motion] .gu-toc__name {
+  :root[data-motion] .mk-toc__name {
     display: block;
   }
-  :root[data-motion] .gu-chapters {
+  :root[data-motion] .mk-chapters {
     align-self: end;
     align-content: end;
     height: auto;
     min-height: min(15rem, 30svh);
   }
-  :root[data-motion] .gu-chapter {
+  :root[data-motion] .mk-chapter {
     align-self: end;
   }
-  :root[data-motion] .gu-chapter__label {
+  :root[data-motion] .mk-chapter__label {
     display: none;
   }
-  :root[data-motion] .gu-chapter__title {
+  :root[data-motion] .mk-chapter__title {
     margin-top: 0;
     font-size: min(clamp(1.6rem, 0.9rem + 1.5vw, 2.5rem), 5.4svh);
   }
-  :root[data-motion] .gu-chapter__body {
+  :root[data-motion] .mk-chapter__body {
     display: block;
   }
 }
@@ -3416,12 +3426,9 @@ body:has(.not-found__map) .site-footer__place {
   h3 {
     break-after: avoid;
   }
-  /* The house drawn from the ground up prints a little smaller, so its label, the drawing and the chapters share one sheet. */
-  .gu-layout {
+  /* The making-of section prints on one sheet: its label, the house at dusk and the chapters. */
+  .mk-layout {
     break-inside: avoid;
-  }
-  .gu-plane {
-    width: min(100%, 24rem);
   }
   .site-footer__inner,
   [data-parallax] {

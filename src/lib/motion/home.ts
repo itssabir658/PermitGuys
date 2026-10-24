@@ -43,12 +43,12 @@ export function roll(inP: number, outP: number) {
  * Where each section's label (its heading and note, each one mask) starts
  * to roll in, as its section's sso: the story's as its sheet comes up,
  * before the first chapter's lines; Works' with the first picture, as the
- * story's stage leaves; the ground-up drawing's as its stage comes up,
+ * story's stage leaves; the making-of board's as its stage comes up,
  * before its first lines are drawn; Values' as the stage pins, with the
  * first word; Services' eyebrow from its track, as the ground passes
  * night.
  */
-export const LABEL_IN = { story: 0.32, works: 0.3, groundUp: 0.32, values: 0.62, services: 0.34 } as const;
+export const LABEL_IN = { story: 0.32, works: 0.3, making: 0.32, values: 0.62, services: 0.34 } as const;
 
 /** A section label at its section's sso `s`, as a yPercent: it rolls in over 0.3 screens from `from` (LABEL_IN), and leaves with the released stage. */
 export function sectionLabel(s: number, from: number) {
@@ -503,80 +503,109 @@ export function worksButton(y: number) {
   return { y: y * WORKS_BUTTON, opacity: smoothstep(shown, 0.36, 0.72) };
 }
 
-/* ---- From the ground up (630vh track: four chapters under one pinned 100vh stage) ---- */
+/* ---- The making of a house (820vh track: five chapters under one pinned 100vh stage) ---- */
 
 /**
- * The ground-up drawing's timeline, in screens of scroll since its stage
+ * The making-of section's timeline, in screens of scroll since its stage
  * pinned (e, sso − 1). The chapters start at `starts` and the stage
- * releases at `release`. One house is drawn in five layers (the
- * foundation in the ground, the floor framing, the ground floor, the
- * second floor, the roof), from the ground up, each in its place in the
- * exploded drawing:
- *   - its draft is drawn line by line, every edge, the hidden ones too,
- *     lowest first (`draft`: start and length);
- *   - then it fills in, its hidden lines gone, and settles the last
- *     `settle` metres into its place (`solid`: start, over `solidVh`);
- *   - the view rises with the drawing to take in each new layer as its
- *     draft starts (over `viewVh`);
- *   - once the roof is in, the gaps close and the layers come together
- *     into the house (`close`, over `closeVh`), the view coming down with
- *     them.
- * The foundation is drawn as the stage comes up; the two floors share a
- * chapter. Each chapter's changes come together as its text hands over,
- * so they are one beat, and what they leave is held whole while the text
- * is read: each chapter's text is composed for 0.6 screens or more, and
- * the drawing is still for half a screen or more after each chapter's
- * layers are in and after the roof (the whole exploded drawing), and for
- * 0.35 once the house is together before the stage releases, so a touch
- * screen settling the page never carries it past one (settle.ts).
+ * releases at `release`. One board shows the big house's project from its
+ * site to its permit set:
+ *   - `draw`: when a line drawing is drafted, a segment at a time (start,
+ *     length): the site plan, the floor plan, the front elevation, the
+ *     structure over it, the sheet's border and title block;
+ *   - `fade`: each layer's opacity as keyframes [e, opacity], eased from
+ *     one to the next: the site's footprint, the plan's poché and room
+ *     names, the windows lit, the rendering by day, the paper veil laid
+ *     over it for the engineering, the title block, the rendering at dusk;
+ *   - `zoom`: the site plan drawn closer until its house is the floor plan
+ *     (MK_SITE_ZOOM), as it fades.
+ * Each chapter's changes come together as its text hands over, and what
+ * they leave is held whole while it is read: each chapter's text is
+ * composed for 0.6 screens or more, and the board rests for 0.4 screens or
+ * more after each chapter's changes and 0.6 after the house is shown at
+ * dusk, so a touch screen settling the page never carries it past one
+ * (settle.ts). A drawing being drafted is whole at every moment.
  */
-export const GROUND_UP = {
-  starts: [0, 1, 2.2, 3.6],
-  release: 5.3,
-  draft: [
-    [-0.3, 0.55],
-    [0.95, 0.36],
-    [2.15, 0.34],
-    [2.4, 0.34],
-    [3.55, 0.3],
-  ],
-  solid: [0.02, 1.15, 2.35, 2.6, 3.75],
-  solidVh: 0.26,
-  settle: 0.6,
-  viewVh: 0.5,
-  close: 4.5,
-  closeVh: 0.5,
+export const MAKING = {
+  starts: [0, 1.15, 2.45, 4.2, 5.45],
+  release: 7.2,
+  draw: {
+    siteLot: [-0.42, 0.4],
+    siteFine: [-0.24, 0.36],
+    siteWays: [-0.08, 0.26],
+    planWalls: [1.2, 0.26],
+    planOpenings: [1.3, 0.18],
+    planDoors: [1.34, 0.16],
+    planFittings: [1.38, 0.14],
+    elevGround: [2.38, 0.12],
+    elevOutline: [2.41, 0.26],
+    elevPanels: [2.53, 0.22],
+    elevOpenings: [2.62, 0.24],
+    elevMullions: [2.72, 0.2],
+    elevJoints: [2.78, 0.18],
+    engSolid: [4.22, 0.3],
+    engHidden: [4.28, 0.28],
+    sheet: [5.45, 0.24],
+  },
+  fade: {
+    siteHouse: [[0.14, 0], [0.3, 1], [1.22, 1], [1.38, 0]],
+    siteLabels: [[0.16, 0], [0.3, 1], [0.98, 1], [1.1, 0]],
+    site: [[1.22, 1], [1.38, 0]],
+    planPoche: [[1.46, 0], [1.58, 1]],
+    planLabels: [[1.48, 0], [1.6, 1]],
+    plan: [[2.35, 1], [2.53, 0]],
+    glass: [[2.94, 0], [3.08, 1]],
+    day: [[3.08, 0], [3.28, 1]],
+    lines: [[3.22, 1], [3.4, 0], [4.12, 0], [4.26, 0.5], [6.3, 0.5], [6.48, 0]],
+    veil: [[4.12, 0], [4.26, 0.86], [6.3, 0.86], [6.5, 0]],
+    engLabels: [[4.5, 0], [4.64, 1]],
+    eng: [[6.3, 1], [6.48, 0]],
+    sheet: [[6.3, 1], [6.48, 0]],
+    title: [[5.61, 0], [5.75, 1], [6.3, 1], [6.48, 0]],
+    dusk: [[6.3, 0], [6.55, 1]],
+  },
+  zoom: [1.0, 0.38],
 } as const;
 
-/** A share of a layer's draft each line takes to draw (storyLineDraw). */
-export const GROUND_UP_LINE_DUR = 0.12;
-/** How far a draft's line runs past its ends, in the drawing's units (1611 across). */
-export const GROUND_UP_OVERSHOOT = 16;
+export type MakingDraw = keyof typeof MAKING.draw;
+export type MakingFade = keyof typeof MAKING.fade;
+
+/** A share of a drawing each line takes to draw (storyLineDraw). */
+export const MAKING_LINE_DUR = 0.08;
+/** How far a drafted line runs past its ends, in the board's units (3547 across). */
+export const MAKING_OVERSHOOT = 14;
+/** From here the house at dusk may play its film; below it the film rests at its first frame. */
+export const MAKING_FILM_AT = 6.55;
 
 /** The section's length in vh: the stage pinned until it releases, and one screen for it to arrive. */
-export function groundUpSectionVh() {
-  return Math.round((GROUND_UP.release + 1) * 100);
+export function makingSectionVh() {
+  return Math.round((MAKING.release + 1) * 100);
 }
 
-/** Layer i at `e`, each 0 → 1: how much of its draft is drawn, how far it has filled in, and how far it has settled into its place. */
-export function groundUpLayer(e: number, i: number) {
-  const [start, length] = GROUND_UP.draft[i] ?? [0, 1];
-  const solid = GROUND_UP.solid[i] ?? 0;
-  return {
-    draft: tween(e, start, length),
-    solid: tween(e, solid, GROUND_UP.solidVh, ease.power2InOut),
-    settle: tween(e, solid, GROUND_UP.solidVh, ease.power3Out),
-  };
+/** How much of drawing `k` is drafted at `e`, 0 → 1. */
+export function makingDraw(e: number, k: MakingDraw) {
+  const [start, length] = MAKING.draw[k];
+  return tween(e, start, length);
 }
 
-/** How far the layers have closed up into the house, 0 → 1. */
-export function groundUpClose(e: number) {
-  return tween(e, GROUND_UP.close, GROUND_UP.closeVh, ease.power2InOut);
+/** Layer `k`'s opacity at `e`, eased between its keyframes, and whether it is changing there. */
+export function makingFade(e: number, k: MakingFade): { value: number; moving: boolean } {
+  const keys = MAKING.fade[k] as readonly (readonly [number, number])[];
+  if (e <= keys[0][0]) return { value: keys[0][1], moving: false };
+  for (let i = 0; i + 1 < keys.length; i++) {
+    const [a, va] = keys[i];
+    const [b, vb] = keys[i + 1];
+    if (e < b) {
+      if (va === vb) return { value: va, moving: false };
+      return { value: mix(va, vb, ease.power2InOut(clamp((e - a) / (b - a)))), moving: true };
+    }
+  }
+  return { value: keys[keys.length - 1][1], moving: false };
 }
 
-/** How far the view has moved to take in layer i (i ≥ 1), 0 → 1: it starts just before the layer's draft. */
-export function groundUpView(e: number, i: number) {
-  return tween(e, (GROUND_UP.draft[i]?.[0] ?? 0) - 0.12, GROUND_UP.viewVh, ease.power2InOut);
+/** How far the site plan has been drawn in to the floor plan, 0 → 1. */
+export function makingZoom(e: number) {
+  return tween(e, MAKING.zoom[0], MAKING.zoom[1], ease.power2InOut);
 }
 
 /**
@@ -586,34 +615,27 @@ export function groundUpView(e: number, i: number) {
  * from 0.2 before the next; the first chapter rises with the stage, the
  * last never leaves.
  */
-export function groundUpLine(e: number, i: number, n: number, k: number) {
-  const a = GROUND_UP.starts[i] ?? 0;
+export function makingLine(e: number, i: number, n: number, k: number) {
+  const a = MAKING.starts[i] ?? 0;
   const inP = i === 0 ? tween(e, -0.36 + k * WORKS.stagger, 0.26, ease.power3Out) : tween(e, a - 0.03 + k * WORKS.stagger, 0.22, ease.power3Out);
-  const outP = i === n - 1 ? 0 : tween(e, (GROUND_UP.starts[i + 1] ?? Infinity) - 0.2 + k * WORKS.outStagger, 0.14, ease.power2In);
+  const outP = i === n - 1 ? 0 : tween(e, (MAKING.starts[i + 1] ?? Infinity) - 0.2 + k * WORKS.outStagger, 0.14, ease.power2In);
   return roll(inP, outP);
 }
 
 /** The chapter the reader is in: it turns over with the text, just before the boundary. */
-export function groundUpChapter(e: number) {
+export function makingChapter(e: number) {
   let c = 0;
-  GROUND_UP.starts.forEach((a, i) => {
+  MAKING.starts.forEach((a, i) => {
     if (e + 0.05 >= a) c = i;
   });
   return c;
 }
 
 /** How far through chapter i the reader is, 0 → 1 (the contents' bars): the last runs to the release. */
-export function groundUpFill(e: number, i: number) {
-  const a = GROUND_UP.starts[i] ?? 0;
-  const b = GROUND_UP.starts[i + 1] ?? GROUND_UP.release;
+export function makingFill(e: number, i: number) {
+  const a = MAKING.starts[i] ?? 0;
+  const b = MAKING.starts[i + 1] ?? MAKING.release;
   return clamp((e - a) / (b - a));
-}
-
-/** Layer i's tag (of n), a masked line: it rolls in as the layer fills in, and the tags leave, the top one first, as the layers start to close up. */
-export function groundUpTag(e: number, i: number, n: number) {
-  const inP = tween(e, GROUND_UP.solid[i] ?? 0, GROUND_UP.solidVh, ease.power3Out);
-  const outP = tween(e, GROUND_UP.close - 0.02 + (n - 1 - i) * WORKS.outStagger, 0.14, ease.power2In);
-  return roll(inP, outP);
 }
 
 /*
@@ -980,23 +1002,18 @@ export function storyPartWay(e: number, lines: readonly number[], fields: number
 }
 
 /**
- * The ground-up drawing at `e` (GROUND_UP), with `lines[i]` masked lines in
- * chapter i and `tags` layers' tags: the section's label (if it has one), a
- * line or a tag part out of its mask; or a layer part filled in or part
- * settled into its place, or the layers part closed up. A draft part
- * drawn, and the view on its way, are whole.
+ * The making-of board at `e` (MAKING), with `lines[i]` masked lines in
+ * chapter i: the section's label (if it has one) or a line part out of its
+ * mask; or a layer part faded, or the site part drawn in. A drawing part
+ * drafted is whole.
  */
-export function groundUpPartWay(e: number, lines: readonly number[], tags: number, label = true) {
+export function makingPartWay(e: number, lines: readonly number[], label = true) {
   const n = lines.length;
   return (
-    (label && lineCut(sectionLabel(e + 1, LABEL_IN.groundUp))) ||
-    anyOf(GROUND_UP.solid.length, (i) => {
-      const l = groundUpLayer(e, i);
-      return partWay(l.solid) || partWay(l.settle);
-    }) ||
-    partWay(groundUpClose(e)) ||
-    lines.some((count, i) => anyOf(count, (k) => lineCut(groundUpLine(e, i, n, k)))) ||
-    anyOf(tags, (i) => lineCut(groundUpTag(e, i, tags)))
+    (label && lineCut(sectionLabel(e + 1, LABEL_IN.making))) ||
+    (Object.keys(MAKING.fade) as MakingFade[]).some((k) => makingFade(e, k).moving) ||
+    partWay(makingZoom(e)) ||
+    lines.some((count, i) => anyOf(count, (k) => lineCut(makingLine(e, i, n, k))))
   );
 }
 
