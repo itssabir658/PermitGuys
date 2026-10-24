@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ORDER, engine, measureRange, screenRatio, setStyle, type Frame, type Range } from "@/lib/motion/engine";
 import { footerDot, footerDraw, footerLift, footerProgress, footerStroke } from "@/lib/motion/footer";
 import { clamp, ease, fit } from "@/lib/motion/math";
@@ -194,8 +194,11 @@ export function MotionRoot() {
     };
   }, []);
 
-  // New page content: re-read the layout once it has painted.
+  // New page content: re-read the layout once it has painted. The first page needs no second reading: the engine measures it as its motion registers.
+  const measuredPath = useRef(pathname);
   useEffect(() => {
+    if (pathname === measuredPath.current) return;
+    measuredPath.current = pathname;
     const raf = requestAnimationFrame(engine.requestMeasure);
     return () => cancelAnimationFrame(raf);
   }, [pathname]);

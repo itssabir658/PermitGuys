@@ -56,7 +56,7 @@ import {
   type SwapLayer,
 } from "@/lib/motion/home";
 import { clamp, ease, mix, toHex, tween } from "@/lib/motion/math";
-import { resplitIfNeeded, unsplit } from "@/lib/motion/split";
+import { resplitIfNeeded, splitAll, unsplit } from "@/lib/motion/split";
 
 /*
  * Drives the homepage from the scroll engine (docs/MOTION.md). Renders
@@ -72,10 +72,19 @@ const all = (sel: string, root: ParentNode = document) => [...root.querySelector
 const svgAll = (sel: string, root: ParentNode) => [...root.querySelectorAll<SVGElement>(sel)];
 const px = (n: number) => `${n.toFixed(2)}px`;
 const num = (n: number) => n.toFixed(4);
-const lift = (y: number) => `translate3d(0, ${px(y)}, 0)`;
-const liftPercent = (y: number) => `translate3d(0, ${y.toFixed(2)}%, 0)`;
+/*
+ * A line or block lifted from its place: a layer of its own (translate3d)
+ * only while it moves. At rest, and parked under its mask, it is drawn with
+ * the page, since dozens of lines left as layers cost a phone memory and
+ * every frame's compositing.
+ */
+const lift = (y: number) => (Math.abs(y) < 0.005 ? "none" : `translate3d(0, ${px(y)}, 0)`);
+const liftPercent = (y: number) => (Math.abs(y) < 0.005 ? "none" : Math.abs(y) > MASK - 0.005 ? `translateY(${y.toFixed(2)}%)` : `translate3d(0, ${y.toFixed(2)}%, 0)`);
 /** A masked line parked below its mask, hidden. */
 const PARKED = liftPercent(MASK);
+
+/** The blocks of text the modules split into lines, gathered as they are set up (HomeMotion), so `splitter` splits them all at once. */
+let splitting: HTMLElement[] = [];
 
 function clear(el: HTMLElement | SVGElement, ...props: string[]) {
   for (const p of props) setStyle(el, p, "");
@@ -272,6 +281,7 @@ function intro(): MotionModule | null {
   const stage = one("[data-intro-stage]", section);
   const items = all("[data-orbit-slot]", section).map((el) => ({ el, slot: Number(el.dataset.orbitSlot), img: one("[data-orbit-img]", el) }));
   const copies = all("[data-intro-copy]", section);
+  splitting.push(...copies);
   const caption = one("[data-intro-caption]", section);
   const { copyIn, exitStart, sectionVh } = introPhases(copies.length);
   let r: Range;
@@ -389,6 +399,7 @@ function story(): MotionModule | null {
   const datums = svgAll("[data-story-datum]", eng);
   const memberLabels = svgAll("[data-story-member-label]", eng).map((el) => ({ el, k: Number(el.getAttribute("data-story-member-label")) }));
   const chapters = all("[data-story-chapter]", section).map((li) => ({ label: one("[data-story-roll]", li), title: one("[data-story-title]", li), body: one("[data-story-body]", li) }));
+  for (const c of chapters) splitting.push(...[c.title, c.body].filter((el) => el !== null));
   const toc = all("[data-story-toc]", section).map((li) => ({ li, fill: one("[data-story-fill]", li) }));
   const fields = all("[data-story-field]", section);
   const labels = all("[data-label-roll]", section);
@@ -580,6 +591,7 @@ function works(): MotionModule | null {
     const [eyebrow, button] = all("[data-works-roll]", item);
     return { eyebrow, button, title: one("[data-works-title]", item)!, link: one("a", item) };
   });
+  splitting.push(...items.map((it) => it.title));
   const labels = all("[data-label-roll]", section);
   // The corner label's block (its Container), in the same sticky screen as the stage.
   const label = one("h2", section)?.parentElement ?? null;
@@ -727,9 +739,11 @@ function values(shared: Shared): MotionModule | null {
       const frameW = rFrames[0]?.width ?? 0;
       setStyle(stage, "--values-frame-w", f.tracks && frameW ? px(frameW) : "");
       fitTitles(f, frameW);
-      // Split every description once here, never in a frame.
-      if (f.tracks) lines = copies.map((c, ci) => c.descs.map((d, i) => resplitIfNeeded(d, lines[ci]?.[i] ?? [])));
-      else if (lines.some((c) => c.some((l) => l.length))) {
+      // Split every description once here, never in a frame. Here rather than with the other blocks (splitter): the frame's width, just set, decides theirs.
+      if (f.tracks) {
+        splitAll(copies.flatMap((c) => c.descs));
+        lines = copies.map((c, ci) => c.descs.map((d, i) => resplitIfNeeded(d, lines[ci]?.[i] ?? [])));
+      } else if (lines.some((c) => c.some((l) => l.length))) {
         copies.forEach((c) => c.descs.forEach(unsplit));
         lines = copies.map((c) => c.descs.map(() => []));
       }
@@ -840,6 +854,7 @@ function services(): MotionModule[] {
   const heading = section && one("[data-services-heading]", section);
   const list = section && one("[data-services-body]", section);
   if (!section || !track || !stage || !frameCol || !box || !reveal || !zoom || !heading || !list) return [];
+  splitting.push(heading);
   const pics = all("[data-services-pic]", section);
   const captions = all("[data-caption]", section);
   const rows = all("[data-service-index]", section).map((li) => ({
@@ -1120,6 +1135,7 @@ function contact(): MotionModule | null {
   const heading = section && one("[data-contact-heading]", section);
   const body = section && one("[data-contact-body]", section);
   if (!section || !heading || !body) return null;
+  splitting.push(heading, body);
   const label = one("[data-contact-roll]", section);
   const actions = one("[data-contact-actions]", section);
   const pic = one("[data-contact-pic]", section);
@@ -1205,10 +1221,30 @@ function contact(): MotionModule | null {
   };
 }
 
+/*
+ * Splitter: every block of text the modules split into lines, split
+ * together before any of them measures, so finding where all their lines
+ * break lays the page out twice in all rather than twice a block
+ * (split.ts). The modules then find their lines already split. (Values
+ * splits its own descriptions, together, once it has set the width they
+ * wrap to.)
+ */
+function splitter(targets: HTMLElement[]): MotionModule {
+  return {
+    order: ORDER.lines,
+    measure(f) {
+      if (f.tracks) splitAll(targets);
+    },
+    update() {},
+  };
+}
+
 export function HomeMotion() {
   useEffect(() => {
     const shared: Shared = { fade: 0 };
+    splitting = [];
     const modules = [ground(shared), hero(), intro(), story(), works(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
+    modules.push(splitter(splitting));
     const offs = modules.map((m) => engine.register(m));
     return () => offs.forEach((off) => off());
   }, []);

@@ -74,6 +74,8 @@ type Callback = (frame: Frame) => void;
 /** Keep in step with the `tracks` custom variant in globals.css (which also limits the tracks to screens; printing sets `printing` here). */
 export const TRACKS_QUERY = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
+/** Phones and tablets: a touch screen is the main way in, and nothing hovers. */
+const TOUCH_QUERY = "(pointer: coarse) and (hover: none)";
 
 /** expo.out, the wheel's ease: in-page links glide on it too. */
 const expoOut = (n: number) => Math.min(1, 1.001 - Math.pow(2, -10 * n));
@@ -166,23 +168,30 @@ class Engine {
   private unlocked: (() => void)[] = [];
   /** The page is being printed: the tracks are off until it is done. */
   private printing = false;
+  /** Holds on the frame loop (`measureAfter`): while any is on, nothing is measured or written. */
+  private holds = 0;
+  /** Waiting for the next measure (`measureAfter`). */
+  private measuredWaiting: (() => void)[] = [];
 
   boot() {
     if (this.booted || typeof window === "undefined") return;
     this.booted = true;
     const reduced = matchMedia(REDUCED_QUERY).matches;
-    this.lenis = new Lenis({
-      autoRaf: false,
-      autoResize: false,
-      smoothWheel: !reduced,
-      gestureOrientation: "vertical",
-      syncTouch: false,
-      touchInertiaExponent: 2,
-      duration: reduced ? 0 : 1.2,
-      // expo.out; with a duration set, Lenis glides by time rather than by its default lerp.
-      easing: reduced ? (n) => n : expoOut,
-    });
-    if (this.locks.size) this.lenis.stop();
+    // Lenis smooths the wheel. A touch screen scrolls natively, without it: its touch listeners cannot be passive, so every touch would wait for the page's script before the page could move.
+    if (!matchMedia(TOUCH_QUERY).matches) {
+      this.lenis = new Lenis({
+        autoRaf: false,
+        autoResize: false,
+        smoothWheel: !reduced,
+        gestureOrientation: "vertical",
+        syncTouch: false,
+        touchInertiaExponent: 2,
+        duration: reduced ? 0 : 1.2,
+        // expo.out; with a duration set, Lenis glides by time rather than by its default lerp.
+        easing: reduced ? (n) => n : expoOut,
+      });
+      if (this.locks.size) this.lenis.stop();
+    }
     const probe = document.createElement("div");
     probe.setAttribute("aria-hidden", "true");
     probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none";
@@ -223,11 +232,13 @@ class Engine {
     f.time = (now - this.started) / 1000;
     this.last = now;
     this.lenis?.raf(now);
+    if (this.holds) return;
     const measured = this.needsMeasure;
     if (measured) this.measure();
     this.run();
     // Note the reading position against the layout the sections were measured in.
     if (!measured) this.anchor = this.readAnchor(f);
+    else this.measuredWaiting.splice(0).forEach((resolve) => resolve());
   };
 
   /** Write the frame: the per-frame callbacks, then the modules in order. */
@@ -285,6 +296,24 @@ class Engine {
     }
   }
 
+  /**
+   * Hold the frame loop (no measure, no writes) until `until` settles, then
+   * measure; resolves once that measure has run. The preloader holds the
+   * page's first measure until its drawing is done: on a phone, splitting
+   * every block of text into lines and reading every section takes the
+   * main thread for several frames, and would stall the strokes mid-line.
+   * The page is hidden under the screen meanwhile.
+   */
+  measureAfter(until: Promise<unknown>) {
+    this.holds++;
+    const go = () => {
+      this.holds--;
+      this.requestMeasure();
+      return new Promise<void>((resolve) => this.measuredWaiting.push(resolve));
+    };
+    return until.then(go, go);
+  }
+
   /** Put the reader back at `y` once the page now showing has been measured (going back to a page). */
   restore(y: number) {
     this.requestMeasure();
@@ -314,9 +343,10 @@ class Engine {
 
   /**
    * Hold the page still for `reason` (menu, route, preloader) until every
-   * reason is released. Lenis cancels wheel and touch while stopped, except
-   * over [data-lenis-prevent] panels, which it leaves alone: those may
-   * scroll themselves but never chain to the page.
+   * reason is released. Lenis cancels wheel and touch while stopped (where
+   * the page scrolls natively, `blockPanels` does), except over
+   * [data-lenis-prevent] panels, which it leaves alone: those may scroll
+   * themselves but never chain to the page.
    */
   lock(reason: string) {
     this.locks.add(reason);
@@ -361,7 +391,9 @@ class Engine {
   private blockPanels = (e: Event) => {
     const t = e.target instanceof Element ? e.target : null;
     const own = t?.closest<HTMLElement>("[data-lenis-prevent]");
-    if (own && t && !scrollsWithin(t, own) && e.cancelable) e.preventDefault();
+    // A panel that scrolls by itself keeps the gesture; one that cannot would chain it to the page. Elsewhere the page is held by Lenis, or here when there is none.
+    const hold = own ? !(t && scrollsWithin(t, own)) : !this.lenis;
+    if (hold && e.cancelable) e.preventDefault();
   };
 
   scrollTo(target: number, immediate = false) {
@@ -399,8 +431,9 @@ function scrollsWithin(el: Element, root: HTMLElement) {
 
 export const engine = new Engine();
 
-/** Module order on the homepage; the page ground runs first because Values reads its fade. */
+/** Module order on the homepage; the lines are split before anything measures, and the page ground runs first because Values reads its fade. */
 export const ORDER = {
+  lines: -1,
   ground: 0,
   hero: 1,
   intro: 2,

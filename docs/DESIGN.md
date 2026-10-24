@@ -52,7 +52,7 @@ The footer is the page's one charcoal band. Process, service areas and guides li
 
 ## Motion
 
-- **Homepage:** Lenis smooth scrolling and one frame loop driving every section from scroll position, in one vocabulary: sheets that rise over a receding layer, display type that only rolls through masks and never fades, entrances that ease out and exits that ease in, and beats that overlap so no frame is empty. See [MOTION.md](MOTION.md).
+- **Homepage:** Lenis smoothing the wheel (touch screens scroll natively) and one frame loop driving every section from scroll position, in one vocabulary: sheets that rise over a receding layer, display type that only rolls through masks and never fades, entrances that ease out and exits that ease in, and beats that overlap so no frame is empty. See [MOTION.md](MOTION.md).
 - **Preloader** (`Preloader.tsx`): on each full page load the outline of Ontario draws itself and the GTA dot is marked, then an iris opens from the dot onto the page. The outline is from SVG Maps (CC BY 4.0, see `public/images/CREDITS.md`).
 - **Screen transition** (`ScreenTransition.tsx`): on every in-site link a graphite panel unfolds in 3D and scales up to cover the page while the Ontario outline draws on it; the next page loads underneath and the cover fades away.
 - **Header and menu** (`MainNav.tsx`): past 80px of scroll on wide screens the top row lifts away and a menu button takes its place; the menu opens out of that button. Links roll their letters on hover and focus. The header follows the ground beneath it.
