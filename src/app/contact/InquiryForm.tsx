@@ -447,7 +447,8 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
       </Field>
 
       <div>
-        <div className="flex items-start gap-3">
+        {/* The whole row is the label, so a finger on the box, beside it or on the sentence ticks it; the link in it still opens the policy. */}
+        <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink-muted">
           <input
             id="consent"
             name="consent"
@@ -458,14 +459,14 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
             aria-describedby={describedBy("consent", errors.consent)}
             className="mt-1 size-5 shrink-0 accent-charcoal-900"
           />
-          <label htmlFor="consent" className="text-sm leading-relaxed text-ink-muted">
+          <span>
             PermitGuys may use these details to contact me about this inquiry, as described in the{" "}
             <Link href={paths.privacy} className="text-charcoal-900 underline underline-offset-4">
               privacy policy
             </Link>
             .
-          </label>
-        </div>
+          </span>
+        </label>
         <FieldError id="consent" error={errors.consent} />
       </div>
 

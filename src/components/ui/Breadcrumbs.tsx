@@ -39,7 +39,7 @@ export function Breadcrumbs({ items, onDark, page }: { items: Crumb[]; onDark?: 
                   </span>
                 ) : (
                   <>
-                    <Link href={item.path as Route} className="link-draw hover:text-ink">
+                    <Link href={item.path as Route} className="link-draw tap hover:text-ink">
                       {item.name}
                     </Link>
                     <span aria-hidden="true" className={i === trail.length - 2 && parentOnPhones ? "max-sm:hidden" : undefined}>

@@ -23,7 +23,12 @@ import { paths } from "@/lib/routes";
  * type never sits on a picture. The page ground turns to stone under the
  * whole section (ground module).
  *
- * Without the tracks each panel shows its text beside its picture.
+ * The viewer is for screens from 768px wide (pins). On phones held upright
+ * the panels flow instead, each project's text above its picture, and each
+ * piece arrives as it comes into view (data-arrive; HomeMotion, arrivals):
+ * the label and the note rise, the picture unveils upward, the title's
+ * lines rise out of their masks. Without the tracks each panel shows its
+ * text beside its picture, still.
  *
  * The frames are portrait and the renderings landscape, so each picture is
  * fetched as wide as it is drawn at the frame's height, with the shots'
@@ -43,18 +48,18 @@ export function Works() {
 
   return (
     <section data-works="" aria-labelledby="works-heading" className="relative">
-      {/* On the tracks: a screen-high sticky layer over the whole track, so the label stays in the corner and scrolls away with the last project. It sits under the stage, so a picture can never be drawn under its ink. Label and note roll in with the stage. */}
-      <div className="relative z-0 tracks:pointer-events-none tracks:absolute tracks:inset-0">
-        <div className="tracks:sticky tracks:top-0 tracks:h-svh">
-          <Container className="pt-28 lg:tracks:pt-32 [&_a]:pointer-events-auto">
-            <h2 id="works-heading" className="text-label text-ink">
+      {/* With the viewer: a screen-high sticky layer over the whole track, so the label stays in the corner and scrolls away with the last project. It sits under the stage, so a picture can never be drawn under its ink. Label and note roll in with the stage. */}
+      <div className="relative z-0 pins:pointer-events-none pins:absolute pins:inset-0">
+        <div className="pins:sticky pins:top-0 pins:h-svh">
+          <Container className="pt-28 lg:pins:pt-32 [&_a]:pointer-events-auto">
+            <h2 id="works-heading" data-arrive="rise" className="text-label text-ink">
               <span className="split-line">
                 <span data-label-roll="" className="block">
                   Selected projects
                 </span>
               </span>
             </h2>
-            <p className="works-note mt-3 max-w-[36ch] text-[0.8125rem] leading-relaxed text-ink-muted sm:max-w-xs sm:text-[0.875rem]">
+            <p data-arrive="rise" className="works-note mt-3 max-w-[36ch] text-[0.8125rem] leading-relaxed text-ink-muted sm:max-w-xs sm:text-[0.875rem]">
               <span className="split-line">
                 <span data-label-roll="" className="block">
                   {NOTE}
@@ -77,7 +82,7 @@ export function Works() {
       </div>
 
       {/* The pinned stage: one frame holding every project's picture, stacked, and one title block per project in the same place. */}
-      <div className="pointer-events-none absolute inset-0 z-10 hidden tracks:block">
+      <div className="pointer-events-none absolute inset-0 z-10 hidden pins:block">
         <div data-works-stage="" className="sticky top-0 h-svh">
           <div data-works-frame="" className="works-stage__frame notch-clip">
             {items.map((s, i) => (
@@ -125,17 +130,19 @@ export function Works() {
 
       {items.map((s, i) => (
         <div key={s.href} data-works-panel={i} className="works-panel">
-          <div className="works-panel__text tracks:hidden">
-            <p className="text-label text-ink-muted">{TAG}</p>
-            <h3 className="mt-3 font-display text-display-lg font-light text-ink">{s.plate.caption}</h3>
-            <div className="mt-6">
+          <div className="works-panel__text pins:hidden">
+            <p data-arrive="rise" className="text-label text-ink-muted">
+              {TAG}
+            </p>
+            <h3 data-arrive="lines" className="mt-3 font-display text-display-lg font-light text-ink" dangerouslySetInnerHTML={{ __html: escapeHtml(s.plate.caption) }} />
+            <div data-arrive="rise" className="mt-6">
               <LinkButton href={s.href}>
                 View the project<span className="sr-only">: {s.plate.caption}</span>
               </LinkButton>
             </div>
           </div>
-          <div className="works-panel__frame tracks:hidden">
-            <div className="works-panel__image">
+          <div className="works-panel__frame pins:hidden">
+            <div data-arrive="mask" className="works-panel__image">
               <Image
                 src={s.plate.src}
                 alt={s.plate.alt}

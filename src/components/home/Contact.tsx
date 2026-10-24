@@ -55,7 +55,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
             <LinkButton href={paths.contact}>Start a project</LinkButton>
             {contact.phone ? (
               <p className="text-ink-muted">
-                or call <PhoneLink location="home-contact" className="link-rule text-ink" />
+                or call <PhoneLink location="home-contact" className="link-rule tap text-ink" />
               </p>
             ) : null}
           </div>
@@ -113,8 +113,8 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
             <dl data-contact-cell="" className="contact-block__cell">
               <dt className="contact-block__label">Phone and email</dt>
               <dd className="contact-block__value grid justify-items-start gap-0.5">
-                <PhoneLink location="home-contact-block" className="link-rule" />
-                <EmailLink location="home-contact-block" className="link-rule" />
+                <PhoneLink location="home-contact-block" className="link-rule tap-line" />
+                <EmailLink location="home-contact-block" className="link-rule tap-line" />
               </dd>
             </dl>
           ) : null}
@@ -123,7 +123,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
               <dt className="contact-block__label">Google rating</dt>
               <dd className="contact-block__value">
                 {/* Inline, so a rating that wraps is underlined line by line, the icon after its last word. */}
-                <a href={reviews.url} className="group">
+                <a href={reviews.url} className="group tap">
                   <span className="link-rule">
                     {reviews.rating.toFixed(1)} out of 5 from {reviews.count} reviews
                   </span>

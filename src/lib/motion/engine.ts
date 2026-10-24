@@ -22,6 +22,15 @@ import Lenis from "lenis";
  * rescales the choreography; height-only resizes on touch screens are
  * ignored for the same reason.
  *
+ * Phones held upright (the tracks on, under 768px wide) keep only the
+ * hero's and the story's pins: the intro, Works and Values flow there, so a
+ * thumb's swipe always moves the page (`pins`).
+ *
+ * A module whose section is a screen or more off the screen has nothing to
+ * change (`sleeper`): it writes its frame once as the section leaves, then
+ * sleeps until the section comes back, so a phone spends each frame only on
+ * what it shows.
+ *
  * The page is held still (menu open, page transition, preloader) by a
  * reference-counted lock: Lenis stops wheel and touch, and the scrolling
  * keys are cancelled. The root's overflow is never touched, so a classic
@@ -58,6 +67,14 @@ export interface Frame {
    * layout (see the `tracks` variant in globals.css).
    */
   tracks: boolean;
+  /**
+   * The long pinned stages are on: the intro's ring, Works' viewer and the
+   * Values words. The tracks, on a screen at least 768px wide (the `pins`
+   * variant in globals.css). On narrower screens those sections flow, their
+   * pieces arriving as they come into view, and the story moves a third
+   * faster.
+   */
+  pins: boolean;
 }
 
 export interface MotionModule {
@@ -73,7 +90,11 @@ type Callback = (frame: Frame) => void;
 
 /** Keep in step with the `tracks` custom variant in globals.css (which also limits the tracks to screens; printing sets `printing` here). */
 export const TRACKS_QUERY = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
+/** Keep in step with the `pins` custom variant in globals.css. */
+export const PINS_QUERY = `${TRACKS_QUERY} and (min-width: 768px)`;
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
+/** Phones and tablets: a touch screen is the main way in, and nothing hovers. */
+const TOUCH_QUERY = "(pointer: coarse) and (hover: none)";
 
 /** expo.out, the wheel's ease: in-page links glide on it too. */
 const expoOut = (n: number) => Math.min(1, 1.001 - Math.pow(2, -10 * n));
@@ -118,6 +139,29 @@ export function screenRatio(range: Range, f: Frame) {
   return Math.min(1, Math.max(-1, -1 + 2 * t));
 }
 
+/**
+ * A module's sleep: modules are pure functions of the scroll, so one whose
+ * section is a screen or more off the screen writes the same styles every
+ * frame. `skip` lets the frame be written once as the section leaves (on
+ * either side), then skips it until the section comes back; `wake` (from
+ * measure) has the next frame written whatever, as the layout may have
+ * changed under it.
+ */
+export function sleeper() {
+  let side = 0;
+  return {
+    skip(r: Range, f: Frame) {
+      const s = r.top - f.scroll > 2 * f.vh ? 1 : r.top + r.height - f.scroll < -f.vh ? -1 : 0;
+      if (s !== 0 && s === side) return true;
+      side = s;
+      return false;
+    },
+    wake() {
+      side = 0;
+    },
+  };
+}
+
 /** Keys that scroll the page; cancelled while it is locked, except where they operate a control. */
 const SCROLL_KEYS = [" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"];
 
@@ -140,7 +184,7 @@ export function clearStyleCache(el: HTMLElement | SVGElement) {
 
 class Engine {
   lenis: Lenis | null = null;
-  frame: Frame = { time: 0, dt: 0, scroll: 0, vw: 0, vh: 0, reduced: false, tracks: false };
+  frame: Frame = { time: 0, dt: 0, scroll: 0, vw: 0, vh: 0, reduced: false, tracks: false, pins: false };
   private modules: MotionModule[] = [];
   private callbacks = new Set<Callback>();
   private raf = 0;
@@ -166,23 +210,30 @@ class Engine {
   private unlocked: (() => void)[] = [];
   /** The page is being printed: the tracks are off until it is done. */
   private printing = false;
+  /** Holds on the frame loop (`measureAfter`): while any is on, nothing is measured or written. */
+  private holds = 0;
+  /** Waiting for the next measure (`measureAfter`). */
+  private measuredWaiting: (() => void)[] = [];
 
   boot() {
     if (this.booted || typeof window === "undefined") return;
     this.booted = true;
     const reduced = matchMedia(REDUCED_QUERY).matches;
-    this.lenis = new Lenis({
-      autoRaf: false,
-      autoResize: false,
-      smoothWheel: !reduced,
-      gestureOrientation: "vertical",
-      syncTouch: false,
-      touchInertiaExponent: 2,
-      duration: reduced ? 0 : 1.2,
-      // expo.out; with a duration set, Lenis glides by time rather than by its default lerp.
-      easing: reduced ? (n) => n : expoOut,
-    });
-    if (this.locks.size) this.lenis.stop();
+    // Lenis smooths the wheel. A touch screen scrolls natively, without it: its touch listeners cannot be passive, so every touch would wait for the page's script before the page could move.
+    if (!matchMedia(TOUCH_QUERY).matches) {
+      this.lenis = new Lenis({
+        autoRaf: false,
+        autoResize: false,
+        smoothWheel: !reduced,
+        gestureOrientation: "vertical",
+        syncTouch: false,
+        touchInertiaExponent: 2,
+        duration: reduced ? 0 : 1.2,
+        // expo.out; with a duration set, Lenis glides by time rather than by its default lerp.
+        easing: reduced ? (n) => n : expoOut,
+      });
+      if (this.locks.size) this.lenis.stop();
+    }
     const probe = document.createElement("div");
     probe.setAttribute("aria-hidden", "true");
     probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none";
@@ -201,6 +252,7 @@ class Engine {
       { passive: true },
     );
     matchMedia(TRACKS_QUERY).addEventListener("change", layoutChanged);
+    matchMedia(PINS_QUERY).addEventListener("change", layoutChanged);
     new ResizeObserver(layoutChanged).observe(document.body);
     // A printed page takes the still layout (the tracks are for screens), so the modules clear what they wrote before it prints, and write it again after.
     const printing = (on: boolean) => () => {
@@ -223,11 +275,13 @@ class Engine {
     f.time = (now - this.started) / 1000;
     this.last = now;
     this.lenis?.raf(now);
+    if (this.holds) return;
     const measured = this.needsMeasure;
     if (measured) this.measure();
     this.run();
     // Note the reading position against the layout the sections were measured in.
     if (!measured) this.anchor = this.readAnchor(f);
+    else this.measuredWaiting.splice(0).forEach((resolve) => resolve());
   };
 
   /** Write the frame: the per-frame callbacks, then the modules in order. */
@@ -256,8 +310,9 @@ class Engine {
     this.lastW = window.innerWidth;
     f.reduced = matchMedia(REDUCED_QUERY).matches;
     f.tracks = !this.printing && "motion" in document.documentElement.dataset && matchMedia(TRACKS_QUERY).matches;
+    f.pins = f.tracks && matchMedia(PINS_QUERY).matches;
     // Only a new screen moves the reader; content growing within the page (a disclosure opening) keeps the pixel position.
-    const view = `${f.vw}x${f.vh} ${f.tracks}`;
+    const view = `${f.vw}x${f.vh} ${f.tracks} ${f.pins}`;
     const keep = this.keepPlace && view !== this.view ? this.anchor : null;
     this.keepPlace = false;
     this.view = view;
@@ -283,6 +338,24 @@ class Engine {
       window.scrollTo({ top: y, behavior: "instant" });
       this.frame.scroll = window.scrollY;
     }
+  }
+
+  /**
+   * Hold the frame loop (no measure, no writes) until `until` settles, then
+   * measure; resolves once that measure has run. The preloader holds the
+   * page's first measure until its drawing is done: on a phone, splitting
+   * every block of text into lines and reading every section takes the
+   * main thread for several frames, and would stall the strokes mid-line.
+   * The page is hidden under the screen meanwhile.
+   */
+  measureAfter(until: Promise<unknown>) {
+    this.holds++;
+    const go = () => {
+      this.holds--;
+      this.requestMeasure();
+      return new Promise<void>((resolve) => this.measuredWaiting.push(resolve));
+    };
+    return until.then(go, go);
   }
 
   /** Put the reader back at `y` once the page now showing has been measured (going back to a page). */
@@ -314,9 +387,10 @@ class Engine {
 
   /**
    * Hold the page still for `reason` (menu, route, preloader) until every
-   * reason is released. Lenis cancels wheel and touch while stopped, except
-   * over [data-lenis-prevent] panels, which it leaves alone: those may
-   * scroll themselves but never chain to the page.
+   * reason is released. Lenis cancels wheel and touch while stopped (where
+   * the page scrolls natively, `blockPanels` does), except over
+   * [data-lenis-prevent] panels, which it leaves alone: those may scroll
+   * themselves but never chain to the page.
    */
   lock(reason: string) {
     this.locks.add(reason);
@@ -361,7 +435,9 @@ class Engine {
   private blockPanels = (e: Event) => {
     const t = e.target instanceof Element ? e.target : null;
     const own = t?.closest<HTMLElement>("[data-lenis-prevent]");
-    if (own && t && !scrollsWithin(t, own) && e.cancelable) e.preventDefault();
+    // A panel that scrolls by itself keeps the gesture; one that cannot would chain it to the page. Elsewhere the page is held by Lenis, or here when there is none.
+    const hold = own ? !(t && scrollsWithin(t, own)) : !this.lenis;
+    if (hold && e.cancelable) e.preventDefault();
   };
 
   scrollTo(target: number, immediate = false) {
@@ -399,8 +475,9 @@ function scrollsWithin(el: Element, root: HTMLElement) {
 
 export const engine = new Engine();
 
-/** Module order on the homepage; the page ground runs first because Values reads its fade. */
+/** Module order on the homepage; the lines are split before anything measures, the page ground runs first because Values reads its fade, and the phones' arrivals measure once the modules have put their sections back. */
 export const ORDER = {
+  lines: -1,
   ground: 0,
   hero: 1,
   intro: 2,
@@ -411,6 +488,7 @@ export const ORDER = {
   services: 7,
   handover: 8,
   contact: 9,
+  arrivals: 10,
   footer: 19,
   parallax: 20,
   nav: 90,

@@ -94,7 +94,7 @@ export default function ProjectsPage() {
                 <p className="max-w-2xl text-lg leading-relaxed text-ink-muted">
                   Case studies are being prepared. We publish an account of a project only with our client&apos;s permission. In the meantime, our services and permit guides explain how we approach each type of project.
                 </p>
-                <div data-row="" className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
+                <div data-row="" className="mt-8 flex flex-wrap gap-x-8 gap-y-3 pointer-coarse:gap-y-5">
                   <ArrowLink href={paths.services}>Explore services</ArrowLink>
                   <ArrowLink href={paths.guides}>Read permit guides</ArrowLink>
                 </div>

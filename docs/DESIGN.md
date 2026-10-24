@@ -17,7 +17,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | `brand-500` … `brand-700` | `#C2352C` … `#8F271F` | Red text on light grounds, if ever needed. Use `brand-300` on dark. |
 
 - **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels and metadata, and Playfair Display Black only for the wordmark display type: the hero name, the Values words and the firm's mark in a title block (the story's sheet and Contact) (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
-- **Scale:** `text-hero` (fluid up to 8.5rem), `text-display-2xl` … `text-display-sm`, `text-lede`, `text-label` (mono, uppercase, tracked).
+- **Scale:** `text-hero` (fluid up to 8.5rem), `text-display-2xl` … `text-display-sm`, `text-lede`, `text-label` (mono, uppercase, tracked; 11px, and 12px on phones so captions and form labels read at arm's length).
 - **Easing:** `ease-out-expo` for reveals and hovers, `ease-in-out-quint` for masks and the menu panel. Durations sit between 0.5s and 1.4s.
 - **Width:** content runs to `max-w-site` (100rem) on a 12-column grid; long copy stays at `max-w-prose`.
 
@@ -52,7 +52,7 @@ The footer is the page's one charcoal band. Process, service areas and guides li
 
 ## Motion
 
-- **Homepage:** Lenis smooth scrolling and one frame loop driving every section from scroll position, in one vocabulary: sheets that rise over a receding layer, display type that only rolls through masks and never fades, entrances that ease out and exits that ease in, and beats that overlap so no frame is empty. See [MOTION.md](MOTION.md).
+- **Homepage:** Lenis smoothing the wheel (touch screens scroll natively) and one frame loop driving every section from scroll position, in one vocabulary: sheets that rise over a receding layer, display type that only rolls through masks and never fades, entrances that ease out and exits that ease in, and beats that overlap so no frame is empty. See [MOTION.md](MOTION.md).
 - **Preloader** (`Preloader.tsx`): on each full page load the outline of Ontario draws itself and the GTA dot is marked, then an iris opens from the dot onto the page. The outline is from SVG Maps (CC BY 4.0, see `public/images/CREDITS.md`).
 - **Screen transition** (`ScreenTransition.tsx`): on every in-site link a graphite panel unfolds in 3D and scales up to cover the page while the Ontario outline draws on it; the next page loads underneath and the cover fades away.
 - **Header and menu** (`MainNav.tsx`): past 80px of scroll on wide screens the top row lifts away and a menu button takes its place; the menu opens out of that button. Links roll their letters on hover and focus. The header follows the ground beneath it.
@@ -63,6 +63,7 @@ The footer is the page's one charcoal band. Process, service areas and guides li
 ## Rules
 
 - Vary layouts between sections (index rows, asymmetric images, a pinned column, a dark band). No card grids.
+- Every link and control is a target a finger can find on a touch screen, at least 44px each way. A small text link standing alone takes `tap` (an invisible box around its words, so nothing moves); links stacked in a list take `tap-line` (each line grows to 44px and the list drops its own gaps, so neighbouring targets meet rather than overlap). Under a mouse they are as they were.
 - Placeholders stay visible (`Placeholder`) until the business supplies the fact. Never fill them with sample content.
 - Reviews are never written by hand, and Google review structured data is never added (Google does not allow it for a business's own reviews).
 - Client renderings are captioned as renderings, never as photographs of finished buildings, and never with an address. Rendered studies are always captioned as studies and never presented as client projects.

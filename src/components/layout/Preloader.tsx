@@ -14,7 +14,11 @@ import { OntarioOutline } from "./OntarioOutline";
  * mainland over 0.9s, the islands overlapping its end; the GTA dot pops at
  * 0.95s and rings out once. The screen waits for the strokes (about 1.35s;
  * the dot finishes popping as the exit sets off), the fonts and the opening
- * pictures (openingAssets), and for at least 1.25s from navigation.
+ * pictures (openingAssets), and for at least 1.25s from navigation. The
+ * page underneath is first measured only once the strokes are drawn and
+ * the fonts are in, and the screen waits for that too: on a phone the
+ * measure takes the main thread for a few frames, which would stall the
+ * strokes mid-line (the dot's pop and ring run on the compositor).
  *
  * Then, T₀: the page is put back at the top and the document gets
  * data-loaded and data-revealed, so the page's own entrance (the hero, the
@@ -64,9 +68,12 @@ export function Preloader() {
     // Only the strokes are waited for: the dot pops as the mainland closes and finishes during the exit's slow start, and its ring rings out through the exit.
     const drawing = el.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation && (a.animationName === "dot-in" || a.animationName === "dot-pulse")));
     const drawn = Promise.all(drawing.map((a) => a.finished.catch(() => undefined)));
+    const fonts = Promise.race([document.fonts?.ready, wait(ASSET_CAP_MS)]);
+    // The page underneath is first measured once the strokes are drawn and the fonts are in (engine.measureAfter), and the screen waits for that measure.
+    const measured = engine.measureAfter(Promise.race([Promise.all([drawn, fonts]), wait(Math.max(0, SAFETY_MS - performance.now()))]));
     const assets = Promise.all([document.fonts?.ready, ...openingAssets()]);
 
-    Promise.all([drawn, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
+    Promise.all([drawn, measured, Promise.race([assets, wait(ASSET_CAP_MS)]), wait(Math.max(0, MIN_MS - performance.now()))]).then(() => {
       if (cancelled) return;
       // Too late: the head script has already revealed the page (8s), so leave the page where the visitor has it.
       if ("preloaded" in html.dataset) {
@@ -77,8 +84,11 @@ export function Preloader() {
       const dot = el.querySelector(".ontario__dot")?.getBoundingClientRect();
       const x = dot ? dot.left + dot.width / 2 : window.innerWidth / 2;
       const y = dot ? dot.top + dot.height / 2 : window.innerHeight / 2;
-      html.style.setProperty("--iris-x", `${x.toFixed(1)}px`);
-      html.style.setProperty("--iris-y", `${y.toFixed(1)}px`);
+      // On the screen and the hero's stage only: set on the root, a custom property restyles the whole document, just as the screen opens.
+      for (const target of [el, ...document.querySelectorAll<HTMLElement>("[data-hero-stage]")]) {
+        target.style.setProperty("--iris-x", `${x.toFixed(1)}px`);
+        target.style.setProperty("--iris-y", `${y.toFixed(1)}px`);
+      }
       // Back at the top before anything shows (data-loaded is what scripts and tests wait for).
       engine.scrollTo(0, true);
       html.dataset.loaded = "";
