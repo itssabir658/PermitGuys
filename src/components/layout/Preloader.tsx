@@ -24,8 +24,8 @@ import { openingAssets } from "@/lib/motion/opening";
  * fade and settle on the compositor, and the page underneath is first
  * measured only once the map is complete (engine.measureAfter), in the hold.
  *
- * A later full load in the same tab shows only the charcoal screen, which
- * fades as soon as the page is ready. The pictures are CSS backgrounds that
+ * A later full load in the same tab shows the finished map in line, with
+ * its label, but no pictures, and fades as soon as the page is ready. The pictures are CSS backgrounds that
  * apply only during the intro, so a later load never fetches them; one that
  * fails to load leaves its region in a dark tone.
  *

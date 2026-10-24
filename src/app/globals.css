@@ -658,10 +658,14 @@
 .intro {
   position: relative;
   width: min(calc(85vw - 2rem), calc(71svh * 1000 / 1096.7), 39rem);
-  visibility: hidden;
 }
-:root[data-intro] .intro {
-  visibility: visible;
+/* A later load in the tab shows the finished lines and the label, without the pictures, until the page is ready. */
+:root:not([data-intro]) .intro__stroke {
+  stroke-dashoffset: 0;
+}
+/* On the intro, the label waits for the timeline. */
+:root[data-intro]:not([data-intro="play"]) .intro__label {
+  opacity: 0;
 }
 /* Under the map, in the old loader's type and red. */
 .intro__label {
@@ -792,22 +796,20 @@
 }
 .screen-veil__label {
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-charcoal-300);
 }
-.screen-veil__label span + span::before {
-  content: "";
-  display: inline-block;
+.screen-veil__dot {
   width: 0.4rem;
   height: 0.4rem;
-  margin-right: 0.6rem;
   border-radius: 9999px;
   background: var(--color-brand-400);
-  vertical-align: 0.08em;
 }
 
 /* ---- Page transition (ScreenTransition.tsx) ---- */
@@ -844,15 +846,28 @@
   inset: 0;
   display: grid;
   place-items: center;
-  background: var(--color-charcoal-950);
+  background: #121212;
 }
 .screen-veil__mark {
   gap: 1.75rem;
 }
+/* The intro's map, smaller and lines only: the outline, then the borders between its regions. */
 .screen-veil__map {
-  height: min(44svh, 24rem, calc((100vw - 4rem) / 0.892));
-  aspect-ratio: 892 / 1000;
+  height: min(44svh, 24rem, calc((100vw - 4rem) * 1096.4 / 1000));
+  aspect-ratio: 1000 / 1096.4;
   overflow: visible;
+}
+.gta__stroke {
+  stroke: #fff;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.gta__stroke--border {
+  stroke-width: 1.25px;
 }
 /* The tapped link answers at once, before the sheet has covered it. */
 [data-pressed] {
