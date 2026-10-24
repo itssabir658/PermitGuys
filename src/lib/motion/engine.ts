@@ -22,15 +22,6 @@ import Lenis from "lenis";
  * rescales the choreography; height-only resizes on touch screens are
  * ignored for the same reason.
  *
- * Phones held upright (the tracks on, under 768px wide) keep only the
- * hero's and the story's pins: the intro, Works and Values flow there, so a
- * thumb's swipe always moves the page (`pins`).
- *
- * A module whose section is a screen or more off the screen has nothing to
- * change (`sleeper`): it writes its frame once as the section leaves, then
- * sleeps until the section comes back, so a phone spends each frame only on
- * what it shows.
- *
  * The page is held still (menu open, page transition, preloader) by a
  * reference-counted lock: Lenis stops wheel and touch, and the scrolling
  * keys are cancelled. The root's overflow is never touched, so a classic
@@ -67,14 +58,6 @@ export interface Frame {
    * layout (see the `tracks` variant in globals.css).
    */
   tracks: boolean;
-  /**
-   * The long pinned stages are on: the intro's ring, Works' viewer and the
-   * Values words. The tracks, on a screen at least 768px wide (the `pins`
-   * variant in globals.css). On narrower screens those sections flow, their
-   * pieces arriving as they come into view, and the story moves a third
-   * faster.
-   */
-  pins: boolean;
 }
 
 export interface MotionModule {
@@ -90,8 +73,6 @@ type Callback = (frame: Frame) => void;
 
 /** Keep in step with the `tracks` custom variant in globals.css (which also limits the tracks to screens; printing sets `printing` here). */
 export const TRACKS_QUERY = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
-/** Keep in step with the `pins` custom variant in globals.css. */
-export const PINS_QUERY = `${TRACKS_QUERY} and (min-width: 768px)`;
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 /** Phones and tablets: a touch screen is the main way in, and nothing hovers. */
 const TOUCH_QUERY = "(pointer: coarse) and (hover: none)";
@@ -139,29 +120,6 @@ export function screenRatio(range: Range, f: Frame) {
   return Math.min(1, Math.max(-1, -1 + 2 * t));
 }
 
-/**
- * A module's sleep: modules are pure functions of the scroll, so one whose
- * section is a screen or more off the screen writes the same styles every
- * frame. `skip` lets the frame be written once as the section leaves (on
- * either side), then skips it until the section comes back; `wake` (from
- * measure) has the next frame written whatever, as the layout may have
- * changed under it.
- */
-export function sleeper() {
-  let side = 0;
-  return {
-    skip(r: Range, f: Frame) {
-      const s = r.top - f.scroll > 2 * f.vh ? 1 : r.top + r.height - f.scroll < -f.vh ? -1 : 0;
-      if (s !== 0 && s === side) return true;
-      side = s;
-      return false;
-    },
-    wake() {
-      side = 0;
-    },
-  };
-}
-
 /** Keys that scroll the page; cancelled while it is locked, except where they operate a control. */
 const SCROLL_KEYS = [" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"];
 
@@ -184,7 +142,7 @@ export function clearStyleCache(el: HTMLElement | SVGElement) {
 
 class Engine {
   lenis: Lenis | null = null;
-  frame: Frame = { time: 0, dt: 0, scroll: 0, vw: 0, vh: 0, reduced: false, tracks: false, pins: false };
+  frame: Frame = { time: 0, dt: 0, scroll: 0, vw: 0, vh: 0, reduced: false, tracks: false };
   private modules: MotionModule[] = [];
   private callbacks = new Set<Callback>();
   private raf = 0;
@@ -252,7 +210,6 @@ class Engine {
       { passive: true },
     );
     matchMedia(TRACKS_QUERY).addEventListener("change", layoutChanged);
-    matchMedia(PINS_QUERY).addEventListener("change", layoutChanged);
     new ResizeObserver(layoutChanged).observe(document.body);
     // A printed page takes the still layout (the tracks are for screens), so the modules clear what they wrote before it prints, and write it again after.
     const printing = (on: boolean) => () => {
@@ -310,9 +267,8 @@ class Engine {
     this.lastW = window.innerWidth;
     f.reduced = matchMedia(REDUCED_QUERY).matches;
     f.tracks = !this.printing && "motion" in document.documentElement.dataset && matchMedia(TRACKS_QUERY).matches;
-    f.pins = f.tracks && matchMedia(PINS_QUERY).matches;
     // Only a new screen moves the reader; content growing within the page (a disclosure opening) keeps the pixel position.
-    const view = `${f.vw}x${f.vh} ${f.tracks} ${f.pins}`;
+    const view = `${f.vw}x${f.vh} ${f.tracks}`;
     const keep = this.keepPlace && view !== this.view ? this.anchor : null;
     this.keepPlace = false;
     this.view = view;
@@ -475,7 +431,7 @@ function scrollsWithin(el: Element, root: HTMLElement) {
 
 export const engine = new Engine();
 
-/** Module order on the homepage; the lines are split before anything measures, the page ground runs first because Values reads its fade, and the phones' arrivals measure once the modules have put their sections back. */
+/** Module order on the homepage; the lines are split before anything measures, and the page ground runs first because Values reads its fade. */
 export const ORDER = {
   lines: -1,
   ground: 0,
@@ -488,7 +444,6 @@ export const ORDER = {
   services: 7,
   handover: 8,
   contact: 9,
-  arrivals: 10,
   footer: 19,
   parallax: 20,
   nav: 90,

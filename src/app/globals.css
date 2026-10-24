@@ -17,22 +17,6 @@
 }
 
 /*
- * `pins:` applies while the long pinned stages are on (the intro's ring,
- * Works' viewer, the Values words): the tracks, on a screen at least 768px
- * wide. Narrower screens (phones held upright) keep only the hero's and the
- * story's pins; there the intro, Works and Values flow, each piece arriving
- * as it comes into view (HomeMotion, arrivals), so a thumb's swipe always
- * moves the page. Keep in step with PINS_QUERY in src/lib/motion/engine.ts.
- */
-@custom-variant pins {
-  @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 768px) {
-    :root[data-motion] & {
-      @slot;
-    }
-  }
-}
-
-/*
  * PermitGuys design tokens (luxury redesign, docs/DESIGN.md).
  *
  * Materials, not decoration: warm ivory paper, stone, graphite and a near
@@ -345,42 +329,6 @@
   font-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.3rem);
   line-height: 1.55;
   letter-spacing: -0.01em;
-}
-
-/* On a phone the labels are a size up, a little less spaced, so a caption or a form label reads at arm's length. */
-@media (max-width: 639px) {
-  .text-label {
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-  }
-}
-
-/*
- * Touch targets. On a touch screen a small text link gets a target a finger
- * can find, at least 44px each way, centred on its words:
- *   .tap       a link with no other within 22px of it: an invisible box
- *              around it takes the touch, and nothing moves
- *   .tap-line  a link stacked with others: its line grows to 44px with the
- *              words in the middle, so neighbouring targets meet and never
- *              cover each other's words (its list drops its own row gaps)
- * Drawn underlines are placed in the content box, so they stay under the
- * words. Under a mouse the links are as they were.
- */
-@media (pointer: coarse) {
-  .tap {
-    position: relative;
-  }
-  .tap::after {
-    content: "";
-    position: absolute;
-    inset: min(0px, 50% - 22px);
-  }
-  .tap-line {
-    display: inline-block;
-    vertical-align: top;
-    padding-block: max(0px, (44px - 1lh) / 2);
-    background-origin: content-box;
-  }
 }
 
 /*
@@ -931,7 +879,7 @@
 /* Phones keep the row, on a ground of its own once the page has scrolled, with a hairline under it on light grounds. */
 @media (max-width: 767px) {
   .site-nav[data-collapsed]:not([data-open]) .site-nav__bar {
-    /* The homepage writes the colour under the header here, from 768px wide (stone under Works, dusk over Services, ivory over Contact); phones keep the ivory, and the dark sections turn the bar dark. */
+    /* The homepage writes the colour under the header here (stone under Works, dusk over Services, ivory over Contact). */
     background: color-mix(in srgb, var(--ground, var(--color-ivory)) 88%, transparent);
     backdrop-filter: blur(14px);
     box-shadow: inset 0 -1px rgb(23 23 22 / 0.08);
@@ -1647,59 +1595,24 @@ body:has(.not-found__map) .site-footer__place {
 }
 
 /* ---- Homepage: intro orbit (Intro.tsx) ---- */
-/*
- * Flowing (phones, and the still layout): the paragraphs, then the six
- * pictures beneath them, on phones a sheet of three by two, from tablets up
- * a quiet row.
- */
 .intro-orbit {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 30rem;
-  margin: 0 auto;
-  padding: 0 1.25rem 5.5rem;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
   list-style: none;
   pointer-events: none;
 }
 .intro-orbit__item {
-  position: relative;
-  aspect-ratio: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--size);
+  height: var(--size);
   overflow: hidden;
   background: var(--color-stone-300);
-}
-@media (min-width: 768px) {
-  .intro-orbit {
-    display: flex;
-    justify-content: center;
-    gap: clamp(0.5rem, 1.5vw, 1rem);
-    max-width: none;
-    padding: 0 1.25rem 5rem;
-  }
-  .intro-orbit__item {
-    width: clamp(56px, 9vw, 112px);
-  }
-}
-/* The ring (pins): every picture at the centre of the stage, sized and placed by HomeMotion (intro module). */
-@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 768px) {
-  :root[data-motion] .intro-orbit {
-    position: absolute;
-    inset: 0;
-    display: block;
-    padding: 0;
-  }
-  :root[data-motion] .intro-orbit__item {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: var(--size);
-    height: var(--size);
-    aspect-ratio: auto;
-    opacity: 0;
-    transform: translate(-50%, -50%);
-  }
+  opacity: 0;
+  transform: translate(-50%, -50%);
 }
 /* The paragraphs avoid a lone last word; from tablets up their lines are balanced. */
 .intro-copy {
@@ -1711,10 +1624,54 @@ body:has(.not-found__map) .site-footer__place {
   }
 }
 /* Inside the ring on wider screens (HomeMotion, orbitPath: not portrait), the copy is sized by both sides of the screen, so its five lines clear the pictures. */
-@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 768px) and (min-aspect-ratio: 4/5) {
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-aspect-ratio: 4/5) {
   :root[data-motion] .intro-copy {
     font-size: clamp(1.65rem, min(3.2vw, 5.1vh), 3.4rem);
   }
+}
+/*
+ * The still intro (reduced motion, short screens, no JavaScript, print): the
+ * paragraphs, then the pictures as a quiet row beneath them, clear of the
+ * copy. The same rules twice: a media query cannot be combined with the
+ * missing data-motion in one selector.
+ */
+@media print, (prefers-reduced-motion: reduce), (max-height: 499.98px) {
+  .intro-orbit {
+    position: relative;
+    inset: auto;
+    display: flex;
+    justify-content: center;
+    gap: clamp(0.5rem, 1.5vw, 1rem);
+    padding: 0 1.25rem 5rem;
+  }
+  .intro-orbit__item {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: clamp(56px, 9vw, 112px);
+    height: auto;
+    aspect-ratio: 1;
+    opacity: 1;
+    transform: none;
+  }
+}
+:root:not([data-motion]) .intro-orbit {
+  position: relative;
+  inset: auto;
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+  padding: 0 1.25rem 5rem;
+}
+:root:not([data-motion]) .intro-orbit__item {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: clamp(56px, 9vw, 112px);
+  height: auto;
+  aspect-ratio: 1;
+  opacity: 1;
+  transform: none;
 }
 
 /* ---- Homepage: story (Story.tsx) ---- */
@@ -2819,9 +2776,8 @@ body:has(.not-found__map) .site-footer__place {
 }
 
 /* ---- Homepage: the tracks ---- */
-/* The long pinned stages (pins: the tracks, from 768px wide). On phones the intro, Works and Values flow, and their pieces arrive on their own (HomeMotion, arrivals). */
-@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-width: 768px) {
-  :root[data-motion] :is(.intro-copy, [data-works-title], [data-values-desc]):not([data-split]) {
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] :is(.intro-copy, [data-services-heading], [data-works-title], [data-values-desc], [data-contact-heading], [data-contact-body]):not([data-split]) {
     opacity: 0;
   }
   :root[data-motion] .intro-copy {
@@ -2841,7 +2797,7 @@ body:has(.not-found__map) .site-footer__place {
     height: 140vh;
     padding: 0;
   }
-  :root[data-motion] :is([data-works-roll], .works-item .split-line__inner, :is([data-works], [data-values]) [data-label-roll]) {
+  :root[data-motion] :is([data-works-roll], .works-item .split-line__inner, [data-label-roll]) {
     transform: translateY(120%);
   }
 
@@ -2862,15 +2818,6 @@ body:has(.not-found__map) .site-footer__place {
     transform: scale(0.72);
   }
   :root[data-motion] :is([data-values-roll], .values-text__descs .split-line__inner) {
-    transform: translateY(120%);
-  }
-}
-@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
-  :root[data-motion] :is([data-services-heading], [data-contact-heading], [data-contact-body]):not([data-split]) {
-    opacity: 0;
-  }
-  /* The story's label waits below its mask for the sheet. */
-  :root[data-motion] [data-story] [data-label-roll] {
     transform: translateY(120%);
   }
 

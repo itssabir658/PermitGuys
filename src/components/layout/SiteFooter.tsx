@@ -54,8 +54,8 @@ export function SiteFooter() {
               </p>
             </div>
             <address className="mt-10 grid gap-2 text-[0.875rem] not-italic text-charcoal-300">
-              <p>{contact.phone ? <PhoneLink location="footer" className="link-draw tap-line text-ivory" /> : <Placeholder onDark>phone number</Placeholder>}</p>
-              <p>{contact.email ? <EmailLink location="footer" className="link-draw tap-line text-ivory" /> : <Placeholder onDark>email address</Placeholder>}</p>
+              <p>{contact.phone ? <PhoneLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>phone number</Placeholder>}</p>
+              <p>{contact.email ? <EmailLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>email address</Placeholder>}</p>
               <p>{contact.address ?? <Placeholder onDark>business address, if it will be published</Placeholder>}</p>
               {contact.hours ? <p>{contact.hours}</p> : null}
             </address>
@@ -64,10 +64,10 @@ export function SiteFooter() {
             {footerNav.map((col) => (
               <div key={col.heading}>
                 <h2 className="text-label text-charcoal-300">{col.heading}</h2>
-                <ul className="mt-6 space-y-3 text-[0.9375rem] pointer-coarse:mt-3 pointer-coarse:space-y-0 lg:text-[0.875rem]">
+                <ul className="mt-6 space-y-3 text-[0.9375rem] lg:text-[0.875rem]">
                   {col.links.map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className="tap-line text-ivory/80 transition-colors hover:text-ivory">
+                      <Link href={link.href} className="text-ivory/80 transition-colors hover:text-ivory">
                         <RollText>{link.label}</RollText>
                       </Link>
                     </li>
@@ -79,13 +79,13 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-24 flex flex-col gap-10 border-t border-ivory/15 pt-10 lg:mt-32 lg:flex-row lg:items-end lg:justify-between">
-          <Link href={paths.home} aria-label={`${site.name} home`} className="tap inline-block">
+          <Link href={paths.home} aria-label={`${site.name} home`} className="inline-block">
             <Logo onDark className="h-8 w-auto sm:h-10" />
           </Link>
           <div className="space-y-3 text-sm text-charcoal-300 lg:max-w-xl lg:text-right">
             <p>
               © {new Date().getFullYear()} {site.legalName ?? site.name}. Serving homeowners and property owners in the {site.region}.{" "}
-              <Link href={paths.privacy} className="link-rule tap text-ivory/80 hover:text-ivory">
+              <Link href={paths.privacy} className="link-rule text-ivory/80 hover:text-ivory">
                 Privacy policy
               </Link>
             </p>
