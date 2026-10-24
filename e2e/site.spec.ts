@@ -331,6 +331,33 @@ test.describe("interactive pieces", () => {
     await expect.poll(() => page.locator(".site-nav__bar").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(ivory);
   });
 
+  test("the intro's ring and paragraphs follow its own section, so no blank screen follows it", async ({ page }) => {
+    await page.goto("/");
+    // A first load in the tab: the intro screen marks the page as well as the section.
+    await expect(page.locator("html")).toHaveAttribute("data-intro", /.*/);
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    const top = await page.evaluate(() => {
+      let t = 0;
+      for (let n = document.querySelector<HTMLElement>("section[data-intro]"); n; n = n.offsetParent as HTMLElement | null) t += n.offsetTop;
+      return t;
+    });
+    const vh = page.viewportSize()?.height ?? 900;
+    const go = (e: number) => page.evaluate((y) => window.scrollTo(0, y), Math.round(top + e * vh));
+    // The first paragraph is read a screen after the stage pins, not before its time.
+    await go(1);
+    const first = page.locator("[data-intro-copy]").first().locator(".split-line").first();
+    // Its first line in place in its mask.
+    await expect.poll(() => first.evaluate((el) => Math.abs(el.firstElementChild!.getBoundingClientRect().top - el.getBoundingClientRect().top))).toBeLessThan(2);
+    // Just after the fling starts (3.7 screens), the ring is still on screen around the stage.
+    await go(3.75);
+    await expect
+      .poll(() => page.evaluate(() => [...document.querySelectorAll("[data-orbit-slot]")].filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth && Number(getComputedStyle(el).opacity) > 0.5;
+      }).length))
+      .toBeGreaterThanOrEqual(4);
+  });
+
   test("the transition and intro stay out of the way with reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
