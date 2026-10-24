@@ -42,7 +42,7 @@ The map is the five census divisions of the GTA from Statistics Canada's 2021 ca
 
 | From `data-intro="play"` | What happens |
 |---|---|
-| Before first paint | The head script sets `data-motion` for visitors who allow motion, `data-intro` on the first load in a tab, and every flag after 8s whatever happens, so the page can never be held. A `#171717` screen is in place and the five pictures start loading (CSS backgrounds that apply only with `data-intro`, picked by screen width and density: see `docs/IMAGES.md`). |
+| Before first paint | The head script sets `data-motion` for visitors who allow motion, `data-intro` on the first load in a tab, and every flag after 8s whatever happens, so the page can never be held. A near-black `#0a0a0a` screen is in place and the five pictures start loading (CSS backgrounds that apply only with `data-intro`, picked by screen width and density: see `docs/IMAGES.md`). |
 | 0 | Two frames after hydration the Preloader sets `data-intro="play"` and the CSS timeline starts (the head script starts it anyway 1.5s after navigation). The drawing is painted on the main thread, so it waits until hydration is over: started at first paint, a phone at four times CPU throttle stalled the first line for up to 180ms. |
 | 0 to 0.4s | The dark screen holds. |
 | 0.4 to 1.7s | The outer edge draws as one stroke from the south-west tip, up the lakeshore first and round (1.3s, `--e-inout-2`), with mitred corners. |

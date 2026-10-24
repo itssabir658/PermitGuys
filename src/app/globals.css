@@ -645,7 +645,7 @@
   z-index: 120;
   display: none;
   place-items: center;
-  background: #171717;
+  background: #0a0a0a;
 }
 :root[data-motion]:not([data-preloaded]) .preloader {
   display: grid;
@@ -667,7 +667,7 @@
   position: absolute;
   overflow: hidden;
   /* What a region shows if its picture never arrives. */
-  background: #232323;
+  background: #161616;
   opacity: 0;
 }
 .intro__picture {
