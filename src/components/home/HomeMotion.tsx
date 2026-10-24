@@ -343,7 +343,8 @@ function hero(): MotionModule | null {
 
 /* Intro: six pictures travel one squircle path around the centre while two paragraphs pass through it. */
 function intro(): MotionModule | null {
-  const section = one("[data-intro]");
+  // The section, not the page: the first-load intro screen also marks <html> with data-intro.
+  const section = one("section[data-intro]");
   if (!section) return null;
   const stage = one("[data-intro-stage]", section);
   const items = all("[data-orbit-slot]", section).map((el) => ({ el, slot: Number(el.dataset.orbitSlot), img: one("[data-orbit-img]", el) }));
