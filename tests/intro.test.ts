@@ -47,20 +47,26 @@ describe("GTA map", () => {
     }
   });
 
-  it("crops each picture to its region's shape of box, in both sizes", () => {
+  it("crops each picture to its region's shape of box, at three widths, the full one at the crop's own resolution", () => {
     for (const r of GTA_REGIONS) {
       const aspect = r.box[2] / r.box[3];
-      const large = webpSize(r.picture.src);
-      const small = webpSize(r.picture.small);
-      expect(large).toEqual({ width: r.picture.width, height: r.picture.height });
-      expect(small.width).toBe(r.picture.smallWidth);
-      expect(large.width / large.height).toBeCloseTo(aspect, 1);
-      expect(small.width / small.height).toBeCloseTo(aspect, 1);
+      const sizes = [r.picture.small, r.picture.medium, r.picture.full].map(webpSize);
+      expect(sizes[2]).toEqual({ width: r.picture.width, height: r.picture.height });
+      for (const s of sizes) expect(s.width / s.height).toBeCloseTo(aspect, 1);
+      expect(sizes[0].width).toBeLessThan(sizes[1].width);
+      expect(sizes[1].width).toBeLessThanOrEqual(sizes[2].width);
+      // Sharp on large screens: at least 1400px on its long edge.
+      expect(Math.max(r.picture.width, r.picture.height)).toBeGreaterThanOrEqual(1400);
     }
   });
 
+  it("draws the map in straight lines: a few dozen corners in all", () => {
+    const corners = [...GTA_OUTLINE, ...GTA_BORDERS].reduce((n, d) => n + numbers(d).length / 2, 0);
+    expect(corners).toBeLessThan(120);
+  });
+
   it("never names an address in a picture's file", () => {
-    for (const r of GTA_REGIONS) expect(r.picture.src + r.picture.small).not.toMatch(/\d{2,}[- ]?[a-z]|street|drive|road|avenue|\bdr\b|\bst\b/i);
+    for (const r of GTA_REGIONS) expect(r.picture.small + r.picture.medium + r.picture.full).not.toMatch(/\d{2,}[- ]?[a-z]|street|drive|road|avenue|\bdr\b|\bst\b/i);
   });
 });
 

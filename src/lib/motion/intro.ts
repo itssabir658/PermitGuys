@@ -13,7 +13,7 @@
 export const INTRO_HOLD_MS = 400;
 /** The outer edge draws in one stroke. */
 export const INTRO_OUTLINE_MS = 1300;
-/** Toronto Island draws as the edge closes. */
+/** Any island (none at present) draws as the edge closes. */
 export const INTRO_ISLAND_MS = 400;
 /** The borders between regions start once the edge is most of the way round, a little apart. */
 export const INTRO_BORDERS_AT_MS = 1050;
@@ -37,7 +37,7 @@ export interface IntroStroke {
   ms: number;
 }
 
-/** When the outline's strokes draw: the edge first, then the island. */
+/** When the outline's strokes draw: the edge first, then any island. */
 export function outlineTiming(index: number): IntroStroke {
   return index === 0 ? { at: INTRO_HOLD_MS, ms: INTRO_OUTLINE_MS } : { at: INTRO_HOLD_MS + INTRO_OUTLINE_MS - INTRO_ISLAND_MS * 0.5, ms: INTRO_ISLAND_MS };
 }

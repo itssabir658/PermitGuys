@@ -676,13 +676,27 @@
   background-position: center;
   background-size: cover;
 }
-/* Only during the intro, so a later load never fetches them. */
+/*
+ * Only during the intro, so a later load never fetches them. Phones take the
+ * smaller cut, or the middle one on high-density screens; larger screens the
+ * middle cut, or the full-resolution one on high-density screens; screens
+ * 1920px wide and up (4K monitors included) always the full one.
+ */
 :root[data-intro] .intro__picture {
-  background-image: var(--picture-small);
+  background-image: var(--picture-medium);
+  background-image: -webkit-image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
+  background-image: image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
 }
 @media (min-width: 40rem) {
   :root[data-intro] .intro__picture {
-    background-image: var(--picture);
+    background-image: var(--picture-full);
+    background-image: -webkit-image-set(var(--picture-medium) 1x, var(--picture-full) 2x);
+    background-image: image-set(var(--picture-medium) 1x, var(--picture-full) 2x);
+  }
+}
+@media (min-width: 120rem) {
+  :root[data-intro] .intro__picture {
+    background-image: var(--picture-full);
   }
 }
 .intro__lines {
@@ -694,8 +708,8 @@
 }
 .intro__lines path {
   vector-effect: non-scaling-stroke;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
 }
 .intro__stroke {
   stroke: #fff;

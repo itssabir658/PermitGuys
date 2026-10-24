@@ -13,8 +13,11 @@ Toronto (3520) and the regional municipalities of Durham (3518), York
 (3519), Peel (3521) and Halton (3524). The cartographic file follows the
 Lake Ontario shoreline. The data is kept in Statistics Canada's own Lambert
 conformal conic projection (EPSG:3347), north up, and simplified with
-mapshaper so neighbouring regions keep sharing exactly the same edge. Islands
-under 1 km² are dropped (Toronto Island stays).
+mapshaper (Douglas-Peucker, 2 km) to a few dozen straight lines, so the
+regions read as clean geometric shapes while neighbouring regions keep
+sharing exactly the same edge. Islands are dropped, and so are the narrow
+spikes the shoreline leaves (the harbour spits), where no other region
+shares the corner.
 
 Pictures: each region's picture is cropped from a client rendering to the
 region's bounding box, so the house sits as near the middle of the region
@@ -37,8 +40,10 @@ from shapely.ops import polylabel
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SERVICE = "https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/4/query"
 CDUIDS = ["3518", "3519", "3520", "3521", "3524"]
-# Simplification step in metres (the map is about 137 km across, drawn 1000 units wide).
-INTERVAL_M = 110
+# Simplification tolerance in metres (the map is about 137 km across, drawn 1000 units wide).
+INTERVAL_M = 2000
+# A corner sharper than this, on the shoreline only, is a spike and is cut.
+SPIKE_DEG = 35
 WIDTH = 1000
 
 # Reveal order, and each region's picture: the source rendering, the point in
@@ -51,8 +56,9 @@ REGIONS = [
     ("toronto", "Toronto", "narrow-contemporary-house", (0.5, 0.52), 1.0),
     ("durham", "Durham", "farmhouse-bungalow", (0.58, 0.68), 1.35),
 ]
-# Two widths per picture, for phones and for larger screens.
-SIZES = [(560, 64), (1000, 66)]
+# Three widths per picture: phones, larger screens, and the full resolution
+# of the crop (capped) for high-density and 4K screens. Never upscaled.
+SIZES = [(560, 70), (1100, 74), (2000, 76)]
 
 
 def fetch():
@@ -100,7 +106,11 @@ def main():
         with open(raw, "wb") as f:
             f.write(fetch())
         simp, inner, outer = (os.path.join(tmp, n) for n in ("simp.json", "inner.json", "outer.json"))
-        mapshaper(raw, "-filter-islands", "min-area=1000000", "-simplify", "planar", f"interval={INTERVAL_M}", "keep-shapes", "-clean", "-o", simp, "format=geojson", "force")
+        mapshaper(raw, "-filter-islands", "min-area=10000000", "-simplify", "dp", "planar", f"interval={INTERVAL_M}", "keep-shapes", "-clean", "-o", simp, "format=geojson", "force")
+        with open(simp) as f:
+            cleaned = despike(json.load(f))
+        with open(simp, "w") as f:
+            json.dump(cleaned, f)
         mapshaper(simp, "-innerlines", "-o", inner, "format=geojson", "force")
         mapshaper(simp, "-dissolve", "-lines", "-o", outer, "format=geojson", "force")
         simp, inner, outer = (json.load(open(p)) for p in (simp, inner, outer))
@@ -130,7 +140,7 @@ def main():
         regions.append(dict(key=key, picture=picture, box=[round(bx, 1), round(by, 1), round(bw, 1), round(bh, 1)], centre=[round(label.x, 1), round(label.y, 1)], clip=clip, focus=focus, zoom=zoom))
 
     # The outline: the outer edge as one stroke, starting at the south-west
-    # tip and running up the lakeshore first, then Toronto Island.
+    # tip and running up the lakeshore first, then any island kept.
     rings = []
     for f in outer["features"]:
         g = f["geometry"]
@@ -141,7 +151,7 @@ def main():
     edge = rings[0][:-1] if rings[0][0] == rings[0][-1] else rings[0]
     start = max(range(len(edge)), key=lambda i: edge[i][1] - 0.3 * edge[i][0])
     edge = edge[start:] + edge[:start]
-    if edge[-40][0] > edge[40][0]:
+    if edge[-3][0] > edge[3][0]:
         edge = [edge[0]] + edge[1:][::-1]
     outline = [path(edge + [edge[0]], False)] + [path(r, True) for r in rings[1:]]
 
@@ -155,6 +165,41 @@ def main():
 
     write_pictures(regions)
     write_module(height, regions, outline, borders)
+
+
+def despike(collection):
+    """Cuts shoreline corners sharper than SPIKE_DEG; a corner two regions share is never touched."""
+    import math
+
+    def rings(g):
+        return [r for p in (g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]) for r in p]
+
+    use = {}
+    for f in collection["features"]:
+        for r in rings(f["geometry"]):
+            for c in set(map(tuple, r)):
+                use[c] = use.get(c, 0) + 1
+
+    def angle(a, b, c):
+        v1 = (a[0] - b[0], a[1] - b[1])
+        v2 = (c[0] - b[0], c[1] - b[1])
+        cos = (v1[0] * v2[0] + v1[1] * v2[1]) / (math.hypot(*v1) * math.hypot(*v2))
+        return math.degrees(math.acos(max(-1, min(1, cos))))
+
+    for f in collection["features"]:
+        for r in rings(f["geometry"]):
+            changed = True
+            while changed and len(r) > 5:
+                changed = False
+                pts = r[:-1]
+                for i in range(len(pts)):
+                    a, b, c = pts[i - 1], pts[i], pts[(i + 1) % len(pts)]
+                    if use[tuple(b)] == 1 and angle(a, b, c) < SPIKE_DEG:
+                        del pts[i]
+                        r[:] = pts + [pts[0]]
+                        changed = True
+                        break
+    return collection
 
 
 def grade(img):
@@ -186,7 +231,9 @@ def write_pictures(regions):
         crop = grade(img.crop((round(left), round(top), round(left + cw), round(top + ch))))
         r["sizes"] = []
         for width, quality in SIZES:
-            w = width if aspect >= 1 else round(width * aspect)
+            # The long edge, never past the crop's own pixels.
+            long_edge = min(width, round(max(cw, ch)))
+            w = long_edge if aspect >= 1 else round(long_edge * aspect)
             h = round(w / aspect)
             name = f"{r['picture']}-{w}.webp"
             crop.resize((w, h), Image.LANCZOS).save(os.path.join(out, name), "WEBP", quality=quality, method=6)
@@ -196,14 +243,14 @@ def write_pictures(regions):
 def write_module(height, regions, outline, borders):
     lines = [
         "/**",
-        " * The Greater Toronto Area for the intro (GtaIntro.tsx), as SVG path data",
+        " * The Greater Toronto Area for the intro (Preloader.tsx), as SVG path data",
         f" * in a {WIDTH}×{num(height, 1)} box, north up. Generated by scripts/gta-map/build.py: do",
         " * not edit by hand.",
         " *",
         " * Boundaries: Statistics Canada, 2021 Census cartographic boundary file,",
         " * census divisions (Durham 3518, York 3519, Toronto 3520, Peel 3521,",
         " * Halton 3524), Open Government Licence - Canada. Simplified with",
-        " * mapshaper, keeping shared edges shared; islands under 1 km² dropped.",
+        " * mapshaper to straight lines (2 km), keeping shared edges shared; islands and shoreline spikes dropped.",
         " */",
         "",
         "export interface GtaRegion {",
@@ -214,14 +261,14 @@ def write_module(height, regions, outline, borders):
         "  centre: [number, number];",
         "  /** The region's shape in the units of its own box (clipPathUnits=objectBoundingBox). */",
         "  clip: string;",
-        "  /** The region's picture, cropped to its box: a larger and a smaller width. */",
-        "  picture: { src: string; width: number; height: number; small: string; smallWidth: number };",
+        "  /** The region's picture, cropped to its box, at three widths: phones, larger screens, and full resolution for high-density and 4K screens. */",
+        "  picture: { small: string; medium: string; full: string; width: number; height: number };",
         "}",
         "",
         f"export const GTA_WIDTH = {WIDTH};",
         f"export const GTA_HEIGHT = {num(height, 1)};",
         "",
-        "/** The outer edge: the mainland as one stroke from the south-west tip, up the lakeshore first; then Toronto Island. */",
+        "/** The outer edge: the mainland as one stroke from the south-west tip, up the lakeshore first; then any island kept. */",
         f"export const GTA_OUTLINE = {json.dumps(outline, indent=2)};",
         "",
         "/** The boundaries between the five regions, each from its lakeward end. */",
@@ -231,14 +278,14 @@ def write_module(height, regions, outline, borders):
         "export const GTA_REGIONS: GtaRegion[] = [",
     ]
     for r in regions:
-        small, large = r["sizes"]
+        small, medium, full = r["sizes"]
         lines += [
             "  {",
             f'    key: "{r["key"]}",',
             f"    box: {json.dumps(r['box'])},",
             f"    centre: {json.dumps(r['centre'])},",
             f'    clip: "{r["clip"]}",',
-            f'    picture: {{ src: "{large[0]}", width: {large[1]}, height: {large[2]}, small: "{small[0]}", smallWidth: {small[1]} }},',
+            f'    picture: {{ small: "{small[0]}", medium: "{medium[0]}", full: "{full[0]}", width: {full[1]}, height: {full[2]} }},',
             "  },",
         ]
     lines += ["];", ""]

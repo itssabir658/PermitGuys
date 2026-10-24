@@ -148,8 +148,9 @@ export function Preloader() {
                 className="intro__picture"
                 style={
                   {
-                    "--picture": `url(${r.picture.src})`,
                     "--picture-small": `url(${r.picture.small})`,
+                    "--picture-medium": `url(${r.picture.medium})`,
+                    "--picture-full": `url(${r.picture.full})`,
                     transformOrigin: `${pct(r.centre[0] - x, w)} ${pct(r.centre[1] - y, h)}`,
                   } as CSSProperties
                 }
