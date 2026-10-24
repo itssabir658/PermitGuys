@@ -39,6 +39,20 @@ export function roll(inP: number, outP: number) {
   return outP > 0 ? -MASK * outP : MASK * (1 - inP);
 }
 
+/**
+ * Where each section's label (its heading and note, each one mask) starts
+ * to roll in, as its section's sso: the story's as its sheet comes up,
+ * before the first chapter's lines; Works' with the first picture, as the
+ * story's stage leaves; Values' as the stage pins, with the first word;
+ * Services' eyebrow from its track, as the ground passes night.
+ */
+export const LABEL_IN = { story: 0.32, works: 0.3, values: 0.62, services: 0.34 } as const;
+
+/** A section label at its section's sso `s`, as a yPercent: it rolls in over 0.3 screens from `from` (LABEL_IN), and leaves with the released stage. */
+export function sectionLabel(s: number, from: number) {
+  return roll(tween(s, from, 0.3, ease.power3Out), 0);
+}
+
 /* ---- Hero (250vh track, 100vh sticky stage, pinned for 1.5 screens) ---- */
 
 /**
@@ -567,8 +581,13 @@ export const NIGHT = 0x191918;
  */
 export function pageGround(ssoWorks: number, hsoWorks: number, ssoServices: number) {
   const stone = smoothstep(ssoWorks, 0.55, 0.95) * (1 - smoothstep(hsoWorks, -0.35, 0));
-  const fade = smoothstep(ssoServices, 0.24, 0.46);
+  const fade = dusk(ssoServices);
   return { fade, color: mixColorOklab(mixColorNum(CREAM, STONE, stone), NIGHT, fade) };
+}
+
+/** How far dusk has fallen, 0–1, from Services' sso (pageGround). */
+export function dusk(ssoServices: number) {
+  return smoothstep(ssoServices, 0.24, 0.46);
 }
 
 /**
@@ -606,7 +625,11 @@ export function riseInset(p: number, top: number, height: number, vh: number) {
  * starts while the last Values picture is still centred, just below it.
  */
 export function servicesReveal(rise: number) {
-  const r = tween(rise, 0.02, 0.5, ease.power3Out);
+  return servicesRevealAt(tween(rise, 0.02, 0.5, ease.power3Out));
+}
+
+/** The Services picture `r` of the way in (servicesReveal), however `r` is driven: by the scroll, or on touch screens by its own clock. */
+export function servicesRevealAt(r: number) {
   return { r, scale: mix(1.2, 1, r), y: (1 - r) * 6 };
 }
 
@@ -738,13 +761,21 @@ export function contactLine(s: number, j: number) {
  * 0.06 and taking `duration`.
  */
 export function contactRise(s: number, delay = 0, rise = 24, duration = 0.3) {
-  const t = tween(s, 0.06 + delay, duration, ease.power3Out);
+  return contactRiseAt(tween(s, 0.06 + delay, duration, ease.power3Out), rise);
+}
+
+/** A block of the close `t` of the way up (contactRise), however `t` is driven. */
+export function contactRiseAt(t: number, rise = 24) {
   return { t, y: (1 - t) * rise, opacity: Math.min(1, t * 2.5) };
 }
 
 /** The picture, from its frame's own sso: its sheet wipes up as `t` runs (riseInset) while the picture settles from 1.12. */
 export function contactPicture(s: number) {
-  const t = tween(s, 0.04, 0.4, ease.power3Out);
+  return contactPictureAt(tween(s, 0.04, 0.4, ease.power3Out));
+}
+
+/** The picture `t` of the way in (contactPicture), however `t` is driven. */
+export function contactPictureAt(t: number) {
   return { t, scale: mix(1.12, 1, t) };
 }
 
@@ -765,4 +796,96 @@ export function contactBlock(s: number) {
  */
 export function contactCell(s: number, rank: number) {
   return contactRise(s, rank * 0.02, 12, 0.22);
+}
+
+/* ---- Touch screens: where a scene is part way (settle.ts) ---- */
+
+/*
+ * On touch screens the page is never left at rest part way through a
+ * change: each scene says where that would be (its module's zones, found
+ * with these), and the engine settles the page out of them. A change is
+ * part way while a masked line is cut by its mask, some of it showing and
+ * some hidden, or while a wipe, the ring's fling, the trace turning to
+ * paper or the dusk has begun and not finished. The rest is whole at every
+ * moment, so the page may stop among it: drawings in progress (the story's
+ * sketch and engineering, each stroke a finished line), pictures on the
+ * move (the ring, the drifts, the Values pictures' growth) and the sheets
+ * that rise with the page between sections.
+ */
+
+/** How far a masked line may stand off its place, or below its mask, in % of its height, and still be at rest. */
+export const LINE_REST = 3;
+
+/** Whether a masked line at yPercent `y` (roll()) is cut by its mask. */
+export function lineCut(y: number) {
+  const a = Math.abs(y);
+  return a > LINE_REST && a < MASK - LINE_REST;
+}
+
+/** Whether a wipe, or any change that runs 0 → 1, is part way: more than half a percent from either end. */
+export function partWay(p: number) {
+  return p > 0.005 && p < 0.995;
+}
+
+const anyOf = (n: number, test: (k: number) => boolean) => {
+  for (let k = 0; k < n; k++) if (test(k)) return true;
+  return false;
+};
+
+/** The hero (heroState): the name or a line of the statement part way out through its mask. */
+export function heroPartWay(scroll: number, top: number, vh: number) {
+  const st = heroState(scroll, top, vh);
+  return lineCut(st.nameRoll) || st.subRoll.some((y) => lineCut(y));
+}
+
+/** The intro at its sso `s`, with `lines[i]` lines in paragraph i: a line part way through its mask, or the ring part way through its fling. */
+export function introPartWay(s: number, lines: readonly number[]) {
+  const { copyIn, exitStart, sectionVh } = introPhases(lines.length);
+  const { e, exit } = introProgress(s, sectionVh / 100, exitStart);
+  return partWay(exit) || lines.some((count, i) => anyOf(count, (j) => lineCut(introLine(e, copyIn[i], j))));
+}
+
+/**
+ * The story at `e` (storyState), with `lines[i]` masked lines in chapter i
+ * (its label, its title's lines, its body's) and `fields` values in the
+ * title block: the section's label (if it has one), a line or a value part
+ * out of its mask; or the sheet's, the rendering's or the trace's wipe, the
+ * trace turning to paper, or the drawing coming back in ink and
+ * straightening, part way.
+ */
+export function storyPartWay(e: number, lines: readonly number[], fields: number, label = true) {
+  const st = storyState(e);
+  const n = lines.length;
+  return (
+    (label && lineCut(sectionLabel(e + 1, LABEL_IN.story))) ||
+    [st.sheet, st.render, st.veil, st.paper, st.ink, st.rectify].some((p) => partWay(p)) ||
+    lines.some((count, i) => anyOf(count, (k) => lineCut(storyLine(e, i, n, k)))) ||
+    anyOf(fields, (k) => lineCut(storyField(e, k)))
+  );
+}
+
+/** Works at `e`, pinned for `D` screens (worksShot), with `titles[i]` lines in project i's title: the label, the project's eyebrow, a title line or its button (which travels farther, worksButton) part out of its mask, or a picture's wipe part way. */
+export function worksPartWay(e: number, D: number, titles: readonly number[], label = true) {
+  const n = titles.length;
+  const project = (i: number) => {
+    const last = titles[i] + 1;
+    return partWay(worksShot(e, i, n, D).inP) || anyOf(last, (k) => lineCut(worksLine(e, i, n, D, k))) || lineCut(worksButton(worksLine(e, i, n, D, last)).y);
+  };
+  return (label && lineCut(sectionLabel(e + 1, LABEL_IN.works))) || anyOf(n, project);
+}
+
+/** Values with value i at `xs[i]` (valuesTitle) and the section at sso `s`, `lines[i]` lines in value i's description: the label, a word or a line of description part out of its mask. */
+export function valuesPartWay(xs: readonly number[], s: number, lines: readonly number[], label = true) {
+  const n = xs.length;
+  return (label && lineCut(sectionLabel(s, LABEL_IN.values))) || xs.some((x, i) => lineCut(valuesTitle(x, i, n)) || anyOf(lines[i] ?? 0, (k) => lineCut(valuesDescLine(x, i, n, k))));
+}
+
+/** The page ground, from Services' sso: dusk part fallen. */
+export function duskPartWay(ssoServices: number) {
+  return partWay(dusk(ssoServices));
+}
+
+/** Services from its track's sso `s`, with `heading` lines in its heading and, on the pinned track, `slots` labels and rows in the list (0 where it flows): the eyebrow (if there is one), a heading line or a slot part out of its mask. */
+export function servicesPartWay(s: number, heading: number, slots: number, eyebrow = true) {
+  return (eyebrow && lineCut(sectionLabel(s, LABEL_IN.services))) || anyOf(heading, (j) => lineCut(servicesHeading(s, j))) || anyOf(slots, (k) => lineCut(servicesRow(s, k).y));
 }

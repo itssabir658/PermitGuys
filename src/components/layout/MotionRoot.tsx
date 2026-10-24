@@ -3,8 +3,9 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { ORDER, engine, measureRange, screenRatio, setStyle, type Frame, type Range } from "@/lib/motion/engine";
-import { footerDot, footerDraw, footerLift, footerProgress, footerStroke } from "@/lib/motion/footer";
+import { footerDot, footerDraw, footerLift, footerProgress, footerStroke, FOOTER_DRAW_S } from "@/lib/motion/footer";
 import { clamp, ease, fit } from "@/lib/motion/math";
+import { entranceClock } from "@/lib/motion/settle";
 
 /*
  * Starts the scroll engine (Lenis and the frame loop) and adds the motion
@@ -133,8 +134,11 @@ function parallax() {
 
 /*
  * The footer, on every page. Pure functions of the scroll (lib/motion/
- * footer.ts), so it plays back on the way up. With reduced motion or on
- * the still layout everything is cleared: the outline shows fully drawn.
+ * footer.ts), so it plays back on the way up. On touch screens, where the
+ * page may come to rest anywhere around it, the outline draws itself on its
+ * own clock once it has come up, so it is never left half drawn
+ * (settle.ts). With reduced motion or on the still layout everything is
+ * cleared: the outline shows fully drawn.
  */
 function footer() {
   const el = document.querySelector<HTMLElement>("body > footer");
@@ -146,6 +150,7 @@ function footer() {
   let r: Range;
   let rMap: Range;
   let height = 0;
+  const since = entranceClock();
   return engine.register({
     order: ORDER.footer,
     measure() {
@@ -167,7 +172,7 @@ function footer() {
       const x = footerProgress(f.scroll, f.vh, r.top, r.height, height);
       const y = footerLift(x, r.height, f.vh);
       setStyle(inner, "transform", y < -0.005 ? `translate3d(0, ${y.toFixed(2)}px, 0)` : "");
-      const d = footerDraw(f.scroll, f.vh, rMap.top, rMap.height, height);
+      const d = f.touch ? clamp(since(f.time, map, (f.scroll + f.vh - rMap.top) / f.vh, 0.08) / FOOTER_DRAW_S) : footerDraw(f.scroll, f.vh, rMap.top, rMap.height, height);
       groups.forEach((paths, i) => {
         const v = footerStroke(d, i).toFixed(4);
         paths.forEach((p) => setStyle(p, "strokeDashoffset", v));

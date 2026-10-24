@@ -39,6 +39,9 @@ export function footerDraw(scroll: number, vh: number, top: number, height: numb
   return clamp((scroll + vh - top) / span);
 }
 
+/** Touch screens: the seconds the outline takes to draw itself, once it is 0.08 screen up (MotionRoot), about the preloader's own drawing. */
+export const FOOTER_DRAW_S = 1.6;
+
 /** The dash offset of stroke group i (0 the mainland, then the islands): 1 undrawn, 0 drawn. */
 export function footerStroke(d: number, i: number) {
   return 1 - tween(d, 0.15 + i * 0.06, 0.5, ease.power2Out);

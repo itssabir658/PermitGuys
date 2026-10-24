@@ -2,18 +2,24 @@
 
 import { useEffect } from "react";
 import { LINE_KINDS, STORY_W, storyGrid, storyLevels, storyLines, storyMembers } from "@/content/story-drawing";
-import { ORDER, engine, hso, measureRange, setStyle, sso, type Frame, type MotionModule, type Range } from "@/lib/motion/engine";
+import { ORDER, engine, hso, measureRange, setStyle, sleeper, sso, type Frame, type MotionModule, type Range } from "@/lib/motion/engine";
 import {
+  LABEL_IN,
   contactBlock,
   contactCell,
   contactLine,
   contactPicture,
+  contactPictureAt,
   contactRise,
+  contactRiseAt,
+  duskPartWay,
   headerGround,
   HERO_DEPTH,
+  heroPartWay,
   heroState,
   introCopy,
   introLine,
+  introPartWay,
   introPhases,
   introProgress,
   orbitItem,
@@ -25,9 +31,12 @@ import {
   servicesHold,
   servicesIndex,
   servicesLead,
+  servicesPartWay,
   servicesReveal,
+  servicesRevealAt,
   SERVICES_META_ON,
   servicesRow,
+  sectionLabel,
   STORY,
   STORY_OVERSHOOT,
   storyChapter,
@@ -36,6 +45,7 @@ import {
   storyLine,
   storyLineDraw,
   storyOverlay,
+  storyPartWay,
   storySeg,
   storySide,
   storyState,
@@ -47,15 +57,18 @@ import {
   roll,
   valuesDescLine,
   valuesImage,
+  valuesPartWay,
   valuesTitle,
   valuesWordSize,
   worksButton,
   worksLine,
+  worksPartWay,
   worksShot,
   type OrbitPath,
   type SwapLayer,
 } from "@/lib/motion/home";
 import { clamp, ease, mix, toHex, tween } from "@/lib/motion/math";
+import { entranceClock, spansWhere, ZONE_STEP, type Span } from "@/lib/motion/settle";
 import { resplitIfNeeded, splitAll, unsplit } from "@/lib/motion/split";
 
 /*
@@ -63,8 +76,16 @@ import { resplitIfNeeded, splitAll, unsplit } from "@/lib/motion/split";
  * nothing: it finds the sections by their data attributes and registers one
  * module per section, in the reference's order. Each module is a pure
  * function of the scroll position, so the page plays backwards exactly on
- * the way up. Without the tracks (reduced motion, short screens) the
- * modules clear their styles and the sections show their still layouts.
+ * the way up, and each sleeps while its section is a screen or more off the
+ * screen (engine.ts, sleeper). Without the tracks (reduced motion, short
+ * screens) the modules clear their styles and the sections show their
+ * still layouts.
+ *
+ * On touch screens the page is never left part way through a change
+ * (settle.ts): each module on a pinned stage says where its changes are
+ * (`zones`), and the engine settles the page out of them once a flick has
+ * come to rest; Services' list and pictures on phones, and Contact, come
+ * up with the page instead, so their entrances play on their own clock.
  */
 
 const one = (sel: string, root: ParentNode = document) => root.querySelector<HTMLElement>(sel);
@@ -117,6 +138,29 @@ function textRight(el: HTMLElement) {
   range.selectNodeContents(el);
   return range.getBoundingClientRect().right;
 }
+
+/*
+ * Touch screens (settle.ts): the spans of scroll between `from` and `to`
+ * (px) where something of a module is part way through a change, `partWay`
+ * judging the frame at each place (lib/motion/home.ts, "Touch screens").
+ */
+function zonesWhere(f: Frame, from: number, to: number, partWay: (g: Frame) => boolean): Span[] {
+  const g = { ...f };
+  return spansWhere(from, to, ZONE_STEP * f.vh, (y) => {
+    g.scroll = y;
+    return partWay(g);
+  });
+}
+
+/*
+ * Touch screens: entrances on their own clock (entranceClock), on the
+ * vocabulary's timed values (lib/motion/home.ts): a masked line 0.9s, 0.07s
+ * after the one before it; a block 0.8s; a picture's sheet 1s.
+ */
+const LINE_S = 0.9;
+const LINE_GAP = 0.07;
+const BLOCK_S = 0.8;
+const SHEET_S = 1;
 
 interface Shared {
   /** How far the page ground has turned to night, 0–1; Values dims its pictures by it. */
@@ -173,6 +217,9 @@ function ground(shared: Shared): MotionModule | null {
       if (bar) setStyle(bar, "--ground", toHex(h.color));
       setNight(h.night);
     },
+    zones(f) {
+      return zonesWhere(f, rServices.top - f.vh, rServices.top, (g) => duskPartWay(sso(rServices, g)));
+    },
     destroy() {
       setStyle(document.body, "backgroundColor", "");
       if (bar) setStyle(bar, "--ground", "");
@@ -228,15 +275,18 @@ function hero(): MotionModule | null {
   };
   window.addEventListener("pointermove", onMove, { passive: true });
   document.addEventListener("mouseout", onOut);
+  const sleep = sleeper();
   return {
     order: ORDER.hero,
     measure() {
+      sleep.wake();
       r = measureRange(section);
       z = parseFloat(getComputedStyle(stage).getPropertyValue("--z")) || 1;
       w = stage.clientWidth;
       h = stage.clientHeight;
     },
     update(f) {
+      if (sleep.skip(r, f)) return;
       if (!f.tracks) {
         clear(heading, "transform");
         [name, ...subs].forEach((el) => el && clear(el, "transform"));
@@ -265,6 +315,9 @@ function hero(): MotionModule | null {
       // Not drawn at all until the scroll darkens anything (Hero.tsx keeps it invisible: at the top it would be a full-screen layer showing nothing).
       setStyle(dim, "visibility", s.dim > 0 ? "visible" : "");
     },
+    zones(f) {
+      return zonesWhere(f, r.top, r.top + r.height, (g) => heroPartWay(g.scroll, r.top, g.vh));
+    },
     destroy() {
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("mouseout", onOut);
@@ -287,9 +340,11 @@ function intro(): MotionModule | null {
   let r: Range;
   let path: OrbitPath;
   let lines: HTMLElement[][] = copies.map(() => []);
+  const sleep = sleeper();
   return {
     order: ORDER.intro,
     measure(f) {
+      sleep.wake();
       r = measureRange(section);
       if (f.tracks) lines = copies.map((c, i) => resplitIfNeeded(c, lines[i]));
       else if (lines.some((l) => l.length)) {
@@ -302,6 +357,7 @@ function intro(): MotionModule | null {
       for (const it of items) setStyle(it.el, "--size", f.tracks ? px(path.sizes[it.slot] ?? 0) : "");
     },
     update(f) {
+      if (sleep.skip(r, f)) return;
       // Without the tracks the pictures sit in a row under the paragraphs (globals.css), untouched.
       if (!f.tracks) {
         for (const it of items) {
@@ -332,16 +388,20 @@ function intro(): MotionModule | null {
         }),
       );
     },
+    zones(f) {
+      const counts = lines.map((ls) => ls.length);
+      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => introPartWay(sso(r, g), counts));
+    },
   };
 }
 
 /*
  * A section label (its heading and note, each one mask) rolls in over 0.3
- * screens from `from` (the section's showScreenOffset) as its stage comes
- * up, and leaves with the released stage.
+ * screens from `from` (the section's showScreenOffset, LABEL_IN) as its
+ * stage comes up, and leaves with the released stage.
  */
 function labelRoll(labels: HTMLElement[], r: Range, f: Frame, from: number) {
-  const y = roll(tween(sso(r, f), from, 0.3, ease.power3Out), 0);
+  const y = sectionLabel(sso(r, f), from);
   for (const el of labels) setStyle(el, "transform", liftPercent(y));
 }
 
@@ -419,6 +479,7 @@ function story(): MotionModule | null {
   /** Each chapter's masked lines, top first: its label, its title's lines, its body's. */
   let lines: HTMLElement[][] = chapters.map(() => []);
   let live = false;
+  const sleep = sleeper();
 
   const still = () => {
     labels.forEach((el) => clear(el, "transform"));
@@ -450,6 +511,7 @@ function story(): MotionModule | null {
   return {
     order: ORDER.story,
     measure(f) {
+      sleep.wake();
       r = measureRange(section);
       stageH = stage.offsetHeight;
       sheetH = sheet.offsetHeight;
@@ -469,9 +531,9 @@ function story(): MotionModule | null {
       lines = chapters.map((c, i) => [...(c.label ? [c.label] : []), ...titleLines[i], ...bodyLines[i]]);
     },
     update(f) {
+      if (sleep.skip(r, f)) return;
       if (!f.tracks) return still();
-      // As the sheet comes up, before the first chapter's lines.
-      labelRoll(labels, r, f, 0.32);
+      labelRoll(labels, r, f, LABEL_IN.story);
       const e = sso(r, f) - 1;
       const st = storyState(e);
 
@@ -568,6 +630,10 @@ function story(): MotionModule | null {
         section.setAttribute("data-story-live", "");
       }
     },
+    zones(f) {
+      const counts = lines.map((ls) => ls.length);
+      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => storyPartWay(sso(r, g) - 1, counts, fields.length, labels.length > 0));
+    },
     destroy() {
       section.removeAttribute("data-story-live");
     },
@@ -610,9 +676,11 @@ function works(): MotionModule | null {
     if (i >= 0 && r && engine.frame.tracks) engine.scrollTo(r.top + (i + 0.5) * (D / n) * engine.frame.vh);
   };
   section.addEventListener("focusin", onFocus);
+  const sleep = sleeper();
   return {
     order: ORDER.works,
     measure(f) {
+      sleep.wake();
       r = measureRange(section);
       D = Math.max(0.5, r.height / f.vh - 1);
       stageH = stage.offsetHeight;
@@ -627,6 +695,7 @@ function works(): MotionModule | null {
       }
     },
     update(f) {
+      if (sleep.skip(r, f)) return;
       if (!f.tracks) {
         labels.forEach((el) => clear(el, "transform"));
         for (const s of shots) {
@@ -640,8 +709,7 @@ function works(): MotionModule | null {
         }
         return;
       }
-      // With the first picture, as the story's stage leaves.
-      labelRoll(labels, r, f, 0.3);
+      labelRoll(labels, r, f, LABEL_IN.works);
       const e = sso(r, f) - 1;
       // Where the frame is on the screen: the stage rides with the section until it pins, and after it releases.
       const top = Math.min(Math.max(r.top - f.scroll, 0), r.top + r.height - f.scroll - stageH) + frameTop;
@@ -668,6 +736,10 @@ function works(): MotionModule | null {
         }
         if (it.link) setStyle(it.link, "pointerEvents", Math.abs(by) < 0.15 * MASK ? "auto" : "none");
       });
+    },
+    zones(f) {
+      const counts = titleLines.map((ls) => ls.length);
+      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => worksPartWay(sso(r, g) - 1, D, counts, labels.length > 0));
     },
     destroy() {
       section.removeEventListener("focusin", onFocus);
@@ -702,6 +774,7 @@ function values(shared: Shared): MotionModule | null {
   let lines: HTMLElement[][][] = copies.map((c) => c.descs.map(() => []));
   /** The band each row of description lines takes up with its letters (every description starts at the top of one cell, so they share rows), in the stage's px. */
   let rows: { top: number; bottom: number }[] = [];
+  const sleep = sleeper();
 
   /**
    * The words' sizes, the same in both copies. Below 1024px each word is
@@ -732,6 +805,7 @@ function values(shared: Shared): MotionModule | null {
   return {
     order: ORDER.values,
     measure(f) {
+      sleep.wake();
       rSection = measureRange(section);
       rOuters = outers.map(measureRange);
       rFrames = frames.map(measureRange);
@@ -757,6 +831,7 @@ function values(shared: Shared): MotionModule | null {
       });
     },
     update(f) {
+      if (sleep.skip(rSection, f)) return;
       if (!f.tracks) {
         labels.forEach((el) => clear(el, "transform"));
         images.forEach((img) => clear(img, "transform", "filter"));
@@ -764,8 +839,7 @@ function values(shared: Shared): MotionModule | null {
         lines.forEach((c) => c.forEach((ls) => ls.forEach((line) => clear(line, "transform"))));
         return;
       }
-      // As the stage pins, with the first word.
-      labelRoll(labels, rSection, f, 0.62);
+      labelRoll(labels, rSection, f, LABEL_IN.values);
       const xs = rOuters.map((r) => (f.scroll - r.top) / f.vh);
 
       images.forEach((img, i) => {
@@ -810,6 +884,10 @@ function values(shared: Shared): MotionModule | null {
 
       // Clip the ivory copy to every picture on screen.
       setStyle(mask, "clipPath", d ? `path('${d}')` : "inset(50%)");
+    },
+    zones(f) {
+      const counts = (lines[0] ?? []).map((ls) => ls.length);
+      return zonesWhere(f, rSection.top - f.vh, rSection.top + rSection.height, (g) => valuesPartWay(rOuters.map((ro) => (g.scroll - ro.top) / g.vh), sso(rSection, g), counts, labels.length > 0));
     },
   };
 }
@@ -879,11 +957,16 @@ function services(): MotionModule[] {
   const caption = one("[data-services-caption]", section);
   const more = one("[data-services-all]", section);
   const n = rows.length;
+  // Touch screens: the pictures and the flowing list come up with the page, so they play in on their own clocks.
+  const sinceImage = entranceClock();
+  const sinceCopy = entranceClock();
+  const sleepImage = sleeper();
+  const sleepCopy = sleeper();
   const deskTrack = matchMedia("(min-width: 768px) and (min-height: 720px)");
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
   let pinned = false;
   let frameShown = true;
-  let rTrack: Range, rCol: Range, rMore: Range | null = null;
+  let rSection: Range, rTrack: Range, rCol: Range, rMore: Range | null = null;
   let rRows: Range[] = [];
   let rSlots: Range[] = [];
   let rPlates: (Range | null)[] = [];
@@ -941,6 +1024,8 @@ function services(): MotionModule[] {
   const image: MotionModule = {
     order: ORDER.servicesImage,
     measure(f) {
+      sleepImage.wake();
+      rSection = measureRange(section);
       pinned = f.tracks && deskTrack.matches;
       if (pinned) section.dataset.servicesPinned = "";
       else delete section.dataset.servicesPinned;
@@ -956,6 +1041,7 @@ function services(): MotionModule[] {
       boxTop = box.getBoundingClientRect().top - stage.getBoundingClientRect().top;
     },
     update(f) {
+      if (sleepImage.skip(rSection, f)) return;
       // Each group's picture: its sheet wipes up from the bottom of the screen as it comes into view.
       plates.forEach((p, i) => {
         const r = rPlates[i];
@@ -967,7 +1053,8 @@ function services(): MotionModule[] {
           return;
         }
         const top = r.top - f.scroll;
-        const rv = servicesReveal((f.vh - top) / f.vh);
+        const rise = (f.vh - top) / f.vh;
+        const rv = f.touch ? servicesRevealAt(tween(sinceImage(f.time, p.fig, rise, 0.02), 0, SHEET_S, ease.power3Out)) : servicesReveal(rise);
         setStyle(p.reveal, "clipPath", `inset(${riseInset(rv.r, top, r.height, f.vh).toFixed(2)}% 0 0 0)`);
         setStyle(p.zoom, "transform", `translate3d(0, ${rv.y.toFixed(2)}%, 0) scale(${num(rv.scale)})`);
         if (p.caption) setStyle(p.caption, "opacity", num(rv.r));
@@ -1024,7 +1111,8 @@ function services(): MotionModule[] {
       setStyle(stage, "transform", lead > 0.05 ? `translate3d(0, ${(-lead).toFixed(2)}px, 0)` : "");
       // The frame's top on the screen; the sheet rises from the bottom of the screen until the frame's own bottom edge is in view.
       const top = pinned ? stageTop(f) + boxTop - lead : rCol.top - f.scroll;
-      const rv = servicesReveal((f.vh - top) / f.vh);
+      const rise = (f.vh - top) / f.vh;
+      const rv = f.touch ? servicesRevealAt(tween(sinceImage(f.time, box, rise, 0.02), 0, SHEET_S, ease.power3Out)) : servicesReveal(rise);
       setStyle(reveal, "clipPath", `inset(${riseInset(rv.r, top, boxH, f.vh).toFixed(2)}% 0 0 0)`);
       setStyle(zoom, "transform", `translate3d(0, ${rv.y.toFixed(2)}%, 0) scale(${num(rv.scale)})`);
       if (caption) setStyle(caption, "opacity", num(rv.r));
@@ -1041,6 +1129,7 @@ function services(): MotionModule[] {
   const copy: MotionModule = {
     order: ORDER.services,
     measure(f) {
+      sleepCopy.wake();
       rMore = more ? measureRange(more) : null;
       rSlots = slots.map((slot) => measureRange(slot.box));
       if (f.tracks) headLines = resplitIfNeeded(heading, headLines);
@@ -1050,6 +1139,7 @@ function services(): MotionModule[] {
       }
     },
     update(f) {
+      if (sleepCopy.skip(rSection, f)) return;
       if (!f.tracks) {
         if (eyebrow) clear(eyebrow, "transform");
         for (const slot of slots) if (slot.roll) clear(slot.roll, "transform");
@@ -1073,7 +1163,7 @@ function services(): MotionModule[] {
       };
       // The eyebrow and the heading from the track, as the ground passes night.
       const s = sso(rTrack, f);
-      if (eyebrow) setStyle(eyebrow, "transform", liftPercent(roll(tween(s, 0.34, 0.3, ease.power3Out), 0)));
+      if (eyebrow) setStyle(eyebrow, "transform", liftPercent(sectionLabel(s, LABEL_IN.services)));
       headLines.forEach((line, j) => setStyle(line, "transform", liftPercent(servicesHeading(s, j))));
       if (pinned) {
         // The list from the track too, so the composition is whole as the stage pins.
@@ -1084,12 +1174,17 @@ function services(): MotionModule[] {
         if (more) mark(more, servicesRow(s, slots.length - 1).meta);
         return;
       }
-      // Flowing: each label and row from its own place.
+      // Flowing: each label and row from its own place (on touch screens, on its own clock from there).
       slots.forEach((slot, k) => {
-        const t = tween(sso(rSlots[k], f), 0.06, 0.22, ease.power3Out);
+        const sk = sso(rSlots[k], f);
+        const t = f.touch ? tween(sinceCopy(f.time, slot.box, sk, 0.06, LINE_GAP), 0, LINE_S, ease.power3Out) : tween(sk, 0.06, 0.22, ease.power3Out);
         show(slot, t, roll(t, 0), t >= SERVICES_META_ON);
       });
       if (more && rMore) mark(more, tween(sso(rMore, f), 0.06, 0.22, ease.power3Out) >= SERVICES_META_ON);
+    },
+    zones(f) {
+      // On the pinned track the list comes up with the stage; where the section flows, its rows play in on their own.
+      return zonesWhere(f, rTrack.top - f.vh, rTrack.top + (pinned ? rTrack.height : f.vh), (g) => servicesPartWay(sso(rTrack, g), headLines.length, pinned ? slots.length : 0, eyebrow !== null));
     },
   };
   return [image, copy];
@@ -1154,6 +1249,10 @@ function contact(): MotionModule | null {
   let rBlock: Range | null = null;
   // Each shown cell's place, and its rank in its row (left to right).
   let rCells: { el: HTMLElement; r: Range; rank: number }[] = [];
+  // Touch screens: the close comes up with the page, so each part plays in on its own clock.
+  const since = entranceClock();
+  const sleep = sleeper();
+  let rSection: Range;
 
   const reset = () => {
     for (const el of [label, ...headLines, ...bodyLines]) if (el) clear(el, "transform");
@@ -1167,6 +1266,8 @@ function contact(): MotionModule | null {
   return {
     order: ORDER.contact,
     measure(f) {
+      sleep.wake();
+      rSection = measureRange(section);
       if (f.tracks) {
         headLines = resplitIfNeeded(heading, headLines);
         bodyLines = resplitIfNeeded(body, bodyLines);
@@ -1188,32 +1289,42 @@ function contact(): MotionModule | null {
       rCells = shown;
     },
     update(f) {
+      if (sleep.skip(rSection, f)) return;
       if (!f.tracks) return reset();
       const focused = document.activeElement;
       const holds = (el: HTMLElement | null) => !!el && focused instanceof Node && el.contains(focused);
-      if (label && rLabel) setStyle(label, "transform", liftPercent(contactLine(sso(rLabel, f), 0)));
+      // How far a part is in from its own clock, `delay` s after it starts (touch screens).
+      const played = (key: HTMLElement, s: number, from: number, duration: number, curve: (t: number) => number, gap = 0, delay = 0) => tween(since(f.time, key, s, from, gap), delay, duration, curve);
+      // A masked line: on touch screens all of a block's lines start together as it comes up, 0.07s apart.
+      const line = (el: HTMLElement, s: number, j: number) => (f.touch ? roll(played(el, s, 0.06, LINE_S, ease.power3Out, LINE_GAP), 0) : contactLine(s, j));
+      if (label && rLabel) setStyle(label, "transform", liftPercent(line(label, sso(rLabel, f), 0)));
       const sh = sso(rHeading, f);
-      headLines.forEach((line, j) => setStyle(line, "transform", liftPercent(contactLine(sh, j))));
+      headLines.forEach((el, j) => setStyle(el, "transform", liftPercent(line(el, sh, j))));
       const sb = sso(rBody, f);
-      bodyLines.forEach((line, j) => setStyle(line, "transform", liftPercent(contactLine(sb, j))));
+      bodyLines.forEach((el, j) => setStyle(el, "transform", liftPercent(line(el, sb, j))));
       if (actions && rActions) {
-        const st = holds(actions) ? { y: 0, opacity: 1 } : contactRise(sso(rActions, f));
+        const sa = sso(rActions, f);
+        const st = holds(actions) ? { y: 0, opacity: 1 } : f.touch ? contactRiseAt(played(actions, sa, 0.06, BLOCK_S, ease.power3Out)) : contactRise(sa);
         setStyle(actions, "transform", st.y > 0.005 ? lift(st.y) : "none");
         setStyle(actions, "opacity", num(st.opacity));
       }
-      if (rPic) {
-        const st = contactPicture(sso(rPic, f));
+      if (pic && rPic) {
+        const sp = sso(rPic, f);
+        const st = f.touch ? contactPictureAt(played(pic, sp, 0.04, SHEET_S, ease.power3Out)) : contactPicture(sp);
         if (wipe) setStyle(wipe, "clipPath", `inset(${riseInset(st.t, rPic.top - f.scroll, rPic.height, f.vh).toFixed(2)}% 0 0 0)`);
         if (img) setStyle(img, "transform", st.scale > 1.00005 ? `scale(${num(st.scale)})` : "none");
         if (caption) setStyle(caption, "opacity", num(st.t));
       }
       if (block && rBlock) {
-        const draw = holds(block) ? 1 : contactBlock(sso(rBlock, f));
+        const sk = sso(rBlock, f);
+        const draw = holds(block) ? 1 : f.touch ? played(block, sk, 0.02, LINE_S, ease.power2InOut) : contactBlock(sk);
         // Written out even when drawn: the tracks' initial state in globals.css holds the block undrawn until now.
         setStyle(block, "clipPath", draw < 0.9995 ? `inset(0 ${((1 - draw) * 100).toFixed(2)}% 0 0)` : "none");
       }
       for (const c of rCells) {
-        const st = holds(c.el) ? { y: 0, opacity: 1 } : contactCell(sso(c.r, f), c.rank);
+        const sc = sso(c.r, f);
+        // On touch screens a cell follows the drawing's edge in: 0.15s after it starts, and 0.12s more for each cell before it in its row.
+        const st = holds(c.el) ? { y: 0, opacity: 1 } : f.touch ? contactRiseAt(played(c.el, sc, 0.06, 0.6, ease.power3Out, 0.06, 0.15 + c.rank * 0.12), 12) : contactCell(sc, c.rank);
         setStyle(c.el, "transform", st.y > 0.005 ? lift(st.y) : "none");
         setStyle(c.el, "opacity", num(st.opacity));
       }
