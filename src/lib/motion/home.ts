@@ -264,7 +264,7 @@ export function introLine(e: number, n: number, line: number) {
   return roll(inP, outP);
 }
 
-/* ---- Story (580vh track: four 1.2-screen chapters under one pinned 100vh stage) ---- */
+/* ---- Story (580vh track: four 1.2-screen chapters under one pinned 100vh stage; 460vh on phones) ---- */
 
 /**
  * The story's timeline, in screens of scroll since its stage pinned (e,
@@ -283,11 +283,14 @@ export function introLine(e: number, n: number, line: number) {
  *     is filled in (storyField).
  * Each change starts as its chapter's text hands over, so word and picture
  * turn together, and each state is held, whole, while its text is read: a
- * chapter's text is composed for 0.6 screens or more.
+ * chapter's text is composed for 0.6 screens or more. On phones a chapter
+ * takes `phoneStep` screens of scroll instead (storyProgress), so the
+ * story asks for fewer swipes there.
  */
 export const STORY = {
   chapters: 4,
   step: 1.2,
+  phoneStep: 0.9,
   sheetIn: -0.9,
   sheetVh: 0.6,
   sketchIn: -0.42,
@@ -310,8 +313,20 @@ export const STORY = {
 } as const;
 
 /** The section's length in vh: `step` screens per chapter, and one for the stage to arrive. */
-export function storySectionVh(chapters: number = STORY.chapters) {
-  return Math.round((chapters * STORY.step + 1) * 100);
+export function storySectionVh(chapters: number = STORY.chapters, step: number = STORY.step) {
+  return Math.round((chapters * step + 1) * 100);
+}
+
+/**
+ * The story's own timeline (e, in its `step` screens) from the screens of
+ * scroll since its stage pinned. With the pins (screens from 768px wide)
+ * they are the same; on phones the pinned part runs step / phoneStep times
+ * faster, so the stage releases at the same moment of the story after
+ * chapters × phoneStep screens. The arrival before the pin keeps the
+ * scroll's pace: the stage is still riding up with the page.
+ */
+export function storyProgress(scrolled: number, pins: boolean) {
+  return pins || scrolled <= 0 ? scrolled : (scrolled * STORY.step) / STORY.phoneStep;
 }
 
 /** Every state of the drawing at `e` (see STORY), each 0 → 1. */

@@ -23,8 +23,14 @@ import { escapeHtml } from "@/lib/html";
  * (HomeMotion, values module).
  *
  * The pinned text is decoration over the per-value text, which stays in the
- * page for assistive technology (visually hidden on the tracks) and shows
- * beside each picture without them.
+ * page for assistive technology (visually hidden with the pinned words) and
+ * shows beside each picture without them.
+ *
+ * The pinned words are for screens from 768px wide (pins). On phones held
+ * upright each value flows instead, its picture above its word and its
+ * line, and each piece arrives as it comes into view (data-arrive;
+ * HomeMotion, arrivals): the picture unveils upward, the word rises out of
+ * its mask, the line follows.
  */
 const values: { title: string; body: string; plate: Plate }[] = [
   {
@@ -72,19 +78,19 @@ function ValueText({ tone }: { tone: "ink" | "ivory" }) {
 
 export function Values() {
   return (
-    <section data-values="" aria-labelledby="values-heading" className="relative pb-20 tracks:pb-0">
-      {/* On the tracks: a screen-high sticky layer over the whole track, so the label stays in the corner and scrolls away with the last value. It sits under the pictures, so a passing picture covers it rather than the label printing on the picture. Label and note roll in with the stage. */}
-      <div className="relative z-0 tracks:pointer-events-none tracks:absolute tracks:inset-0">
-        <div className="tracks:sticky tracks:top-0 tracks:h-svh">
+    <section data-values="" aria-labelledby="values-heading" className="relative pb-20 pins:pb-0">
+      {/* With the pinned words: a screen-high sticky layer over the whole track, so the label stays in the corner and scrolls away with the last value. It sits under the pictures, so a passing picture covers it rather than the label printing on the picture. Label and note roll in with the stage. */}
+      <div className="relative z-0 pins:pointer-events-none pins:absolute pins:inset-0">
+        <div className="pins:sticky pins:top-0 pins:h-svh">
           <Container className="pt-28 lg:pt-32">
-            <h2 id="values-heading" className="text-label text-ink">
+            <h2 id="values-heading" data-arrive="rise" className="text-label text-ink">
               <span className="split-line">
                 <span data-label-roll="" className="block">
                   Our values
                 </span>
               </span>
             </h2>
-            <p className="mt-3 max-w-[16rem] text-[0.875rem] leading-relaxed text-ink-muted">
+            <p data-arrive="rise" className="mt-3 max-w-[16rem] text-[0.875rem] leading-relaxed text-ink-muted">
               <span className="split-line">
                 <span data-label-roll="" className="block">
                   How we work on every project, whatever its size.
@@ -95,7 +101,7 @@ export function Values() {
         </div>
       </div>
 
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 hidden tracks:block">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 hidden pins:block">
         <div data-values-stage="" className="sticky top-0 h-svh overflow-hidden">
           <ValueText tone="ink" />
           <div data-values-mask="" className="absolute inset-0" style={{ clipPath: "inset(50%)" }}>
@@ -107,7 +113,7 @@ export function Values() {
       {values.map((v, i) => (
         <div key={v.title} data-values-outer={i} className="values-outer">
           <div data-values-frame="" className="values-frame">
-            <div data-values-image="" className="absolute inset-0 overflow-hidden bg-stone-300">
+            <div data-values-image="" data-arrive="mask" className="absolute inset-0 overflow-hidden bg-stone-300">
               <Image
                 src={v.plate.src}
                 alt=""
@@ -117,13 +123,15 @@ export function Values() {
                 className="object-cover"
                 style={{ objectPosition: v.plate.focus }}
               />
-              {/* On the tracks only, a scrim shaped around the text keeps the ivory description legible on bright skies and pale walls; the still layout shows the pictures untouched. */}
-              <div aria-hidden="true" className="absolute inset-0 hidden tracks:block" style={{ background: "radial-gradient(70% 45% at 50% 52%, rgb(17 17 16 / 0.58), rgb(17 17 16 / 0.2) 100%)" }} />
+              {/* With the pinned words only, a scrim shaped around the text keeps the ivory description legible on bright skies and pale walls; elsewhere the pictures show untouched. */}
+              <div aria-hidden="true" className="absolute inset-0 hidden pins:block" style={{ background: "radial-gradient(70% 45% at 50% 52%, rgb(17 17 16 / 0.58), rgb(17 17 16 / 0.2) 100%)" }} />
             </div>
           </div>
-          <div className="values-outer__text tracks:sr-only">
-            <h3 className="font-wordmark text-[clamp(2.4rem,1rem+5vw,5rem)] leading-[0.9] uppercase">{v.title}</h3>
-            <p className="mt-4 max-w-md leading-relaxed text-ink-muted">{v.body}</p>
+          <div className="values-outer__text pins:sr-only">
+            <h3 data-arrive="lines" className="font-wordmark text-[clamp(2.4rem,1rem+5vw,5rem)] leading-[0.9] uppercase" dangerouslySetInnerHTML={{ __html: escapeHtml(v.title) }} />
+            <p data-arrive="rise" className="mt-4 max-w-md leading-relaxed text-ink-muted">
+              {v.body}
+            </p>
           </div>
         </div>
       ))}

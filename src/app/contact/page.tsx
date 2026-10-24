@@ -69,13 +69,13 @@ export default async function ContactPage() {
                 <div className="py-4">
                   <dt className="text-label text-ink-muted">Phone</dt>
                   <dd className="mt-2 text-lg text-ink">
-                    {contact.phone ? <PhoneLink location="contact-sidebar" className={linkClass} /> : <Placeholder>phone number</Placeholder>}
+                    {contact.phone ? <PhoneLink location="contact-sidebar" className={`${linkClass} tap`} /> : <Placeholder>phone number</Placeholder>}
                   </dd>
                 </div>
                 <div className="py-4">
                   <dt className="text-label text-ink-muted">Email</dt>
                   <dd className="mt-2 text-lg text-ink">
-                    {contact.email ? <EmailLink location="contact-sidebar" className={linkClass} /> : <Placeholder>email address</Placeholder>}
+                    {contact.email ? <EmailLink location="contact-sidebar" className={`${linkClass} tap`} /> : <Placeholder>email address</Placeholder>}
                   </dd>
                 </div>
                 <div className="py-4">

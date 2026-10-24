@@ -17,7 +17,7 @@ References studied (as text only; see the note at the end): Storey Architecture 
 | `brand-500` … `brand-700` | `#C2352C` … `#8F271F` | Red text on light grounds, if ever needed. Use `brand-300` on dark. |
 
 - **Type:** Geist (300, 400, 500) for everything, Geist Mono for labels and metadata, and Playfair Display Black only for the wordmark display type: the hero name, the Values words and the firm's mark in a title block (the story's sheet and Contact) (`src/app/fonts.ts`). Display sizes are light (300) with tight tracking. If the business later licenses Lufga and Gilroy, `fonts.ts` is the only file to change.
-- **Scale:** `text-hero` (fluid up to 8.5rem), `text-display-2xl` … `text-display-sm`, `text-lede`, `text-label` (mono, uppercase, tracked).
+- **Scale:** `text-hero` (fluid up to 8.5rem), `text-display-2xl` … `text-display-sm`, `text-lede`, `text-label` (mono, uppercase, tracked; 11px, and 12px on phones so captions and form labels read at arm's length).
 - **Easing:** `ease-out-expo` for reveals and hovers, `ease-in-out-quint` for masks and the menu panel. Durations sit between 0.5s and 1.4s.
 - **Width:** content runs to `max-w-site` (100rem) on a 12-column grid; long copy stays at `max-w-prose`.
 
@@ -63,6 +63,7 @@ The footer is the page's one charcoal band. Process, service areas and guides li
 ## Rules
 
 - Vary layouts between sections (index rows, asymmetric images, a pinned column, a dark band). No card grids.
+- Every link and control is a target a finger can find on a touch screen, at least 44px each way. A small text link standing alone takes `tap` (an invisible box around its words, so nothing moves); links stacked in a list take `tap-line` (each line grows to 44px and the list drops its own gaps, so neighbouring targets meet rather than overlap). Under a mouse they are as they were.
 - Placeholders stay visible (`Placeholder`) until the business supplies the fact. Never fill them with sample content.
 - Reviews are never written by hand, and Google review structured data is never added (Google does not allow it for a business's own reviews).
 - Client renderings are captioned as renderings, never as photographs of finished buildings, and never with an address. Rendered studies are always captioned as studies and never presented as client projects.
