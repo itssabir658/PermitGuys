@@ -76,7 +76,7 @@ import {
   worksShot,
   type SwapLayer,
 } from "@/lib/motion/home";
-import { footerDot, footerDraw, footerLift, footerProgress, footerStroke } from "@/lib/motion/footer";
+import { footerLift, footerProgress } from "@/lib/motion/footer";
 import { clamp, cssEase, damp, ease, fit, fromOklab, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
 import { WIPE_MS, wipeStep } from "@/lib/motion/wipe";
 
@@ -1250,7 +1250,6 @@ describe("the making of a house", () => {
 });
 
 describe("footer", () => {
-  const range = (from: number, to: number, by: number) => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
   // At 1440×900: a footer 1000px tall at the end of the page.
   const top = 20000;
   const height = 1000;
@@ -1272,27 +1271,6 @@ describe("footer", () => {
     expect(footerLift(1, 756, VH)).toBeCloseTo(0);
     expect(footerLift(0, 1600, 844)).toBeCloseTo(-0.3 * 844);
     expect(footerLift(2, 1600, 844)).toBeCloseTo(0);
-  });
-
-  it("the outline draws while it is on screen, mainland first, the GTA dot landing last", () => {
-    // Outline 360px tall, its top 112px into the footer.
-    const mt = top + 112;
-    expect(footerDraw(mt - VH, VH, mt, 360, end)).toBe(0);
-    expect(footerDraw(mt + 360 + 0.3 * VH - VH, VH, mt, 360, end)).toBeCloseTo(1);
-    // On a phone, where the footer is taller than the screen, it is drawn before it leaves the top.
-    const phone = footerDraw(mt + 360 - 844 + 0.3 * 844, 844, mt, 360, top + 1600);
-    expect(phone).toBe(1);
-    // Near the end of a short page it is drawn by the last scroll position.
-    expect(footerDraw(end - VH, VH, end - 300, 360, end)).toBe(1);
-    for (let i = 0; i < 5; i++) {
-      expect(footerStroke(0, i)).toBe(1);
-      expect(footerStroke(1, i)).toBe(0);
-      if (i) for (const d of range(0, 1, 0.02)) expect(footerStroke(d, i)).toBeGreaterThanOrEqual(footerStroke(d, i - 1));
-    }
-    expect(footerDot(0.7)).toBe(0);
-    expect(footerDot(0.9)).toBe(1);
-    // The dot lands after the mainland is drawn.
-    expect(footerStroke(0.7, 0)).toBeLessThan(0.05);
   });
 });
 

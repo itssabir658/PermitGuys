@@ -8,19 +8,14 @@ import { Placeholder } from "@/components/ui/Placeholder";
 import { RollText } from "@/components/ui/RollText";
 import { paths } from "@/lib/routes";
 import { Logo } from "./Logo";
-import { OntarioOutline } from "./OntarioOutline";
-
-/** "Greater Toronto Area, Ontario" → ["Ontario", "Greater Toronto Area"], as the preloader names the place. */
-const [area, province = "Ontario"] = site.region.split(", ");
 
 /*
  * The one dark band at the foot of every page. Pages close on paper (the
  * homepage's Contact, an inner page's CtaPanel, the contact form), so the
  * footer's own call to action shows only where none of those is on the
- * page (data-footer-cta, globals.css). In its place the Ontario outline
- * with the Greater Toronto Area marked draws itself as the footer comes up
- * (MotionRoot, footer module), a bookend to the preloader's drawing, and
- * the footer's content rises out from under the sheet above it.
+ * page (data-footer-cta, globals.css); in its place the column opens on
+ * the logo. The footer's content rises out from under the sheet above it
+ * (MotionRoot, footer module).
  */
 export function SiteFooter() {
   const { contact } = site;
@@ -46,13 +41,9 @@ export function SiteFooter() {
                 </span>
               </Link>
             </div>
-            <div className="site-footer__place">
-              <OntarioOutline className="site-footer__map" />
-              <p className="site-footer__region mt-6 text-label text-charcoal-300">
-                <span>{province}</span>
-                <span>{area}</span>
-              </p>
-            </div>
+            <Link href={paths.home} aria-label={`${site.name} home`} className="inline-block">
+              <Logo onDark className="h-9 w-auto sm:h-10" />
+            </Link>
             <address className="mt-10 grid gap-2 text-[0.875rem] not-italic text-charcoal-300">
               <p>{contact.phone ? <PhoneLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>phone number</Placeholder>}</p>
               <p>{contact.email ? <EmailLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>email address</Placeholder>}</p>
@@ -78,11 +69,8 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-24 flex flex-col gap-10 border-t border-ivory/15 pt-10 lg:mt-32 lg:flex-row lg:items-end lg:justify-between">
-          <Link href={paths.home} aria-label={`${site.name} home`} className="inline-block">
-            <Logo onDark className="h-8 w-auto sm:h-10" />
-          </Link>
-          <div className="space-y-3 text-sm text-charcoal-300 lg:max-w-xl lg:text-right">
+        <div className="mt-24 border-t border-ivory/15 pt-10 lg:mt-32">
+          <div className="space-y-3 text-sm text-charcoal-300 lg:max-w-xl">
             <p>
               © {new Date().getFullYear()} {site.legalName ?? site.name}. Serving homeowners and property owners in the {site.region}.{" "}
               <Link href={paths.privacy} className="link-rule text-ivory/80 hover:text-ivory">

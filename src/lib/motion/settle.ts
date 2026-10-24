@@ -89,7 +89,7 @@ export function settleAt(from: number, to: number, elapsed: number, duration: nu
 
 /*
  * Pieces that come up with the page rather than on a pinned stage (Services
- * on phones, Contact, the footer's outline) cannot be settled: the page is
+ * on phones, Contact) cannot be settled: the page is
  * free to rest anywhere around them. On touch screens each plays its
  * entrance on its own clock instead, from the moment the page brings it to
  * its start, so a flick that stops as one arrives never leaves it part way.
