@@ -178,8 +178,10 @@ function ground(shared: Shared): MotionModule | null {
  * pointer and the sky with it, the name holding still between them; on the
  * way out the statement and the name leave upward through their masks while
  * the house and the sky recede under the intro's sheet, each at its own
- * depth. The stylesheet gives the planes room to move (--z, read here) only
- * for fine pointers on the tracks, so elsewhere they never follow it.
+ * depth, and darken. The stylesheet gives the planes room to move (--z,
+ * read here) only for fine pointers on the tracks, so elsewhere they never
+ * follow it. Everywhere, should the pictures still be loading, the stage
+ * waits until both are decoded (data-waiting) before it shows either.
  */
 function hero(): MotionModule | null {
   const section = one("[data-home-hero]");
@@ -188,8 +190,16 @@ function hero(): MotionModule | null {
   const near = one('[data-hero-layer="near"]');
   const far = one('[data-hero-layer="far"]');
   const fig = one(".hero-fig");
-  if (!section || !stage || !heading || !near || !far || !fig) return null;
-  const dims = all("[data-hero-dim]", section);
+  const dim = one("[data-hero-dim]");
+  if (!section || !stage || !heading || !near || !far || !fig || !dim) return null;
+  // Hold the sky back until the house is there (globals.css, "Hero"), both pictures decoded: decoding them as they appear would stall the frame they come in on.
+  const planes = [...stage.querySelectorAll<HTMLImageElement>("[data-hero-plate] img")];
+  let live = true;
+  const arrived = () => delete stage.dataset.waiting;
+  if (planes.some((img) => !(img.complete && img.naturalWidth))) {
+    stage.dataset.waiting = "";
+    void Promise.allSettled(planes.map((img) => img.decode())).then(() => live && arrived());
+  }
   // The name first, then the two statement lines.
   const [name, ...subs] = all("[data-hero-roll]", section);
   let r: Range;
@@ -224,7 +234,7 @@ function hero(): MotionModule | null {
         clear(fig, "opacity");
         clear(near, "transform");
         clear(far, "transform");
-        dims.forEach((el) => clear(el, "opacity"));
+        clear(dim, "opacity", "visibility");
         at.x = at.y = 0;
         return;
       }
@@ -242,11 +252,15 @@ function hero(): MotionModule | null {
       setStyle(fig, "opacity", num(s.figOpacity));
       setStyle(near, "transform", `translate3d(${px(-at.x * HERO_DEPTH.nearX * w)}, ${px(s.imageY - at.y * HERO_DEPTH.nearY * h)}, 0) scale(${num(z * s.imageScale)})`);
       setStyle(far, "transform", `translate3d(${px(at.x * HERO_DEPTH.farX * w)}, ${px(s.skyY + at.y * HERO_DEPTH.farY * h)}, 0) scale(${num(z * s.skyScale)})`);
-      dims.forEach((el) => setStyle(el, "opacity", num(s.dim)));
+      setStyle(dim, "opacity", num(s.dim));
+      // Not drawn at all until the scroll darkens anything (Hero.tsx keeps it invisible: at the top it would be a full-screen layer showing nothing).
+      setStyle(dim, "visibility", s.dim > 0 ? "visible" : "");
     },
     destroy() {
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("mouseout", onOut);
+      live = false;
+      arrived();
     },
   };
 }

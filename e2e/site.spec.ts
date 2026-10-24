@@ -340,11 +340,16 @@ test.describe("interactive pieces", () => {
   test("the name stands behind the house: the roof hides the foot of R to T, never of E or G, and the house moves against a mouse", async ({ page }, info) => {
     await page.goto("/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
-    // The sky behind the name, the rendering in front of it, masked by its matte.
+    // The sky behind the name, the rendering in front of it, cut out in its own picture (no mask), and the scroll's darkening over both.
     const order = await page.locator("[data-hero-stage] > *").evaluateAll((els) => els.map((el) => el.getAttribute("data-hero-layer") ?? el.tagName.toLowerCase()));
-    expect(order.slice(0, 3)).toEqual(["far", "h1", "near"]);
-    await expect(page.locator("[data-hero-matte]")).toHaveCSS("mask-image", /matte\.webp/);
-    await expect(page.locator('[data-hero-layer="near"]').getByRole("img")).toHaveAttribute("alt", /^Rendering of /);
+    expect(order.slice(0, 4)).toEqual(["far", "h1", "near", "div"]);
+    const house = page.locator('[data-hero-layer="near"]').getByRole("img");
+    await expect(house).toHaveAttribute("alt", /^Rendering of /);
+    expect(await house.evaluate((img: HTMLImageElement) => img.currentSrc)).toMatch(/-near(-half|-three-quarter)?\.webp$/);
+    for (const el of await page.locator("[data-hero-layer], [data-hero-layer] *").all()) await expect(el).toHaveCSS("mask-image", "none");
+    // Both planes are shown, and kept as layers, so moving them never redraws them.
+    await expect(page.locator("[data-hero-stage]")).not.toHaveAttribute("data-waiting");
+    for (const plane of ["far", "near"]) await expect(page.locator(`[data-hero-layer="${plane}"]`)).toHaveCSS("will-change", "transform");
     // Where the roof's wedge meets the name's baseline, with the house swayed as far as the pointer takes it (HERO_DEPTH: 1.5% of the width, 0.8% of the height).
     const fit = await page.evaluate(() => {
       const stage = document.querySelector<HTMLElement>("[data-hero-stage]")!;

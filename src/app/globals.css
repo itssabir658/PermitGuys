@@ -1394,8 +1394,9 @@ body:has(.not-found__map) .site-footer__place {
 /*
  * Three planes in one stage, a size container, so the geometry below is in
  * the stage's own units: the sky behind, the name, and in front of it the
- * rendering itself, masked by its matte (the house, the pine, the trees and
- * the ground), so the roof hides the foot of the letters beneath it.
+ * rendering itself, cut out around the house, the pine, the trees and the
+ * ground (a transparent picture, heroLayers), so the roof hides the foot of
+ * the letters beneath it.
  *
  * The name is placed from where cover-fitting puts the roof's peak and the
  * chimney's edge (in the picture's pixels: peak 1639.8, 456.4, chimney x
@@ -1476,10 +1477,18 @@ body:has(.not-found__map) .site-footer__place {
     --sway-y: 0.8cqh;
   }
 }
+/*
+ * Each plane is a layer of its own, kept as one (will-change), so the
+ * pointer and the scroll move and scale it without its picture ever being
+ * drawn again: a layer whose scale changes is otherwise redrawn at the new
+ * scale every frame. Both planes' pictures are the same size and placed
+ * alike, so they line up exactly.
+ */
 .hero-layer {
   position: absolute;
   inset: 0;
   transform: scale(var(--z));
+  will-change: transform;
 }
 .hero-plate {
   position: absolute;
@@ -1488,16 +1497,19 @@ body:has(.not-found__map) .site-footer__place {
 .hero-plate img {
   object-position: var(--pos);
 }
-/* The matte is the picture's size, so placed as the picture is it covers it exactly. */
-.hero-plate--near {
-  -webkit-mask: var(--matte) var(--pos) / cover no-repeat;
-  mask: var(--matte) var(--pos) / cover no-repeat;
+/*
+ * Until the house has arrived the sky waits too, since the sky plate alone
+ * is a half-built background (a slow connection, once the preloader or the
+ * page transition has stopped waiting); once both pictures are decoded they
+ * fade in together (HomeMotion, hero module, sets data-waiting). Under the
+ * preloader they simply appear: a fade nobody sees would only cost the
+ * opening frames.
+ */
+.hero-stage[data-waiting] .hero-layer {
+  opacity: 0;
 }
-@media (max-aspect-ratio: 3/5) {
-  .hero-plate--near {
-    -webkit-mask-image: var(--matte-tall);
-    mask-image: var(--matte-tall);
-  }
+:root[data-revealed] .hero-stage:not([data-waiting]) .hero-layer {
+  transition: opacity 0.5s var(--e-out);
 }
 .hero-name {
   /* The peak and the chimney after the zoom, and the span the letters may use. */

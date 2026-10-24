@@ -21,17 +21,13 @@ function jpegSize(src: string) {
   throw new Error(`${src}: no frame header`);
 }
 
-/** Width and height from a lossless WebP's header (VP8L), or an extended one's canvas (VP8X). */
-function webpSize(src: string) {
+/** Width, height and whether it has an alpha channel, from an extended WebP's header (VP8X). */
+function webpInfo(src: string) {
   const buf = readFileSync(join(process.cwd(), "public", src));
   if (buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WEBP") throw new Error(`${src}: not a WebP`);
   const chunk = buf.toString("ascii", 12, 16);
-  if (chunk === "VP8L") {
-    const bits = buf.readUInt32LE(21);
-    return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
-  }
-  if (chunk === "VP8X") return { width: buf.readUIntLE(24, 3) + 1, height: buf.readUIntLE(27, 3) + 1 };
-  throw new Error(`${src}: unexpected ${chunk} chunk`);
+  if (chunk !== "VP8X") throw new Error(`${src}: unexpected ${chunk} chunk`);
+  return { width: buf.readUIntLE(24, 3) + 1, height: buf.readUIntLE(27, 3) + 1, alpha: (buf[20] & 0x10) !== 0 };
 }
 
 describe("imagery", () => {
@@ -44,12 +40,16 @@ describe("imagery", () => {
 
   it("cuts the hero's planes from its picture at the picture's own size, for each crop", () => {
     const { terrace } = plates;
-    const sizes = { src: { width: terrace.width, height: terrace.height }, tall: { width: terrace.tall!.width, height: terrace.tall!.height } };
-    for (const crop of ["src", "tall"] as const) {
-      expect(jpegSize(heroLayers.sky[crop]), heroLayers.sky[crop]).toEqual(sizes[crop]);
-      expect(webpSize(heroLayers.matte[crop]), heroLayers.matte[crop]).toEqual(sizes[crop]);
-      for (const path of [heroLayers.sky[crop], heroLayers.matte[crop]]) expect(path).not.toMatch(/\d/);
-    }
+    const { width, height } = terrace;
+    const tall = { width: terrace.tall!.width, height: terrace.tall!.height };
+    expect(jpegSize(heroLayers.far.src), heroLayers.far.src).toEqual({ width, height });
+    expect(jpegSize(heroLayers.far.tall), heroLayers.far.tall).toEqual(tall);
+    // The near plane is transparent around what it cuts out, and its smaller copies keep the picture's proportions (Hero.tsx lists them by these widths).
+    expect(webpInfo(heroLayers.near.src)).toEqual({ width, height, alpha: true });
+    expect(webpInfo(heroLayers.near.threeQuarter)).toEqual({ width: width * 0.75, height: Math.round(height * 0.75), alpha: true });
+    expect(webpInfo(heroLayers.near.half)).toEqual({ width: width / 2, height: height / 2, alpha: true });
+    expect(webpInfo(heroLayers.near.tall)).toEqual({ ...tall, alpha: true });
+    for (const path of [...Object.values(heroLayers.far), ...Object.values(heroLayers.near)]) expect(path).not.toMatch(/\d/);
   });
 
   it("shows one or two views of each client project, and every client rendering in exactly one project", () => {
