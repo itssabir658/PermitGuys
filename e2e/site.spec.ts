@@ -469,6 +469,20 @@ test.describe("interactive pieces", () => {
     await expect(caption).toHaveText(/^new and replacement decks, raised or attached\s+rendered study for illustration, not a client project\.$/i, { useInnerText: true });
   });
 
+  test("the services picture keeps its 4:5 width, with its caption starting under its left edge", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "The frame shows beside the list from md; one width is enough");
+    for (const motion of ["reduce", "no-preference"] as const) {
+      await page.emulateMedia({ reducedMotion: motion });
+      await page.goto("/");
+      const box = (sel: string) => page.locator(sel).evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+      const [col, frame, caption] = [await box(".services-frame-col"), await box(".services-frame"), await box(".services-caption")];
+      expect(frame.width, motion).toBeGreaterThan(200);
+      expect(Math.abs(frame.width / frame.height - 0.8), motion).toBeLessThan(0.01);
+      expect(Math.abs(caption.left - frame.left), motion).toBeLessThan(1);
+      expect(Math.abs(frame.right - col.right), motion).toBeLessThan(1);
+    }
+  });
+
   test("the services list is grouped for homes and for businesses, unnumbered, each service with a line on what it covers", async ({ page }) => {
     await page.goto("/");
     const section = page.locator("#services");

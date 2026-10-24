@@ -3029,20 +3029,24 @@ body:has(.not-found__map) .site-footer__place {
     margin-top: 2.75rem;
   }
 }
-/* As wide as the picture and set to the right, so the lines under it start under its left edge (they take no part in its width). */
+/*
+ * As wide as the picture and set to the right, so the lines under it start
+ * under its left edge. The width is stated outright (4:5 of the frame's
+ * height, never wider than the column) rather than shrunk to fit the
+ * picture: some browsers shrink a box whose width comes from its height to
+ * nothing, which pushed the caption against the screen's right edge with
+ * no picture above it.
+ */
 .services-frame-pin {
   position: sticky;
   top: 15svh;
-  width: fit-content;
-  max-width: 100%;
+  width: min(100%, calc(min(70svh, 44rem) * 0.8));
   margin-left: auto;
 }
 .services-frame {
   position: relative;
-  height: min(70svh, 44rem);
-  max-width: 100%;
+  width: 100%;
   aspect-ratio: 4 / 5;
-  margin-left: auto;
   overflow: hidden;
   background: var(--color-charcoal-800);
 }
@@ -3427,16 +3431,10 @@ body:has(.not-found__map) .site-footer__place {
     align-items: center;
     padding-block: min(5.5rem, 10svh) min(2rem, 3svh);
   }
-  :root[data-motion] .services-frame-col {
-    container-type: inline-size;
-  }
+  /* At most 62% of the screen's height; never wider than the column (portrait tablets), so it stays a picture rather than a sliver. */
   :root[data-motion] .services-frame-pin {
     position: static;
-  }
-  /* Never taller than its 4:5 at the column's width (portrait tablets), so it stays a picture rather than a sliver. */
-  :root[data-motion] .services-frame {
-    height: min(62svh, 40rem);
-    height: min(62svh, 40rem, 125cqi);
+    width: min(100%, calc(min(62svh, 40rem) * 0.8));
   }
   :root[data-motion] .services-heading {
     max-width: 20ch;
