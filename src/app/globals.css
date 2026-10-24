@@ -663,6 +663,35 @@
 :root[data-intro] .intro {
   visibility: visible;
 }
+/* Under the map, in the old loader's type and red. */
+.intro__label {
+  position: absolute;
+  top: calc(100% + clamp(1.25rem, 3.5svh, 2rem));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  translate: -50% 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-charcoal-300);
+}
+.intro__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--color-brand-400);
+}
+:root[data-intro="play"] .intro__label {
+  animation: fade-in 0.6s var(--e-out) var(--at) both;
+}
+:root[data-intro="play"] .intro__dot {
+  animation: dot-in 0.45s var(--e-out-strong) calc(var(--at) + var(--ms)) both;
+}
 .intro__region {
   position: absolute;
   overflow: hidden;

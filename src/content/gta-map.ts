@@ -6,7 +6,7 @@
  * Boundaries: Statistics Canada, 2021 Census cartographic boundary file,
  * census divisions (Durham 3518, York 3519, Toronto 3520, Peel 3521,
  * Halton 3524), Open Government Licence - Canada. Simplified with
- * mapshaper to straight lines (2 km), keeping shared edges shared; islands and shoreline spikes dropped.
+ * mapshaper to straight lines (3.5 km), keeping shared edges shared; islands and shoreline spikes dropped.
  */
 
 export interface GtaRegion {
@@ -26,7 +26,7 @@ export const GTA_HEIGHT = 1096.4;
 
 /** The outer edge: the mainland as one stroke from the south-west tip, up the lakeshore first; then any island kept. */
 export const GTA_OUTLINE = [
-  "M242.7 1096.4 296.1 1075.4 368.2 908.1 400.9 816.8 441.3 761.5 504.6 747.7 516.9 736 521.9 724.8 619.8 591.5 716.8 523.7 1000 412.4 920.9 270.4 824.4 325.1 750.2 197.1 717.9 253.2 686.1 219.2 673.7 275.5 520 0 435.6 64.5 286.2 125.9 322.8 327.3 313.6 414.1 282.2 462.7 198.5 509.3 27.7 599.6 0 652.7 123.8 740 36.7 903.3 248.9 1044.8 223.7 1082.6 242.7 1096.4"
+  "M242.7 1096.4 296.1 1075.4 368.2 908.1 400.9 816.8 441.3 761.5 524.7 753.9 619.8 591.5 1000 412.4 920.9 270.4 824.4 325.1 750.2 197.1 717.9 253.2 686.1 219.2 673.7 275.5 520 0 435.6 64.5 286.2 125.9 313.6 414.1 198.5 509.3 27.7 599.6 0 652.7 123.8 740 36.7 903.3 248.9 1044.8 242.7 1096.4"
 ];
 
 /** The boundaries between the five regions, each from its lakeward end. */
@@ -35,8 +35,8 @@ export const GTA_BORDERS = [
   "M577.4 548.5 424.2 267.2 518.4 214.5 435.6 64.5",
   "M317 689.8 577.4 548.5",
   "M317 689.8 198.5 509.3",
-  "M400.9 816.8 351.5 770.9 360.5 753.7 317 689.8",
-  "M368.2 908.1 245.2 845.9 252 828.9 123.8 740"
+  "M400.9 816.8 317 689.8",
+  "M368.2 908.1 123.8 740"
 ];
 
 /** In reveal order, west to east. */
@@ -44,36 +44,36 @@ export const GTA_REGIONS: GtaRegion[] = [
   {
     key: "halton",
     box: [36.7, 740.0, 331.5, 356.4],
-    centre: [156.2, 873.3],
-    clip: "M0.2627 0 0 0.4582 0.6401 0.8552 0.5641 0.9613 0.6214 1 0.7825 0.9411 1 0.4717 0.629 0.2971 0.6495 0.2494Z",
+    centre: [160.0, 875.7],
+    clip: "M0.2627 0 0 0.4582 0.6401 0.8552 0.6214 1 0.7825 0.9411 1 0.4717Z",
     picture: { small: "/images/intro/classical-house-dusk-521.webp", medium: "/images/intro/classical-house-dusk-1023.webp", full: "/images/intro/classical-house-dusk-1860.webp", width: 1860, height: 2000 },
   },
   {
     key: "peel",
     box: [0.0, 509.3, 400.9, 398.8],
     centre: [164.0, 643.3],
-    clip: "M0.4951 0 0.0691 0.2264 0 0.3596 0.3088 0.5785 0.6286 0.8014 0.6116 0.844 0.9184 1 1 0.7711 0.8768 0.656 0.8992 0.6128 0.7907 0.4526Z",
+    clip: "M0.4951 0 0.0691 0.2264 0 0.3596 0.3088 0.5785 0.9184 1 1 0.7711 0.7907 0.4526Z",
     picture: { small: "/images/intro/contemporary-house-dusk-560.webp", medium: "/images/intro/contemporary-house-dusk-1100.webp", full: "/images/intro/contemporary-house-dusk-2000.webp", width: 2000, height: 1990 },
   },
   {
     key: "york",
     box: [198.5, 64.5, 378.9, 625.3],
-    centre: [407.8, 498.4],
-    clip: "M0.6258 0 0.2315 0.0982 0.3281 0.4203 0.3038 0.5591 0.2209 0.6368 0 0.7113 0.3127 1 1 0.774 0.5957 0.3242 0.8443 0.2399Z",
+    centre: [406.6, 498.4],
+    clip: "M0.6258 0 0.2315 0.0982 0.3038 0.5591 0 0.7113 0.3127 1 1 0.774 0.5957 0.3242 0.8443 0.2399Z",
     picture: { small: "/images/intro/stone-house-339.webp", medium: "/images/intro/stone-house-667.webp", full: "/images/intro/stone-house-1186.webp", width: 1186, height: 1957 },
   },
   {
     key: "toronto",
     box: [317.0, 548.5, 302.8, 268.3],
-    centre: [465.7, 686.5],
-    clip: "M0.86 0 0 0.5266 0.1437 0.7648 0.1139 0.8289 0.2771 1 0.4105 0.7939 0.6196 0.7425 0.6602 0.6988 0.6767 0.6571 1 0.1603Z",
+    centre: [480.5, 684.1],
+    clip: "M0.86 0 0 0.5266 0.2771 1 0.4105 0.7939 0.6859 0.7656 1 0.1603Z",
     picture: { small: "/images/intro/narrow-contemporary-house-560.webp", medium: "/images/intro/narrow-contemporary-house-1100.webp", full: "/images/intro/narrow-contemporary-house-2000.webp", width: 2000, height: 1772 },
   },
   {
     key: "durham",
     box: [424.2, 0.0, 575.8, 591.5],
-    centre: [652.3, 406.9],
-    clip: "M0.3397 1 0.5082 0.8854 1 0.6972 0.8626 0.4571 0.695 0.5496 0.5662 0.3332 0.5101 0.4281 0.4548 0.3706 0.4333 0.4658 0.1664 0 0.0198 0.109 0.1636 0.3626 0 0.4517 0.2661 0.9273Z",
+    centre: [664.4, 415.6],
+    clip: "M0.3397 1 1 0.6972 0.8626 0.4571 0.695 0.5496 0.5662 0.3332 0.5101 0.4281 0.4548 0.3706 0.4333 0.4658 0.1664 0 0.0198 0.109 0.1636 0.3626 0 0.4517 0.2661 0.9273Z",
     picture: { small: "/images/intro/farmhouse-bungalow-545.webp", medium: "/images/intro/farmhouse-bungalow-1071.webp", full: "/images/intro/farmhouse-bungalow-1402.webp", width: 1402, height: 1440 },
   },
 ];

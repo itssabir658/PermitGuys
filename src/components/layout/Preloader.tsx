@@ -179,6 +179,11 @@ export function Preloader() {
             <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke" style={timing(outlineTiming(i))} />
           ))}
         </svg>
+        {/* The old loader's label: its words come up as the outline starts, its red dot pops as the outline closes. */}
+        <p className="intro__label" style={timing(outlineTiming(0))}>
+          <span className="intro__dot" />
+          Greater Toronto Area
+        </p>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ Toronto (3520) and the regional municipalities of Durham (3518), York
 (3519), Peel (3521) and Halton (3524). The cartographic file follows the
 Lake Ontario shoreline. The data is kept in Statistics Canada's own Lambert
 conformal conic projection (EPSG:3347), north up, and simplified with
-mapshaper (Douglas-Peucker, 2 km) to a few dozen straight lines, so the
+mapshaper (Douglas-Peucker, 3.5 km) to a few dozen straight lines, so the
 regions read as clean geometric shapes while neighbouring regions keep
 sharing exactly the same edge. Islands are dropped, and so are the narrow
 spikes the shoreline leaves (the harbour spits), where no other region
@@ -41,7 +41,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SERVICE = "https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/4/query"
 CDUIDS = ["3518", "3519", "3520", "3521", "3524"]
 # Simplification tolerance in metres (the map is about 137 km across, drawn 1000 units wide).
-INTERVAL_M = 2000
+INTERVAL_M = 3500
 # A corner sharper than this, on the shoreline only, is a spike and is cut.
 SPIKE_DEG = 35
 WIDTH = 1000
@@ -250,7 +250,7 @@ def write_module(height, regions, outline, borders):
         " * Boundaries: Statistics Canada, 2021 Census cartographic boundary file,",
         " * census divisions (Durham 3518, York 3519, Toronto 3520, Peel 3521,",
         " * Halton 3524), Open Government Licence - Canada. Simplified with",
-        " * mapshaper to straight lines (2 km), keeping shared edges shared; islands and shoreline spikes dropped.",
+        " * mapshaper to straight lines (3.5 km), keeping shared edges shared; islands and shoreline spikes dropped.",
         " */",
         "",
         "export interface GtaRegion {",
