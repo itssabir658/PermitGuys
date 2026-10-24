@@ -11,7 +11,10 @@ export type AnalyticsEvent =
   | "inquiry_form_submit"
   | "inquiry_form_success"
   | "click_to_call"
-  | "click_to_email";
+  | "click_to_email"
+  | "chat_open"
+  | "chat_message"
+  | "chat_handoff";
 
 type Params = Record<string, string | number | boolean | undefined>;
 

@@ -3031,3 +3031,55 @@ body:has(.not-found__map) .site-footer__place {
     outline-offset: -1px;
   }
 }
+
+/*
+ * Website assistant (src/components/chat/ChatAssistant.tsx). The panel rises
+ * a little as it opens; the three dots breathe while a reply is on its way.
+ */
+@layer components {
+  .chat-panel:not([hidden]) {
+    animation: chat-rise 0.5s var(--e-out-strong) both;
+  }
+  .chat-typing span {
+    display: inline-block;
+    margin-right: 0.3em;
+    font-size: 0.5em;
+    vertical-align: middle;
+    animation: chat-dot 1.2s var(--e-inout) infinite both;
+  }
+  .chat-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .chat-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chat-panel:not([hidden]),
+    .chat-typing span {
+      animation: none;
+    }
+  }
+  @media print {
+    .chat-launcher,
+    .chat-panel {
+      display: none !important;
+    }
+  }
+}
+
+@keyframes chat-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@keyframes chat-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}

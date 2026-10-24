@@ -37,6 +37,9 @@ export default function PrivacyPage() {
             With an inquiry we also record how you found the website, where available: campaign tags in the link you followed, the name of the website that referred you and the first page you visited. We do not record the full address of the referring page.
           </p>
           <p>
+            If you use the website assistant, the messages you type are sent to Anthropic, the provider of the AI model that writes its replies, so it can answer you. We do not save the conversation on our servers: it stays in your browser tab until you close it or start a new chat. If you ask the assistant to fill in the inquiry form, it copies your project details into the form, and nothing is sent to us until you send the form yourself. Please do not share personal details with the assistant.
+          </p>
+          <p>
             We may also collect basic technical information, such as pages visited, to understand how the website is used. <Placeholder>name any analytics tool, or state that none is used</Placeholder>
           </p>
           <h2>How we use it</h2>
