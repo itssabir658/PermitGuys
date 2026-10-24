@@ -4,14 +4,14 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { GTA_BORDERS, GTA_HEIGHT, GTA_OUTLINE, GTA_REGIONS, GTA_WIDTH } from "@/content/gta-map";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
-import { INTRO_COMPLETE_MS, INTRO_EXIT_MS, INTRO_REPEAT_EXIT_MS, borderTiming, outlineTiming, revealTiming } from "@/lib/motion/intro";
+import { INTRO_COMPLETE_MS, INTRO_EXIT_MS, borderTiming, outlineTiming, revealTiming } from "@/lib/motion/intro";
 import { openingAssets } from "@/lib/motion/opening";
 
 /*
  * The load sequence: the Greater Toronto Area intro. docs/MOTION.md, "Load
  * sequence"; the timeline is in src/lib/motion/intro.ts.
  *
- * Once per tab (sessionStorage), a charcoal screen holds, the outline of the
+ * On every full load, a dark grey screen holds, the outline of the
  * Greater Toronto Area draws itself up the lakeshore and round, the borders
  * between its five regions follow, and the regions come to life west to
  * east: Halton, Peel, York, Toronto, Durham, each a client rendering fading
@@ -24,10 +24,11 @@ import { openingAssets } from "@/lib/motion/opening";
  * fade and settle on the compositor, and the page underneath is first
  * measured only once the map is complete (engine.measureAfter), in the hold.
  *
- * A later full load in the same tab shows the finished map in line, with
- * its label, but no pictures, and fades as soon as the page is ready. The pictures are CSS backgrounds that
- * apply only during the intro, so a later load never fetches them; one that
- * fails to load leaves its region in a dark tone.
+ * The pictures are CSS backgrounds that apply only during the intro (after
+ * the first load they come from the browser's cache); one that fails to
+ * load leaves its region in a dark tone. Moving between pages never
+ * reloads, so it uses the page transition (ScreenTransition.tsx), which
+ * shows the same map.
  *
  * The screen waits for the fonts and the page's opening pictures as before
  * (openingAssets, capped at 3.5s). Then, T₀: the page is put back at the
@@ -38,12 +39,12 @@ import { openingAssets } from "@/lib/motion/opening";
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on only for visitors who allow motion and have JavaScript, marks
- * the first full load in the tab for the intro (data-intro), starts it
+ * the load for the intro (data-intro), starts it
  * after 1.5s should the page not have hydrated by then, and sets every
  * flag after 8s whatever happens, so the page can never be held. With
  * reduced motion there is no screen at all: the page is simply there.
  */
-export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else{d.dataset.motion="";try{if(!sessionStorage.getItem("pg_intro")){sessionStorage.setItem("pg_intro","1");d.dataset.intro="";setTimeout(function(){d.dataset.intro="play"},1500)}}catch(e){}}setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
+export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else{d.dataset.motion="";d.dataset.intro="";setTimeout(function(){d.dataset.intro="play"},1500)}setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
 
 /** From navigation start, as the head script: the page is released by then whatever happens. */
 const SAFETY_MS = 8000;
@@ -66,14 +67,13 @@ export function Preloader() {
     const safety = window.setTimeout(() => engine.unlock("preloader"), Math.max(0, SAFETY_MS - performance.now()));
     let release = 0;
     let cancelled = false;
-    const full = "intro" in html.dataset;
     const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
     const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const settled = (list: Animation[]) => Promise.all(list.map((a) => a.finished.catch(() => undefined)));
     let composedAt = 0;
     // Two frames on, so every effect of the hydration has run and nothing heavy is left to stall the drawing.
-    const composed = (full ? frame().then(frame) : Promise.resolve()).then(() => {
-      if (full) html.dataset.intro = "play";
+    const composed = frame().then(frame).then(() => {
+      html.dataset.intro = "play";
       // Reading them brings the styles up to date, which starts the animations.
       return settled(el.getAnimations({ subtree: true })).then(() => {
         composedAt = performance.now();
@@ -86,7 +86,7 @@ export function Preloader() {
 
     Promise.all([composed, measured, Promise.race([assets, wait(ASSET_CAP_MS)])])
       // The finished map is held a moment, however long the page took to be ready.
-      .then(() => (full ? wait(Math.max(0, INTRO_COMPLETE_MS - (performance.now() - composedAt))) : undefined))
+      .then(() => wait(Math.max(0, INTRO_COMPLETE_MS - (performance.now() - composedAt))))
       .then(() => {
         if (cancelled) return;
         // Too late: the head script has already revealed the page (8s), so leave the page where the visitor has it.
@@ -107,7 +107,7 @@ export function Preloader() {
         engine.scrollTo(0, true);
         html.dataset.loaded = "";
         html.dataset.revealed = "";
-        const ms = full ? INTRO_EXIT_MS : INTRO_REPEAT_EXIT_MS;
+        const ms = INTRO_EXIT_MS;
         const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: cssEase.power1InOut, fill: "forwards" });
         el.querySelector(".intro")?.animate([{ transform: "scale(1)" }, { transform: "scale(1.035)" }], { duration: ms, easing: cssEase.power2Out, fill: "forwards" });
         release = window.setTimeout(() => {

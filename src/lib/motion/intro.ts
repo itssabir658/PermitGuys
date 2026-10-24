@@ -27,8 +27,6 @@ export const INTRO_REVEAL_MS = 900;
 export const INTRO_COMPLETE_MS = 600;
 /** The crossfade onto the page. */
 export const INTRO_EXIT_MS = 800;
-/** A later full load in the same tab: the dark screen just fades once the page is ready. */
-export const INTRO_REPEAT_EXIT_MS = 450;
 
 export interface IntroStroke {
   /** Delay from first paint, ms. */
