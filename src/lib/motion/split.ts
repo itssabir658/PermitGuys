@@ -1,5 +1,8 @@
+import { WORDMARK_HTML, WORDMARK_NAME } from "@/content/wordmark";
+
 /*
  * Split a plain-text element into masked lines, for line-by-line reveals.
+ * The firm's name is drawn as the wordmark wherever it appears.
  * Each line becomes
  *   <span class="split-line"><span class="split-line__inner">…</span></span>
  * so it can slide up from behind its own edge. The words stay ordinary text,
@@ -18,6 +21,23 @@
  * by one would lay the page out twice per element.
  */
 
+/** Append a word: as text, or, where it is the firm's name, as the wordmark (any punctuation after it as text). */
+function appendWord(parent: HTMLElement, word: string) {
+  if (word.startsWith(WORDMARK_NAME)) {
+    parent.insertAdjacentHTML("beforeend", WORDMARK_HTML);
+    const rest = word.slice(WORDMARK_NAME.length);
+    if (rest) parent.append(rest);
+  } else parent.append(word);
+}
+
+/** The words, separated by spaces, into `parent`. */
+function appendWords(parent: HTMLElement, words: string[]) {
+  words.forEach((word, i) => {
+    if (i) parent.append(" ");
+    appendWord(parent, word);
+  });
+}
+
 /** What a split that still holds would have recorded (see above). */
 const fitOf = (el: HTMLElement) => `${el.clientWidth}${document.fonts?.status === "loading" ? "~" : ""}`;
 
@@ -29,7 +49,7 @@ function writeProbes(el: HTMLElement) {
   const words = text.split(/\s+/);
   return words.map((word, i) => {
     const span = document.createElement("span");
-    span.textContent = word;
+    appendWord(span, word);
     span.style.display = "inline-block";
     el.append(span);
     if (i < words.length - 1) el.append(" ");
@@ -54,7 +74,7 @@ function writeLines(el: HTMLElement, probes: HTMLElement[], tops: number[]) {
     outer.className = "split-line";
     const inner = document.createElement("span");
     inner.className = "split-line__inner";
-    inner.textContent = line.join(" ");
+    appendWords(inner, line);
     outer.append(inner);
     el.append(outer, " ");
     return inner;
@@ -89,7 +109,8 @@ export function resplitIfNeeded(el: HTMLElement, current: HTMLElement[]): HTMLEl
 /** Put the original text back. */
 export function unsplit(el: HTMLElement) {
   if (el.dataset.splitText === undefined) return;
-  el.textContent = el.dataset.splitText;
+  el.textContent = "";
+  appendWords(el, el.dataset.splitText.split(/\s+/));
   delete el.dataset.split;
   delete el.dataset.splitWidth;
 }

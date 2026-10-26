@@ -1,10 +1,10 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
 import { Container } from "@/components/ui/Container";
-import { site } from "@/content/site";
 import { MK_H, MK_W, mkCallouts, mkElevation, mkPlan, mkSite, mkStructure } from "@/content/making-drawing";
 import { escapeHtml } from "@/lib/html";
 import { makingSectionVh } from "@/lib/motion/home";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 /** The five chapters: what the firm does at each stage of the house, never a promise of the municipality's decision. */
 const chapters = [
@@ -184,7 +184,9 @@ export function Making() {
                 </svg>
                 <div data-mk-fade="title" aria-hidden="true" className="mk-title">
                   <div className="mk-title__mark">
-                    <p className="mk-title__brand font-wordmark">{site.name}</p>
+                    <p className="mk-title__brand">
+                      <Wordmark />
+                    </p>
                     <p className="mk-title__label">Architects</p>
                   </div>
                   <div>

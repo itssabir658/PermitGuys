@@ -2,6 +2,8 @@ import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 import { coverWidth, plates, type Plate } from "@/content/imagery";
 import { escapeHtml } from "@/lib/html";
+import { wordmarkInHtml } from "@/content/wordmark";
+import { withWordmark } from "@/components/ui/Wordmark";
 
 /*
  * The practice's values. The content is the "How we work" principles from
@@ -54,7 +56,7 @@ function ValueText({ tone }: { tone: "ink" | "ivory" }) {
     <div className={`values-text ${tone === "ink" ? "text-ink" : "text-ivory"}`}>
       <div className="values-text__titles">
         {values.map((v, i) => (
-          <p key={v.title} data-values-title={i} className="split-line font-wordmark text-[length:min(clamp(3.25rem,1rem+9vw,10rem),17svh)] leading-[0.9] tracking-[-0.01em] uppercase">
+          <p key={v.title} data-values-title={i} className="split-line font-logo text-[length:min(clamp(3.25rem,1rem+9vw,10rem),17svh)] leading-[0.9] tracking-[-0.02em]">
             <span data-values-roll="" className="inline-block">
               {v.title}
             </span>
@@ -63,7 +65,7 @@ function ValueText({ tone }: { tone: "ink" | "ivory" }) {
       </div>
       <div className="values-text__descs">
         {values.map((v, i) => (
-          <p key={v.title} data-values-desc={i} className="text-center text-[1.125rem] leading-relaxed" dangerouslySetInnerHTML={{ __html: escapeHtml(v.body) }} />
+          <p key={v.title} data-values-desc={i} className="text-center text-[1.125rem] leading-relaxed" dangerouslySetInnerHTML={{ __html: wordmarkInHtml(escapeHtml(v.body)) }} />
         ))}
       </div>
     </div>
@@ -122,8 +124,8 @@ export function Values() {
             </div>
           </div>
           <div className="values-outer__text tracks:sr-only">
-            <h3 className="font-wordmark text-[clamp(2.4rem,1rem+5vw,5rem)] leading-[0.9] uppercase">{v.title}</h3>
-            <p className="mt-4 max-w-md leading-relaxed text-ink-muted">{v.body}</p>
+            <h3 className="font-logo text-[clamp(2.4rem,1rem+5vw,5rem)] leading-[0.9] tracking-[-0.02em]">{v.title}</h3>
+            <p className="mt-4 max-w-md leading-relaxed text-ink-muted">{withWordmark(v.body)}</p>
           </div>
         </div>
       ))}

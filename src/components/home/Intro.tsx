@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import { coverWidth, plates, type Plate } from "@/content/imagery";
 import { escapeHtml } from "@/lib/html";
+import { wordmarkInHtml } from "@/content/wordmark";
 import { introPhases } from "@/lib/motion/home";
 
 /** The two paragraphs that cut in and out at the centre. */
@@ -66,7 +67,7 @@ export function Intro() {
               key={i}
               data-intro-copy=""
               className="intro-copy mx-auto max-w-[19ch] text-center font-display text-[clamp(1.65rem,0.9rem+2.6vw,3.4rem)] leading-[1.1] font-light tracking-[-0.035em] text-ink sm:max-w-[24ch]"
-              dangerouslySetInnerHTML={{ __html: escapeHtml(text) }}
+              dangerouslySetInnerHTML={{ __html: wordmarkInHtml(escapeHtml(text)) }}
             />
           ))}
         </div>

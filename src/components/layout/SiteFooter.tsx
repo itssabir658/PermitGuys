@@ -8,6 +8,7 @@ import { Placeholder } from "@/components/ui/Placeholder";
 import { RollText } from "@/components/ui/RollText";
 import { paths } from "@/lib/routes";
 import { Logo } from "./Logo";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 /*
  * The one dark band at the foot of every page. Pages close on paper (the
@@ -72,7 +73,7 @@ export function SiteFooter() {
         <div className="mt-24 border-t border-ivory/15 pt-10 lg:mt-32">
           <div className="space-y-3 text-sm text-charcoal-300 lg:max-w-xl">
             <p>
-              © {new Date().getFullYear()} {site.legalName ?? site.name}. Serving homeowners and property owners in the {site.region}.{" "}
+              © {new Date().getFullYear()} {site.legalName ?? <Wordmark />}. Serving homeowners and property owners in the {site.region}.{" "}
               <Link href={paths.privacy} className="link-rule text-ivory/80 hover:text-ivory">
                 Privacy policy
               </Link>

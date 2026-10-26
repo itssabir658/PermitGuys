@@ -23,6 +23,7 @@ import {
   type InquiryField,
 } from "@/lib/validation/inquiry";
 import { submitInquiry } from "./actions";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 const ERROR = "text-[#a3361f]";
 const field =
@@ -499,7 +500,7 @@ export function InquiryForm({ directContact }: { directContact: ReactNode }) {
             className="mt-1 size-5 shrink-0 accent-charcoal-900"
           />
           <label htmlFor="consent" className="text-sm leading-relaxed text-ink-muted">
-            PermitGuys may use these details to contact me about this inquiry, as described in the{" "}
+            <Wordmark /> may use these details to contact me about this inquiry, as described in the{" "}
             <Link href={paths.privacy} className="text-charcoal-900 underline underline-offset-4">
               privacy policy
             </Link>

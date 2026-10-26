@@ -4,6 +4,7 @@ import { Placeholder } from "@/components/ui/Placeholder";
 import { site } from "@/content/site";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 export const metadata = pageMetadata({
   title: "Privacy Policy",
@@ -25,7 +26,7 @@ export default function PrivacyPage() {
           </p>
           <h2>Who we are</h2>
           <p>
-            This policy explains how {site.legalName ?? site.name} (&ldquo;we&rdquo;) handles personal information collected through this website.
+            This policy explains how {site.legalName ?? <Wordmark />} (&ldquo;we&rdquo;) handles personal information collected through this website.
           </p>
           <h2>What we collect</h2>
           <p>When you send an inquiry, we collect the details you choose to provide, such as:</p>

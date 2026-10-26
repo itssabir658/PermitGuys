@@ -124,14 +124,14 @@ describe("where a scene is part way", () => {
     for (const p of [0.01, 0.5, 0.99]) expect(partWay(p)).toBe(true);
   });
 
-  it("hero: whole at the top and once the name has gone; part way only as they leave", () => {
+  it("hero: whole at the top and once the statement has gone; part way only as it leaves", () => {
     const vh = 844;
     expect(heroPartWay(0, 0, vh)).toBe(false);
-    expect(heroPartWay(0.4 * vh, 0, vh)).toBe(true);
-    expect(heroPartWay(0.75 * vh, 0, vh)).toBe(false);
+    expect(heroPartWay(0.2 * vh, 0, vh)).toBe(true);
+    expect(heroPartWay(0.4 * vh, 0, vh)).toBe(false);
     const { zones } = settled(0, 2.5, (s) => heroPartWay(s * vh, 0, vh));
     expect(zones).toHaveLength(1);
-    expect(zones[0][1]).toBeLessThan(0.75);
+    expect(zones[0][1]).toBeLessThan(0.4);
   });
 
   it("intro: each paragraph keeps its whole moment, and the ring's fling is never left half way", () => {

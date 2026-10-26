@@ -1,5 +1,6 @@
 import type { SourceRef } from "@/content/types";
 import { ExternalIcon } from "./Icons";
+import { Wordmark } from "./Wordmark";
 
 const fmt = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 
@@ -20,7 +21,9 @@ export function SourceList({ sources }: { sources: SourceRef[] }) {
           <p className="mt-1 text-sm text-ink-muted">
             {s.publisher}
             {" · "}
-            {s.checked ? <>Checked {formatDate(s.checked)}</> : <span data-placeholder="">Link not yet verified by PermitGuys</span>}
+            {s.checked ? <>Checked {formatDate(s.checked)}</> : <span data-placeholder="">
+              Link not yet verified by <Wordmark />
+            </span>}
           </p>
         </li>
       ))}

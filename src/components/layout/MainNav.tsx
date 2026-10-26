@@ -324,8 +324,8 @@ export function MainNav({
         <div className="site-nav__bar mx-auto flex h-20 w-full max-w-site items-center justify-between gap-6 px-5 sm:px-8 lg:h-24 lg:px-12 xl:px-16">
           <div className="site-nav__item site-nav__item--logo" style={{ "--i": 0, "--o": inline.length + 1 } as CSSProperties}>
             <Link href="/" className="nav-intro site-nav__logo-stack" aria-label={`${site.name} home`}>
-              <Logo priority className="site-nav__logo site-nav__logo--dark h-[1.35rem] w-auto sm:h-6" />
-              <Logo onDark priority className="site-nav__logo site-nav__logo--light h-[1.35rem] w-auto sm:h-6" />
+              <Logo className="site-nav__logo site-nav__logo--dark h-[1.35rem] w-auto sm:h-6" />
+              <Logo onDark className="site-nav__logo site-nav__logo--light h-[1.35rem] w-auto sm:h-6" />
             </Link>
           </div>
 

@@ -1,6 +1,7 @@
 import type { Faq } from "@/content/types";
 import { PlusIcon } from "./Icons";
 import { cn } from "./cn";
+import { withWordmark } from "./Wordmark";
 
 /**
  * Native disclosure widgets on hairline rules: keyboard and screen-reader
@@ -13,7 +14,7 @@ export function FaqList({ faqs, className }: { faqs: Faq[]; className?: string }
       {faqs.map((faq) => (
         <details key={faq.question} className="smooth group row-rule">
           <summary className="flex cursor-pointer list-none items-start justify-between gap-8 py-7 text-left [&::-webkit-details-marker]:hidden">
-            <h3 className="font-display text-display-sm text-ink">{faq.question}</h3>
+            <h3 className="font-display text-display-sm text-ink">{withWordmark(faq.question)}</h3>
             <span className="flex size-11 shrink-0 items-center justify-center text-ink ring-1 ring-ink/15 transition-[background-color,color] duration-300 ring-inset group-open:bg-ink group-open:text-ivory">
               <PlusIcon className="size-4 transition-transform duration-500 ease-out-expo group-open:rotate-45" />
             </span>
@@ -21,7 +22,7 @@ export function FaqList({ faqs, className }: { faqs: Faq[]; className?: string }
           <div className="max-w-2xl pr-14 pb-8 text-[1.0625rem] leading-relaxed text-ink-muted">
             {faq.answer.map((p) => (
               <p key={p} className="mt-3 first:mt-0">
-                {p}
+                {withWordmark(p)}
               </p>
             ))}
           </div>

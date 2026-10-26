@@ -7,6 +7,7 @@ import { getProjectsForLocation, pickGuides, pickServices } from "@/lib/content"
 import { paths } from "@/lib/routes";
 import { ProjectEvidence } from "./ProjectEvidence";
 import { RelatedContent } from "./RelatedContent";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 const toc = [
   { id: "coverage", label: "Coverage" },
@@ -32,7 +33,8 @@ export function LocationTemplate({ location }: { location: Location }) {
       />
       <ArticleLayout toc={toc}>
         <ArticleSection id="coverage" title="Coverage">
-          <p className="prose-pg">PermitGuys has confirmed it works with homeowners and property owners in {location.name}.</p>
+          <p className="prose-pg">
+            <Wordmark /> has confirmed it works with homeowners and property owners in {location.name}.</p>
         </ArticleSection>
 
         <ArticleSection id="local-permits" title={`Building permits in ${location.name}`}>

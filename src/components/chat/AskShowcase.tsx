@@ -7,6 +7,7 @@ import { GTA_PERMITS_CHECKED_ON, gtaPermits } from "@/content/gta-permits";
 import { askAssistant, askExamples, askSuggestions } from "@/lib/chat/ask";
 import { chatLimits } from "@/lib/chat/conversation";
 import "./chat.css";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 /*
  * The homepage's showcase for the website assistant, after the making of a
@@ -145,7 +146,9 @@ export function AskShowcase() {
         <div className="lg:col-span-2">
           <p className="ask-rise flex items-center gap-3 text-label text-ink" style={rise(0)}>
             <span aria-hidden="true" className="chat-live" />
-            PermitGuys AI
+            <span>
+              <Wordmark className="text-[1.25em]" /> AI
+            </span>
           </p>
           <h2 id="ask-heading" className="mt-7 font-wordmark text-[clamp(3.1rem,1rem+8.4vw,11rem)] leading-[0.86] tracking-[-0.01em] whitespace-nowrap uppercase max-[359px]:whitespace-normal">
             <span className="ask-line">

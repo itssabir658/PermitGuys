@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import localFont from "next/font/local";
 
 /*
  * Typography for the luxury redesign: one superfamily, two voices.
@@ -34,6 +35,21 @@ export const wordmarkFont = Playfair_Display({
   variable: "--font-wordmark-face",
   subsets: ["latin"],
   weight: ["900"],
+  display: "swap",
+});
+
+/**
+ * The logo's typeface, for the four Values words (Sebra, 26 October 2026).
+ * The logo is set in ITC Avant Garde Gothic, a paid face; until a licensed
+ * file arrives this is TeX Gyre Adventor Bold, a free revival of it under
+ * the GUST Font License (fonts/GUST-FONT-LICENSE.txt), the weight that
+ * matches the logo, subset to Latin. The wordmark itself is drawn from the
+ * same outlines (src/content/wordmark.ts).
+ */
+export const logoFont = localFont({
+  src: "./fonts/tex-gyre-adventor-bold-latin.woff2",
+  variable: "--font-logo-face",
+  weight: "700",
   display: "swap",
 });
 

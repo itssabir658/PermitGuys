@@ -12,6 +12,7 @@ import { gtaMunicipalities } from "@/content/locations";
 import { getLocations } from "@/lib/content";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 export const metadata = pageMetadata({
   title: "Service Areas in the Greater Toronto Area",
@@ -45,7 +46,7 @@ export default function ServiceAreasPage() {
               <LinkRows items={confirmed.map((l) => ({ href: paths.serviceArea(l.slug), title: l.name, description: l.summary, meta: l.region }))} />
             ) : (
               <Placeholder block>
-                list of municipalities PermitGuys has confirmed it serves. Each confirmed municipality gets its own page with local permit information, generated from src/content/locations.ts.
+                list of municipalities <Wordmark /> has confirmed it serves. Each confirmed municipality gets its own page with local permit information, generated from src/content/locations.ts.
               </Placeholder>
             )}
           </div>

@@ -7,6 +7,7 @@ import { plates } from "@/content/imagery";
 import { site } from "@/content/site";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
+import { withWordmark } from "@/components/ui/Wordmark";
 
 export const metadata = pageMetadata({
   title: "About PermitGuys",
@@ -30,7 +31,7 @@ export default function AboutPage() {
         pageType="AboutPage"
         eyebrow="About"
         title="Architecture and engineering, with the permit in mind."
-        lead="PermitGuys is a team of architects and designers in Oakville, working with homeowners, landlords and businesses across the Greater Toronto Area."
+        lead={withWordmark("PermitGuys is a team of architects and designers in Oakville, working with homeowners, landlords and businesses across the Greater Toronto Area.")}
       />
       <PlateBand plate={plates.terrace} />
       <ArticleLayout toc={toc}>
@@ -61,7 +62,7 @@ export default function AboutPage() {
           </Placeholder>
         </ArticleSection>
         <ArticleSection id="story" title="Our story">
-          <Placeholder block className="max-w-(--measure-article)">a short account of how and why PermitGuys started, written or approved by the business.</Placeholder>
+          <Placeholder block className="max-w-(--measure-article)">{withWordmark("a short account of how and why PermitGuys started, written or approved by the business.")}</Placeholder>
         </ArticleSection>
       </ArticleLayout>
       <CtaPanel />

@@ -61,7 +61,7 @@ test.describe("accessibility", () => {
   test("respects reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const animation = await page.locator(".hero-heading-line .split-line__inner").evaluate((el) => getComputedStyle(el).animationName);
+    const animation = await page.locator(".hero-sub-line .split-line__inner").first().evaluate((el) => getComputedStyle(el).animationName);
     expect(animation).toBe("none");
     await page.goto("/services/");
     const inner = await page.locator(".motion-rise").first().evaluate((el) => getComputedStyle(el).animationName);
@@ -349,13 +349,17 @@ test.describe("interactive pieces", () => {
     // Its first line in place in its mask.
     await expect.poll(() => first.evaluate((el) => Math.abs(el.firstElementChild!.getBoundingClientRect().top - el.getBoundingClientRect().top))).toBeLessThan(2);
     // Just after the fling starts (3.7 screens), the ring is still on screen around the stage.
-    await go(3.75);
-    await expect
-      .poll(() => page.evaluate(() => [...document.querySelectorAll("[data-orbit-slot]")].filter((el) => {
+    // Read in the frames right after the jump: on a touch screen the page then settles on through the fling (settle.ts).
+    const ring = await page.evaluate(async (y) => {
+      window.scrollTo(0, y);
+      for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame);
+      return [...document.querySelectorAll("[data-orbit-slot]")].filter((el) => {
         const r = el.getBoundingClientRect();
         return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth && Number(getComputedStyle(el).opacity) > 0.5;
-      }).length))
-      .toBeGreaterThanOrEqual(4);
+      }).length;
+    }, Math.round(top + 3.75 * vh));
+    // Half the ring or more: on a phone a six-line paragraph spreads it, so the two studies nearest the edges have already dissolved.
+    expect(ring).toBeGreaterThanOrEqual(3);
   });
 
   test("the transition and intro stay out of the way with reduced motion", async ({ page }) => {
@@ -367,14 +371,21 @@ test.describe("interactive pieces", () => {
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
   });
 
-  test("the name stands behind the house: the roof hides the foot of R to T, never of E or G, and the house moves against a mouse", async ({ page }, info) => {
+  test("the hero is the house alone: the sky behind it, a heading only for screen readers, and the house moves against a mouse", async ({ page }, info) => {
     await page.goto("/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
-    // The name has risen and the planes have settled (the intro's crossfade is shorter than their entrance).
+    // The planes have settled (the intro's crossfade is shorter than their entrance).
     await page.waitForFunction(() => document.querySelector("[data-hero-stage]")!.getAnimations({ subtree: true }).every((a) => a.playState !== "running"));
-    // The sky behind the name, the rendering in front of it, cut out in its own picture (no mask), and the scroll's darkening over both.
+    // The sky, then the rendering in front of it, cut out in its own picture (no mask), and the scroll's darkening over both.
     const order = await page.locator("[data-hero-stage] > *").evaluateAll((els) => els.map((el) => el.getAttribute("data-hero-layer") ?? el.tagName.toLowerCase()));
     expect(order.slice(0, 4)).toEqual(["far", "h1", "near", "div"]);
+    // No name on the picture: the page's one heading is read out but not drawn.
+    const heading = page.getByRole("heading", { level: 1 });
+    await expect(heading).toHaveCount(1);
+    await expect(heading).toHaveText(/^PermitGuys: architecture, engineering and permit drawings in the Greater Toronto Area$/);
+    await expect(heading).toHaveClass(/\bsr-only\b/);
+    await expect(page.locator(".hero-name, [data-hero-heading]")).toHaveCount(0);
+    expect(await heading.evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
     const house = page.locator('[data-hero-layer="near"]').getByRole("img");
     await expect(house).toHaveAttribute("alt", /^Rendering of /);
     expect(await house.evaluate((img: HTMLImageElement) => img.currentSrc)).toMatch(/-near(-half|-three-quarter)?\.webp$/);
@@ -382,51 +393,15 @@ test.describe("interactive pieces", () => {
     // Both planes are shown, and kept as layers, so moving them never redraws them.
     await expect(page.locator("[data-hero-stage]")).not.toHaveAttribute("data-waiting");
     for (const plane of ["far", "near"]) await expect(page.locator(`[data-hero-layer="${plane}"]`)).toHaveCSS("will-change", "transform");
-    // Where the roof's wedge meets the name's baseline, with the house swayed as far as the pointer takes it (HERO_DEPTH: 1.5% of the width, 0.8% of the height).
-    const fit = await page.evaluate(() => {
-      const stage = document.querySelector<HTMLElement>("[data-hero-stage]")!;
-      const inner = document.querySelector(".hero-heading-line .split-line__inner")!;
-      const fs = parseFloat(getComputedStyle(inner).fontSize);
-      const [w, h] = [stage.clientWidth, stage.clientHeight];
-      const z = parseFloat(getComputedStyle(stage).getPropertyValue("--z")) || 1;
-      const [swayX, swayY] = z > 1 ? [0.015 * w, 0.008 * h] : [0, 0];
-      const pic = matchMedia("(max-aspect-ratio: 3/5)").matches ? { w: 1500, h: 1994, x0: 1340, px: 0.5, py: 0.6 } : { w: 3800, h: 1994, x0: 0, px: 0.55, py: 0 };
-      const k = Math.max(w / pic.w, h / pic.h);
-      const peakX = w / 2 + ((w - pic.w * k) * pic.px + (1639.8 - pic.x0) * k - w / 2) * z;
-      const peakY = h / 2 + ((h - pic.h * k) * pic.py + 456.4 * k - h / 2) * z;
-      const text = inner.firstChild as Text;
-      const range = document.createRange();
-      const letters = [...text.data].map((_, i) => {
-        range.setStart(text, i);
-        range.setEnd(text, i + 1);
-        const box = range.getBoundingClientRect();
-        return { left: box.left, right: box.right };
-      });
-      const baseline = inner.getBoundingClientRect().top + 0.875 * fs;
-      const deepest = baseline - (peakY - swayY);
-      return { letters, fs, z, shallowest: baseline - (peakY + swayY), from: peakX - swayX - deepest / 0.4728, to: peakX + swayX + deepest / 0.1854, peakX };
-    });
-    // Always some of the name behind the roof.
-    expect(fit.shallowest).toBeGreaterThan(0);
-    const [, E, R, , , T] = fit.letters;
-    if (fit.peakX > fit.letters[0].left) {
-      // The peak over the word: the wedge from R to T.
-      expect(fit.from).toBeGreaterThanOrEqual(R.left);
-      expect(fit.to).toBeLessThanOrEqual(T.right);
-    } else {
-      // The peak just before the word (phones): only P's foot behind the roof, never E's.
-      expect(fit.to).toBeLessThanOrEqual(E.left + 0.03 * fit.fs);
-    }
+    const z = await page.locator("[data-hero-stage]").evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue("--z")) || 1);
     // The planes follow a fine pointer only (the desktop project has one).
-    if (info.project.name === "desktop") expect(fit.z).toBeGreaterThan(1);
-    if (fit.z === 1) return;
-    // A mouse at the right moves the house left and the sky right; the name stays where it is.
-    const name = await page.locator("#hero-heading").boundingBox();
+    if (info.project.name === "desktop") expect(z).toBeGreaterThan(1);
+    if (z === 1) return;
+    // A mouse at the right moves the house left and the sky right.
     const size = page.viewportSize()!;
     await page.mouse.move(size.width - 2, size.height / 2, { steps: 5 });
     await expect.poll(() => page.locator('[data-hero-layer="near"]').evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41)).toBeLessThan(-0.01 * size.width);
     expect(await page.locator('[data-hero-layer="far"]').evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41)).toBeGreaterThan(0);
-    expect(await page.locator("#hero-heading").boundingBox()).toEqual(name);
   });
 
   test("every picture says what it is: a rendering of a client project, or a rendered study", async ({ page }) => {

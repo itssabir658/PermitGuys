@@ -17,19 +17,17 @@ const sizes = {
 };
 
 /**
- * Opening: a full-bleed client rendering in three planes. Behind, the sky;
- * then the name, set very large; in front of it the rendering itself, cut
- * out around the house, the pine, the trees and the ground (docs/IMAGES.md,
- * "The hero's layers"), so the roof's peak hides the foot of the letters
- * beneath it, as if the name stood behind the house. The stylesheet places
- * the name from the picture's geometry (globals.css, "Hero"): the peak
- * always falls under R, M, I or T, the chimney never hides a letter. Both
- * pictures carry the same graded veil, drawn into them (darker at the top
- * for the header and at the bottom for the statement, open across the
- * glazing), and the statement sits at the bottom left. Phones held upright
- * get tall crops of the same pictures, so they fetch the slices they show
- * (art direction: one <picture> a plane, so only one file of each ever
- * loads).
+ * Opening: a full-bleed client rendering in two planes. Behind, the sky; in
+ * front of it the rendering itself, cut out around the house, the pine, the
+ * trees and the ground (docs/IMAGES.md, "The hero's layers"), so the two can
+ * move at their own depths. Both pictures carry the same graded veil, drawn
+ * into them (darker at the top for the header and at the bottom for the
+ * statement, open across the glazing), and the statement sits at the bottom
+ * left. The page's heading is for screen readers and search engines only
+ * (Sebra took the big name off the picture, 26 October 2026). Phones held
+ * upright get tall crops of the same pictures, so they fetch the slices
+ * they show (art direction: one <picture> a plane, so only one file of each
+ * ever loads).
  *
  * Each plane is one picture on its own layer, so moving it costs the screen
  * nothing but compositing: the cut-out is in the near picture's own alpha
@@ -38,28 +36,27 @@ const sizes = {
  * of scale never redraws them.
  *
  * Load: the preloader's iris opens from the GTA dot onto the picture, whose
- * planes settle from 112% around that point; the name rises out of its mask
- * at 0.45s, the statement's lines from 0.85s (globals.css, "Hero"). After a
- * page transition the same entrance runs sooner. The preloader and the page
- * transition wait for both pictures; should the house still be on its way
- * when they open (a slow connection), the sky waits for it too and both
- * fade in together (HomeMotion, hero module), as the sky plate alone is a
- * half-built background.
+ * planes settle from 112% around that point; the statement's lines rise
+ * from 0.85s (globals.css, "Hero"). After a page transition the same
+ * entrance runs sooner. The preloader and the page transition wait for both
+ * pictures; should the house still be on its way when they open (a slow
+ * connection), the sky waits for it too and both fade in together
+ * (HomeMotion, hero module), as the sky plate alone is a half-built
+ * background.
  *
  * Pointer: with a fine pointer on the tracks the planes are drawn 4% larger,
- * and the house moves against the pointer while the sky moves with it, the
- * name holding still between them (HomeMotion, hero module).
+ * and the house moves against the pointer while the sky moves with it
+ * (HomeMotion, hero module).
  *
  * Scroll: a 250vh track holds the stage for 1.5 screens, and from half a
  * screen the intro's ivory sheet rises over it (Intro.tsx). The statement
- * and then the name leave upward through their own masks before the sheet
- * reaches them, while the picture recedes beneath it, each plane at its own
- * depth: the house drifts up and grows 8%, the sky drifts and grows less,
- * and both darken (HomeMotion, hero module; heroState). The CSS entrance
- * moves each line's inner span, the scroll moves the [data-hero-roll] span
- * around it, so neither overrides the other.
- * Short screens, reduced motion and no JavaScript get the still opening,
- * with the name placed the same way.
+ * leaves upward through its masks before the sheet reaches it, while the
+ * picture recedes beneath it, each plane at its own depth: the house drifts
+ * up and grows 8%, the sky drifts and grows less, and both darken
+ * (HomeMotion, hero module; heroState). The CSS entrance moves each line's
+ * inner span, the scroll moves the [data-hero-roll] span around it, so
+ * neither overrides the other.
+ * Short screens, reduced motion and no JavaScript get the still opening.
  */
 
 /** The far plane, through the image optimizer. */
@@ -111,13 +108,8 @@ export function Hero() {
           </div>
         </div>
 
-        <h1 id="hero-heading" data-hero-heading="" className="hero-name font-wordmark leading-[0.92] tracking-[-0.015em] whitespace-nowrap uppercase">
-          <span className="split-line hero-heading-line">
-            <span data-hero-roll="" className="block">
-              <span className="split-line__inner">PermitGuys</span>
-            </span>
-          </span>
-          <span className="sr-only"> — architecture, engineering and permit drawings in the Greater Toronto Area</span>
+        <h1 id="hero-heading" className="sr-only">
+          PermitGuys: architecture, engineering and permit drawings in the Greater Toronto Area
         </h1>
 
         <div data-hero-layer="near" data-hero-image="" className="hero-layer">

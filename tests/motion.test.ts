@@ -196,8 +196,6 @@ describe("motion vocabulary", () => {
     expect(makingLine(-1, 0, 5, 0)).toBe(MASK);
     expect(makingLine(0.5, 0, 5, 6)).toBe(0);
     expect(makingLine(2, 0, 5, 6)).toBe(-MASK);
-    expect(heroState(0, 0, VH).nameRoll).toBe(0);
-    expect(heroState(VH, 0, VH).nameRoll).toBe(-MASK);
     expect(heroState(VH, 0, VH).subRoll).toEqual([-MASK, -MASK]);
   });
 });
@@ -205,28 +203,23 @@ describe("motion vocabulary", () => {
 describe("homepage choreography", () => {
   it("hero: nothing has moved at the top, and the first scroll already moves the statement and the picture", () => {
     const top = heroState(0, 0, VH);
-    expect(top).toEqual({ nameRoll: 0, headingY: -0, subRoll: [0, 0], figOpacity: 1, imageScale: 1, imageY: -0, skyScale: 1, skyY: -0, dim: 0 });
+    expect(top).toEqual({ subRoll: [0, 0], figOpacity: 1, imageScale: 1, imageY: -0, skyScale: 1, skyY: -0, dim: 0 });
     // Before the track starts, the same.
     expect(heroState(-500, 0, VH)).toEqual(top);
     const notch = heroState(0.05 * VH, 0, VH);
     expect(notch.subRoll[0]).toBeLessThan(0);
     expect(notch.imageScale).toBeGreaterThan(1);
     expect(notch.figOpacity).toBeLessThan(1);
-    // The name waits a little longer.
-    expect(notch.nameRoll).toBe(0);
   });
 
-  it("hero: the statement and the name have left through their masks before the intro's sheet reaches them", () => {
+  it("hero: the statement has left through its masks before the intro's sheet reaches them", () => {
     // The sheet's top edge is at (1.5 − s) screens from the top of the screen: at the bottom at 0.5, the middle at 1.0.
     const sheetArrives = heroState(0.5 * VH, 0, VH);
     expect(sheetArrives.subRoll).toEqual([-MASK, -MASK]);
     expect(sheetArrives.figOpacity).toBe(0);
-    expect(heroState(0.72 * VH, 0, VH).nameRoll).toBeCloseTo(-MASK);
-    expect(heroState(0.72 * VH, 0, VH).headingY).toBeCloseTo(-0.08 * VH);
     // Leaving only ever goes up: the rolls never return below 0 on the way out.
     for (let s = 0; s <= 1.5; s += 0.01) {
       const h = heroState(s * VH, 0, VH);
-      expect(h.nameRoll).toBeLessThanOrEqual(0);
       for (const y of h.subRoll) expect(y).toBeLessThanOrEqual(0);
     }
   });
@@ -258,13 +251,11 @@ describe("homepage choreography", () => {
     }
   });
 
-  it("hero: the planes move with the pointer only inside the stylesheet's overscan, and the name keeps clear of the roof's sway", () => {
+  it("hero: the planes move with the pointer only inside the stylesheet's overscan", () => {
     const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
-    const depth = css.match(/:root\[data-motion\] \.hero-stage \{\s*--z: ([\d.]+);\s*--sway: ([\d.]+)cqw;\s*--sway-y: ([\d.]+)cqh;/);
+    const depth = css.match(/:root\[data-motion\] \.hero-stage \{\s*--z: ([\d.]+);/);
     expect(depth).not.toBeNull();
-    const [z, sway, swayY] = [Number(depth![1]), Number(depth![2]), Number(depth![3])];
-    expect(sway / 100).toBeCloseTo(HERO_DEPTH.nearX);
-    expect(swayY / 100).toBeCloseTo(HERO_DEPTH.nearY);
+    const z = Number(depth![1]);
     for (const amount of [HERO_DEPTH.nearX, HERO_DEPTH.nearY, HERO_DEPTH.farX, HERO_DEPTH.farY]) expect(amount).toBeLessThanOrEqual((z - 1) / 2);
     // The sky moves the other way, and less.
     expect(HERO_DEPTH.farX).toBeLessThan(HERO_DEPTH.nearX);

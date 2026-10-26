@@ -6,6 +6,7 @@ import { site } from "@/content/site";
 import { LINE_KINDS, STORY_H, STORY_W, storyGrid, storyLevels, storyLines, storyMembers } from "@/content/story-drawing";
 import { escapeHtml } from "@/lib/html";
 import { storySectionVh } from "@/lib/motion/home";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 /** The four chapters: what happens to a project at each, never a promise of the municipality's decision. */
 const chapters = [
@@ -187,7 +188,9 @@ export function Story() {
 
                 <div data-story-block="" aria-hidden="true" className="story-block">
                   <div className="story-block__cell story-block__mark">
-                    <p className="font-wordmark text-[1.05em] leading-none tracking-[-0.01em] uppercase">{site.name}</p>
+                    <p className="text-[1.3em] leading-none">
+                      <Wordmark />
+                    </p>
                     <p className="story-block__label mt-1.5">Architects</p>
                   </div>
                   <Field label="Project" value="Narrow contemporary house" className="story-block__project" />
