@@ -53,7 +53,7 @@ const values: { title: string; body: string; plate: Plate }[] = [
 
 function ValueText({ tone }: { tone: "ink" | "ivory" }) {
   return (
-    <div className={`values-text ${tone === "ink" ? "text-ink" : "text-ivory"}`}>
+    <div className={`values-text ${tone === "ink" ? "text-ink" : "text-ivory [--wordmark-guys:#fff]"}`}>
       <div className="values-text__titles">
         {values.map((v, i) => (
           <p key={v.title} data-values-title={i} className="split-line font-logo text-[length:min(clamp(3.25rem,1rem+9vw,10rem),17svh)] leading-[0.9] tracking-[-0.02em]">

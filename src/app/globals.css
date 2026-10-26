@@ -2862,9 +2862,14 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 .values-text__descs > * {
   grid-area: 1 / 1;
 }
-/* Each word is its own mask, as tall as its own line: fitted words differ in size, and a mask stretched to the largest would let a smaller hidden word show below it. */
+/*
+ * Each word is its own mask, as tall as its own line: fitted words differ in size, and a mask stretched to the largest would let a smaller hidden word show below it.
+ * The logo face's round capitals rise above a 0.9 line and Safari ignores overflow-clip-margin, so the line is 1.1 (letters inside it in every browser) and the margins take the extra 0.2em back out of the layout.
+ */
 .values-text__titles > .split-line {
   align-self: center;
+  line-height: 1.1;
+  margin-block: -0.1em;
   overflow-clip-margin: 0.12em;
 }
 .values-text__descs {
