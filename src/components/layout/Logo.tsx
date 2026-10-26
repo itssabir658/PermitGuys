@@ -1,20 +1,16 @@
-import Image from "next/image";
 import { site } from "@/content/site";
+import { WORDMARK } from "@/content/wordmark";
 
 /**
- * The PermitGuys logo as supplied: red "permit", charcoal "guys". On dark
- * grounds "guys" switches to white (permitguys-logo-on-dark.png).
+ * The PermitGuys logo, drawn as vectors so it is sharp at any size
+ * (src/content/wordmark.ts): red "permit", charcoal "guys". On dark grounds
+ * "guys" switches to white. Sized by its height (className).
  */
-export function Logo({ onDark, className, priority }: { onDark?: boolean; className?: string; priority?: boolean }) {
+export function Logo({ onDark, className }: { onDark?: boolean; className?: string }) {
   return (
-    <Image
-      src={onDark ? "/brand/permitguys-logo-on-dark.png" : "/brand/permitguys-logo.png"}
-      alt={site.name}
-      width={327}
-      height={61}
-      unoptimized
-      priority={priority}
-      className={className ?? "h-6 w-auto"}
-    />
+    <svg viewBox={WORDMARK.viewBox} role="img" aria-label={site.name} className={className ?? "h-6 w-auto"}>
+      <path fill={WORDMARK.red} d={WORDMARK.permit} />
+      <path fill={onDark ? "#fff" : WORDMARK.charcoal} d={WORDMARK.guys} />
+    </svg>
   );
 }

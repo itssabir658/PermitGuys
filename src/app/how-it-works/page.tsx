@@ -8,6 +8,7 @@ import { plates } from "@/content/imagery";
 import { homeSteps } from "@/content/process";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
+import { withWordmark } from "@/components/ui/Wordmark";
 
 export const metadata = pageMetadata({
   title: "How the Permit Drawing Process Works",
@@ -71,7 +72,7 @@ export default function HowItWorksPage() {
             {responsibilities.map((r) => (
               <div key={r.who}>
                 <Eyebrow as="h3" className="mb-4">
-                  {r.who}
+                  {withWordmark(r.who)}
                 </Eyebrow>
                 <RuledList items={r.items} />
               </div>

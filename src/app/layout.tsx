@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { headingFont, monoFont, wordmarkFont } from "./fonts";
+import { headingFont, logoFont, monoFont, wordmarkFont } from "./fonts";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -43,7 +43,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-CA" className={`${headingFont.variable} ${monoFont.variable} ${wordmarkFont.variable} antialiased`} suppressHydrationWarning>
+    <html lang="en-CA" className={`${headingFont.variable} ${monoFont.variable} ${wordmarkFont.variable} ${logoFont.variable} antialiased`} suppressHydrationWarning>
       <head>
         {/* Before first paint: turn on the preloader and scroll motion for visitors who allow motion. */}
         <script dangerouslySetInnerHTML={{ __html: motionScript }} />

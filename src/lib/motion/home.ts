@@ -60,9 +60,8 @@ export function sectionLabel(s: number, from: number) {
 /**
  * The hero as the intro's ivory sheet rises over it (from 0.5 to 1.5
  * screens; Intro.tsx). The statement leaves upward through its masks first,
- * since the sheet arrives at its edge (0.02 → 0.37); the name follows,
- * gone by 0.72, before the sheet reaches it, lifting 0.08 screen as it
- * goes. The caption fades by 0.3. The picture recedes under the sheet the
+ * since the sheet arrives at its edge (0.02 → 0.37). The caption fades by
+ * 0.3. The picture recedes under the sheet the
  * whole time, each plane at its own depth: the house drifts up 0.04 screen,
  * grows 8% and darkens, the sky drifts 0.015 screen and grows 3%, so the
  * sky slides behind the roof. Each plane's growth covers its drift, so no
@@ -70,11 +69,8 @@ export function sectionLabel(s: number, from: number) {
  */
 export function heroState(scroll: number, top: number, vh: number) {
   const s = Math.max(0, (scroll - top) / vh);
-  const name = tween(s, 0.12, 0.6, ease.power2In);
   const pic = tween(s, 0, 1.5, ease.power1InOut);
   return {
-    nameRoll: roll(1, name),
-    headingY: -0.08 * vh * name,
     subRoll: [0, 1].map((i) => roll(1, tween(s, 0.02 + i * 0.05, 0.3, ease.power2In))),
     figOpacity: 1 - tween(s, 0, 0.3),
     imageScale: 1 + 0.08 * pic,
@@ -88,12 +84,10 @@ export function heroState(scroll: number, top: number, vh: number) {
 /**
  * The hero's depth under a fine pointer (HomeMotion, hero module): at full
  * deflection the house (the near plane) moves against the pointer by these
- * fractions of the stage's width and height, and the sky with it, while the
- * name holds still between them. The planes follow at `rate` (an
- * exponential approach, per second) and settle back when the pointer leaves
- * the window. Keep nearX and nearY in step with --sway and --sway-y in
- * globals.css, which keep the roof's wedge under R to T as the house moves,
- * and the overscan there (--z, 1.04) at least 1 + 2 × each amount.
+ * fractions of the stage's width and height, and the sky with it. The
+ * planes follow at `rate` (an exponential approach, per second) and settle
+ * back when the pointer leaves the window. Keep the overscan in globals.css
+ * (--z, 1.04) at least 1 + 2 × each amount.
  */
 export const HERO_DEPTH = { nearX: 0.015, nearY: 0.008, farX: 0.009, farY: 0.005, rate: 5 };
 
@@ -969,10 +963,9 @@ const anyOf = (n: number, test: (k: number) => boolean) => {
   return false;
 };
 
-/** The hero (heroState): the name or a line of the statement part way out through its mask. */
+/** The hero (heroState): a line of the statement part way out through its mask. */
 export function heroPartWay(scroll: number, top: number, vh: number) {
-  const st = heroState(scroll, top, vh);
-  return lineCut(st.nameRoll) || st.subRoll.some((y) => lineCut(y));
+  return heroState(scroll, top, vh).subRoll.some((y) => lineCut(y));
 }
 
 /** The intro at its sso `s`, with `lines[i]` lines in paragraph i: a line part way through its mask, or the ring part way through its fling. */

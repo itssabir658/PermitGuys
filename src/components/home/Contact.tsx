@@ -8,6 +8,7 @@ import { site } from "@/content/site";
 import { escapeHtml } from "@/lib/html";
 import { paths } from "@/lib/routes";
 import type { ReviewSummary } from "@/lib/reviews";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZone: "UTC" });
 
@@ -82,7 +83,9 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
 
         <div data-contact-block="" className="contact-block">
           <div data-contact-cell="" aria-hidden="true" className="contact-block__cell contact-block__mark">
-            <p className="font-wordmark text-[1.125rem] leading-none tracking-[-0.01em] text-ink uppercase">{site.name}</p>
+            <p className="text-[1.4rem] leading-none">
+              <Wordmark />
+            </p>
             <p className="contact-block__label mt-2">Architects</p>
           </div>
           {contact.address ? (

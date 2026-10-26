@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { ProcessStep } from "@/content/types";
 import { cn } from "./cn";
+import { withWordmark } from "./Wordmark";
 
 const partyOrder: ProcessStep["owner"][] = ["You", "PermitGuys", "Other consultants", "Municipality"];
 
@@ -26,7 +27,7 @@ export function StepList({ steps, onDark, showOwner = true }: { steps: ProcessSt
           <span />
           {parties.map((p) => (
             <span key={p} className="text-center">
-              {p === "Municipality" ? "The city" : p}
+              {p === "Municipality" ? "The city" : withWordmark(p)}
             </span>
           ))}
         </div>
@@ -41,7 +42,7 @@ export function StepList({ steps, onDark, showOwner = true }: { steps: ProcessSt
               {showOwner ? (
                 <p className={cn("mt-4 text-label lg:sr-only", onDark ? "text-ivory" : "text-ink")}>
                   <span className="sr-only">Handled by: </span>
-                  {step.owner}
+                  {withWordmark(step.owner)}
                 </p>
               ) : null}
             </div>

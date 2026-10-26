@@ -14,6 +14,7 @@ import { HANDOFF_EVENT, HANDOFF_STORAGE_KEY, type Handoff } from "@/lib/chat/han
 import { engine } from "@/lib/motion/engine";
 import { paths } from "@/lib/routes";
 import "./chat.css";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 /*
  * The website assistant: a launcher in the corner, ringed by a slow red
@@ -341,7 +342,9 @@ export function ChatAssistant() {
             <span className="text-[0.9375rem]">Close assistant</span>
           ) : (
             <span className="flex flex-col text-left leading-tight">
-              <span className="text-[0.9375rem]">Ask PermitGuys AI</span>
+              <span className="text-[0.9375rem] [--wordmark-guys:#fff]">
+                Ask <Wordmark /> AI
+              </span>
               <span className="mt-0.5 text-[0.75rem] text-charcoal-300 max-sm:sr-only">Permit questions, answered</span>
             </span>
           )}
@@ -360,7 +363,9 @@ export function ChatAssistant() {
           <div className="relative">
             <p className="flex items-center gap-2.5 text-label text-charcoal-300">
               <span aria-hidden="true" className="chat-live" />
-              PermitGuys AI
+              <span className="[--wordmark-guys:#fff]">
+                <Wordmark className="text-[1.25em]" /> AI
+              </span>
             </p>
             <h2 id="pg-chat-title" className="mt-2 font-display text-display-sm text-ivory">
               Ask about your project

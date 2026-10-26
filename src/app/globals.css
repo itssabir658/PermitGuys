@@ -66,6 +66,7 @@
   --font-sans: var(--font-heading), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --font-wordmark: var(--font-wordmark-face), "Didot", "Bodoni 72", Georgia, serif;
+  --font-logo: var(--font-logo-face), "ITC Avant Garde Gothic", "Century Gothic", ui-sans-serif, sans-serif;
 
   --text-hero: clamp(3rem, 0.9rem + 6.6vw, 8.5rem);
   --text-hero--line-height: 0.93;
@@ -1447,6 +1448,36 @@
   clip-path: url(#notch-clip);
 }
 
+/* ---- Wordmark (Wordmark.tsx): the logo in running text, at the text's own size ---- */
+/* The ink box at 1em of the font it is set in, dropped by the descent so its baseline sits on the line's. */
+.wordmark {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.wordmark__svg {
+  display: inline-block;
+  width: 5.306em;
+  height: 0.988em;
+  vertical-align: -0.221em;
+  overflow: visible;
+}
+.wordmark__permit {
+  fill: #ee352f;
+}
+.wordmark__guys {
+  fill: var(--wordmark-guys, #231f20);
+}
+/* On dark grounds "guys" is white, as in the logo's copy for dark grounds. */
+[data-tone="dark"] {
+  --wordmark-guys: #fff;
+}
+@media print {
+  .wordmark__guys {
+    fill: #231f20;
+  }
+}
+
 /* ---- Footer (SiteFooter.tsx; drawn by MotionRoot, footer module) ---- */
 /* The content rises out from under the sheet above: the footer's top edge clips it. */
 .site-footer {
@@ -1459,89 +1490,26 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 
 /* ---- Homepage: hero (Hero.tsx) ---- */
 /*
- * Three planes in one stage, a size container, so the geometry below is in
- * the stage's own units: the sky behind, the name, and in front of it the
- * rendering itself, cut out around the house, the pine, the trees and the
- * ground (a transparent picture, heroLayers), so the roof hides the foot of
- * the letters beneath it.
- *
- * The name is placed from where cover-fitting puts the roof's peak and the
- * chimney's edge (in the picture's pixels: peak 1639.8, 456.4, chimney x
- * 900, of 3800 × 1994; the tall crop starts at x 1340), after the overscan
- * zoom --z. Its baseline sits --tuck of the cap height below the peak, so
- * the roof's wedge (slopes 0.4728 to the left, 0.1854 to the right) hides
- * the foot of the letters over it. That wedge must fall under R, M, I or T:
- * E without its foot reads as F, and G as C. The letters also start clear
- * of the chimney (and of its sway with the pointer), their caps clear the
- * header (--clear) and the word keeps the side margins. In em of the face,
- * with this tracking: the ink runs from 0.023 to 6.644, E's ink starts at
- * 0.683, R's at 1.31 and T's ends at 4.01; the cap height is 0.71 and the
- * baseline 0.875 below the top of the 0.92 line.
- *   Wider screens: the peak under R to T, the word as large as that allows
- *   and centred between the chimney and the right margin where it can be.
- *   Narrow portrait screens, where the peak is near the left edge: the word
- *   starts just right of the peak, and the roof's right slope hides only
- *   the foot of P.
- * With a fine pointer on the tracks every plane is drawn 4% larger (--z),
- * room for HomeMotion to move the house against the pointer, up to --sway
- * across and --sway-y up or down (HERO_DEPTH), and the sky with it; the name
- * holds still between them. The placement allows for the house's sway: as
- * it rises the wedge deepens and reaches farther along the word (--rise-l,
- * --rise-r), so even then it stays under R to T.
+ * Two planes in one stage: the sky behind, and in front of it the rendering
+ * itself, cut out around the house, the pine, the trees and the ground (a
+ * transparent picture, heroLayers), so the two can move at their own
+ * depths. With a fine pointer on the tracks every plane is drawn 4% larger
+ * (--z), room for HomeMotion to move the house against the pointer and the
+ * sky with it (HERO_DEPTH).
  */
 .hero-stage {
-  container: hero-stage / size;
   --z: 1;
-  --sway: 0px;
-  --sway-y: 0px;
-  --tuck: 0.25;
-  --clear: 4.5rem;
-  --margin: 1.25rem;
   --pos: 55% 0%;
-  /* The wide picture, drawn to the stage's height (wider stages: below). */
-  --peak-x: calc((100cqw - 190.5717cqh) * 0.55 + 82.237cqh);
-  --peak-y: 22.889cqh;
-  --chimney-x: calc((100cqw - 190.5717cqh) * 0.55 + 45.135cqh);
 }
-/* Stages wider than the picture draw it to their width, from its top. */
-@container hero-stage (min-aspect-ratio: 3800/1994) {
-  .hero-stage > * {
-    --peak-x: 43.153cqw;
-    --peak-y: 12.011cqw;
-    --chimney-x: 23.684cqw;
-  }
-}
-/* The site's gutters, and the header's height. */
-@media (min-width: 640px) {
-  .hero-stage {
-    --margin: 2rem;
-  }
-}
-@media (min-width: 1024px) {
-  .hero-stage {
-    --margin: 3rem;
-    --clear: 5.5rem;
-  }
-}
-@media (min-width: 1280px) {
-  .hero-stage {
-    --margin: 4rem;
-  }
-}
-/* The tall crop (Hero.tsx, TALL), drawn to the stage's height at 50% 60%; the chimney is outside it. */
+/* The tall crop (Hero.tsx, TALL), drawn to the stage's height at 50% 60%. */
 @media (max-aspect-ratio: 3/5) {
   .hero-stage {
     --pos: 50% 60%;
-    --peak-x: calc((100cqw - 75.226cqh) * 0.5 + 15.035cqh);
-    --chimney-x: -100cqw;
-    --tuck: 0.2;
   }
 }
 @media screen and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
   :root[data-motion] .hero-stage {
     --z: 1.04;
-    --sway: 1.5cqw;
-    --sway-y: 0.8cqh;
   }
 }
 /*
@@ -1578,50 +1546,10 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 :root[data-revealed] .hero-stage:not([data-waiting]) .hero-layer {
   transition: opacity 0.5s var(--e-out);
 }
-.hero-name {
-  /* The peak and the chimney after the zoom, and the span the letters may use. */
-  --px: calc(50cqw + (var(--peak-x) - 50cqw) * var(--z));
-  --py: calc(50cqh + (var(--peak-y) - 50cqh) * var(--z));
-  --xl: max(var(--margin), calc(50cqw + (var(--chimney-x) - 50cqw) * var(--z) + var(--sway) + 1rem));
-  --xr: calc(100cqw - var(--margin));
-  /* How far the roof's wedge reaches either side of the peak along the baseline, and where along the word the peak may fall (past E, before G), in em; and how much farther it reaches when the house rises with the pointer. */
-  --reach-l: calc(var(--tuck) * 0.71 / 0.4728);
-  --reach-r: calc(var(--tuck) * 0.71 / 0.1854);
-  --p-min: calc(1.31 + var(--reach-l));
-  --p-max: calc(4.01 - var(--reach-r));
-  --rise-l: calc(var(--sway) + var(--sway-y) / 0.4728);
-  --rise-r: calc(var(--sway) + var(--sway-y) / 0.1854);
-  position: absolute;
-  margin: 0;
-  font-size: min(
-    calc((var(--xr) - var(--xl)) / 6.644),
-    calc((var(--py) - var(--clear)) / (0.71 * (1 - var(--tuck)))),
-    calc((var(--px) - var(--rise-l) - var(--xl)) / var(--p-min)),
-    calc((var(--xr) - var(--px) - var(--rise-r)) / (6.644 - var(--p-max)))
-  );
-  top: calc(var(--py) + var(--tuck) * 0.71em - 0.875em);
-  left: max(
-    var(--xl),
-    calc(var(--px) + var(--rise-r) - var(--p-max) * 1em),
-    min(calc(var(--xr) - 6.644em), calc(var(--px) - var(--rise-l) - var(--p-min) * 1em), calc((var(--xl) + var(--xr) - 6.644em) / 2))
-  );
-}
-@media (max-aspect-ratio: 13/20) {
-  .hero-name {
-    /* How far right of the peak the word starts, in em, so the roof's right slope meets the baseline a hair before E's ink. */
-    --lead: max(0, var(--reach-r) - 0.66);
-    font-size: min(
-      calc((var(--xr) - var(--xl)) / 6.644),
-      calc((var(--py) - var(--clear)) / (0.71 * (1 - var(--tuck)))),
-      calc((var(--xr) - var(--px) - var(--rise-r)) / (6.644 + var(--lead)))
-    );
-    left: max(var(--xl), calc(var(--px) + var(--rise-r) + var(--lead) * 1em), min(calc(var(--xr) - 6.644em), calc((var(--xl) + var(--xr) - 6.644em) / 2)));
-  }
-}
 /*
  * The iris opens from the GTA dot onto the picture, whose planes settle
- * from 112% around that same point (1.8s); the name rises at 0.45s (1.2s),
- * the statement's lines from 0.85s, 0.09s apart, the caption at 1.15s.
+ * from 112% around that same point (1.8s); the statement's lines rise
+ * from 0.85s, 0.09s apart, the caption at 1.15s.
  * After a page transition (data-arrival="route") the same entrance runs
  * sooner, as the cover lifts. All of it waits for data-revealed.
  */
@@ -1635,9 +1563,6 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     transform-origin: var(--iris-x, 50%) var(--iris-y, 50%);
     animation: hero-settle 1.8s var(--ease-out-expo) backwards;
   }
-  :root[data-motion] .hero-heading-line .split-line__inner {
-    animation: line-up 1.2s var(--ease-out-expo) 0.45s both;
-  }
   :root[data-motion] .hero-sub-line .split-line__inner {
     animation: line-up 0.9s var(--ease-out-expo) calc(0.85s + var(--i, 0) * 0.09s) both;
   }
@@ -1647,16 +1572,13 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   :root[data-motion][data-arrival="route"] [data-hero-plate] {
     animation-duration: 1.4s;
   }
-  :root[data-motion][data-arrival="route"] .hero-heading-line .split-line__inner {
-    animation-delay: 0.2s;
-  }
   :root[data-motion][data-arrival="route"] .hero-sub-line .split-line__inner {
     animation-delay: calc(0.5s + var(--i, 0) * 0.07s);
   }
   :root[data-motion][data-arrival="route"] .hero-fig {
     animation-delay: 0.6s;
   }
-  :root[data-motion]:not([data-revealed]) :is([data-hero-plate], .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig) {
+  :root[data-motion]:not([data-revealed]) :is([data-hero-plate], .hero-sub-line .split-line__inner, .hero-fig) {
     animation-play-state: paused;
   }
 }
@@ -3470,7 +3392,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
  * play again (until the next navigation, which happens under the cover).
  */
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-motion][data-returning] :is([data-hero-plate], .hero-heading-line .split-line__inner, .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
+  :root[data-motion][data-returning] :is([data-hero-plate], .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
     animation: none;
   }
 }
