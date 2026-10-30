@@ -292,7 +292,7 @@ export const services: Service[] = [
       askAboutPricing,
     ],
     relatedGuides: ["do-i-need-a-building-permit", "permit-costs-and-timelines"],
-    relatedServices: ["commercial-permits", "legal-basement-permits", "residential-additions"],
+    relatedServices: ["load-bearing-wall-removal", "commercial-permits", "finished-basement-permits"],
     visual: {
       drawing: "interior",
       alt: "Line drawing of an interior floor plan with a wall being removed, marked in red.",
@@ -354,7 +354,7 @@ export const services: Service[] = [
       askAboutPricing,
     ],
     relatedGuides: ["basement-apartment-permits", "do-i-need-a-building-permit", "permit-costs-and-timelines"],
-    relatedServices: ["landlord-permits", "interior-renovation-permits"],
+    relatedServices: ["below-grade-entrance-permits", "finished-basement-permits", "landlord-permits"],
     visual: {
       drawing: "basement",
       alt: "Line drawing of a house section showing a separate basement unit with its own entrance.",
@@ -363,6 +363,252 @@ export const services: Service[] = [
       title: "Legal Basement Apartment Permits in the GTA",
       description:
         "Permit drawings and permit process support for legal basement apartments and second units in the Greater Toronto Area.",
+    },
+  },
+  {
+    slug: "finished-basement-permits",
+    name: "Finished Basement Permits",
+    navLabel: "Finished basements",
+    scope: "More living space for your own household",
+    category: "residential",
+    featured: false,
+    homeRow: false,
+    summary:
+      "Permit drawings for finishing a basement as living space for your own household, with new rooms, a bathroom or a bedroom.",
+    directAnswer:
+      "Finishing a basement with new walls, a bathroom or a bedroom commonly needs a building permit, while purely cosmetic updates may not. We help you find out which applies, design the space and prepare the permit drawings when one is needed.",
+    overview: [
+      "A finished basement adds living space for the people who already live in the house: a family room, an office, a guest bedroom or a bathroom. It is not a separate unit. A basement with its own kitchen and entrance for another household is a second unit, which is reviewed differently (see Legal basement apartments).",
+      "We document the existing basement, design the new layout and work out what the design has to address, such as ceiling heights, bedroom windows, plumbing for a new bathroom, insulation and any posts or beams the layout affects.",
+    ],
+    whoItsFor: [
+      "Homeowners turning an unfinished basement into living space.",
+      "Families adding a bedroom, bathroom or office downstairs.",
+      "Owners who want the basement designed so it could become a second unit later.",
+    ],
+    typicalRequirements: {
+      intro: "Finished basement applications commonly address items such as:",
+      items: [
+        "Existing and proposed basement floor plans.",
+        "Bedroom windows, exits and smoke and carbon monoxide alarms.",
+        "Plumbing information for a new bathroom or laundry.",
+        "Insulation and moisture protection for the foundation walls.",
+        "Structural details where posts, beams or walls are moved.",
+      ],
+      qualifier,
+    },
+    process: coreProcess("basement"),
+    costFactors: sharedCostFactors,
+    timelineFactors: sharedTimelineFactors,
+    faqs: [
+      {
+        question: "Do I need a permit to finish my basement?",
+        answer: [
+          "Finishing a basement often involves work that needs a permit, such as new walls and rooms, a bathroom, changes to the structure or to heating and ventilation. Replacing finishes alone may not. Your building department confirms what your project needs.",
+        ],
+      },
+      {
+        question: "What is the difference between a finished basement and a legal basement apartment?",
+        answer: [
+          "A finished basement is more living space for your own household. A basement apartment is a separate unit for another household, with its own kitchen and entrance, and it has to meet further Building Code, Fire Code and zoning requirements. If you might rent the space later, tell us at the start so the design does not close that door.",
+        ],
+      },
+      askAboutPricing,
+    ],
+    relatedGuides: ["do-i-need-a-building-permit", "basement-apartment-permits", "permit-costs-and-timelines"],
+    relatedServices: ["legal-basement-permits", "below-grade-entrance-permits", "load-bearing-wall-removal"],
+    visual: {
+      drawing: "basement",
+      alt: "Line drawing of a house section with a finished basement.",
+    },
+    seo: {
+      title: "Finished Basement Permits in the GTA",
+      description:
+        "Find out when finishing a basement needs a building permit, and get permit drawings for basement finishing projects in the Greater Toronto Area.",
+    },
+  },
+  {
+    slug: "below-grade-entrance-permits",
+    name: "Below-Grade Entrance Permits",
+    navLabel: "Below-grade entrances",
+    scope: "A separate stair and door down to the basement",
+    category: "residential",
+    featured: false,
+    homeRow: false,
+    summary:
+      "Permit drawings for a new below-grade entrance: a stairwell dug down beside the house to a new door in the basement wall.",
+    directAnswer:
+      "A below-grade entrance cuts a new opening in the foundation wall and builds a stairwell down to it, so it generally needs a building permit, and zoning rules can limit where it may go. We design the entrance, work out its structure and prepare the permit drawings.",
+    overview: [
+      "A separate basement entrance is often the first step toward a basement apartment, and it is also useful on its own, for access to a basement workshop, office or family space. Because it changes the foundation and the yard, it is reviewed for both its structure and its location on the lot.",
+      "We check the side and rear yards against the zoning considerations we can identify, design the stair, retaining walls and new opening, and coordinate any structural input the foundation needs.",
+    ],
+    whoItsFor: [
+      "Homeowners adding a separate side or rear entrance to the basement.",
+      "Owners preparing a basement for a future second unit.",
+      "Owners who want to replace or enlarge an existing basement stairwell.",
+    ],
+    typicalRequirements: {
+      intro: "Below-grade entrance applications commonly include items such as:",
+      items: [
+        "A site plan showing the entrance, the house, property lines and setbacks.",
+        "Plans and a section through the stairwell and the new door.",
+        "Structural details for the opening in the foundation wall and the retaining walls.",
+        "Guard, handrail and stair details.",
+        "Drainage at the bottom of the stairwell.",
+      ],
+      qualifier,
+    },
+    process: coreProcess("house and yard"),
+    costFactors: sharedCostFactors,
+    timelineFactors: sharedTimelineFactors,
+    faqs: [
+      {
+        question: "Do I need a permit for a separate basement entrance?",
+        answer: [
+          "Cutting a new opening in a foundation wall and building a stairwell to it is structural work, and it commonly needs a building permit in GTA municipalities. Your local building department confirms what your project needs.",
+        ],
+      },
+      {
+        question: "Can a below-grade entrance go in a side yard?",
+        answer: [
+          "It depends on your municipality's zoning by-law and the width of the side yard. Some by-laws limit entrances in side yards or set minimum clearances. If the location does not meet the by-law, a minor variance may be needed first. We flag this when we assess your property.",
+        ],
+      },
+      askAboutPricing,
+    ],
+    relatedGuides: ["basement-apartment-permits", "do-i-need-a-building-permit", "permit-costs-and-timelines"],
+    relatedServices: ["legal-basement-permits", "finished-basement-permits", "residential-additions"],
+    visual: {
+      drawing: "basement",
+      alt: "Line drawing of a house section with a separate stair down to a basement entrance.",
+    },
+    seo: {
+      title: "Below-Grade Entrance Permits in the GTA",
+      description:
+        "Permit drawings for separate basement entrances and below-grade stairwells in the Greater Toronto Area, from the first site check to municipal review.",
+    },
+  },
+  {
+    slug: "load-bearing-wall-removal",
+    name: "Load-Bearing Wall Removal Permits",
+    navLabel: "Load-bearing wall removal",
+    scope: "Opening up a floor plan with a new beam",
+    category: "residential",
+    featured: false,
+    homeRow: false,
+    summary:
+      "Structural design and permit drawings for removing or moving a load-bearing wall and carrying the load on a new beam.",
+    directAnswer:
+      "Removing a load-bearing wall means the floors and roof above need a new way down to the foundation, usually a beam and posts, so it commonly needs a building permit. We work out the structure, design the new beam, posts and footings and prepare the permit drawings.",
+    overview: [
+      "Opening a kitchen to the living room or joining two small rooms is one of the most common renovations, and one of the few where the drawings are mostly about structure. The load the wall carried has to be traced from the roof down to the footings, and every part of that path sized for it.",
+      "We confirm which walls are load-bearing, design the beam and its supports so the opening is as clean as the structure allows (including flush beams hidden in the ceiling where they work), and show how the load reaches the foundation.",
+    ],
+    whoItsFor: [
+      "Homeowners opening up a kitchen, living or dining area.",
+      "Owners combining rooms or moving walls in a renovation.",
+      "Contractors who need structural drawings and a permit for a client's wall removal.",
+    ],
+    typicalRequirements: {
+      intro: "Wall removal applications commonly include items such as:",
+      items: [
+        "Existing and proposed floor plans showing the wall and the new opening.",
+        "The size and material of the new beam, posts and connections.",
+        "How the load reaches the foundation, including any new footings.",
+        "Notes on temporary support while the wall is taken out.",
+      ],
+      qualifier,
+    },
+    process: coreProcess("house"),
+    costFactors: sharedCostFactors,
+    timelineFactors: sharedTimelineFactors,
+    faqs: [
+      {
+        question: "Do I need a permit to remove a load-bearing wall?",
+        answer: [
+          "Removing or moving a load-bearing wall changes the structure of the house, and it commonly requires a building permit in GTA municipalities. Your local building department confirms what your project needs.",
+        ],
+      },
+      {
+        question: "How do I know if a wall is load-bearing?",
+        answer: [
+          "Clues include walls that run across the floor joists, walls near the middle of the house and walls with another wall or a beam directly above or below. None of these is certain on its own, so we confirm it from the structure before anything is drawn or removed.",
+        ],
+      },
+      askAboutPricing,
+    ],
+    relatedGuides: ["do-i-need-a-building-permit", "permit-costs-and-timelines"],
+    relatedServices: ["interior-renovation-permits", "finished-basement-permits", "residential-additions"],
+    visual: {
+      drawing: "interior",
+      alt: "Line drawing of an interior floor plan with a wall being removed, marked in red.",
+    },
+    seo: {
+      title: "Load-Bearing Wall Removal Permits in the GTA",
+      description:
+        "Structural design and permit drawings for removing a load-bearing wall in the Greater Toronto Area: beam, posts and footings, ready for municipal review.",
+    },
+  },
+  {
+    slug: "detached-garage-permits",
+    name: "Detached Garage Permits",
+    navLabel: "Detached garages",
+    scope: "New detached garages and accessory buildings",
+    category: "residential",
+    featured: false,
+    homeRow: false,
+    summary:
+      "Design and permit drawings for new detached garages and larger accessory buildings on residential lots.",
+    directAnswer:
+      "A new detached garage generally needs a building permit, and zoning rules decide where it can sit on your lot and how big and tall it can be. We design the garage, check it against the zoning considerations we can identify and prepare the permit drawings.",
+    overview: [
+      "A detached garage is a small building of its own, with its own foundation, structure and roof, so it is reviewed against the Building Code and the zoning by-law. Zoning commonly controls its setbacks from the property lines, its height and how much of the lot it covers.",
+      "We design the garage to suit the house and the lot, coordinate structural input for the foundation and framing, and tell you early if the design would need a minor variance.",
+    ],
+    whoItsFor: [
+      "Homeowners building a new detached garage.",
+      "Owners replacing an old garage with a larger one.",
+      "Owners planning a workshop, studio or storage building.",
+    ],
+    typicalRequirements: {
+      intro: "Detached garage applications commonly include items such as:",
+      items: [
+        "A site plan showing the garage, the house, property lines and setbacks.",
+        "Floor plan, elevations and a building section.",
+        "Foundation, framing and roof details.",
+        "Grading and drainage information, where the municipality asks for it.",
+      ],
+      qualifier,
+    },
+    process: coreProcess("lot"),
+    costFactors: sharedCostFactors,
+    timelineFactors: sharedTimelineFactors,
+    faqs: [
+      {
+        question: "Does a detached garage need a permit?",
+        answer: [
+          "A new garage generally does. Some very small accessory buildings may not need a building permit, but zoning rules such as setbacks and lot coverage can still apply. Your building department confirms what your project needs.",
+        ],
+      },
+      {
+        question: "Can I add living space above a detached garage?",
+        answer: [
+          "Living space in or above a garage is treated differently from a garage, and a separate unit there is a garden or laneway suite, which has its own zoning and Building Code requirements. Tell us what you have in mind and we will check what your municipality allows.",
+        ],
+      },
+      askAboutPricing,
+    ],
+    relatedGuides: ["do-i-need-a-building-permit", "permit-costs-and-timelines"],
+    relatedServices: ["custom-home-permits", "deck-permits", "residential-additions"],
+    visual: {
+      drawing: "plan",
+      alt: "Line drawing of a site plan with a detached garage at the back of the lot.",
+    },
+    seo: {
+      title: "Detached Garage Permits in the GTA",
+      description:
+        "Design and permit drawings for new detached garages and accessory buildings in the Greater Toronto Area, with zoning checked before drawing.",
     },
   },
   {
