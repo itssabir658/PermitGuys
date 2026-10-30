@@ -4,6 +4,7 @@ import { Hero } from "@/components/home/Hero";
 import { HomeMotion } from "@/components/home/HomeMotion";
 import { Intro } from "@/components/home/Intro";
 import { Making } from "@/components/home/Making";
+import { Praise } from "@/components/home/Praise";
 import { Services } from "@/components/home/Services";
 import { Story } from "@/components/home/Story";
 import { Values } from "@/components/home/Values";
@@ -27,7 +28,8 @@ export const metadata = pageMetadata({
 export const revalidate = 86400;
 
 /**
- * The homepage, section by section: hero, intro orbit, the story (one
+ * The homepage, section by section: hero, intro orbit, praise (reviews,
+ * Mike Holmes and the companies worked with), the story (one
  * house from idea to permit), works, the making of a house (one client
  * house from its site to its permit set), values, services, contact. HomeMotion drives all of it
  * from the scroll engine, including the page ground (stone under Works,
@@ -39,6 +41,7 @@ export default async function HomePage() {
     <>
       <Hero />
       <Intro />
+      <Praise reviews={reviews} />
       <Story />
       <Works />
       <Making />
