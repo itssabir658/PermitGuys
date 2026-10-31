@@ -3,67 +3,77 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 /*
  * The Mapbox map behind ProjectsMap, loaded only once its frame nears the
- * screen. Mapbox's dark style redrawn in the site's palette (ink land,
- * deeper water, roads and labels in faint ivory and stone) with every
- * project as a dot in the logo's red over a soft red glow. When the frame
- * comes into view the camera settles from over the lake onto the GTA while
- * the dots come up in a scattered order; with reduced motion they are
- * simply there. Scrolling the page never moves the map: it zooms with
- * Ctrl or ⌘ and the wheel, or two fingers on a phone (cooperativeGestures),
- * and never closer than a neighbourhood (maxZoom), as the points are blurred
- * to about 500m anyway.
+ * screen. Mapbox Standard in its monochrome daylight theme: pale streets,
+ * soft shadows and the city's buildings in 3D, no shops or transit to
+ * compete. The projects sit on it as the site's own marks: where they are
+ * close together they gather into an ink circle with their number in
+ * ivory, which opens up on a click; one alone is a red point ringed in
+ * white. As the frame comes into view the camera rises from straight
+ * above the lake into a tilted view of the GTA, and the marks fade up;
+ * with reduced motion it is simply there. Scrolling the page never moves
+ * the map: it zooms with Ctrl or ⌘ and the wheel, or two fingers on a
+ * phone (cooperativeGestures), and never closer than a neighbourhood
+ * (maxZoom), as the points are blurred to about 500m anyway.
  */
 
 const INK = "#171716";
-const WATER = "#0d0d0c";
+const IVORY = "#f4f1eb";
 const RED = "#ee352f";
+const FONT = ["DIN Pro Medium", "Arial Unicode MS Regular"];
 /** The GTA, from Burlington to Oshawa and up to Newmarket. */
 const GTA: [[number, number], [number, number]] = [
-  [-80.05, 43.28],
-  [-78.75, 44.12],
+  [-79.95, 43.3],
+  [-78.85, 44.0],
 ];
-
-function restyle(map: mapboxgl.Map) {
-  for (const layer of map.getStyle()?.layers ?? []) {
-    const id = layer.id;
-    try {
-      if (layer.type === "background") map.setPaintProperty(id, "background-color", INK);
-      else if (layer.type === "fill" && /water/.test(id)) map.setPaintProperty(id, "fill-color", WATER);
-      else if (layer.type === "fill") {
-        map.setPaintProperty(id, "fill-color", INK);
-        map.setPaintProperty(id, "fill-opacity", 0.6);
-      }
-      else if (layer.type === "line" && /water/.test(id)) map.setPaintProperty(id, "line-color", WATER);
-      // The border across the lake would read as a line through the map: country lines go, provincial ones stay faint.
-      else if (layer.type === "line" && /admin-0/.test(id)) map.setLayoutProperty(id, "visibility", "none");
-      else if (layer.type === "line" && /admin|boundary/.test(id)) map.setPaintProperty(id, "line-color", "rgba(244,241,235,0.1)");
-      else if (layer.type === "line") map.setPaintProperty(id, "line-color", "rgba(244,241,235,0.075)");
-      else if (layer.type === "symbol") {
-        if (/poi|transit|road-number|shield|airport/.test(id)) map.setLayoutProperty(id, "visibility", "none");
-        else {
-          map.setPaintProperty(id, "text-color", /settlement-major|place-city/.test(id) ? "#cfc7ba" : "#8f877b");
-          map.setPaintProperty(id, "text-halo-color", INK);
-        }
-      }
-    } catch {
-      // A layer without that property keeps its own.
-    }
-  }
-}
+/**
+ * The municipalities the firm works with (recognition.ts), named on the map
+ * in the site's own type in place of Mapbox's place names, which would sit
+ * over the circles: the circles are drawn over these instead. Aurora, next
+ * to Newmarket, is left to the intro's list.
+ */
+const PLACES: [string, number, number][] = [
+  ["Toronto", -79.385, 43.655],
+  ["Mississauga", -79.64, 43.59],
+  ["Oakville", -79.69, 43.45],
+  ["Brampton", -79.76, 43.73],
+  ["Markham", -79.33, 43.88],
+  ["Newmarket", -79.46, 44.05],
+  ["Oshawa", -78.86, 43.9],
+  ["Burlington", -79.8, 43.33],
+  ["Hamilton", -79.87, 43.25],
+];
+/** The settled view: tilted, turned a little, so the lake lies along the bottom (less tilted on phones, where the frame is taller than wide). */
+const BEARING = -16;
 
 /** Mounts the map in `el`; returns a function that removes it. */
 export function mountProjectsMapbox(el: HTMLElement, token: string, points: [number, number][], onReady: () => void) {
   mapboxgl.accessToken = token;
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Wide, the trust panel sits over the map's left side (globals.css), so the GTA is framed to its right.
+  const wide = el.clientWidth >= 1024;
+  const narrow = el.clientWidth < 640;
+  const pitch = narrow ? 30 : 48;
+  const padding = wide ? { top: 40, bottom: 40, left: 360, right: 40 } : 16;
   const map = new mapboxgl.Map({
     container: el,
-    style: "mapbox://styles/mapbox/dark-v11",
+    style: "mapbox://styles/mapbox/standard",
+    config: {
+      basemap: {
+        theme: "monochrome",
+        lightPreset: "day",
+        showPointOfInterestLabels: false,
+        showTransitLabels: false,
+        showPlaceLabels: false,
+        showRoadLabels: false,
+        showPedestrianRoads: false,
+        show3dObjects: true,
+      },
+    },
     bounds: GTA,
-    fitBoundsOptions: { padding: 24 },
-    minZoom: 4.5,
+    fitBoundsOptions: { padding },
+    minZoom: 5,
     maxZoom: 12.5,
     cooperativeGestures: true,
-    dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
     attributionControl: true,
@@ -72,63 +82,125 @@ export function mountProjectsMapbox(el: HTMLElement, token: string, points: [num
   map.touchZoomRotate.disableRotation();
   map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
-  // Each point carries its own moment in the entrance, 0–1, so the dots come up scattered rather than in a sweep.
   const data = {
     type: "FeatureCollection" as const,
-    features: points.map(([lon, lat], i) => ({ type: "Feature" as const, properties: { r: ((i * 0.6180339887) % 1) * 0.85 }, geometry: { type: "Point" as const, coordinates: [lon, lat] } })),
+    features: points.map(([lon, lat]) => ({ type: "Feature" as const, properties: {}, geometry: { type: "Point" as const, coordinates: [lon, lat] } })),
   };
 
   let frame = 0;
   map.on("style.load", () => {
-    restyle(map);
-    map.addSource("projects", { type: "geojson", data });
-    // Under the place names, so a city's name always reads over its projects.
-    const labels = map.getStyle()?.layers.find((l) => l.type === "symbol")?.id;
+    map.addSource("projects", { type: "geojson", data, cluster: true, clusterRadius: narrow ? 34 : 44, clusterMaxZoom: 11 });
+    map.addSource("places", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: PLACES.map(([name, lon, lat]) => ({ type: "Feature", properties: { name }, geometry: { type: "Point", coordinates: [lon, lat] } })) },
+    });
     map.addLayer({
-      id: "projects-glow",
-      type: "heatmap",
-      source: "projects",
-      maxzoom: 12,
-      paint: {
-        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 6, 10, 9, 22, 12, 34],
-        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 6, 0.6, 12, 1.2],
-        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"], 0, "rgba(238,53,47,0)", 0.3, "rgba(238,53,47,0.18)", 0.7, "rgba(238,53,47,0.38)", 1, "rgba(255,120,96,0.55)"],
-        "heatmap-opacity": 0,
+      id: "places",
+      type: "symbol",
+      source: "places",
+      slot: "top",
+      layout: {
+        "text-field": ["upcase", ["get", "name"]],
+        "text-font": FONT,
+        "text-size": 11,
+        "text-letter-spacing": 0.18,
+        "text-anchor": "top",
+        "text-offset": [0, 2.5],
+        "text-allow-overlap": true,
+        // On a phone the circles fill the frame, so the names would only be covered.
+        visibility: narrow ? "none" : "visible",
       },
-    }, labels);
+      paint: { "text-color": "#5e5952", "text-halo-color": "#f8f6f2", "text-halo-width": 1.5, "text-emissive-strength": 1 },
+    });
+    // Standard lights its layers; marks of the site's own colours glow at their own strength (emissive), so daylight never greys them.
     map.addLayer({
-      id: "projects-dots",
+      id: "projects-groups",
       type: "circle",
       source: "projects",
+      slot: "top",
+      filter: ["has", "point_count"],
       paint: {
-        "circle-color": RED,
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.6, 9, 2.8, 12, 4.5],
-        "circle-stroke-color": INK,
-        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.3, 12, 1],
+        "circle-color": INK,
+        "circle-radius": narrow ? ["step", ["get", "point_count"], 11, 10, 14, 40, 18, 100, 22] : ["step", ["get", "point_count"], 13, 10, 17, 40, 22, 100, 28],
+        "circle-stroke-color": IVORY,
+        "circle-stroke-width": 2,
+        "circle-emissive-strength": 1,
+        "circle-pitch-alignment": "viewport",
         "circle-opacity": 0,
         "circle-stroke-opacity": 0,
       },
-    }, labels);
+    });
+    map.addLayer({
+      id: "projects-group-counts",
+      type: "symbol",
+      source: "projects",
+      slot: "top",
+      filter: ["has", "point_count"],
+      layout: {
+        "text-field": ["get", "point_count_abbreviated"],
+        "text-font": FONT,
+        "text-size": ["step", ["get", "point_count"], 11, 10, 12, 100, 14],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: { "text-color": IVORY, "text-emissive-strength": 1, "text-opacity": 0 },
+    });
+    map.addLayer({
+      id: "projects-one",
+      type: "circle",
+      source: "projects",
+      slot: "top",
+      filter: ["!", ["has", "point_count"]],
+      paint: {
+        "circle-color": RED,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 4, 12, 6.5],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 2,
+        "circle-emissive-strength": 1,
+        "circle-pitch-alignment": "viewport",
+        "circle-opacity": 0,
+        "circle-stroke-opacity": 0,
+      },
+    });
   });
 
-  // The entrance, once the map has drawn: the dots and their glow over 1.8s, the camera settling over 2.6s.
+  // A group opens up where it was clicked.
+  map.on("click", "projects-groups", (e) => {
+    const f = e.features?.[0];
+    const id = f?.properties?.cluster_id;
+    const src = map.getSource("projects") as mapboxgl.GeoJSONSource | undefined;
+    if (!f || id == null || !src) return;
+    src.getClusterExpansionZoom(id, (err, zoom) => {
+      if (err || zoom == null) return;
+      map.easeTo({ center: (f.geometry as GeoJSON.Point).coordinates as [number, number], zoom: Math.min(zoom + 0.2, 12.5), duration: still ? 0 : 900 });
+    });
+  });
+  map.on("mouseenter", "projects-groups", () => (map.getCanvas().style.cursor = "pointer"));
+  map.on("mouseleave", "projects-groups", () => (map.getCanvas().style.cursor = ""));
+
+  // The entrance, once the map has drawn: the camera rises into the tilted view over 3.2s, the marks fade up over its second half.
   map.once("load", () => {
     onReady();
     const show = (t: number) => {
-      const opacity: mapboxgl.ExpressionSpecification = ["case", ["<", ["get", "r"], t], 1, 0];
-      map.setPaintProperty("projects-dots", "circle-opacity", opacity);
-      map.setPaintProperty("projects-dots", "circle-stroke-opacity", opacity);
-      map.setPaintProperty("projects-glow", "heatmap-opacity", Math.min(1, t) * 0.9);
+      for (const id of ["projects-groups", "projects-one"]) {
+        map.setPaintProperty(id, "circle-opacity", t);
+        map.setPaintProperty(id, "circle-stroke-opacity", t);
+      }
+      map.setPaintProperty("projects-group-counts", "text-opacity", t);
     };
-    if (still) return show(1);
-    const center = map.getCenter();
-    const zoom = map.getZoom();
-    map.jumpTo({ center: [center.lng + 0.25, center.lat - 0.35], zoom: zoom - 0.9 });
-    map.easeTo({ center, zoom, duration: 2600, easing: (x) => 1 - (1 - x) ** 4 });
+    // Framed for the tilt, so the whole GTA is in view once the camera has settled.
+    const cam = map.cameraForBounds(GTA, { padding, pitch, bearing: BEARING });
+    const center = (cam?.center as mapboxgl.LngLatLike | undefined) ?? map.getCenter();
+    const zoom = cam?.zoom ?? map.getZoom();
+    if (still) {
+      map.jumpTo({ center, zoom, pitch, bearing: BEARING });
+      return show(1);
+    }
+    map.flyTo({ center, zoom, pitch, bearing: BEARING, duration: 3200, curve: 1.1, easing: (x) => 1 - (1 - x) ** 3 });
     const t0 = performance.now();
     const tick = (now: number) => {
-      const t = Math.min(1, (now - t0) / 1800);
-      show(t * 1.0001);
+      const t = Math.min(1, Math.max(0, (now - t0 - 1400) / 1200));
+      show(t);
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);

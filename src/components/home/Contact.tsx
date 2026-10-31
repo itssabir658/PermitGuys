@@ -11,6 +11,7 @@ import type { ReviewSummary } from "@/lib/reviews";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ProjectsMap } from "@/components/ui/ProjectsMap";
 import { projectPoints } from "@/content/project-points";
+import { projectsMapStats } from "@/content/projects-map";
 
 const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZone: "UTC" });
 
@@ -157,7 +158,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
         {site.projectsMap ? (
           <div data-reveal="" className="contact-map">
             <h3 className="text-label text-ink-muted">{site.projectsMap.title}</h3>
-            <ProjectsMap points={projectPoints} permits={site.projectsMap.permits} className="mt-5" />
+            <ProjectsMap points={projectPoints} stats={projectsMapStats()} className="mt-5" />
           </div>
         ) : null}
       </Container>

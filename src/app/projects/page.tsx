@@ -8,6 +8,7 @@ import { Placeholder } from "@/components/ui/Placeholder";
 import { Plate } from "@/components/ui/Plate";
 import { ProjectsMap } from "@/components/ui/ProjectsMap";
 import { projectPoints } from "@/content/project-points";
+import { projectsMapStats } from "@/content/projects-map";
 import { Section } from "@/components/ui/Section";
 import { clientProjects } from "@/content/imagery";
 import { site } from "@/content/site";
@@ -75,7 +76,7 @@ export default function ProjectsPage() {
           <h2 id="map-heading" data-reveal-lines="" className="mt-6 max-w-[22ch] font-display text-display-md text-charcoal-900">
             {site.projectsMap.title}
           </h2>
-          <ProjectsMap points={projectPoints} permits={site.projectsMap.permits} className="mt-10" />
+          <ProjectsMap points={projectPoints} stats={projectsMapStats()} className="mt-10" />
         </Section>
       ) : null}
       <Section labelledBy="case-studies-heading" tone="light">
