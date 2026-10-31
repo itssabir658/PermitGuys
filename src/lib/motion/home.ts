@@ -160,6 +160,8 @@ export interface OrbitPath {
   vh: number;
   /** Each slot's size in px. */
   sizes: number[];
+  /** Each municipal seal's diameter in px (SEALS). */
+  seal: number;
   /** Half the height of the copy at the centre, in px (0 if unknown): on portrait screens a study shows only once clear of it. */
   clear: number;
   /** The ring's vertical centre from the stage's centre, and its half height, in px. */
@@ -203,7 +205,8 @@ export function orbitPath(vw: number, h: number, clear = 0, vh = h): OrbitPath {
     ys[i] = cy + ry * sgnSqrt(Math.sin(a));
     if (i) cum[i] = cum[i - 1] + Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]);
   }
-  return { portrait, h, vh, sizes, clear, cy, ry, xs, ys, cum };
+  const seal = portrait ? SEALS.p * Math.min(vw, 0.5 * h) : SEALS.d * h;
+  return { portrait, h, vh, sizes, seal, clear, cy, ry, xs, ys, cum };
 }
 
 /** The point at `u` of the way along the path (any number; it wraps), in px from the stage's centre. */
@@ -252,6 +255,11 @@ export function orbitItem(path: OrbitPath, slot: number, e: number, exit: number
   const k = mix(1.8, 1, arrive) * breathe * (1 + (ORBIT.exitRadius - 1) * ease.power2In(exit));
   const x = x0 * k;
   const y = path.cy + (y0 - path.cy) * k;
+  return { x, y, opacity: arrive * ringFade(path, y, y0, size, exit, copy), imgScale: mix(1.18, 1, arrive), arrive };
+}
+
+/** How much of a place on the ring shows: on portrait screens only clear of the copy (orbitItem), and never at the stage's lower edge during the fling. */
+function ringFade(path: OrbitPath, y: number, y0: number, size: number, exit: number, copy: number) {
   let side = 1;
   if (path.portrait) {
     const clearOfCopy = path.clear > 0 ? smoothstep(Math.abs(y) - size / 2 - path.clear, 4, 52) : smoothstep(Math.abs(y0 - path.cy) / path.ry, 0.45, 0.65);
@@ -259,7 +267,53 @@ export function orbitItem(path: OrbitPath, slot: number, e: number, exit: number
   }
   // The band widens with the fling, so a study dissolves over about a quarter of a screen rather than in one notch.
   const edge = 1 - smoothstep(y + size / 2, path.h / 2 - ORBIT_EDGE_FADE * (1 + 3 * exit), path.h / 2);
-  return { x, y, opacity: arrive * side * edge, imgScale: mix(1.18, 1, arrive), arrive };
+  return side * edge;
+}
+
+/**
+ * The ring turns: with the last paragraph (the municipalities) the six
+ * pictures give way to ten municipal seals, round, each the logo of a
+ * municipality the firm works with. The change runs round the ring as a
+ * wave, clockwise from the top, starting `beforeCopy` screens ahead of the
+ * paragraph (as the one before it leaves) and taking `wave` screens to go
+ * round: at each place the picture shrinks away over `leave` screens and
+ * the seal opens over `each`, `lag` behind it, so the two never sit on one
+ * another. The seals travel the same path, a little faster than the
+ * pictures did (`turnsPerScreen`), so on a phone, where only the top and
+ * bottom of the ring show beside the copy, every seal passes through view.
+ * d and p size them as ORBIT_SLOTS does.
+ */
+export const SEALS = { beforeCopy: 0.92, wave: 0.4, leave: 0.24, each: 0.32, lag: 0.15, turnsPerScreen: 0.12, d: 0.17, p: 0.27, from: 0.55 };
+
+/** When the ring starts to turn, in the intro's screens (e), with the last paragraph at copyIn's end. */
+export function sealsStart(copyIn: readonly number[]) {
+  return (copyIn[copyIn.length - 1] ?? ORBIT.firstCopy) - SEALS.beforeCopy;
+}
+
+/** How far round the ring the turn is at `e`, 0–1: whole once the last seal has opened. */
+export function sealsTurn(e: number, start: number) {
+  return tween(e, start, SEALS.wave + SEALS.lag + SEALS.each);
+}
+
+/** A place on the ring, 0–1 from the top clockwise, as the wave reads it. */
+const ringPlace = (u: number) => ((u % 1) + 1) % 1;
+
+/** How far picture `slot` has given way to the seals at `e`, 0–1 (its place fixed where the turn starts, so the wave never jumps as the ring travels). */
+export function orbitLeave(slot: number, e: number, start: number) {
+  const place = ringPlace(ORBIT_SLOTS[slot].u + start * ORBIT.turnsPerScreen);
+  return tween(e, start + place * SEALS.wave, SEALS.leave, ease.power2Out);
+}
+
+/** Where seal `i` of `count` sits and how much of it shows: it opens in place, travels the ring, and is flung out with it (exit), as the pictures are. */
+export function sealItem(path: OrbitPath, i: number, count: number, e: number, exit: number, copy: number, start: number) {
+  const u = (i + 0.5) / count;
+  const [x0, y0] = pathAt(path, u + (e - start) * SEALS.turnsPerScreen);
+  const arrive = tween(e, start + u * SEALS.wave + SEALS.lag, SEALS.each, ease.power3Out);
+  const breathe = 1 + 0.03 * Math.sin(e * 1.7 + i * 1.1);
+  const k = breathe * (1 + (ORBIT.exitRadius - 1) * ease.power2In(exit));
+  const x = x0 * k;
+  const y = path.cy + (y0 - path.cy) * k;
+  return { x, y, opacity: arrive * ringFade(path, y, y0, path.seal, exit, copy), scale: mix(SEALS.from, 1, arrive), arrive };
 }
 
 /**
@@ -968,10 +1022,11 @@ export function heroPartWay(scroll: number, top: number, vh: number) {
   return heroState(scroll, top, vh).subRoll.some((y) => lineCut(y));
 }
 
-/** The intro at its sso `s`, with `lines[i]` lines in paragraph i: a line part way through its mask, or the ring part way through its fling. */
-export function introPartWay(s: number, lines: readonly number[]) {
+/** The intro at its sso `s`, with `lines[i]` lines in paragraph i: a line part way through its mask, or the ring part way through its fling, or (with `seals`) through its turn to the seals. */
+export function introPartWay(s: number, lines: readonly number[], seals = false) {
   const { copyIn, exitStart, sectionVh } = introPhases(lines.length);
   const { e, exit } = introProgress(s, sectionVh / 100, exitStart);
+  if (seals && partWay(sealsTurn(e, sealsStart(copyIn)))) return true;
   return partWay(exit) || lines.some((count, i) => anyOf(count, (j) => lineCut(introLine(e, copyIn[i], j))));
 }
 

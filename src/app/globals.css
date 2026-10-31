@@ -1831,6 +1831,38 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   opacity: 0;
   transform: translate(-50%, -50%);
 }
+/*
+ * The municipalities' seals (Intro.tsx, SEALS): round paper seals with a
+ * second ring inside the edge, each logo in the ink of the page, as the
+ * logo rows draw them.
+ */
+.intro-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--color-stone-50);
+  box-shadow:
+    0 0 0 1px rgb(23 23 22 / 0.2),
+    inset 0 0 0 calc(var(--size) * 0.045) var(--color-stone-50),
+    inset 0 0 0 calc(var(--size) * 0.045 + 1px) rgb(23 23 22 / 0.14),
+    0 1.25rem 2.5rem -1.5rem rgb(23 23 22 / 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -50%);
+}
+.intro-seal__mark {
+  display: block;
+  max-width: none;
+  object-fit: contain;
+  filter: brightness(0);
+  opacity: 0.78;
+}
 /* The paragraphs avoid a lone last word; from tablets up their lines are balanced. */
 .intro-copy {
   text-wrap: pretty;
@@ -1861,7 +1893,8 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     gap: clamp(0.5rem, 1.5vw, 1rem);
     padding: 0 1.25rem 5rem;
   }
-  .intro-orbit__item {
+  .intro-orbit__item,
+  .intro-seal {
     position: relative;
     left: auto;
     top: auto;
@@ -1869,7 +1902,13 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     height: auto;
     aspect-ratio: 1;
     opacity: 1;
+    visibility: visible;
     transform: none;
+  }
+  .intro-seals {
+    flex-wrap: wrap;
+    margin-top: -3.5rem;
+    --size: clamp(56px, 9vw, 112px);
   }
 }
 :root:not([data-motion]) .intro-orbit {
@@ -1880,7 +1919,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   gap: clamp(0.5rem, 1.5vw, 1rem);
   padding: 0 1.25rem 5rem;
 }
-:root:not([data-motion]) .intro-orbit__item {
+:root:not([data-motion]) :is(.intro-orbit__item, .intro-seal) {
   position: relative;
   left: auto;
   top: auto;
@@ -1888,7 +1927,13 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   height: auto;
   aspect-ratio: 1;
   opacity: 1;
+  visibility: visible;
   transform: none;
+}
+:root:not([data-motion]) .intro-seals {
+  flex-wrap: wrap;
+  margin-top: -3.5rem;
+  --size: clamp(56px, 9vw, 112px);
 }
 
 /* ---- Homepage: story (Story.tsx) ---- */
@@ -3651,9 +3696,230 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   }
 }
 
-/* ---- Homepage: municipalities, under the title block (Contact.tsx) ---- */
-.contact-places {
+/* ---- Homepage: the projects map, under the title block (Contact.tsx) ---- */
+.contact-map {
   grid-column: 1 / -1;
+}
+
+/*
+ * The projects map (ProjectsMap.tsx): a sheet ruled as the title block is,
+ * a light map inside, and the trust panel: over the map's left side on wide
+ * screens, above it as a ruled strip on narrower ones.
+ */
+.projects-map__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.projects-map__frame {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--color-stone-100);
+  border: 1px solid rgb(23 23 22 / 0.55);
+}
+@media (min-width: 640px) {
+  .projects-map__frame {
+    aspect-ratio: 4 / 3;
+  }
+}
+@media (min-width: 1024px) {
+  .projects-map__frame {
+    aspect-ratio: 16 / 7;
+  }
+}
+/* Mapbox sets its container relative; the frame's absolute fill wins. */
+.projects-map__canvas,
+.projects-map__canvas.mapboxgl-map {
+  position: absolute;
+  inset: 0;
+}
+.projects-map__cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition:
+    opacity 0.9s var(--e-out),
+    visibility 0s linear 0.9s;
+}
+.projects-map__cover.is-gone {
+  opacity: 0;
+  visibility: hidden;
+}
+/* A faint survey grid, as on the story's drawing sheet. */
+.projects-map__cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(23 23 22 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(23 23 22 / 0.06) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  background-position: center;
+}
+.projects-map__field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.projects-map__legend {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  padding: 0.45rem 0.65rem;
+  pointer-events: none;
+  background: rgb(248 246 242 / 0.88);
+  box-shadow: 0 0 0 1px rgb(23 23 22 / 0.18);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+.projects-map__dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--color-brand-400);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgb(23 23 22 / 0.15);
+}
+.projects-map__group {
+  display: inline-grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-left: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-ink);
+  box-shadow: 0 0 0 2px var(--color-ivory);
+  color: var(--color-ivory);
+  font-size: 0.5625rem;
+  letter-spacing: 0;
+}
+/* The panel: the permits figure large, then the other counts as ruled rows. */
+.projects-map__panel {
+  order: -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-block: 1px solid rgb(23 23 22 / 0.55);
+}
+.projects-map__lead {
+  grid-column: 1 / -1;
+  padding: 1rem 0 1.1rem;
+  border-bottom: 1px solid rgb(23 23 22 / 0.16);
+}
+.projects-map__row {
+  padding: 0.8rem 0.75rem 0.9rem 0;
+  border-bottom: 1px solid rgb(23 23 22 / 0.16);
+}
+.projects-map__row:last-child {
+  border-bottom: 0;
+}
+.projects-map__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.projects-map__figure {
+  margin-top: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(3.5rem, 2.4rem + 4vw, 5.75rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+.projects-map__value {
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+}
+@media (min-width: 640px) {
+  .projects-map__panel {
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
+    align-items: end;
+  }
+  .projects-map__lead {
+    grid-column: auto;
+    padding-right: 2rem;
+    border-bottom: 0;
+  }
+  .projects-map__row {
+    padding: 1rem 1rem 1.1rem;
+    border-bottom: 0;
+    border-left: 1px solid rgb(23 23 22 / 0.16);
+  }
+}
+@media (min-width: 1024px) {
+  .projects-map__panel {
+    position: absolute;
+    left: 1.25rem;
+    top: 1.25rem;
+    z-index: 2;
+    order: 0;
+    width: 19rem;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    align-items: start;
+    padding: 0 1.5rem;
+    border: 0;
+    background: rgb(248 246 242 / 0.9);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow:
+      0 0 0 1px rgb(23 23 22 / 0.2),
+      0 1.5rem 3rem -1.5rem rgb(23 23 22 / 0.35);
+  }
+  .projects-map__lead {
+    padding: 1.6rem 0 1.4rem;
+    border-bottom: 1px solid rgb(23 23 22 / 0.16);
+  }
+  .projects-map__row {
+    padding: 1rem 0 1.05rem;
+    border-left: 0;
+    border-bottom: 1px solid rgb(23 23 22 / 0.16);
+  }
+  .projects-map__row:last-child {
+    padding-bottom: 1.4rem;
+  }
+  .projects-map__legend {
+    left: calc(19rem + 2.5rem);
+    bottom: 1.25rem;
+  }
+}
+/* Mapbox's own controls, in the sheet's ink and paper. */
+.projects-map .mapboxgl-ctrl-group {
+  border-radius: 0;
+  background: rgb(248 246 242 / 0.92);
+  box-shadow: 0 0 0 1px rgb(23 23 22 / 0.25);
+}
+.projects-map__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: var(--color-ink-muted);
 }
 
 /* ---- Homepage: the tracks ---- */

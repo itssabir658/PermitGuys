@@ -4,11 +4,28 @@ import { coverWidth, plates, type Plate } from "@/content/imagery";
 import { escapeHtml } from "@/lib/html";
 import { wordmarkInHtml } from "@/content/wordmark";
 import { introPhases } from "@/lib/motion/home";
+import { logoHeight, municipalities, type Municipality } from "@/content/recognition";
 
-/** The two paragraphs that cut in and out at the centre. */
+/** The municipalities as a sentence, in the order of their seals: "A, B and C". */
+const places = municipalities.map((m) => m.place);
+const placeList = `${places.slice(0, -1).join(", ")} and ${places[places.length - 1]}`;
+
+/**
+ * A logo's box inside its seal, as fractions of the seal's diameter: drawn
+ * at a weight like its neighbours' (logoHeight), and no wider than the
+ * circle allows at that height.
+ */
+function sealMark(m: Municipality) {
+  const aspect = m.width / m.height;
+  const h = Math.min(logoHeight(m, 0.66, 0.15, 0.42), 0.7 / aspect);
+  return { width: `${(h * aspect * 100).toFixed(2)}%`, height: `${(h * 100).toFixed(2)}%` };
+}
+
+/** The paragraphs that cut in and out at the centre; with the last, the ring turns to the municipalities' seals. */
 const copy = [
   "PermitGuys is an architecture and engineering firm in Oakville, working with homeowners, landlords and businesses across the Greater Toronto Area.",
   "From a deck in the backyard to a custom home or a tenant fit-out on a main street, one team handles the design, the engineering and the drawings for the permit.",
+  `We work with the building departments of ${placeList}.`,
 ];
 
 /** Orbit slots 0 to 5, clockwise from the top centre (ORBIT_SLOTS): six client projects, none of them shown again before Values. */
@@ -25,10 +42,17 @@ const renderings: Plate[] = [plates.redBrick, plates.greenBatten, plates.farmhou
  * outward as the stage releases. All of it is scrubbed by scroll
  * (HomeMotion, intro module), so it runs backwards on the way up.
  *
+ * With the last paragraph, which names the municipalities the firm works
+ * with, the ring turns: a wave runs round it from the top, each picture
+ * shrinking away as a round seal opens in its place, the logo of one of
+ * those municipalities in the ink of the page (SEALS). The seals travel
+ * the ring and are flung out with it at the end.
+ *
  * The images are decoration here, so they are hidden from assistive
  * technology; the paragraphs are the content. Without the tracks the
- * paragraphs stand one above the other, with the pictures as a quiet row
- * beneath them. The tiles are square, so each picture is fetched as wide as
+ * paragraphs stand one above the other, with the pictures and then the
+ * seals as quiet rows beneath them; the paragraph names every municipality,
+ * so the seals are left out of the reading too. The tiles are square, so each picture is fetched as wide as
  * it is drawn at the tile's height.
  */
 export function Intro() {
@@ -61,6 +85,24 @@ export function Intro() {
           ))}
         </ul>
 
+        <ul aria-hidden="true" className="intro-orbit intro-seals order-3">
+          {municipalities.map((m, i) => (
+            <li key={m.src} data-seal={i} className="intro-seal">
+              {/* eslint-disable-next-line @next/next/no-img-element -- small vector and line-art marks, drawn as they are */}
+              <img
+                src={m.src}
+                alt=""
+                width={m.width}
+                height={m.height}
+                loading="lazy"
+                decoding="async"
+                className="intro-seal__mark"
+                style={sealMark(m)}
+              />
+            </li>
+          ))}
+        </ul>
+
         <div className="relative z-10 mx-auto grid max-w-site gap-14 px-5 py-32 sm:px-8 lg:px-12 tracks:absolute tracks:inset-0 tracks:block tracks:py-0">
           {copy.map((text, i) => (
             <p
@@ -74,6 +116,9 @@ export function Intro() {
 
         <p data-intro-caption="" className="absolute inset-x-0 bottom-6 z-10 px-5 text-center text-label text-ink-muted lg:bottom-8">
           Renderings of client projects.
+        </p>
+        <p data-seals-caption="" aria-hidden="true" className="absolute inset-x-0 bottom-6 z-10 hidden px-5 text-center text-label text-ink-muted opacity-0 lg:bottom-8 tracks:block">
+          Municipalities we work with.
         </p>
       </div>
     </section>

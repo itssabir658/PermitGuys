@@ -6,8 +6,12 @@ import { Figure } from "@/components/ui/Figure";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { Plate } from "@/components/ui/Plate";
+import { ProjectsMap } from "@/components/ui/ProjectsMap";
+import { projectPoints } from "@/content/project-points";
+import { projectsMapStats } from "@/content/projects-map";
 import { Section } from "@/components/ui/Section";
 import { clientProjects } from "@/content/imagery";
+import { site } from "@/content/site";
 import { getProjects } from "@/lib/content";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
@@ -66,6 +70,15 @@ export default function ProjectsPage() {
           ))}
         </div>
       </Section>
+      {site.projectsMap ? (
+        <Section labelledBy="map-heading">
+          <Eyebrow>On the map</Eyebrow>
+          <h2 id="map-heading" data-reveal-lines="" className="mt-6 max-w-[22ch] font-display text-display-md text-charcoal-900">
+            {site.projectsMap.title}
+          </h2>
+          <ProjectsMap points={projectPoints} stats={projectsMapStats()} className="mt-10" />
+        </Section>
+      ) : null}
       <Section labelledBy="case-studies-heading" tone="light">
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-4">

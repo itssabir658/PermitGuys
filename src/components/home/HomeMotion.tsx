@@ -36,7 +36,11 @@ import {
   introPhases,
   introProgress,
   orbitItem,
+  orbitLeave,
   orbitPath,
+  sealItem,
+  sealsStart,
+  sealsTurn,
   pageGround,
   partWay,
   riseInset,
@@ -337,7 +341,7 @@ function hero(): MotionModule | null {
   };
 }
 
-/* Intro: six pictures travel one squircle path around the centre while two paragraphs pass through it. */
+/* Intro: six pictures travel one squircle path around the centre while the paragraphs pass through it; with the last, the ring turns to the municipalities' seals. */
 function intro(): MotionModule | null {
   // The section, not the page: the first-load intro screen also marks <html> with data-intro.
   const section = one("section[data-intro]");
@@ -346,8 +350,11 @@ function intro(): MotionModule | null {
   const items = all("[data-orbit-slot]", section).map((el) => ({ el, slot: Number(el.dataset.orbitSlot), img: one("[data-orbit-img]", el) }));
   const copies = all("[data-intro-copy]", section);
   splitting.push(...copies);
+  const seals = all("[data-seal]", section);
   const caption = one("[data-intro-caption]", section);
+  const sealsCaption = one("[data-seals-caption]", section);
   const { copyIn, exitStart, sectionVh } = introPhases(copies.length);
+  const turnAt = sealsStart(copyIn);
   let r: Range;
   let path: OrbitPath;
   let lines: HTMLElement[][] = copies.map(() => []);
@@ -366,17 +373,20 @@ function intro(): MotionModule | null {
       const copyHalf = copies.reduce((m, c) => Math.max(m, c.offsetHeight / 2), 0);
       path = orbitPath(f.vw, (f.tracks && stage?.offsetHeight) || f.vh, copyHalf, f.vh);
       for (const it of items) setStyle(it.el, "--size", f.tracks ? px(path.sizes[it.slot] ?? 0) : "");
+      for (const el of seals) setStyle(el, "--size", f.tracks ? px(path.seal) : "");
     },
     update(f) {
       if (sleep.skip(r, f)) return;
       // Without the tracks the pictures sit in a row under the paragraphs (globals.css), untouched.
       if (!f.tracks) {
         for (const it of items) {
-          clear(it.el, "transform", "opacity");
+          clear(it.el, "transform", "opacity", "visibility");
           if (it.img) clear(it.img, "transform");
         }
+        for (const el of seals) clear(el, "transform", "opacity", "visibility");
         lines.forEach((ls) => ls.forEach((line) => clear(line, "transform", "opacity")));
         if (caption) clear(caption, "opacity");
+        if (sealsCaption) clear(sealsCaption, "opacity");
         return;
       }
       const { e, exit, raw } = introProgress(sso(r, f), sectionVh / 100, exitStart);
@@ -384,13 +394,25 @@ function intro(): MotionModule | null {
       let ring = 0;
       for (const it of items) {
         const o = orbitItem(path, it.slot, e, exit, copy);
-        setStyle(it.el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0)`);
-        setStyle(it.el, "opacity", num(o.opacity));
+        // Once the ring has turned the picture is gone (and its layer with it), so it is drawn only while it shows.
+        const leave = seals.length ? orbitLeave(it.slot, e, turnAt) : 0;
+        const k = mix(1, 0.55, leave);
+        setStyle(it.el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0)${leave > 0.001 ? ` scale(${num(k)})` : ""}`);
+        setStyle(it.el, "opacity", num(o.opacity * (1 - leave)));
+        setStyle(it.el, "visibility", leave > 0.999 ? "hidden" : "");
         if (it.img) setStyle(it.img, "transform", `scale(${num(o.imgScale)})`);
         ring = Math.max(ring, o.arrive);
       }
-      // The caption is there whenever any picture is, and leaves with them.
-      if (caption) setStyle(caption, "opacity", num(Math.min(ring, 1 - exit)));
+      for (const el of seals) {
+        const o = sealItem(path, Number(el.dataset.seal), seals.length, e, exit, copy, turnAt);
+        setStyle(el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0) scale(${num(o.scale)})`);
+        setStyle(el, "opacity", num(o.opacity));
+        setStyle(el, "visibility", o.arrive < 0.001 ? "hidden" : "visible");
+      }
+      // Each caption is there while its ring is, and leaves with it; they cross as the ring turns.
+      const turned = seals.length ? sealsTurn(e, turnAt) : 0;
+      if (caption) setStyle(caption, "opacity", num(Math.min(ring, 1 - exit) * (1 - Math.min(1, turned * 2))));
+      if (sealsCaption) setStyle(sealsCaption, "opacity", num(Math.max(0, turned * 2 - 1) * (1 - exit)));
       // Display type never fades: each line only rolls through its mask.
       lines.forEach((ls, i) =>
         ls.forEach((line, j) => {
@@ -401,7 +423,7 @@ function intro(): MotionModule | null {
     },
     zones(f) {
       const counts = lines.map((ls) => ls.length);
-      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => introPartWay(sso(r, g), counts));
+      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => introPartWay(sso(r, g), counts, seals.length > 0));
     },
   };
 }

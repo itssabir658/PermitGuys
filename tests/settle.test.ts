@@ -146,6 +146,18 @@ describe("where a scene is part way", () => {
     }
   });
 
+  it("intro with the municipalities: the third paragraph keeps its moment, and the ring is never left half turned", () => {
+    for (const lines of [[5, 5, 5], [7, 7, 8]]) {
+      const { rests, zones } = settled(0, 7.9, (s) => introPartWay(s, lines, true));
+      // copyIn [1, 2.75, 4.5] in screens since the stage pinned (sso − 1); the turn runs 3.58 to 4.45.
+      expect(longest(rests, 1.5, 3.2)).toBeGreaterThan(0.85);
+      expect(longest(rests, 3.2, 4.9)).toBeGreaterThan(0.8);
+      expect(longest(rests, 5.4, 6.7)).toBeGreaterThan(0.85);
+      for (const [a, b] of zones) expect([introPartWay(a, lines, true), introPartWay(b, lines, true)]).toEqual([false, false]);
+      for (let s = 4.6; s < 5.6; s += 0.01) if (!zones.some(([a, b]) => s > a && s < b)) expect(introPartWay(s, lines, true)).toBe(false);
+    }
+  });
+
   it("story: every chapter keeps 0.6 screens or more with its text composed, and the drawing is whole wherever the page rests", () => {
     for (const lines of [[4, 4, 4, 4], [8, 8, 8, 8]]) {
       const { rests, zones } = settled(-1, 4.8, (e) => storyPartWay(e, lines, 4));

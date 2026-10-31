@@ -56,6 +56,17 @@ export const site = {
     label: "2115 South Service Rd West, Oakville, ON L6L 5W2",
     note: "Our office. Weekend visits by appointment only.",
   } as { query: string; label: string; note?: string },
+  /**
+   * The projects map (ProjectsMap.tsx). Its points come from the firm's
+   * own Google My Maps map "Our Projects" (`mid`, supplied by the business
+   * on 31 October 2026; scripts/project-map/build.py). `permits` is the
+   * number of permits issued, in the business's words (31 October 2026).
+   */
+  projectsMap: {
+    mid: "1TuO8AYFVvh5b1pRdq_TYlNBSngzpcEc",
+    title: "Where our projects are",
+    permits: "2,000+",
+  } as { mid: string; title: string; permits: string } | null,
   /** Verified credentials only, in the business's own words (confirmed 2026-10-22). */
   credentials: ["Small Buildings BCIN certified", "Full architectural stamps in house"] as string[],
   /**
