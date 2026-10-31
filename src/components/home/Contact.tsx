@@ -9,6 +9,8 @@ import { escapeHtml } from "@/lib/html";
 import { paths } from "@/lib/routes";
 import type { ReviewSummary } from "@/lib/reviews";
 import { Wordmark } from "@/components/ui/Wordmark";
+import { LogoRow } from "@/components/ui/LogoRow";
+import { municipalities } from "@/content/recognition";
 
 const dateFormat = new Intl.DateTimeFormat("en-CA", { dateStyle: "long", timeZone: "UTC" });
 
@@ -31,7 +33,9 @@ const BODY = "Tell us what you are planning and where. We will review the detail
  * label, the heading and the paragraph rise line by line from their masks
  * and the actions follow; the picture's sheet wipes up and settles; the
  * title block is drawn in from the left, and its cells come in after it,
- * left to right (HomeMotion, contact module). The section brings its own
+ * left to right (HomeMotion, contact module). Under it, the logos of the
+ * municipalities the firm works with fade up as they reach the screen
+ * (InteractionEffects). The section brings its own
  * ivory: the page ground stays night beneath it.
  */
 export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
@@ -148,6 +152,13 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
               ))}
             </dl>
           ) : null}
+        </div>
+
+        <div className="contact-places">
+          <h3 data-reveal="" className="text-label text-ink-muted">
+            Municipalities we work with
+          </h3>
+          <LogoRow logos={municipalities} label="Municipalities we work with in the Greater Toronto Area" columns={5} className="mt-6" />
         </div>
       </Container>
     </section>

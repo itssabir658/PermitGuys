@@ -8,6 +8,10 @@ The homepage and contact page show the business's Google rating, recent Google r
 - A visible placeholder where review text will go. Review text is never typed in by hand.
 - The map location in `site.map`. The map loads from Google only when a visitor clicks "Show the map".
 
+## Featured reviews on the homepage
+
+The homepage's Praise section (`src/components/home/Praise.tsx`, right after the intro) always shows five Google reviews and Mike Holmes's quote from `src/content/recognition.ts`. They are copied word for word from the old permitguys.ca homepage, which the business published; no star counts are given for them because the old site showed none. To change them, copy new reviews from the Google Business Profile exactly as written. The same file holds the "Worked with and featured by" logos and the municipalities shown under Contact.
+
 ## Live reviews from the Places API
 
 1. In Google Cloud, create or pick a project, enable **Places API (New)** and create an API key. Restrict it to the Places API. It is used only on the server, so no website restriction is needed.
