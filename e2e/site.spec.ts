@@ -83,7 +83,7 @@ test.describe("navigation", () => {
     await button.click();
     await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
     const menu = page.getByRole("navigation", { name: "Site menu" });
-    await expect(menu.getByRole("link", { name: "Home" })).toBeFocused();
+    await expect(menu.getByRole("link", { name: "Home", exact: true })).toBeFocused();
     // The links are words alone, with no numbers before them.
     await expect(menu).not.toContainText(/\d/);
     await page.keyboard.press("Escape");
@@ -101,6 +101,62 @@ test.describe("navigation", () => {
     await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Guides" }).click();
     await expect(page).toHaveURL(/\/permit-guides\/$/);
     await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Guides" })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("Services opens a dropdown of every service page, by hover and from the keyboard", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "Desktop navigation");
+    await page.goto("/about/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    const bar = page.getByRole("navigation", { name: "Main" });
+    const toggle = bar.getByRole("button", { name: "Show the services list" });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await bar.getByRole("link", { name: "Services", exact: true }).hover();
+    const list = page.locator(".site-drop__list");
+    await expect(list).toBeVisible();
+    await expect(list.getByRole("link")).toHaveCount(11);
+    await expect(list.getByRole("link", { name: "Load-bearing wall removal" })).toHaveAttribute("href", "/services/load-bearing-wall-removal/");
+    await page.mouse.move(700, 700);
+    await expect(list).toBeHidden();
+    // Keyboard: the arrow opens it, Tab goes into it, Escape closes it and returns to the arrow.
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    await expect(list).toBeVisible();
+    await page.keyboard.press("Tab");
+    await expect(list.getByRole("link").first()).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(list).toBeHidden();
+    await expect(toggle).toBeFocused();
+    await toggle.press("Enter");
+    await list.getByRole("link", { name: "Detached garages" }).click();
+    await expect(page).toHaveURL(/\/services\/detached-garage-permits\/$/);
+    await expect(list).toBeHidden();
+  });
+
+  test("the logo stays in the header from the top of the page to the bottom", async ({ page }) => {
+    await page.goto("/about/");
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
+    const logo = page.locator(".site-nav__logo-stack");
+    for (const y of [800, 2000, 1e6]) {
+      await page.evaluate((top) => window.scrollTo(0, top), y);
+      await expect(page.locator(".site-nav")).toHaveAttribute("data-collapsed", "");
+      await expect(logo).toBeVisible();
+      await expect.poll(() => logo.evaluate((el) => Number(getComputedStyle(el.closest(".site-nav__item")!).opacity))).toBe(1);
+    }
+    // At the foot of the page one of the two logos (white "guys" over dark grounds) shows whole.
+    await expect.poll(() => page.locator(".site-nav__logo").evaluateAll((els) => Math.max(...els.map((el) => Number(getComputedStyle(el).opacity))))).toBe(1);
+  });
+
+  test("the phone menu folds the services out under Services", async ({ page }, info) => {
+    test.skip(info.project.name !== "mobile", "Phone menu");
+    await page.goto("/about/");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const menu = page.getByRole("navigation", { name: "Site menu" });
+    const more = menu.getByRole("button", { name: "Show the services list" });
+    await expect(menu.getByRole("link", { name: "Finished basements" })).toBeHidden();
+    await more.click();
+    await expect(menu.getByRole("button", { name: "Hide the services list" })).toHaveAttribute("aria-expanded", "true");
+    await menu.getByRole("link", { name: "Finished basements" }).click();
+    await expect(page).toHaveURL(/\/services\/finished-basement-permits\/$/);
   });
 
   test("calls to action lead to real pages", async ({ page }) => {
@@ -200,7 +256,7 @@ test.describe("interactive pieces", () => {
     await page.locator(".site-nav__menu-btn").focus();
     await page.keyboard.press("Enter");
     const menu = page.getByRole("navigation", { name: "Site menu" });
-    await expect(menu.getByRole("link", { name: "Home" })).toBeFocused();
+    await expect(menu.getByRole("link", { name: "Home", exact: true })).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(menu.getByRole("link", { name: "Services" })).toBeFocused();
     await page.keyboard.press("Enter");

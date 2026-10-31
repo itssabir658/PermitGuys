@@ -964,6 +964,234 @@
 }
 
 /*
+ * The logo stays put when the row steps away (wide screens), on a small
+ * frosted plate of the ground's own colour, as tall as the menu button in
+ * the other corner, so it reads over type and pictures alike. Over the
+ * homepage's picture it goes bare, as at the top. Phones have their bar.
+ */
+.site-nav__logo-stack {
+  position: relative;
+  isolation: isolate;
+}
+@media (min-width: 768px) {
+  .site-nav__logo-stack::before {
+    content: "";
+    position: absolute;
+    inset: -0.625rem -0.875rem;
+    z-index: -1;
+    background: color-mix(in srgb, var(--ground, var(--color-ivory)) 84%, transparent);
+    backdrop-filter: blur(14px);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.3s var(--e-ui),
+      background-color 0.3s var(--e-ui);
+  }
+  .site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo-stack::before {
+    background: rgb(25 25 24 / 0.84);
+  }
+  .site-nav[data-collapsed] .site-nav__logo-stack::before {
+    opacity: 1;
+  }
+  .site-nav[data-collapsed][data-over-hero]:not([data-open]) .site-nav__logo-stack::before {
+    opacity: 0;
+  }
+}
+
+/*
+ * Services' dropdown (wide screens): a graphite sheet drops open from just
+ * under the link (0.55s, power3.out), the services rising in one after
+ * another; it folds back up quickly (0.25s). The panel reaches up to the
+ * link, so the pointer never crosses a gap on the way down to it.
+ */
+.site-drop {
+  position: relative;
+}
+.site-drop__toggle {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 2.25rem;
+  margin-right: -0.5rem;
+  opacity: 0.7;
+  transition: opacity 0.3s var(--e-ui);
+}
+.site-drop__toggle:hover,
+.site-drop[data-open] .site-drop__toggle {
+  opacity: 1;
+}
+.site-drop__chevron {
+  width: 0.625rem;
+  height: auto;
+  transition: transform 0.45s var(--e-out-strong);
+}
+.site-drop[data-open] .site-drop__chevron {
+  transform: rotate(180deg);
+}
+.site-drop__panel {
+  position: absolute;
+  top: 100%;
+  left: -2rem;
+  padding-top: 1.1rem;
+  visibility: hidden;
+  transition: visibility 0s linear 0.25s;
+}
+.site-drop[data-open] .site-drop__panel {
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.site-drop__sheet {
+  width: 35rem;
+  padding: 1.75rem 2rem 1.5rem;
+  background: var(--color-charcoal-950);
+  color: var(--color-ivory);
+  box-shadow:
+    inset 0 0 0 1px rgb(244 241 235 / 0.07),
+    0 28px 60px -24px rgb(17 17 16 / 0.5);
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(-6px);
+  transition:
+    clip-path 0.25s var(--e-exit),
+    transform 0.25s var(--e-exit);
+}
+.site-drop[data-open] .site-drop__sheet {
+  clip-path: inset(0);
+  transform: none;
+  transition:
+    clip-path 0.55s var(--e-out-strong),
+    transform 0.55s var(--e-out-strong);
+}
+.site-drop__panel :focus-visible {
+  outline-color: var(--color-brand-300);
+}
+.site-drop__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2rem;
+}
+.site-drop__list > li {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.2s var(--e-ui),
+    transform 0.2s var(--e-ui);
+}
+.site-drop[data-open] .site-drop__list > li {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.5s var(--e-out) calc(0.1s + var(--j, 0) * 22ms),
+    transform 0.6s var(--e-out-strong) calc(0.1s + var(--j, 0) * 22ms);
+}
+.site-drop__link {
+  position: relative;
+  display: block;
+  padding: 0.45rem 0;
+  font-size: 0.9375rem;
+  color: rgb(244 241 235 / 0.72);
+  transition: color 0.3s var(--e-ui);
+}
+.site-drop__link:hover,
+.site-drop__link:focus-visible,
+.site-drop__link[aria-current="page"] {
+  color: var(--color-ivory);
+}
+.site-drop__dot {
+  position: absolute;
+  top: calc(50% - 0.125rem);
+  left: -0.75rem;
+  width: 0.25rem;
+  height: 0.25rem;
+  flex: none;
+  border-radius: 9999px;
+  background: var(--color-brand-400);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.3s var(--e-ui),
+    transform 0.4s var(--e-out-strong);
+}
+.site-drop__link:is(:hover, :focus-visible, [aria-current="page"]) .site-drop__dot {
+  opacity: 1;
+  transform: none;
+}
+.site-drop__all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgb(244 241 235 / 0.1);
+  font-size: 0.875rem;
+  color: var(--color-ivory);
+}
+
+/*
+ * Phones: Services folds its list out under it in the menu (0.45s), from
+ * the plus beside it, which turns into a minus.
+ */
+@media (max-width: 767px) {
+  .site-menu__more {
+    position: relative;
+    display: block;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: rgb(244 241 235 / 0.8);
+  }
+  .site-menu__plus::before,
+  .site-menu__plus::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.95rem;
+    height: 1px;
+    background: currentColor;
+    translate: -50% -50%;
+    transition: rotate 0.45s var(--e-out-strong);
+  }
+  .site-menu__plus::after {
+    rotate: 90deg;
+  }
+  .site-menu__more[aria-expanded="true"] .site-menu__plus::after {
+    rotate: 0deg;
+  }
+  .site-menu__sub {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.45s var(--e-out-strong);
+  }
+  .site-menu__sub[data-open] {
+    grid-template-rows: 1fr;
+  }
+  .site-menu__sub-clip {
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* Folded away, the list is out of sight altogether once the fold has closed. */
+  .site-menu__sub:not([data-open]) .site-menu__sub-clip {
+    visibility: hidden;
+    transition: visibility 0s linear 0.45s;
+  }
+  .site-menu__sub ul {
+    margin-left: 0.15rem;
+    padding: 0.25rem 0 0.75rem 1.1rem;
+    box-shadow: inset 1px 0 rgb(244 241 235 / 0.12);
+  }
+  .site-menu__sub-link {
+    display: block;
+    padding: 0.6rem 0;
+    font-size: 1.0625rem;
+    color: rgb(244 241 235 / 0.7);
+  }
+  .site-menu__sub-link:is(:hover, :focus-visible, [aria-current="page"]) {
+    color: var(--color-ivory);
+  }
+}
+
+/*
  * The row steps up and out past 80px (wide screens) from the right, Contact
  * first (--o, 30ms apart, 0.28s on power2.in), and comes back above it from
  * the left (--i, 40ms apart, 0.5s on power3.out) once the menu button has
@@ -977,7 +1205,7 @@
   transition-delay: calc(0.12s + var(--i, 0) * 40ms), calc(0.12s + var(--i, 0) * 40ms), 0s;
 }
 @media (min-width: 768px) {
-  .site-nav[data-collapsed] .site-nav__item,
+  .site-nav[data-collapsed] .site-nav__item:not(.site-nav__item--logo),
   .site-nav[data-open] .site-nav__item:not(.site-nav__item--logo) {
     opacity: 0;
     transform: translateY(-10px);
