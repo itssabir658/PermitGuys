@@ -1603,6 +1603,38 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   opacity: 0;
   transform: translate(-50%, -50%);
 }
+/*
+ * The municipalities' seals (Intro.tsx, SEALS): round paper seals with a
+ * second ring inside the edge, each logo in the ink of the page, as the
+ * logo rows draw them.
+ */
+.intro-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--color-stone-50);
+  box-shadow:
+    0 0 0 1px rgb(23 23 22 / 0.2),
+    inset 0 0 0 calc(var(--size) * 0.045) var(--color-stone-50),
+    inset 0 0 0 calc(var(--size) * 0.045 + 1px) rgb(23 23 22 / 0.14),
+    0 1.25rem 2.5rem -1.5rem rgb(23 23 22 / 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -50%);
+}
+.intro-seal__mark {
+  display: block;
+  max-width: none;
+  object-fit: contain;
+  filter: brightness(0);
+  opacity: 0.78;
+}
 /* The paragraphs avoid a lone last word; from tablets up their lines are balanced. */
 .intro-copy {
   text-wrap: pretty;
@@ -1633,7 +1665,8 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     gap: clamp(0.5rem, 1.5vw, 1rem);
     padding: 0 1.25rem 5rem;
   }
-  .intro-orbit__item {
+  .intro-orbit__item,
+  .intro-seal {
     position: relative;
     left: auto;
     top: auto;
@@ -1641,7 +1674,13 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     height: auto;
     aspect-ratio: 1;
     opacity: 1;
+    visibility: visible;
     transform: none;
+  }
+  .intro-seals {
+    flex-wrap: wrap;
+    margin-top: -3.5rem;
+    --size: clamp(56px, 9vw, 112px);
   }
 }
 :root:not([data-motion]) .intro-orbit {
@@ -1652,7 +1691,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   gap: clamp(0.5rem, 1.5vw, 1rem);
   padding: 0 1.25rem 5rem;
 }
-:root:not([data-motion]) .intro-orbit__item {
+:root:not([data-motion]) :is(.intro-orbit__item, .intro-seal) {
   position: relative;
   left: auto;
   top: auto;
@@ -1660,7 +1699,13 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   height: auto;
   aspect-ratio: 1;
   opacity: 1;
+  visibility: visible;
   transform: none;
+}
+:root:not([data-motion]) .intro-seals {
+  flex-wrap: wrap;
+  margin-top: -3.5rem;
+  --size: clamp(56px, 9vw, 112px);
 }
 
 /* ---- Homepage: story (Story.tsx) ---- */
@@ -3423,9 +3468,121 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   }
 }
 
-/* ---- Homepage: municipalities, under the title block (Contact.tsx) ---- */
-.contact-places {
+/* ---- Homepage: the projects map, under the title block (Contact.tsx) ---- */
+.contact-map {
   grid-column: 1 / -1;
+}
+
+/*
+ * The projects map (ProjectsMap.tsx): a sheet ruled as the title block is,
+ * ink inside, with the GTA drawn in ivory line until the map is asked for.
+ */
+.projects-map__frame {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--color-ink);
+  border: 1px solid rgb(23 23 22 / 0.55);
+}
+@media (min-width: 640px) {
+  .projects-map__frame {
+    aspect-ratio: 4 / 3;
+  }
+}
+@media (min-width: 1024px) {
+  .projects-map__frame {
+    aspect-ratio: 21 / 9;
+  }
+}
+.projects-map__embed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.projects-map__cover {
+  position: absolute;
+  inset: 0;
+  color: var(--color-ivory);
+  transition:
+    opacity 0.7s var(--e-out),
+    visibility 0s linear 0.7s;
+}
+.projects-map__cover.is-gone {
+  opacity: 0;
+  visibility: hidden;
+}
+/* A faint survey grid, as on the story's drawing sheet. */
+.projects-map__cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(244 241 235 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(244 241 235 / 0.06) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  background-position: center;
+}
+.projects-map__gta {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  height: 78%;
+  max-width: 86%;
+  translate: -50% -50%;
+  overflow: visible;
+}
+.projects-map__edge,
+.projects-map__border {
+  stroke: var(--color-ivory);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.projects-map__edge {
+  stroke-width: 1.25;
+}
+.projects-map__border {
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+  opacity: 0.55;
+}
+.projects-map__place {
+  position: absolute;
+  left: 1.25rem;
+  top: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-stone-300);
+}
+.projects-map__actions {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+}
+@media (min-width: 1024px) {
+  .projects-map__place {
+    left: 1.75rem;
+    top: 1.5rem;
+  }
+  .projects-map__actions {
+    left: 1.75rem;
+    bottom: 1.75rem;
+  }
+}
+.projects-map__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: var(--color-ink-muted);
 }
 
 /* ---- Homepage: the tracks ---- */

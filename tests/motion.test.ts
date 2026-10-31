@@ -41,7 +41,12 @@ import {
   introPhases,
   introProgress,
   orbitItem,
+  orbitLeave,
   orbitPath,
+  SEALS,
+  sealItem,
+  sealsStart,
+  sealsTurn,
   pageGround,
   pathAt,
   riseInset,
@@ -77,7 +82,7 @@ import {
   type SwapLayer,
 } from "@/lib/motion/home";
 import { footerLift, footerProgress } from "@/lib/motion/footer";
-import { clamp, cssEase, damp, ease, fit, fromOklab, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
+import { clamp, cssEase, damp, ease, fit, fromOklab, mix, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
 import { WIPE_MS, wipeStep } from "@/lib/motion/wipe";
 
 /* The homepage choreography, measured at 1440×900. */
@@ -433,6 +438,81 @@ describe("homepage choreography", () => {
     const wide = orbitPath(VW, VH, 200);
     for (let slot = 0; slot < 6; slot++) expect(orbitItem(wide, slot, 2, 0).opacity).toBeCloseTo(1);
   });
+
+  it("the ring turns to the municipalities' seals with the last paragraph, round from the top, never a picture and a seal on one place", () => {
+    const { copyIn, exitStart } = introPhases(3);
+    const start = sealsStart(copyIn);
+    // As the second paragraph leaves (its lines from copyIn[1] + 0.85) and before the third is composed.
+    expect(start).toBeCloseTo(3.58);
+    expect(start).toBeLessThan(copyIn[1] + 0.85);
+    const done = start + SEALS.wave + SEALS.lag + SEALS.each;
+    expect(done).toBeLessThan(copyIn[2]);
+    expect(sealsTurn(start, start)).toBe(0);
+    expect(sealsTurn(done, start)).toBe(1);
+    const p = orbitPath(VW, VH);
+    for (let slot = 0; slot < 6; slot++) {
+      expect(orbitLeave(slot, start, start)).toBe(0);
+      expect(orbitLeave(slot, done, start)).toBe(1);
+    }
+    for (let i = 0; i < 10; i++) {
+      expect(sealItem(p, i, 10, start, 0, 1, start).opacity).toBe(0);
+      expect(sealItem(p, i, 10, done, 0, 1, start).opacity).toBeCloseTo(1);
+    }
+    // The top of the ring turns first.
+    expect(sealItem(p, 0, 10, start + 0.4, 0, 1, start).arrive).toBeGreaterThan(sealItem(p, 5, 10, start + 0.4, 0, 1, start).arrive);
+    // Wherever a seal shows at all, no picture still showing overlaps it by more than a sliver.
+    for (let e = start; e <= done; e += 0.01) {
+      const pics = ORBIT_SLOTS.map((_, slot) => {
+        const o = orbitItem(p, slot, e, 0);
+        const leave = orbitLeave(slot, e, start);
+        return { ...o, opacity: o.opacity * (1 - leave), size: p.sizes[slot] * mix(1, 0.55, leave) };
+      });
+      for (let i = 0; i < 10; i++) {
+        const s = sealItem(p, i, 10, e, 0, 1, start);
+        if (s.opacity < 0.2) continue;
+        for (const pic of pics) {
+          if (pic.opacity < 0.2) continue;
+          const gap = Math.max(Math.abs(pic.x - s.x), Math.abs(pic.y - s.y)) - (pic.size + p.seal * s.scale) / 2;
+          expect(gap).toBeGreaterThan(-12);
+        }
+      }
+    }
+    // Flung out with the ring at the end.
+    const atRest = sealItem(p, 3, 10, exitStart, 0, 1, start);
+    const flung = sealItem(p, 3, 10, exitStart, 1, 1, start);
+    expect(flung.x / atRest.x).toBeCloseTo(ORBIT.exitRadius);
+  });
+
+  for (const [vw, vh, clear] of [
+    [1440, 900, 0],
+    [1280, 720, 0],
+    [1024, 768, 0],
+    [820, 1180, 100],
+    [390, 844, 124],
+    [360, 740, 124],
+  ] as const) {
+    it(`seals at ${vw}×${vh}: every seal whole on screen and apart from its neighbours while the third paragraph is read`, () => {
+      const { copyIn, exitStart } = introPhases(3);
+      const start = sealsStart(copyIn);
+      const p = orbitPath(vw, vh, clear);
+      for (let e = start + 1; e <= exitStart; e += 0.02) {
+        const seals = Array.from({ length: 10 }, (_, i) => sealItem(p, i, 10, e, 0, 1, start));
+        for (const o of seals) {
+          expect(Math.abs(o.x) + p.seal / 2).toBeLessThanOrEqual(vw / 2 + 0.03 * (vw / 2));
+          expect(Math.abs(o.y) + p.seal / 2).toBeLessThanOrEqual(vh / 2 + 0.03 * (vh / 2));
+        }
+        seals.forEach((a, i) =>
+          seals.forEach((b, j) => {
+            if (j <= i || a.opacity < 0.15 || b.opacity < 0.15) return;
+            // Round, so measured centre to centre.
+            expect(Math.hypot(a.x - b.x, a.y - b.y) - p.seal).toBeGreaterThan(8);
+          }),
+        );
+        // On portrait screens they keep clear of the copy, as the pictures do.
+        if (p.portrait) for (const o of seals) if (Math.abs(o.y) - p.seal / 2 < clear + 4) expect(o.opacity).toBe(0);
+      }
+    });
+  }
 
   it("intro copy is at the centre exactly while its lines are: none before the first rises, none after the last leaves, no dip at the handover", () => {
     const { copyIn } = introPhases(2);
