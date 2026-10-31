@@ -150,7 +150,7 @@ export function AskShowcase() {
               <Wordmark className="text-[1.25em]" /> AI
             </span>
           </p>
-          <h2 id="ask-heading" className="mt-7 font-wordmark text-[clamp(3.1rem,1rem+8.4vw,11rem)] leading-[0.86] tracking-[-0.01em] whitespace-nowrap uppercase max-[359px]:whitespace-normal">
+          <h2 id="ask-heading" className="mt-7 font-display text-[clamp(3.6rem,1.4rem+8.6vw,11rem)] leading-[0.92] font-light tracking-[-0.055em] whitespace-nowrap max-[359px]:whitespace-normal">
             <span className="ask-line">
               <span className="ask-rise block" style={rise(1)}>
                 Ask before
