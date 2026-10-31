@@ -7,11 +7,13 @@ export interface NavLink {
   label: string;
   href: Route;
   description?: string;
+  /** Opens the list of service pages: a dropdown in the header bar, a fold-out in the phone menu. */
+  services?: boolean;
 }
 
 /** Inline links in the header bar on large screens. */
 export const primaryNav: NavLink[] = [
-  { label: "Services", href: paths.services },
+  { label: "Services", href: paths.services, services: true },
   { label: "Process", href: paths.howItWorks },
   { label: "Guides", href: paths.guides },
   { label: "About", href: paths.about },
@@ -20,7 +22,7 @@ export const primaryNav: NavLink[] = [
 /** The full-screen menu, in reading order. */
 export const menuLinks: NavLink[] = [
   { label: "Home", href: paths.home },
-  { label: "Services", href: paths.services },
+  { label: "Services", href: paths.services, services: true },
   { label: "How it works", href: paths.howItWorks },
   { label: "Permit guides", href: paths.guides },
   { label: "Service areas", href: paths.serviceAreas },

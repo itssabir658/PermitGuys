@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import type { NavLink } from "@/content/navigation";
 import { site } from "@/content/site";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -37,6 +37,16 @@ import { Logo } from "./Logo";
  * Every part of it changes tone together, over 0.3s; the two logos share
  * one cell and crossfade.
  *
+ * The logo stays in its corner all the way down every page: when the row
+ * steps away on wide screens it keeps its place, on a small frosted plate
+ * of the ground's own colour, so it reads over pictures and type.
+ *
+ * Services opens a dropdown of every service page: on hover, or from the
+ * small arrow beside it (a click, a tap or Enter), which keyboard users tab
+ * to. It closes on leaving it, Escape, a click outside, focus moving on, the
+ * row stepping away and navigation. Phones, which have no row, fold the same
+ * list out under Services in the menu.
+ *
  * The row is held open only while someone is tabbing through it; a mouse
  * click leaves no hold, so the row still collapses on the next page.
  *
@@ -66,6 +76,8 @@ const ITEMS_BACK = 3;
 const FOLD_BACK = 1.35;
 /** In the panel's own time: how long it holds still at the start of a close while the links leave (about 0.16s). */
 const FOLD_HOLD_MS = 216;
+/** The dropdown waits this long after the pointer leaves, so a path across the gap to it does not close it. */
+const DROP_LEAVE_MS = 160;
 
 export function MainNav({
   inline,
@@ -91,11 +103,20 @@ export function MainNav({
   const contentRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(false);
   const baseId = useId();
+  const [drop, setDrop] = useState(false);
+  const [sub, setSub] = useState(false);
+  const dropRef = useRef<HTMLLIElement>(null);
+  const dropBtnRef = useRef<HTMLButtonElement>(null);
+  const dropTimer = useRef<number | undefined>(undefined);
+  // Opened by the pointer resting on it: a click on the arrow then keeps it open rather than closing it.
+  const dropByHover = useRef(false);
 
-  // Close the menu after navigating (adjusting state during render, per React guidance).
+  // Close the menu, the dropdown and the menu's services after navigating (adjusting state during render, per React guidance).
   if (pathname !== lastPath) {
     setLastPath(pathname);
     setOpen(false);
+    setDrop(false);
+    setSub(false);
   }
 
   // Tone and the 80px collapse, as part of the frame loop (after the page modules).
@@ -151,8 +172,11 @@ export function MainNav({
         const isCollapsed = f.scroll > 80 && !kbdInBar;
         if (isCollapsed !== collapsed) {
           collapsed = isCollapsed;
-          if (collapsed) header.dataset.collapsed = "";
-          else delete header.dataset.collapsed;
+          if (collapsed) {
+            header.dataset.collapsed = "";
+            // The dropdown leaves with the row.
+            setDrop(false);
+          } else delete header.dataset.collapsed;
         }
       },
       destroy() {
@@ -272,9 +296,13 @@ export function MainNav({
     check();
     content.addEventListener("scroll", check, { passive: true });
     window.addEventListener("resize", check, { passive: true });
+    // The services folding out (or back) under Services changes the height without a scroll or a resize.
+    const fold = new ResizeObserver(check);
+    if (content.firstElementChild) fold.observe(content.firstElementChild);
     return () => {
       content.removeEventListener("scroll", check);
       window.removeEventListener("resize", check);
+      fold.disconnect();
     };
   }, [shown]);
 
@@ -285,7 +313,7 @@ export function MainNav({
       if (e.key === "Escape") close();
       if (e.key === "Tab" && panelRef.current) {
         // Only what is on screen: phones leave out the services list.
-        const focusable = [buttonRef.current, ...panelRef.current.querySelectorAll<HTMLElement>("a, button")].filter((el): el is HTMLElement => el !== null && el.getClientRects().length > 0);
+        const focusable = [buttonRef.current, ...panelRef.current.querySelectorAll<HTMLElement>("a, button")].filter((el): el is HTMLElement => el !== null && el.getClientRects().length > 0 && !el.closest("[inert]"));
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (e.shiftKey && document.activeElement === first) {
@@ -315,8 +343,42 @@ export function MainNav({
     else {
       setShown(true);
       setOpen(true);
+      setDrop(false);
     }
   };
+
+  // The services dropdown: the pointer opens it and, after a moment away, closes it; a click outside closes it too.
+  const dropEnter = (e: ReactPointerEvent) => {
+    if (e.pointerType === "touch") return;
+    window.clearTimeout(dropTimer.current);
+    if (!drop) dropByHover.current = true;
+    setDrop(true);
+  };
+  const dropLeave = (e: ReactPointerEvent) => {
+    if (e.pointerType === "touch") return;
+    window.clearTimeout(dropTimer.current);
+    dropTimer.current = window.setTimeout(() => {
+      // Keyboard focus inside keeps it open.
+      if (!dropRef.current?.querySelector(":focus-visible")) setDrop(false);
+    }, DROP_LEAVE_MS);
+  };
+  const dropToggle = () => {
+    window.clearTimeout(dropTimer.current);
+    if (drop && dropByHover.current) dropByHover.current = false;
+    else {
+      dropByHover.current = false;
+      setDrop(!drop);
+    }
+  };
+  useEffect(() => () => window.clearTimeout(dropTimer.current), []);
+  useEffect(() => {
+    if (!drop) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!dropRef.current?.contains(e.target as Node)) setDrop(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    return () => document.removeEventListener("pointerdown", onPointer);
+  }, [drop]);
 
   return (
     <>
@@ -334,12 +396,73 @@ export function MainNav({
               <ul className="flex items-center gap-8 text-[0.9375rem] lg:gap-10">
                 {inline.map((link, i) => {
                   const active = isActive(pathname, link.href);
+                  const item = (
+                    <Link href={link.href} aria-current={active ? "page" : undefined} className={cn("group relative flex items-center gap-2 py-2", !link.services && "nav-intro")}>
+                      <span aria-hidden="true" className={cn("size-1 rounded-full bg-brand-400 transition-opacity duration-500", active ? "opacity-100" : "opacity-0")} />
+                      <RollText>{link.label}</RollText>
+                    </Link>
+                  );
+                  const style = { "--i": i + 1, "--o": inline.length - i } as CSSProperties;
+                  if (!link.services) {
+                    return (
+                      <li key={link.href} className="site-nav__item" style={style}>
+                        {item}
+                      </li>
+                    );
+                  }
                   return (
-                    <li key={link.href} className="site-nav__item" style={{ "--i": i + 1, "--o": inline.length - i } as CSSProperties}>
-                      <Link href={link.href} aria-current={active ? "page" : undefined} className="nav-intro group relative flex items-center gap-2 py-2">
-                        <span aria-hidden="true" className={cn("size-1 rounded-full bg-brand-400 transition-opacity duration-500", active ? "opacity-100" : "opacity-0")} />
-                        <RollText>{link.label}</RollText>
-                      </Link>
+                    <li
+                      key={link.href}
+                      ref={dropRef}
+                      className="site-nav__item site-drop"
+                      style={style}
+                      data-open={drop ? "" : undefined}
+                      onPointerEnter={dropEnter}
+                      onPointerLeave={dropLeave}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape" && drop) {
+                          setDrop(false);
+                          dropBtnRef.current?.focus();
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrop(false);
+                      }}
+                    >
+                      <div className="nav-intro flex items-center gap-1">
+                        {item}
+                        <button
+                          ref={dropBtnRef}
+                          type="button"
+                          aria-expanded={drop}
+                          aria-controls={`${baseId}-services`}
+                          onClick={dropToggle}
+                          className="site-drop__toggle"
+                        >
+                          <span className="sr-only">{drop ? "Hide the services list" : "Show the services list"}</span>
+                          <svg aria-hidden="true" viewBox="0 0 10 6" className="site-drop__chevron">
+                            <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.2" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div id={`${baseId}-services`} className="site-drop__panel" inert={!drop}>
+                        <div className="site-drop__sheet">
+                          <ul className="site-drop__list">
+                            {services.map((s, j) => (
+                              <li key={s.href} style={{ "--j": j } as CSSProperties}>
+                                <Link href={s.href} aria-current={pathname === s.href ? "page" : undefined} className="site-drop__link">
+                                  <span aria-hidden="true" className="site-drop__dot" />
+                                  {s.label}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                          <Link href={link.href} className="site-drop__all">
+                            <span className="link-draw">All services</span>
+                            <span aria-hidden="true">→</span>
+                          </Link>
+                        </div>
+                      </div>
                     </li>
                   );
                 })}
@@ -396,7 +519,7 @@ export function MainNav({
               {menu.map((link) => (
                 <li key={link.href}>
                   {/* The mask the link rises in; it lets 4px past its edge, where the link's focus ring is drawn. */}
-                  <span className="block overflow-clip" style={{ overflowClipMargin: 4 }}>
+                  <span className="flex items-center gap-2 overflow-clip" style={{ overflowClipMargin: 4 }}>
                     <Link
                       href={link.href}
                       data-menu-item=""
@@ -408,7 +531,36 @@ export function MainNav({
                       </span>
                       <span aria-hidden="true" className="size-1.5 self-center rounded-full bg-brand-400 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 group-aria-[current=page]:opacity-100" />
                     </Link>
+                    {link.services ? (
+                      // Phones only: wider screens list the services beside the links.
+                      <button
+                        type="button"
+                        data-menu-item=""
+                        aria-expanded={sub}
+                        aria-controls={`${baseId}-menu-services`}
+                        onClick={() => setSub(!sub)}
+                        className="site-menu__more hidden"
+                      >
+                        <span className="sr-only">{sub ? "Hide the services list" : "Show the services list"}</span>
+                        <span aria-hidden="true" className="site-menu__plus" />
+                      </button>
+                    ) : null}
                   </span>
+                  {link.services ? (
+                    <div id={`${baseId}-menu-services`} data-open={sub ? "" : undefined} inert={!sub} className="site-menu__sub md:hidden">
+                      <div className="site-menu__sub-clip">
+                        <ul>
+                          {services.map((s) => (
+                            <li key={s.href}>
+                              <Link href={s.href} aria-current={pathname === s.href ? "page" : undefined} className="site-menu__sub-link">
+                                {s.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
