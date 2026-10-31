@@ -7,5 +7,6 @@
 | Greater Toronto Area map (`src/content/gta-map.ts`, the intro) | Simplified from Statistics Canada, 2021 Census cartographic boundary file, census divisions | Contains information licensed under the Open Government Licence - Canada |
 | `intro/*.webp` | Crops of five of the client renderings in `projects/`, graded for the intro (see `docs/IMAGES.md`). | Supplied by PermitGuys for use on this website. |
 | `studies/*.jpg` | Original renders made for this website in Blender (see `docs/IMAGES.md`). No third-party assets. | Owned by PermitGuys. |
+| `studies/below-grade-entrance.jpg`, `detached-garage.jpg`, `finished-basement.jpg`, `beam-open-plan.jpg` | Generated for this website with Higgsfield (GPT Image 2) on PermitGuys' account, October 2026. Not client projects; captioned as studies. | Generated for PermitGuys. |
 
 No photographs are included yet. Record every image added to this folder here: file, source URL, author, licence.

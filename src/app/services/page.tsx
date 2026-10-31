@@ -15,7 +15,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Permit Drawing and Permit Services",
   description:
-    "Residential and commercial permit services in the GTA: additions, basement apartments, decks, custom homes, interior renovations, commercial and landlord permits.",
+    "Residential and commercial permit services in the GTA: additions, basements, below-grade entrances, wall removals, garages, decks, custom homes and commercial work.",
   path: paths.services,
 });
 
@@ -24,7 +24,7 @@ const groups = [
     id: "residential",
     eyebrow: "Homes",
     title: "Residential",
-    intro: "Additions, basement apartments, decks and new homes, for homeowners across the GTA.",
+    intro: "Additions, basements and their entrances, structural openings, garages, decks and new homes, for homeowners across the GTA.",
     category: "residential" as const,
   },
   {

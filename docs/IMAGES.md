@@ -68,6 +68,8 @@ The section "The making of a house" (`Making.tsx`) is told on the big contempora
 
 `public/images/studies/` holds original renders made for this website. They are kept only for kinds of project that no client rendering shows: a rear addition, a basement second unit, main-street commercial units and a storefront, a rear deck, and an infill house for landlord permits.
 
+Four more were added in October 2026 with the service pages for below-grade entrances, detached garages, finished basements and load-bearing wall removal (`below-grade-entrance.jpg`, `detached-garage.jpg`, `finished-basement.jpg`, `beam-open-plan.jpg`). These were generated with Higgsfield (GPT Image 2, 2048 × 1360) rather than modelled in Blender, saved as progressive JPEGs at quality 84, and carry the same study caption. They show only the kind of work, with no people, signs or house numbers.
+
 Every caption carries "Rendered study for illustration, not a client project." (`STUDY_NOTE`). That includes the caption under the Services picture on the homepage, which switches between the two notes with the picture. The studies must never be presented as PermitGuys work.
 
 The illustrative SVG drawings (`src/components/ui/Drawing.tsx`) are still used on guide and case-study pages, captioned as illustrations.

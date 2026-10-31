@@ -37,6 +37,10 @@ const LEAD = "Design, engineering and permits for every kind of project.";
  * it flow, starting close under Values, and the picture follows the row
  * crossing the middle of the screen.
  *
+ * Services kept off the list (homeRow: false) lead the line under it, "Also
+ * within our scope", linked to their own pages, so the pinned composition
+ * keeps the rows it was sized for.
+ *
  * Contact then rises over the section as an ivory sheet while it sinks and
  * dims (data-services-inner, the handover module).
  *
@@ -55,7 +59,16 @@ const LEAD = "Design, engineering and permits for every kind of project.";
  */
 export function Services() {
   // Homes first, then businesses and landlords.
-  const services = [...getServices()].sort((a, b) => (a.category === b.category ? 0 : a.category === "residential" ? -1 : 1));
+  const services = getServices()
+    .filter((s) => s.homeRow !== false)
+    .sort((a, b) => (a.category === b.category ? 0 : a.category === "residential" ? -1 : 1));
+  // The services kept off the list, with their own pages, then the other work.
+  const more = [
+    ...getServices()
+      .filter((s) => s.homeRow === false)
+      .map((s) => ({ label: s.navLabel, href: paths.service(s.slug) })),
+    ...otherWork,
+  ];
   const groups = [
     { key: "homes", label: "For homes", items: services.filter((s) => s.category === "residential") },
     { key: "businesses", label: "For businesses", items: services.filter((s) => s.category !== "residential") },
@@ -190,7 +203,7 @@ export function Services() {
           <div className="grid gap-6 border-t border-ivory/15 pt-10 md:grid-cols-12 md:gap-8">
             <p className="text-label text-charcoal-300 md:col-span-4">Also within our scope</p>
             <ul className="flex flex-wrap gap-x-7 gap-y-3 text-[0.9375rem] text-ivory/75 md:col-span-8">
-              {otherWork.map((item) => (
+              {more.map((item) => (
                 <li key={item.label}>
                   <Link href={item.href} className="link-draw hover:text-ivory">
                     {item.label}
