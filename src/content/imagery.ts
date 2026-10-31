@@ -9,7 +9,8 @@
  *
  * Rendered studies ("study"): original renders made for this website, kept
  * only for kinds of project no client rendering shows (additions, basement
- * units, commercial units, decks). Their captions always say they are
+ * units, commercial units, decks, and since October 2026 basement entrances,
+ * finished basements, wall removals and detached garages). Their captions always say they are
  * studies, so they are never read as PermitGuys work.
  */
 
@@ -193,6 +194,43 @@ export const plates = {
     focus: "55% 60%",
     kind: "study",
   },
+  /* Generated with Higgsfield (GPT Image 2) for this website, October 2026, for the service pages added then. */
+  belowGrade: {
+    src: "/images/studies/below-grade-entrance.jpg",
+    width: 2048,
+    height: 1360,
+    alt: "The side of a pale rendered two-storey house at dusk, a concrete stairwell with a black rail leading down to a lit, glazed basement door.",
+    caption: "Below-grade entrance at dusk",
+    focus: "36% 62%",
+    kind: "study",
+  },
+  garage: {
+    src: "/images/studies/detached-garage.jpg",
+    width: 2048,
+    height: 1360,
+    alt: "A flat-roofed detached garage clad in dark metal, with a timber garage door, at the end of a concrete driveway beside a pale house.",
+    caption: "Detached garage",
+    focus: "64% 55%",
+    kind: "study",
+  },
+  finishedBasement: {
+    src: "/images/studies/finished-basement.jpg",
+    width: 2048,
+    height: 1360,
+    alt: "A finished basement family room: an oak media wall, a charcoal sofa, recessed lights, a wide window onto a window well and an open stair at the back.",
+    caption: "Finished basement",
+    focus: "52% 60%",
+    kind: "study",
+  },
+  beam: {
+    src: "/images/studies/beam-open-plan.jpg",
+    width: 2048,
+    height: 1360,
+    alt: "An open-plan kitchen and living room with a dark steel beam across the ceiling where a wall was removed, carried on a slim black post.",
+    caption: "Open plan under a new beam",
+    focus: "70% 45%",
+    kind: "study",
+  },
 } satisfies Record<string, Plate>;
 
 export type PlateKey = keyof typeof plates;
@@ -256,6 +294,10 @@ export const servicePlates: Record<string, PlateKey> = {
   "legal-basement-permits": "basement",
   "deck-permits": "deck",
   "custom-home-permits": "stone",
+  "finished-basement-permits": "finishedBasement",
+  "below-grade-entrance-permits": "belowGrade",
+  "load-bearing-wall-removal": "beam",
+  "detached-garage-permits": "garage",
 };
 
 export function plateForService(slug: string): Plate {

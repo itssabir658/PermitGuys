@@ -75,6 +75,12 @@ export interface Service {
   category: ServiceCategory;
   /** Primary services get prominence on the homepage and in navigation. */
   featured: boolean;
+  /**
+   * False keeps the service out of the homepage Services list, whose pinned
+   * composition is sized for the rows it has; it is linked from the line
+   * under the list instead. Every service has its page, nav and index entry.
+   */
+  homeRow?: boolean;
   summary: string;
   /** One or two sentences that directly answer "what is this service?". */
   directAnswer: string;
