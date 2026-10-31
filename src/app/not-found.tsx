@@ -23,7 +23,7 @@ export default function NotFound() {
       <Container className="pt-28 pb-24 sm:pt-32 sm:pb-28 lg:pt-36 lg:pb-32">
         <div className="grid gap-12 lg:grid-cols-12 lg:items-end lg:gap-8">
           <div className="lg:col-span-8">
-            <p aria-hidden="true" className="split-line font-wordmark text-[clamp(6rem,2rem+16vw,16rem)] leading-[0.85] tracking-[-0.01em] uppercase">
+            <p aria-hidden="true" className="split-line font-display text-[clamp(6rem,2rem+16vw,16rem)] leading-[0.9] font-light tracking-[-0.06em]">
               <span className="not-found__numeral block">404</span>
             </p>
             <div className="split-line mt-10 lg:mt-14">

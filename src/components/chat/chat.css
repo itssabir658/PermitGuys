@@ -94,11 +94,14 @@
   animation-play-state: running;
 }
 
-/* Entrances: each line rises once from below its mark and always finishes. */
+/* Entrances: each line rises once from below its mark and always finishes.
+   Safari ignores overflow-clip-margin, so padding (cancelled by margins)
+   gives the mask room for the y's descender without moving the lines. */
 .ask-line {
   display: block;
   overflow: clip;
-  overflow-clip-margin: 0.16em;
+  padding-block: 0.06em 0.2em;
+  margin-block: -0.06em -0.2em;
 }
 .ask[data-armed] .ask-rise {
   opacity: 0;

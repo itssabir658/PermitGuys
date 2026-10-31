@@ -65,7 +65,6 @@
   --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-heading), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --font-wordmark: var(--font-wordmark-face), "Didot", "Bodoni 72", Georgia, serif;
   --font-logo: var(--font-logo-face), "ITC Avant Garde Gothic", "Century Gothic", ui-sans-serif, sans-serif;
 
   --text-hero: clamp(3rem, 0.9rem + 6.6vw, 8.5rem);

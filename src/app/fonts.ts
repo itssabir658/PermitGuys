@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 
 /*
@@ -23,18 +23,6 @@ export const monoFont = Geist_Mono({
   variable: "--font-mono-face",
   subsets: ["latin"],
   weight: ["400", "500"],
-  display: "swap",
-});
-
-/**
- * A fat-face serif used once, for the oversized wordmark across the
- * homepage hero (after the Studio Foundry reference). Only the black
- * weight is loaded, and only for the letters it sets.
- */
-export const wordmarkFont = Playfair_Display({
-  variable: "--font-wordmark-face",
-  subsets: ["latin"],
-  weight: ["900"],
   display: "swap",
 });
 
