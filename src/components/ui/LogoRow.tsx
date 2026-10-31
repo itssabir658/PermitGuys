@@ -9,9 +9,10 @@ import { cn } from "./cn";
  * list's text for screen readers; the pictures are the same names, so they
  * are left out of the reading.
  */
-export function LogoRow({ logos, label, className, onDark }: { logos: Logo[]; label: string; className?: string; onDark?: boolean }) {
+/** `columns` is how many to a row on wide screens (all of them by default). */
+export function LogoRow({ logos, label, className, onDark, columns }: { logos: Logo[]; label: string; className?: string; onDark?: boolean; columns?: number }) {
   return (
-    <ul aria-label={label} className={cn("logo-row", onDark && "logo-row--dark", className)} style={{ "--n": logos.length } as CSSProperties}>
+    <ul aria-label={label} className={cn("logo-row", onDark && "logo-row--dark", className)} style={{ "--n": columns ?? logos.length } as CSSProperties}>
       {logos.map((logo) => (
         <li key={logo.src} data-reveal="" className="logo-row__cell">
           {/* eslint-disable-next-line @next/next/no-img-element -- small vector and line-art marks, drawn as they are */}

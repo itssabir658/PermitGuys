@@ -158,7 +158,7 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
           <h3 data-reveal="" className="text-label text-ink-muted">
             Municipalities we work with
           </h3>
-          <LogoRow logos={municipalities} label="Municipalities we work with in the Greater Toronto Area" className="mt-6" />
+          <LogoRow logos={municipalities} label="Municipalities we work with in the Greater Toronto Area" columns={5} className="mt-6" />
         </div>
       </Container>
     </section>

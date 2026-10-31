@@ -63,82 +63,31 @@ export interface Logo {
 
 /** Companies PermitGuys has worked with or been featured by, in the business's order. */
 export const partners: Logo[] = [
-  {
-    name: "Holmes Family Rescue, with Mike Holmes",
-    src: "/logos/partners/holmes-family-rescue.png",
-    width: 351,
-    height: 116,
-  },
+  { name: "Holmes Family Rescue, with Mike Holmes", src: "/logos/partners/holmes-family-rescue.png", width: 351, height: 116 },
   { name: "HGTV", src: "/logos/partners/hgtv.svg", width: 824, height: 500 },
-  {
-    name: "WSIB Ontario",
-    src: "/logos/partners/wsib.svg",
-    width: 206,
-    height: 72,
-  },
+  { name: "WSIB Ontario", src: "/logos/partners/wsib.svg", width: 206, height: 72 },
   { name: "Aecon", src: "/logos/partners/aecon.png", width: 460, height: 69 },
-  {
-    name: "QuadReal",
-    src: "/logos/partners/quadreal.svg",
-    width: 180,
-    height: 40,
-  },
-  {
-    name: "FinishedBasement.ca",
-    src: "/logos/partners/finished-basement.png",
-    width: 743,
-    height: 105,
-  },
+  { name: "QuadReal", src: "/logos/partners/quadreal.svg", width: 180, height: 40 },
+  { name: "FinishedBasement.ca", src: "/logos/partners/finished-basement.png", width: 743, height: 105 },
 ];
 
 /**
  * Municipalities whose building departments PermitGuys works with: the set
- * the old homepage showed under "Municipalities we work with". Add or
- * remove one only on the business's word.
+ * the old homepage showed under "Municipalities we work with", with
+ * Toronto, Burlington and Hamilton added on the business's word (31 October
+ * 2026). Add or remove one only on the business's word.
  */
 export const municipalities: Logo[] = [
-  {
-    name: "City of Mississauga",
-    src: "/logos/municipalities/mississauga.svg",
-    width: 203,
-    height: 34,
-  },
-  {
-    name: "Town of Oakville",
-    src: "/logos/municipalities/oakville.svg",
-    width: 137,
-    height: 88,
-  },
-  {
-    name: "City of Brampton",
-    src: "/logos/municipalities/brampton.png",
-    width: 220,
-    height: 44,
-  },
-  {
-    name: "City of Markham",
-    src: "/logos/municipalities/markham.svg",
-    width: 130,
-    height: 40,
-  },
-  {
-    name: "Town of Newmarket",
-    src: "/logos/municipalities/newmarket.svg",
-    width: 151,
-    height: 98,
-  },
-  {
-    name: "Town of Aurora",
-    src: "/logos/municipalities/aurora.svg",
-    width: 187,
-    height: 94,
-  },
-  {
-    name: "City of Oshawa",
-    src: "/logos/municipalities/oshawa.svg",
-    width: 162,
-    height: 50,
-  },
+  { name: "City of Toronto", src: "/logos/municipalities/toronto.svg", width: 49, height: 15 },
+  { name: "City of Mississauga", src: "/logos/municipalities/mississauga.svg", width: 203, height: 34 },
+  { name: "Town of Oakville", src: "/logos/municipalities/oakville.svg", width: 137, height: 88 },
+  { name: "City of Brampton", src: "/logos/municipalities/brampton.png", width: 220, height: 44 },
+  { name: "City of Markham", src: "/logos/municipalities/markham.svg", width: 130, height: 40 },
+  { name: "Town of Newmarket", src: "/logos/municipalities/newmarket.svg", width: 151, height: 98 },
+  { name: "Town of Aurora", src: "/logos/municipalities/aurora.svg", width: 187, height: 94 },
+  { name: "City of Oshawa", src: "/logos/municipalities/oshawa.svg", width: 162, height: 50 },
+  { name: "City of Burlington", src: "/logos/municipalities/burlington.svg", width: 600, height: 153 },
+  { name: "City of Hamilton", src: "/logos/municipalities/hamilton.svg", width: 278, height: 63 },
 ];
 
 /**
