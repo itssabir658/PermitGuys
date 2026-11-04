@@ -63,7 +63,7 @@ export function linkButtonWipes() {
     if (on) el.dataset.filled = "";
     else delete el.dataset.filled;
     const step = wipeStep(from, on);
-    if (!step || matchMedia(REDUCED).matches) return;
+    if (!step || (matchMedia(REDUCED).matches && !("gentle" in root.dataset))) return;
     // No fill mode: at its end the run hands over to the resting band (data-filled), which is where it ends, or as empty.
     const run = el.animate(
       [

@@ -29,21 +29,41 @@ interface Arrival {
  *   (data-revealed). Content is visible by default, so it stays readable
  *   without JavaScript, for crawlers and in print. Anything the reader has
  *   passed without it coming in (a glide or a jump past it) is shown, so
- *   nothing above them is ever left blank. Skipped for visitors who prefer
- *   reduced motion, and on a page gone back to (data-returning), which
- *   comes back as it was left.
+ *   nothing above them is ever left blank. Skipped without the head script
+ *   (no data-motion) and on a page gone back to (data-returning), which
+ *   comes back as it was left. Visitors who prefer reduced motion get them
+ *   too (gentle motion), and on the homepage, which has no scroll tracks
+ *   for them, its sections' blocks are marked to come in the same way.
  * - Section tracking: the "On this page" index marks the section being read.
  * - Link buttons: the fill under the label follows hover and keyboard focus
  *   from wherever it is (src/lib/motion/wipe.ts).
  */
+/** The blocks of the homepage's sections that come in as reveals under gentle motion (the hero has its own entrance). */
+const GENTLE_BLOCKS = "h2, h3, p, figure, blockquote, li, dl, form, .link-button";
+
+function gentleReveals() {
+  if (location.pathname !== "/") return;
+  for (const section of document.querySelectorAll<HTMLElement>("main > section")) {
+    if (section.matches("[data-home-hero]") || section.querySelector("[data-home-hero], [data-hero-stage]")) continue;
+    for (const el of section.querySelectorAll<HTMLElement>(GENTLE_BLOCKS)) {
+      // Only the outermost block, and never inside a piece that already has its own reveal, or the projects map.
+      if (el.parentElement?.closest(`${GENTLE_BLOCKS}, [data-reveal], [data-reveal-type], .projects-map, .sr-only`)) continue;
+      if (el.closest("[data-reveal], .projects-map, .sr-only") || el.offsetParent === null) continue;
+      el.dataset.reveal = "";
+    }
+  }
+}
+
 export function InteractionEffects() {
   const pathname = usePathname();
 
   useEffect(() => linkButtonWipes(), []);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const root = document.documentElement;
+    if (!("motion" in root.dataset)) return;
+    // Gentle motion (reduced-motion visitors): the homepage's sections, which otherwise move with the scroll tracks, come in as plain reveals.
+    if ("gentle" in root.dataset) gentleReveals();
     const headings = [...document.querySelectorAll<HTMLElement>("[data-reveal-lines]")];
     if (!("IntersectionObserver" in window) || !("ResizeObserver" in window) || "returning" in root.dataset) {
       // Never leave a heading waiting for a split that will not come.

@@ -38,13 +38,13 @@ import { openingAssets } from "@/lib/motion/opening";
  * released at 60% of the crossfade, or 8s after navigation whatever happens.
  *
  * `motionScript` runs in the document head before first paint. It turns the
- * sequence on only for visitors who allow motion and have JavaScript, marks
+ * sequence on for every visitor with JavaScript (visitors who prefer reduced
+ * motion get it too, with data-gentle: see "Gentle motion" in globals.css), marks
  * the load for the intro (data-intro), starts it
  * after 1.5s should the page not have hydrated by then, and sets every
- * flag after 8s whatever happens, so the page can never be held. With
- * reduced motion there is no screen at all: the page is simply there.
+ * flag after 8s whatever happens, so the page can never be held.
  */
-export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)go();else{d.dataset.motion="";d.dataset.intro="";setTimeout(function(){d.dataset.intro="play"},1500)}setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
+export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)d.dataset.gentle="";d.dataset.motion="";d.dataset.intro="";setTimeout(function(){d.dataset.intro="play"},1500);setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
 
 /** From navigation start, as the head script: the page is released by then whatever happens. */
 const SAFETY_MS = 8000;
