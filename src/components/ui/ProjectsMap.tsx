@@ -13,7 +13,8 @@ import { cn } from "./cn";
  * (projects-mapbox.ts), fetched only once the frame nears the screen, so it
  * costs the page nothing until then. Until it has drawn (or without a
  * token) the sheet shows the same projects as red points on its own grid,
- * so it is never empty. The points are blurred to their area
+ * so it is never empty; it comes back should the map fail to start (no
+ * WebGL) or lose its graphics context later. The points are blurred to their area
  * (src/content/project-points.ts), never an address.
  */
 
@@ -63,10 +64,13 @@ export function ProjectsMap({ points, stats, className }: { points: [number, num
       (entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         io.disconnect();
-        import("./projects-mapbox").then(({ mountProjectsMapbox }) => {
-          if (cancelled || !canvas.current) return;
-          unmount = mountProjectsMapbox(canvas.current, token, points, () => setReady(true));
-        });
+        import("./projects-mapbox")
+          .then(({ mountProjectsMapbox }) => {
+            if (cancelled || !canvas.current) return;
+            // Without WebGL (switched off, or blocked by Chrome after a graphics crash) Mapbox throws: the drawn points stay.
+            unmount = mountProjectsMapbox(canvas.current, token, points, () => setReady(true), () => setReady(false));
+          })
+          .catch(() => setReady(false));
       },
       { rootMargin: "50% 0px" },
     );
