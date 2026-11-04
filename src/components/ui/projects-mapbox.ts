@@ -45,8 +45,13 @@ const PLACES: [string, number, number][] = [
 /** The settled view: tilted, turned a little, so the lake lies along the bottom (less tilted on phones, where the frame is taller than wide). */
 const BEARING = -16;
 
-/** Mounts the map in `el`; returns a function that removes it. */
-export function mountProjectsMapbox(el: HTMLElement, token: string, points: [number, number][], onReady: () => void) {
+/**
+ * Mounts the map in `el`; returns a function that removes it. Throws when
+ * the browser has no WebGL. `onLost` runs if the graphics context is lost
+ * (a GPU reset, or the browser reclaiming memory) and `onReady` again once
+ * it is restored.
+ */
+export function mountProjectsMapbox(el: HTMLElement, token: string, points: [number, number][], onReady: () => void, onLost: () => void) {
   mapboxgl.accessToken = token;
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // Wide, the trust panel sits over the map's left side (globals.css), so the GTA is framed to its right.
@@ -79,6 +84,8 @@ export function mountProjectsMapbox(el: HTMLElement, token: string, points: [num
     attributionControl: true,
     logoPosition: "bottom-right",
   });
+  map.on("webglcontextlost", onLost);
+  map.on("webglcontextrestored", onReady);
   map.touchZoomRotate.disableRotation();
   map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
