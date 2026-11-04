@@ -31,6 +31,10 @@ test.describe("accessibility", () => {
       // Check the settled page: entrance and scroll-reveal motion only fades content in on the way.
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(path);
+      // Gentle motion still plays the intro and the reveals: wait until they are over.
+      await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 10000 });
+      await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity));
+      await page.waitForTimeout(1200);
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"]).analyze();
       const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
       expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
@@ -58,14 +62,23 @@ test.describe("accessibility", () => {
     await expect(page.locator("main")).toBeFocused();
   });
 
-  test("respects reduced motion", async ({ page }) => {
+  test("reduced motion gets gentle motion: entrances and reveals, but nothing pinned or drifting", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const animation = await page.locator(".hero-sub-line .split-line__inner").first().evaluate((el) => getComputedStyle(el).animationName);
-    expect(animation).toBe("none");
+    await expect(page.locator("html")).toHaveAttribute("data-gentle", "");
+    // The entrances play...
+    expect(await page.locator(".hero-sub-line .split-line__inner").first().evaluate((el) => getComputedStyle(el).animationName)).toBe("line-up");
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
+    // ...the homepage's sections come in as reveals...
+    expect(await page.locator('main > section [data-reveal]').count()).toBeGreaterThan(20);
+    // ...but the hero is one screen (no scroll track), and no picture drifts with the scroll.
+    const vh = page.viewportSize()!.height;
+    expect(await page.locator("[data-home-hero]").evaluate((el) => el.getBoundingClientRect().height)).toBeLessThanOrEqual(vh * 1.05);
+    await page.mouse.wheel(0, 3 * vh);
+    await page.waitForTimeout(600);
+    for (const el of await page.locator("[data-parallax]").all()) expect(await el.evaluate((e) => (e as HTMLElement).style.transform)).toBe("");
     await page.goto("/services/");
-    const inner = await page.locator(".motion-rise").first().evaluate((el) => getComputedStyle(el).animationName);
-    expect(inner).toBe("none");
+    expect(await page.locator(".motion-rise").first().evaluate((el) => getComputedStyle(el).animationName)).not.toBe("none");
   });
 });
 
@@ -492,6 +505,8 @@ test.describe("interactive pieces", () => {
     test.skip(info.project.name !== "desktop", "The frame shows beside the list from md; one width is enough");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
+    // Gentle motion plays the intro too; the page answers the keyboard once it is released.
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
     const caption = page.locator("[data-services-caption]");
     await expect(caption).toHaveText(/^rear, side and second-storey additions\s+rendered study for illustration, not a client project\.$/i, { useInnerText: true });
     await page.locator("#services").getByRole("link", { name: /custom home/i }).focus();

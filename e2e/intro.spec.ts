@@ -63,10 +63,11 @@ test.describe("GTA intro", () => {
     await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
   });
 
-  test("with reduced motion there is no screen at all", async ({ page }) => {
+  test("with reduced motion the intro still plays (gentle motion) and lets the page go", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    expect(await page.evaluate(() => "preloaded" in document.documentElement.dataset)).toBe(true);
+    await expect(page.locator(".preloader")).toBeVisible();
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await expect(page.locator(".preloader")).toBeHidden();
   });
 });

@@ -189,7 +189,7 @@
     outline-color: var(--color-brand-300);
   }
 
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     html {
       interpolate-size: allow-keywords;
     }
@@ -289,7 +289,7 @@
   }
 
   /* FAQ disclosures open smoothly where the browser supports it. */
-  @media (prefers-reduced-motion: no-preference) {
+  @media all {
     details.smooth::details-content {
       block-size: 0;
       overflow-y: clip;
@@ -370,7 +370,7 @@
   pointer-events: none;
 }
 
-@media screen and (prefers-reduced-motion: no-preference) {
+@media screen {
   :root[data-motion] .page-crumbs {
     animation: fade-in 0.6s var(--e-out) both;
   }
@@ -1259,7 +1259,7 @@
  * name is rising. The menu button is the last item, so on phones it comes
  * in with the logo.
  */
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   :root[data-motion] .nav-intro {
     animation: nav-in 0.7s var(--e-out) calc(0.3s + var(--i, 0) * 0.05s) both;
   }
@@ -1785,7 +1785,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     transform: scale(1.12);
   }
 }
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   :root[data-motion] [data-hero-plate] {
     transform-origin: var(--iris-x, 50%) var(--iris-y, 50%);
     animation: hero-settle 1.8s var(--ease-out-expo) backwards;
@@ -4080,17 +4080,24 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
  * page comes back where it was left, as it was, so its entrance does not
  * play again (until the next navigation, which happens under the cover).
  */
-@media (prefers-reduced-motion: no-preference) {
+@media all {
   :root[data-motion][data-returning] :is([data-hero-plate], .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
     animation: none;
   }
 }
 
-/* Reduced motion: transitions and animations end at once (the scroll engine also stands still). */
+/*
+ * Gentle motion: visitors who prefer reduced motion still get the intro,
+ * the entrances, fades and reveals (the head script marks them
+ * data-gentle), but nothing pins, scrubs or drifts with the scroll: the
+ * tracks, parallax and the footer's lift all need no-preference, and the
+ * engine keeps frame.reduced for them. Without JavaScript (no data-motion)
+ * transitions and animations end at once.
+ */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion]) *,
+  :root:not([data-motion]) *::before,
+  :root:not([data-motion]) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
