@@ -9,9 +9,6 @@ import {
   HERO_DEPTH,
   MASK,
   NIGHT,
-  ORBIT,
-  ORBIT_EDGE_FADE,
-  ORBIT_SLOTS,
   STONE,
   VALUES_CAP,
   WORKS,
@@ -36,19 +33,16 @@ import {
   makingZoom,
   headerGround,
   heroState,
-  introCopy,
+  FRAME,
+  frameCaption,
+  frameMark,
+  frameSlide,
+  frameWipe,
   introLine,
+  introTick,
   introPhases,
   introProgress,
-  orbitItem,
-  orbitLeave,
-  orbitPath,
-  SEALS,
-  sealItem,
-  sealsStart,
-  sealsTurn,
   pageGround,
-  pathAt,
   riseInset,
   roll,
   servicesHandover,
@@ -82,11 +76,10 @@ import {
   type SwapLayer,
 } from "@/lib/motion/home";
 import { footerLift, footerProgress } from "@/lib/motion/footer";
-import { clamp, cssEase, damp, ease, fit, fromOklab, mix, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
+import { clamp, cssEase, damp, ease, fit, fromOklab, mixColorNum, mixColorOklab, smoothstep, toHex, toOklab, tween } from "@/lib/motion/math";
 import { WIPE_MS, wipeStep } from "@/lib/motion/wipe";
 
 /* The homepage choreography, measured at 1440×900. */
-const VW = 1440;
 const VH = 900;
 
 describe("motion maths", () => {
@@ -267,383 +260,81 @@ describe("homepage choreography", () => {
     expect(HERO_DEPTH.farY).toBeLessThan(HERO_DEPTH.nearY);
   });
 
-  it("intro track follows from the number of paragraphs, releasing 0.4 screen into the fling", () => {
-    const two = introPhases(2);
-    expect(two.copyIn).toEqual([1, 2.75]);
-    expect(two.exitStart).toBeCloseTo(3.7);
-    expect(two.sectionVh).toBe(510);
+  it("intro track follows from the number of paragraphs, releasing 1.15 screens after the last", () => {
     const three = introPhases(3);
     expect(three.copyIn).toEqual([1, 2.75, 4.5]);
-    expect(three.sectionVh).toBe(685);
+    expect(three.release).toBeCloseTo(5.65);
+    expect(three.sectionVh).toBe(665);
+    expect(introPhases(2).sectionVh).toBe(490);
   });
 
-  it("intro progress starts a screen early, as the sheet rises over the hero, and the fling outlives the stage", () => {
-    const { sectionVh, exitStart } = introPhases(2);
-    const h = sectionVh / 100;
-    // The sheet's top meets the bottom of the screen (sso 0), then pins (sso 1).
-    expect(introProgress(0, h, exitStart).e).toBe(-1);
-    expect(introProgress(-2, h, exitStart).e).toBe(-1);
-    expect(introProgress(1, h, exitStart).e).toBe(0);
-    // Released at e = 4.1; the fling runs 3.7 → 4.7 on the unclamped value.
-    expect(introProgress(9, h, exitStart).e).toBeCloseTo(4.1);
-    expect(introProgress(1 + exitStart, h, exitStart).exit).toBe(0);
-    expect(introProgress(1 + 4.1, h, exitStart).exit).toBeCloseTo(0.352);
-    expect(introProgress(1 + 4.5, h, exitStart).exit).toBeCloseTo(0.896);
-    expect(introProgress(1 + 4.7, h, exitStart).exit).toBe(1);
+  it("intro progress starts a screen early, as the sheet rises over the hero, and holds once the stage lets go", () => {
+    const { release } = introPhases(3);
+    expect(introProgress(0, release)).toBe(-1);
+    expect(introProgress(-2, release)).toBe(-1);
+    expect(introProgress(1, release)).toBe(0);
+    expect(introProgress(99, release)).toBeCloseTo(release);
   });
 
-  it("orbit path: a squircle sized from the screen, read by arc length and wrapping", () => {
-    const p = orbitPath(VW, VH);
-    expect(p.portrait).toBe(false);
-    expect(p.sizes.map(Math.round)).toEqual([216, 171, 198, 162, 207, 180]);
-    // Top centre at 0, bottom centre half way round.
-    const [x0, y0] = pathAt(p, 0);
-    expect(x0).toBeCloseTo(0);
-    expect(y0).toBeCloseTo(p.cy - p.ry);
-    expect(pathAt(p, 0.5)[0]).toBeCloseTo(0, 0);
-    expect(pathAt(p, 0.5)[1]).toBeCloseTo(p.cy + p.ry, 0);
-    expect(pathAt(p, 1.25)).toEqual(pathAt(p, 0.25));
-    expect(pathAt(p, -0.75)[0]).toBeCloseTo(pathAt(p, 0.25)[0], 6);
-    // Equal steps of u are equal lengths of path, on the flat sides and round the corners alike.
-    const step = (u: number) => Math.hypot(pathAt(p, u + 0.01)[0] - pathAt(p, u)[0], pathAt(p, u + 0.01)[1] - pathAt(p, u)[1]);
-    for (const u of [0, 0.1, 0.125, 0.2, 0.37, 0.6, 0.875]) expect(step(u)).toBeCloseTo(step(0.05), 0);
-    // Portrait phones size the pictures from the width.
-    const phone = orbitPath(390, 844);
-    expect(phone.portrait).toBe(true);
-    expect(phone.sizes.map(Math.round)).toEqual([109, 94, 113, 98, 109, 101]);
-  });
-
-  // Portrait screens pass the copy's half height (about 104px on phones, 100 on a portrait tablet), as the page does.
-  for (const [vw, vh, minGap, clear] of [
-    [1440, 900, 50, 0],
-    [1280, 720, 50, 0],
-    [1024, 768, 15, 0],
-    [820, 1180, 50, 100],
-    [390, 844, 20, 104],
-    [360, 740, 30, 104],
-  ] as const) {
-    it(`orbit at ${vw}×${vh}: every picture whole on screen and apart from its neighbours, the whole way round`, () => {
-      const p = orbitPath(vw, vh, clear);
-      for (let e = 0.5; e <= 4.1; e += 0.02) {
-        const items = ORBIT_SLOTS.map((_, slot) => ({ ...orbitItem(p, slot, e, 0), size: p.sizes[slot] }));
-        for (const o of items) {
-          // The breathing (±3%) is the only thing that moves an image off the path.
-          expect(Math.abs(o.x) + o.size / 2).toBeLessThanOrEqual(vw / 2 + 0.03 * (vw / 2));
-          expect(Math.abs(o.y) + o.size / 2).toBeLessThanOrEqual(vh / 2 + 0.03 * (vh / 2));
-        }
-        items.forEach((a, i) =>
-          items.forEach((b, j) => {
-            if (j <= i || a.opacity < 0.15 || b.opacity < 0.15) return;
-            const gap = Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) - (a.size + b.size) / 2;
-            expect(gap).toBeGreaterThan(minGap);
-          }),
-        );
+  it("frame: the first picture opens with the sheet, and each other one wipes in as the paragraph before it leaves", () => {
+    const { copyIn, release } = introPhases(3);
+    expect(frameWipe(-1, 0, copyIn)).toBe(0);
+    expect(frameWipe(0, 0, copyIn)).toBe(1);
+    for (const k of [1, 2]) {
+      const start = copyIn[k] - FRAME.wipeBefore;
+      // It starts as the paragraph before starts to leave (its lines from copyIn + 0.85), and is whole before this paragraph's lines are.
+      expect(start).toBeCloseTo(copyIn[k - 1] + 0.85);
+      expect(frameWipe(start, k, copyIn)).toBe(0);
+      expect(frameWipe(start + FRAME.wipe, k, copyIn)).toBe(1);
+      expect(start + FRAME.wipe).toBeLessThan(copyIn[k]);
+      // While it wipes the picture inside holds still on the page: the window's travel and the picture's cancel.
+      for (const t of [0.2, 0.5, 0.8]) {
+        const o = frameSlide(start + t * FRAME.wipe, k, 3, copyIn, release);
+        expect(o.y + o.innerY).toBeCloseTo(0);
       }
-    });
-  }
-
-  it("orbit: pictures glide in from beyond the ring as the sheet uncovers their place, top ones first, never as specks", () => {
-    const p = orbitPath(VW, VH);
-    const before = orbitItem(p, 0, -1, 0);
-    // At e = −1 (the sheet still under the hero) the top centre picture has only begun: near 1.8× the ring, its image still zoomed.
-    expect(before.arrive).toBeGreaterThan(0);
-    expect(before.arrive).toBeLessThan(0.35);
-    expect(before.imgScale).toBeCloseTo(1.18 - 0.18 * before.arrive, 6);
-    const [, y0] = pathAt(p, ORBIT_SLOTS[0].u - ORBIT.turnsPerScreen);
-    expect((before.y - p.cy) / (y0 - p.cy)).toBeCloseTo((1.8 - 0.8 * before.arrive) * (1 + 0.03 * Math.sin(-1.7)), 6);
-    // The bottom centre picture starts later: the sheet uncovers the top of the ring first.
-    expect(orbitItem(p, 3, -1, 0).opacity).toBe(0);
-    expect(orbitItem(p, 0, -0.6, 0).arrive).toBeGreaterThan(orbitItem(p, 3, -0.6, 0).arrive + 0.3);
-    for (const [vw, vh] of [
-      [1440, 900],
-      [1280, 720],
-      [820, 1180],
-      [390, 844],
-    ] as const) {
-      const q = orbitPath(vw, vh);
-      for (let e = -1; e <= 0; e += 0.01) {
-        // The part of the stage the rising sheet has uncovered, from the stage's centre.
-        const uncovered = -vh / 2 + (1 + e) * vh;
-        for (let slot = 0; slot < 6; slot++) {
-          const o = orbitItem(q, slot, e, 0);
-          const half = q.sizes[slot] / 2;
-          // A picture wholly in view is already more than half way in.
-          if (o.y + half < uncovered && o.y - half > -vh / 2 && Math.abs(o.x) + half < vw / 2) expect(o.arrive).toBeGreaterThan(0.5);
-        }
-      }
-      // Every slot has landed half a screen after the stage pins, at full size and opacity.
-      for (let slot = 0; slot < 6; slot++) {
-        const o = orbitItem(q, slot, 0.5, 0);
-        expect(o.arrive).toBeCloseTo(1);
-        expect(o.imgScale).toBeCloseTo(1);
-        if (!q.portrait) expect(o.opacity).toBeCloseTo(1);
-      }
+      // The one before drifts up a little as it is covered, then is no longer drawn.
+      expect(frameSlide(start + FRAME.wipe, k - 1, 3, copyIn, release).innerY).toBeCloseTo(-8);
+      expect(frameSlide(start + FRAME.wipe, k - 1, 3, copyIn, release).covered).toBe(true);
     }
   });
 
-  it("orbit: one speed for every picture, and the fling takes the ring out to 1.9×", () => {
-    const p = orbitPath(VW, VH);
-    // Travel from e 1 to e 3 is the same length of path for every slot: 0.15 of the way round.
-    const len = (slot: number) => {
-      const u = ORBIT_SLOTS[slot].u;
-      return [pathAt(p, u + ORBIT.turnsPerScreen), pathAt(p, u + 3 * ORBIT.turnsPerScreen)];
-    };
-    expect(ORBIT.turnsPerScreen * 2).toBeCloseTo(0.15);
-    for (let slot = 0; slot < 6; slot++) {
-      const [a, b] = len(slot);
-      const o1 = orbitItem(p, slot, 1, 0);
-      const o3 = orbitItem(p, slot, 3, 0);
-      const b1 = 1 + 0.03 * Math.sin(1.7 + slot * 1.3);
-      const b3 = 1 + 0.03 * Math.sin(3 * 1.7 + slot * 1.3);
-      expect(o1.x).toBeCloseTo(a[0] * b1, 6);
-      expect(o3.x).toBeCloseTo(b[0] * b3, 6);
+  it("frame: a picture closes in slowly the whole time it is shown, never past its rest size", () => {
+    const { copyIn, release } = introPhases(3);
+    let last = Infinity;
+    for (let e = 0; e <= 1.85; e += 0.05) {
+      const { scale } = frameSlide(e, 0, 3, copyIn, release);
+      expect(scale).toBeLessThanOrEqual(last + 1e-9);
+      expect(scale).toBeGreaterThanOrEqual(1);
+      last = scale;
     }
-    const settled = orbitItem(p, 2, 4, 0);
-    const flung = orbitItem(p, 2, 4, 1);
-    expect(flung.x / settled.x).toBeCloseTo(ORBIT.exitRadius);
-    expect((flung.y - p.cy) / (settled.y - p.cy)).toBeCloseTo(ORBIT.exitRadius);
+    expect(frameSlide(release, 2, 3, copyIn, release).scale).toBeCloseTo(1);
   });
 
-  it("orbit on portrait phones: pictures fade out before they reach the copy, and show above and below it", () => {
-    const clear = 104;
-    const p = orbitPath(390, 844, clear);
-    expect(p.clear).toBe(clear);
-    // The top centre slot, landed: fully shown.
-    expect(orbitItem(p, 0, 0.5, 0).opacity).toBeCloseTo(1);
-    let shown = 0;
-    for (let e = 0.5; e <= 4.1; e += 0.05) {
-      let now = 0;
-      for (let slot = 0; slot < 6; slot++) {
-        const o = orbitItem(p, slot, e, 0);
-        // Its edge nearest the middle, from the stage's centre line: never within 4px of the copy's band while it shows at all, whole once 52px clear.
-        const edge = Math.abs(o.y) - p.sizes[slot] / 2;
-        if (edge < clear + 4) expect(o.opacity).toBe(0);
-        if (edge > clear + 52) expect(o.opacity).toBeCloseTo(o.arrive, 6);
-        if (o.opacity > 0.9) now++;
-      }
-      // At least two pictures are always whole, above and below the copy.
-      expect(now).toBeGreaterThanOrEqual(2);
-      shown += now;
-    }
-    expect(shown / 73).toBeGreaterThan(2.5);
-    // Without a measured copy it falls back to hiding the middles of the sides.
-    const bare = orbitPath(390, 844);
-    for (let e = 0.5; e <= 4.1; e += 0.05) {
-      for (let slot = 0; slot < 6; slot++) {
-        const [, y0] = pathAt(bare, ORBIT_SLOTS[slot].u + e * ORBIT.turnsPerScreen);
-        if (Math.abs(y0 - bare.cy) / bare.ry < 0.45) expect(orbitItem(bare, slot, e, 0).opacity).toBe(0);
-      }
-    }
-    // Wide screens never fade them, whatever the copy.
-    const wide = orbitPath(VW, VH, 200);
-    for (let slot = 0; slot < 6; slot++) expect(orbitItem(wide, slot, 2, 0).opacity).toBeCloseTo(1);
-  });
-
-  it("the ring turns to the municipalities' seals with the last paragraph, round from the top, never a picture and a seal on one place", () => {
-    const { copyIn, exitStart } = introPhases(3);
-    const start = sealsStart(copyIn);
-    // As the second paragraph leaves (its lines from copyIn[1] + 0.85) and before the third is composed.
-    expect(start).toBeCloseTo(3.58);
-    expect(start).toBeLessThan(copyIn[1] + 0.85);
-    const done = start + SEALS.wave + SEALS.lag + SEALS.each;
-    expect(done).toBeLessThan(copyIn[2]);
-    expect(sealsTurn(start, start)).toBe(0);
-    expect(sealsTurn(done, start)).toBe(1);
-    const p = orbitPath(VW, VH);
-    for (let slot = 0; slot < 6; slot++) {
-      expect(orbitLeave(slot, start, start)).toBe(0);
-      expect(orbitLeave(slot, done, start)).toBe(1);
-    }
-    for (let i = 0; i < 10; i++) {
-      expect(sealItem(p, i, 10, start, 0, 1, start).opacity).toBe(0);
-      expect(sealItem(p, i, 10, done, 0, 1, start).opacity).toBeCloseTo(1);
-    }
-    // The top of the ring turns first.
-    expect(sealItem(p, 0, 10, start + 0.4, 0, 1, start).arrive).toBeGreaterThan(sealItem(p, 5, 10, start + 0.4, 0, 1, start).arrive);
-    // Wherever a seal shows at all, no picture still showing overlaps it by more than a sliver.
-    for (let e = start; e <= done; e += 0.01) {
-      const pics = ORBIT_SLOTS.map((_, slot) => {
-        const o = orbitItem(p, slot, e, 0);
-        const leave = orbitLeave(slot, e, start);
-        return { ...o, opacity: o.opacity * (1 - leave), size: p.sizes[slot] * mix(1, 0.55, leave) };
-      });
-      for (let i = 0; i < 10; i++) {
-        const s = sealItem(p, i, 10, e, 0, 1, start);
-        if (s.opacity < 0.2) continue;
-        for (const pic of pics) {
-          if (pic.opacity < 0.2) continue;
-          const gap = Math.max(Math.abs(pic.x - s.x), Math.abs(pic.y - s.y)) - (pic.size + p.seal * s.scale) / 2;
-          expect(gap).toBeGreaterThan(-12);
-        }
-      }
-    }
-    // Flung out with the ring at the end.
-    const atRest = sealItem(p, 3, 10, exitStart, 0, 1, start);
-    const flung = sealItem(p, 3, 10, exitStart, 1, 1, start);
-    expect(flung.x / atRest.x).toBeCloseTo(ORBIT.exitRadius);
-  });
-
-  for (const [vw, vh, clear] of [
-    [1440, 900, 0],
-    [1280, 720, 0],
-    [1024, 768, 0],
-    [820, 1180, 100],
-    [390, 844, 124],
-    [360, 740, 124],
-  ] as const) {
-    it(`seals at ${vw}×${vh}: every seal whole on screen and apart from its neighbours while the third paragraph is read`, () => {
-      const { copyIn, exitStart } = introPhases(3);
-      const start = sealsStart(copyIn);
-      const p = orbitPath(vw, vh, clear);
-      for (let e = start + 1; e <= exitStart; e += 0.02) {
-        const seals = Array.from({ length: 10 }, (_, i) => sealItem(p, i, 10, e, 0, 1, start));
-        for (const o of seals) {
-          expect(Math.abs(o.x) + p.seal / 2).toBeLessThanOrEqual(vw / 2 + 0.03 * (vw / 2));
-          expect(Math.abs(o.y) + p.seal / 2).toBeLessThanOrEqual(vh / 2 + 0.03 * (vh / 2));
-        }
-        seals.forEach((a, i) =>
-          seals.forEach((b, j) => {
-            if (j <= i || a.opacity < 0.15 || b.opacity < 0.15) return;
-            // Round, so measured centre to centre.
-            expect(Math.hypot(a.x - b.x, a.y - b.y) - p.seal).toBeGreaterThan(8);
-          }),
-        );
-        // On portrait screens they keep clear of the copy, as the pictures do.
-        if (p.portrait) for (const o of seals) if (Math.abs(o.y) - p.seal / 2 < clear + 4) expect(o.opacity).toBe(0);
-      }
-    });
-  }
-
-  it("intro copy is at the centre exactly while its lines are: none before the first rises, none after the last leaves, no dip at the handover", () => {
-    const { copyIn } = introPhases(2);
-    expect(introCopy(-1, copyIn)).toBe(0);
-    expect(introCopy(copyIn[0] - 0.9, copyIn)).toBe(0);
-    expect(introCopy(copyIn[0] - 0.6, copyIn)).toBe(1);
-    expect(introCopy(copyIn[1] + 1.2, copyIn)).toBe(1);
-    // It reads the unclamped progress, so it finishes after the stage releases (e stops at 4.1) instead of holding half way.
-    const { sectionVh, exitStart } = introPhases(2);
-    expect(introProgress(1 + copyIn[1] + 1.5, sectionVh / 100, exitStart).e).toBeCloseTo(4.1);
-    expect(introCopy(introProgress(1 + copyIn[1] + 1.5, sectionVh / 100, exitStart).raw, copyIn)).toBeCloseTo(0, 9);
-    for (let e = -1; e <= 4.1; e += 0.01) {
-      const c = introCopy(e, copyIn);
-      // Seven lines a paragraph, the most a phone sets.
-      const ys = copyIn.flatMap((n) => Array.from({ length: 7 }, (_, j) => introLine(e, n, j)));
-      // Any line showing at all, and there is copy; every line of a paragraph at rest, and it is all there.
-      if (ys.some((y) => Math.abs(y) < MASK)) expect(c).toBeGreaterThan(0);
-      if (copyIn.some((n) => Array.from({ length: 7 }, (_, j) => introLine(e, n, j)).every((y) => y === 0))) expect(c).toBe(1);
-      // Through the handover the centre is never bare.
-      if (e > copyIn[0] && e < copyIn[1]) expect(c).toBe(1);
-      // Whole before the first line is a third out of its mask, so the pictures have gone before any text can be read.
-      if (e < copyIn[0] && introLine(e, copyIn[0], 0) < MASK * (2 / 3)) expect(c).toBe(1);
-      // And it holds until the last paragraph's lines are at least half way out of their masks.
-      if (e > copyIn[1] && ys.some((y) => y > -MASK / 2 && y <= 0)) expect(c).toBe(1);
+  it("frame: each caption is in its mask exactly while its picture is shown, and the municipalities' marks are all up as their panel is whole", () => {
+    const { copyIn } = introPhases(3);
+    expect(frameCaption(-1, 0, 3, copyIn)).toBe(MASK);
+    expect(frameCaption(0.5, 0, 3, copyIn)).toBe(0);
+    expect(frameCaption(3, 0, 3, copyIn)).toBe(-MASK);
+    expect(frameCaption(3, 1, 3, copyIn)).toBe(0);
+    expect(frameCaption(9, 2, 3, copyIn)).toBe(0);
+    for (let j = 0; j < 10; j++) {
+      expect(frameMark(0, j)).toBe(0);
+      expect(frameMark(1, j)).toBe(1);
     }
   });
 
-  it("orbit on portrait screens: with no copy at the centre the whole ring shows, and it gives way only while copy is there", () => {
-    const { copyIn } = introPhases(2);
-    for (const [vw, vh] of [
-      [390, 844],
-      [360, 740],
-      [820, 1180],
-    ] as const) {
-      const p = orbitPath(vw, vh, 104);
-      // Landing on the bare sheet, before the first line rises: all six, nothing held back.
-      expect(introCopy(0.08, copyIn)).toBe(0);
-      for (let slot = 0; slot < 6; slot++) {
-        const o = orbitItem(p, slot, 0.08, 0, introCopy(0.08, copyIn));
-        expect(o.opacity).toBe(o.arrive);
-        expect(o.opacity).toBeGreaterThan(0.8);
-      }
-      for (let e = -1; e <= 4.1; e += 0.02) {
-        const copy = introCopy(e, copyIn);
-        for (let slot = 0; slot < 6; slot++) {
-          const o = orbitItem(p, slot, e, 0, copy);
-          // Over the copy's band a picture shows only as much as the copy has gone.
-          if (Math.abs(o.y) - p.sizes[slot] / 2 < p.clear + 4) expect(o.opacity).toBeLessThanOrEqual(o.arrive * (1 - copy) + 1e-9);
-        }
-      }
-    }
+  it("intro hairlines fill in turn, one per paragraph, the last as the stage lets go", () => {
+    const { copyIn, release } = introPhases(3);
+    expect(introTick(0, 0, copyIn, release)).toBe(0);
+    expect(introTick(copyIn[1] - 0.65, 0, copyIn, release)).toBe(1);
+    expect(introTick(copyIn[1] - 0.65, 1, copyIn, release)).toBe(0);
+    expect(introTick(release, 2, copyIn, release)).toBe(1);
   });
 
-  it("orbit at rest keeps clear of the stage's bottom edge at every size, so the edge fade changes nothing until the fling", () => {
-    for (const [vw, vh] of [
-      [1440, 900],
-      [1280, 720],
-      [1024, 768],
-      [2560, 1440],
-      [820, 1180],
-      [390, 844],
-      [360, 740],
-    ] as const) {
-      const p = orbitPath(vw, vh, 104);
-      for (let e = 0.5; e <= 4.1; e += 0.02) {
-        for (let slot = 0; slot < 6; slot++) {
-          const o = orbitItem(p, slot, e, 0, 0);
-          expect(o.y + p.sizes[slot] / 2).toBeLessThan(vh / 2 - ORBIT_EDGE_FADE);
-          expect(o.opacity).toBe(o.arrive);
-          expect(o.opacity).toBeGreaterThan(0.99);
-        }
-      }
-    }
-  });
-
-  it("orbit fling: a picture is gone before it reaches the stage's bottom edge, which crosses mid-screen once the stage releases", () => {
-    const { sectionVh, exitStart } = introPhases(2);
-    for (const [vw, vh] of [
-      [1440, 900],
-      [1280, 720],
-      [820, 1180],
-      [390, 844],
-      [360, 740],
-    ] as const) {
-      const p = orbitPath(vw, vh, 104);
-      let faded = 0;
-      for (let raw = exitStart; raw <= exitStart + ORBIT.exitVh + 0.3; raw += 0.01) {
-        const { e, exit } = introProgress(raw + 1, sectionVh / 100, exitStart);
-        for (let slot = 0; slot < 6; slot++) {
-          const o = orbitItem(p, slot, e, exit, 0);
-          const bottom = o.y + p.sizes[slot] / 2;
-          // Never cut by the stage's clip: whatever still shows is wholly above it.
-          if (o.opacity > 0) expect(bottom).toBeLessThan(vh / 2);
-          if (bottom > vh / 2 - 10 && bottom < vh / 2) faded++;
-        }
-      }
-      // And it is the lower pictures that meet it, at every size.
-      expect(faded).toBeGreaterThan(0);
-    }
-    // The upper pictures are flung out whole: no edge fade on the top centre one.
-    const p = orbitPath(VW, VH);
-    expect(orbitItem(p, 0, 0, 0.6, 0).opacity).toBeCloseTo(1);
-  });
-
-  it("orbit on a phone with its toolbar showing: the ring fits the 100svh stage, and the sheet's timing stays in screens", () => {
-    // 100lvh 844, 100svh 744.
-    const stage = orbitPath(390, 744, 104, 844);
-    expect(stage.h).toBe(744);
-    expect(stage.vh).toBe(844);
-    expect(stage.ry).toBeLessThan(orbitPath(390, 844, 104).ry);
-    for (let e = 0.5; e <= 4.1; e += 0.02) {
-      for (let slot = 0; slot < 6; slot++) {
-        const o = orbitItem(stage, slot, e, 0, 0);
-        const half = stage.sizes[slot] / 2;
-        // Below the 80px header bar, above the two-line caption at the foot of the stage.
-        expect(o.y - half).toBeGreaterThan(-744 / 2 + 80);
-        expect(o.y + half).toBeLessThan(744 / 2 - 60);
-      }
-    }
-    // The sheet still rises a screen (lvh) at a time: a picture wholly in the part it has uncovered is already more than half way in, and one still a third of a screen under it has not started.
-    for (let e = -1; e <= 0; e += 0.01) {
-      // The screen's bottom edge, in the stage's coordinates: the stage's top is −e screens down the screen.
-      const uncovered = (1 + e) * 844 - 744 / 2;
-      for (let slot = 0; slot < 6; slot++) {
-        const o = orbitItem(stage, slot, e, 0);
-        const half = stage.sizes[slot] / 2;
-        const [, y0] = pathAt(stage, ORBIT_SLOTS[slot].u + e * ORBIT.turnsPerScreen);
-        if (o.y + half < uncovered && o.y - half > -744 / 2) expect(o.arrive).toBeGreaterThan(0.5);
-        if (y0 - half > uncovered + 0.3 * 844) expect(o.arrive).toBe(0);
-      }
-    }
+  it("the last intro paragraph stays composed as the section leaves", () => {
+    const { copyIn, release } = introPhases(3);
+    expect(introLine(release, copyIn[2], 0, true)).toBe(0);
+    expect(introLine(release, copyIn[1], 0)).toBe(-MASK);
   });
 
   it("intro lines rise in, hold composed and leave upward, without fading", () => {

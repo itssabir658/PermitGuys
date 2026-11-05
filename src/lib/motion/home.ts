@@ -1,4 +1,4 @@
-import { PI2, clamp, ease, mix, mixColorNum, mixColorOklab, smoothstep, tween } from "./math";
+import { clamp, ease, mix, mixColorNum, mixColorOklab, smoothstep, tween } from "./math";
 
 /*
  * The homepage choreography as pure functions of scroll. Every input is
@@ -91,240 +91,101 @@ export function heroState(scroll: number, top: number, vh: number) {
  */
 export const HERO_DEPTH = { nearX: 0.015, nearY: 0.008, farX: 0.009, farY: 0.005, rate: 5 };
 
-/* ---- Intro orbit (510vh track for two paragraphs, 100vh sticky stage) ---- */
+/* ---- Intro frame (665vh track for three paragraphs, 100vh sticky stage) ---- */
 
 /**
  * The intro's timeline, in screens of scroll from the moment its stage pins
  * (e = 0; it rises over the hero from e = −1). Paragraph i is composed at
- * firstCopy + i × copyStepVh; the ring is flung outward from exitAfter past
- * the last one, over exitVh, and the stage releases releaseIntoExit into
- * the fling, so the images are still leaving as the story comes up beneath.
+ * firstCopy + i × copyStepVh. The last paragraph stays composed, and the
+ * stage releases holdAfter screens after it, so the section leaves whole,
+ * carried up by the page as the reviews come up beneath.
+ *
+ * Beside the copy one framed picture at a time: paragraph i has picture i,
+ * and the last has the municipalities' marks. Each picture after the first
+ * wipes up into the frame over `wipe` screens, starting `wipeBefore` ahead
+ * of its paragraph, as the paragraph before leaves through its masks, so
+ * every change of picture happens with a change of text and each paragraph
+ * keeps its whole moment with one still picture.
  */
-export const ORBIT = { firstCopy: 1.0, copyStepVh: 1.75, exitAfter: 0.95, exitVh: 1, releaseIntoExit: 0.4, exitRadius: 1.9, turnsPerScreen: 0.075 };
+export const FRAME = { firstCopy: 1.0, copyStepVh: 1.75, holdAfter: 1.15, wipe: 0.55, wipeBefore: 0.9, open: -0.62, push: 0.1, drift: 0.045 };
 
-/**
- * Six slots around one squircle path: u is the position along the path (0
- * top centre, spaced by arc length, a sixth apart with a slight jitter), d
- * the size on wide screens × vh, p the size on portrait screens ×
- * min(vw, 0.5 vh).
- */
-export const ORBIT_SLOTS = [
-  { u: 0.01, d: 0.24, p: 0.28 },
-  { u: 1 / 6 - 0.013, d: 0.19, p: 0.24 },
-  { u: 2 / 6 + 0.016, d: 0.22, p: 0.29 },
-  { u: 0.5 - 0.008, d: 0.18, p: 0.25 },
-  { u: 4 / 6 + 0.013, d: 0.23, p: 0.28 },
-  { u: 5 / 6 - 0.016, d: 0.2, p: 0.26 },
-] as const;
-
-/** The section's length follows from the number of copy blocks, so adding one lengthens the track. For two: copyIn [1, 2.75], exitStart 3.7, 510vh. */
+/** The section's length follows from the number of copy blocks. For three: copyIn [1, 2.75, 4.5], release 5.65, 665vh. */
 export function introPhases(blocks: number) {
-  const copyIn = Array.from({ length: blocks }, (_, i) => ORBIT.firstCopy + i * ORBIT.copyStepVh);
-  const exitStart = (copyIn[copyIn.length - 1] ?? ORBIT.firstCopy) + ORBIT.exitAfter;
-  const release = exitStart + ORBIT.releaseIntoExit;
-  return { copyIn, exitStart, sectionVh: Math.round((release + 1) * 100) };
+  const copyIn = Array.from({ length: blocks }, (_, i) => FRAME.firstCopy + i * FRAME.copyStepVh);
+  const release = (copyIn[copyIn.length - 1] ?? FRAME.firstCopy) + FRAME.holdAfter;
+  return { copyIn, release, sectionVh: Math.round((release + 1) * 100) };
+}
+
+/** Progress through the intro in screens: −1 as its sheet starts to rise over the hero, 0 when its stage pins, `release` when it lets go. */
+export function introProgress(sso: number, release: number) {
+  return clamp(sso - 1, -1, release);
+}
+
+/** When picture `k` starts to wipe into the frame (the first opens with the sheet as it rises). */
+export function frameStart(k: number, copyIn: readonly number[]) {
+  return k === 0 ? FRAME.open : (copyIn[k] ?? 0) - FRAME.wipeBefore;
+}
+
+/** How far picture `k` has come into the frame at `e`, 0–1. The first opens as the sheet rises (whole as the stage pins); the rest wipe up from the frame's lower edge. */
+export function frameWipe(e: number, k: number, copyIn: readonly number[]) {
+  if (k === 0) return tween(e, FRAME.open, -FRAME.open, ease.power2Out);
+  return tween(e, frameStart(k, copyIn), FRAME.wipe, ease.power3InOut);
 }
 
 /**
- * Progress through the intro in screens: −1 as its sheet starts to rise
- * over the hero, 0 when its stage pins, `height/vh − 1` when it releases.
- * The fling reads the unclamped value, so it finishes while the stage
- * scrolls away.
+ * Picture `k` at `e`, for `count` pictures and a stage released at
+ * `release`: `y` is where its window sits, in % of the frame (100 below it,
+ * 0 in place), and the picture inside is held still against that travel
+ * (`innerY`, so the wipe reveals it rather than sliding it), drifting up a
+ * little as the next one covers it (`innerY` −8%). It settles from a slight
+ * push (`scale`) as it arrives and keeps closing in, very slowly, for as
+ * long as it is shown: a frame that is never quite still, with no state
+ * left half done. `covered` once the next one is whole over it.
  */
-export function introProgress(sso: number, heightVh: number, exitStart: number) {
-  const raw = sso - 1;
-  return { e: clamp(raw, -1, heightVh - 1), exit: smoothstep(raw, exitStart, exitStart + ORBIT.exitVh), raw };
+export function frameSlide(e: number, k: number, count: number, copyIn: readonly number[], release: number) {
+  const p = frameWipe(e, k, copyIn);
+  const next = k + 1 < count ? frameWipe(e, k + 1, copyIn) : 0;
+  const until = k + 1 < count ? frameStart(k + 1, copyIn) + FRAME.wipe : release;
+  const d = tween(e, frameStart(k, copyIn), until - frameStart(k, copyIn));
+  return {
+    p,
+    y: 100 * (1 - p),
+    innerY: -100 * (1 - p) - 8 * next,
+    scale: 1 + FRAME.push * (1 - p) + FRAME.drift * (1 - d),
+    covered: next > 0.999,
+  };
 }
 
-/**
- * How much copy is at the centre, 0–1, from the unclamped progress (introProgress
- * raw), so it can finish after the stage releases. It leads the text in and
- * follows it out, so a study is never seen fading behind a readable line:
- * whole just as the first paragraph's first line starts to show (the lines
- * rise from copyIn − 0.65), and down only once the last one's lines have
- * all but left (they leave from + 0.85, the seventh more than half gone by
- * + 1.2). A paragraph is on screen for 1.9 screens and the next starts 1.75
- * after it (copyStepVh), so the handover never leaves the centre bare in
- * between.
- */
-export function introCopy(raw: number, copyIn: number[]) {
-  const first = copyIn[0] ?? ORBIT.firstCopy;
-  const last = copyIn[copyIn.length - 1] ?? first;
-  return tween(raw, first - 0.9, 0.3) * (1 - tween(raw, last + 1.2, 0.3));
+/** The caption under picture `k`, through its mask: in as its picture settles, out as the next one starts to cover it. */
+export function frameCaption(e: number, k: number, count: number, copyIn: readonly number[]) {
+  const start = frameStart(k, copyIn);
+  const inP = tween(e, k === 0 ? -0.35 : start + 0.2, 0.4, ease.power3Out);
+  const outP = k + 1 < count ? tween(e, frameStart(k + 1, copyIn), 0.28, ease.power2In) : 0;
+  return roll(inP, outP);
 }
 
-export interface OrbitPath {
-  portrait: boolean;
-  /** The stage's height (100svh, so it holds still as a phone's toolbar comes and goes) and the screen's (100lvh, the timeline's unit), in px. */
-  h: number;
-  vh: number;
-  /** Each slot's size in px. */
-  sizes: number[];
-  /** Each municipal seal's diameter in px (SEALS). */
-  seal: number;
-  /** Half the height of the copy at the centre, in px (0 if unknown): on portrait screens a study shows only once clear of it. */
-  clear: number;
-  /** The ring's vertical centre from the stage's centre, and its half height, in px. */
-  cy: number;
-  ry: number;
-  /** 513 points from the top centre, clockwise, with the cumulative length at each. */
-  xs: Float64Array;
-  ys: Float64Array;
-  cum: Float64Array;
+/** Mark `j` on the last panel (the municipalities), 0–1: they come up one after another within its wipe, all whole as it is. */
+export function frameMark(p: number, j: number) {
+  return tween(p, 0.4 + j * 0.03, 0.3, ease.power2Out);
 }
 
-const PATH_SAMPLES = 512;
-const sgnSqrt = (v: number) => Math.sign(v) * Math.sqrt(Math.abs(v));
-
-/**
- * The ring for one stage: a squircle inside the safe box (clear of the
- * header on portrait screens, of the caption below), inset by half the
- * largest image, so every image stays whole on the stage. `h` is the
- * stage's height and `vh` the screen's (they differ while a phone shows its
- * toolbar). Sampled once per measure, so the images can be spaced along it
- * by arc length: evenly spaced angles crowd the squircle's flat sides.
- * `clear` is half the height of the copy block, for the portrait fade.
- */
-export function orbitPath(vw: number, h: number, clear = 0, vh = h): OrbitPath {
-  const portrait = vw < 0.8 * h;
-  const sizes = ORBIT_SLOTS.map((s) => (portrait ? s.p * Math.min(vw, 0.5 * h) : s.d * h));
-  const big = Math.max(...sizes);
-  const padX = portrait ? 12 : Math.max(32, 0.04 * vw);
-  const padTop = portrait ? 96 : 40;
-  // Above the caption, with room for the 3% breathing (it sets on two lines on phones).
-  const padBot = portrait ? 88 : 72;
-  const rx = vw / 2 - big / 2 - padX;
-  const ry = (h - padTop - padBot) / 2 - big / 2;
-  const cy = (padTop - padBot) / 2;
-  const xs = new Float64Array(PATH_SAMPLES + 1);
-  const ys = new Float64Array(PATH_SAMPLES + 1);
-  const cum = new Float64Array(PATH_SAMPLES + 1);
-  for (let i = 0; i <= PATH_SAMPLES; i++) {
-    const a = -Math.PI / 2 + (i / PATH_SAMPLES) * PI2;
-    xs[i] = rx * sgnSqrt(Math.cos(a));
-    ys[i] = cy + ry * sgnSqrt(Math.sin(a));
-    if (i) cum[i] = cum[i - 1] + Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]);
-  }
-  const seal = portrait ? SEALS.p * Math.min(vw, 0.5 * h) : SEALS.d * h;
-  return { portrait, h, vh, sizes, seal, clear, cy, ry, xs, ys, cum };
-}
-
-/** The point at `u` of the way along the path (any number; it wraps), in px from the stage's centre. */
-export function pathAt(path: OrbitPath, u: number): [number, number] {
-  const { xs, ys, cum } = path;
-  const s = (((u % 1) + 1) % 1) * cum[PATH_SAMPLES];
-  let lo = 0;
-  let hi = PATH_SAMPLES;
-  while (hi - lo > 1) {
-    const m = (lo + hi) >> 1;
-    if (cum[m] <= s) lo = m;
-    else hi = m;
-  }
-  const t = (s - cum[lo]) / (cum[hi] - cum[lo] || 1);
-  return [mix(xs[lo], xs[hi], t), mix(ys[lo], ys[hi], t)];
-}
-
-/** A study flung down dissolves over this many px (widening with the fling) before its lower edge would meet the stage's; at rest the ring's lowest study keeps 57px or more above that edge, up to 2560×1440. */
-export const ORBIT_EDGE_FADE = 44;
-
-/**
- * Where one study sits: travelling along the path at one speed for all, so
- * neighbours never close up. It glides in from 1.8× the ring as the sheet
- * rises (e −1 to 0), starting just before its own part of the sheet comes
- * up over the bottom edge, so the top of the ring arrives first and the
- * sheet is never blank. It breathes 3%, and is flung out to exitRadius ×
- * the ring at the end.
- *
- * On portrait screens the copy fills the width, so while there is copy at
- * the centre (`copy`, introCopy) a study shows only once clear of it, above
- * or below: a ring tilting behind the text. With no copy, all of it shows.
- *
- * The stage clips at its bottom edge, and once it releases that edge is a
- * line across the middle of the screen with ivory on both sides; the fling
- * carries the lower pictures down onto it. They dissolve before they reach
- * it, so none is ever cut by an edge nobody can see. At rest the ring keeps
- * clear of that band, so this changes nothing until the fling.
- */
-export function orbitItem(path: OrbitPath, slot: number, e: number, exit: number, copy = 1) {
-  const [x0, y0] = pathAt(path, ORBIT_SLOTS[slot].u + e * ORBIT.turnsPerScreen);
-  const size = path.sizes[slot];
-  // The stage's top edge is −e screens down the screen while the sheet rises, so this place comes into view at e = (h/2 + y0)/vh − 1.
-  const enter = (path.h / 2 + y0) / path.vh - 1.25;
-  const arrive = ease.power3Out(clamp((e - enter) / 1.1));
-  const breathe = 1 + 0.03 * Math.sin(e * 1.7 + slot * 1.3);
-  const k = mix(1.8, 1, arrive) * breathe * (1 + (ORBIT.exitRadius - 1) * ease.power2In(exit));
-  const x = x0 * k;
-  const y = path.cy + (y0 - path.cy) * k;
-  return { x, y, opacity: arrive * ringFade(path, y, y0, size, exit, copy), imgScale: mix(1.18, 1, arrive), arrive };
-}
-
-/** How much of a place on the ring shows: on portrait screens only clear of the copy (orbitItem), and never at the stage's lower edge during the fling. */
-function ringFade(path: OrbitPath, y: number, y0: number, size: number, exit: number, copy: number) {
-  let side = 1;
-  if (path.portrait) {
-    const clearOfCopy = path.clear > 0 ? smoothstep(Math.abs(y) - size / 2 - path.clear, 4, 52) : smoothstep(Math.abs(y0 - path.cy) / path.ry, 0.45, 0.65);
-    side = 1 - clamp(copy) * (1 - clearOfCopy);
-  }
-  // The band widens with the fling, so a study dissolves over about a quarter of a screen rather than in one notch.
-  const edge = 1 - smoothstep(y + size / 2, path.h / 2 - ORBIT_EDGE_FADE * (1 + 3 * exit), path.h / 2);
-  return side * edge;
-}
-
-/**
- * The ring turns: with the last paragraph (the municipalities) the six
- * pictures give way to ten municipal seals, round, each the logo of a
- * municipality the firm works with. The change runs round the ring as a
- * wave, clockwise from the top, starting `beforeCopy` screens ahead of the
- * paragraph (as the one before it leaves) and taking `wave` screens to go
- * round: at each place the picture shrinks away over `leave` screens and
- * the seal opens over `each`, `lag` behind it, so the two never sit on one
- * another. The seals travel the same path, a little faster than the
- * pictures did (`turnsPerScreen`), so on a phone, where only the top and
- * bottom of the ring show beside the copy, every seal passes through view.
- * d and p size them as ORBIT_SLOTS does.
- */
-export const SEALS = { beforeCopy: 0.92, wave: 0.4, leave: 0.24, each: 0.32, lag: 0.15, turnsPerScreen: 0.12, d: 0.17, p: 0.27, from: 0.55 };
-
-/** When the ring starts to turn, in the intro's screens (e), with the last paragraph at copyIn's end. */
-export function sealsStart(copyIn: readonly number[]) {
-  return (copyIn[copyIn.length - 1] ?? ORBIT.firstCopy) - SEALS.beforeCopy;
-}
-
-/** How far round the ring the turn is at `e`, 0–1: whole once the last seal has opened. */
-export function sealsTurn(e: number, start: number) {
-  return tween(e, start, SEALS.wave + SEALS.lag + SEALS.each);
-}
-
-/** A place on the ring, 0–1 from the top clockwise, as the wave reads it. */
-const ringPlace = (u: number) => ((u % 1) + 1) % 1;
-
-/** How far picture `slot` has given way to the seals at `e`, 0–1 (its place fixed where the turn starts, so the wave never jumps as the ring travels). */
-export function orbitLeave(slot: number, e: number, start: number) {
-  const place = ringPlace(ORBIT_SLOTS[slot].u + start * ORBIT.turnsPerScreen);
-  return tween(e, start + place * SEALS.wave, SEALS.leave, ease.power2Out);
-}
-
-/** Where seal `i` of `count` sits and how much of it shows: it opens in place, travels the ring, and is flung out with it (exit), as the pictures are. */
-export function sealItem(path: OrbitPath, i: number, count: number, e: number, exit: number, copy: number, start: number) {
-  const u = (i + 0.5) / count;
-  const [x0, y0] = pathAt(path, u + (e - start) * SEALS.turnsPerScreen);
-  const arrive = tween(e, start + u * SEALS.wave + SEALS.lag, SEALS.each, ease.power3Out);
-  const breathe = 1 + 0.03 * Math.sin(e * 1.7 + i * 1.1);
-  const k = breathe * (1 + (ORBIT.exitRadius - 1) * ease.power2In(exit));
-  const x = x0 * k;
-  const y = path.cy + (y0 - path.cy) * k;
-  return { x, y, opacity: arrive * ringFade(path, y, y0, path.seal, exit, copy), scale: mix(SEALS.from, 1, arrive), arrive };
+/** How much of paragraph i's hairline is drawn under the copy: it fills while the paragraph is read, the last until the stage lets go. */
+export function introTick(e: number, i: number, copyIn: readonly number[], release: number) {
+  const from = (copyIn[i] ?? 0) - 0.65;
+  const to = i + 1 < copyIn.length ? from + FRAME.copyStepVh : release;
+  return tween(e, from, to - from);
 }
 
 /**
  * One line of an intro paragraph composed at `n` on the timeline: the lines
  * rise from their masks 0.05 apart (n − 0.65), hold, and leave upward 0.02
- * apart (n + 0.85). Five lines stay composed for 0.8 screens, seven for
- * 0.7; the next paragraph starts rising as this one leaves.
+ * apart (n + 0.85), except the last paragraph's, which stay as the section
+ * leaves. Five lines stay composed for 0.8 screens, seven for 0.7; the next
+ * paragraph starts rising as this one leaves.
  */
-export function introLine(e: number, n: number, line: number) {
+export function introLine(e: number, n: number, line: number, last = false) {
   const inP = tween(e, n - 0.65 + line * 0.05, 0.5, ease.power3Out);
-  const outP = tween(e, n + 0.85 + line * 0.02, 0.28, ease.power2In);
+  const outP = last ? 0 : tween(e, n + 0.85 + line * 0.02, 0.28, ease.power2In);
   return roll(inP, outP);
 }
 
@@ -1022,12 +883,13 @@ export function heroPartWay(scroll: number, top: number, vh: number) {
   return heroState(scroll, top, vh).subRoll.some((y) => lineCut(y));
 }
 
-/** The intro at its sso `s`, with `lines[i]` lines in paragraph i: a line part way through its mask, or the ring part way through its fling, or (with `seals`) through its turn to the seals. */
-export function introPartWay(s: number, lines: readonly number[], seals = false) {
-  const { copyIn, exitStart, sectionVh } = introPhases(lines.length);
-  const { e, exit } = introProgress(s, sectionVh / 100, exitStart);
-  if (seals && partWay(sealsTurn(e, sealsStart(copyIn)))) return true;
-  return partWay(exit) || lines.some((count, i) => anyOf(count, (j) => lineCut(introLine(e, copyIn[i], j))));
+/** The intro at its sso `s`, with `lines[i]` lines in paragraph i: a line part way through its mask, or a picture part way through its wipe into the frame (with its caption). */
+export function introPartWay(s: number, lines: readonly number[]) {
+  const { copyIn, release } = introPhases(lines.length);
+  const e = introProgress(s, release);
+  const n = lines.length;
+  for (let k = 1; k < n; k++) if (partWay(frameWipe(e, k, copyIn)) || lineCut(frameCaption(e, k, n, copyIn))) return true;
+  return lines.some((count, i) => anyOf(count, (j) => lineCut(introLine(e, copyIn[i], j, i === n - 1))));
 }
 
 /**

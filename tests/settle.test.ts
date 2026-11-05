@@ -134,27 +134,16 @@ describe("where a scene is part way", () => {
     expect(zones[0][1]).toBeLessThan(0.4);
   });
 
-  it("intro: each paragraph keeps its whole moment, and the ring's fling is never left half way", () => {
-    for (const lines of [[5, 5], [7, 7]]) {
-      const { rests, zones } = settled(0, 6.1, (s) => introPartWay(s, lines));
-      // copyIn [1, 2.75] in screens since the stage pinned, which is sso − 1.
-      expect(longest(rests, 1.5, 3.2)).toBeGreaterThan(0.85);
-      expect(longest(rests, 3.2, 4.9)).toBeGreaterThan(0.85);
-      for (const [a, b] of zones) expect([introPartWay(a, lines), introPartWay(b, lines)]).toEqual([false, false]);
-      // The fling is done before the intro's end, as the story comes up.
-      expect(introPartWay(5.75, lines)).toBe(false);
-    }
-  });
-
-  it("intro with the municipalities: the third paragraph keeps its moment, and the ring is never left half turned", () => {
+  it("intro: each paragraph keeps its whole moment with its picture still, and no picture is ever left half way through its wipe", () => {
     for (const lines of [[5, 5, 5], [7, 7, 8]]) {
-      const { rests, zones } = settled(0, 7.9, (s) => introPartWay(s, lines, true));
-      // copyIn [1, 2.75, 4.5] in screens since the stage pinned (sso − 1); the turn runs 3.58 to 4.45.
-      expect(longest(rests, 1.5, 3.2)).toBeGreaterThan(0.85);
-      expect(longest(rests, 3.2, 4.9)).toBeGreaterThan(0.8);
-      expect(longest(rests, 5.4, 6.7)).toBeGreaterThan(0.85);
-      for (const [a, b] of zones) expect([introPartWay(a, lines, true), introPartWay(b, lines, true)]).toEqual([false, false]);
-      for (let s = 4.6; s < 5.6; s += 0.01) if (!zones.some(([a, b]) => s > a && s < b)) expect(introPartWay(s, lines, true)).toBe(false);
+      const { rests, zones } = settled(0, 7.9, (s) => introPartWay(s, lines));
+      // copyIn [1, 2.75, 4.5] in screens since the stage pinned (sso − 1); the pictures wipe in from 1.85 and 3.6.
+      expect(longest(rests, 1.5, 3.2)).toBeGreaterThan(0.8);
+      expect(longest(rests, 3.2, 4.9)).toBeGreaterThan(0.75);
+      expect(longest(rests, 5.4, 6.7)).toBeGreaterThan(1.1);
+      for (const [a, b] of zones) expect([introPartWay(a, lines), introPartWay(b, lines)]).toEqual([false, false]);
+      // Whole as the section leaves.
+      expect(introPartWay(6.65, lines)).toBe(false);
     }
   });
 

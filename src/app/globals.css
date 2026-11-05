@@ -1810,129 +1810,238 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   }
 }
 
-/* ---- Homepage: intro orbit (Intro.tsx) ---- */
-.intro-orbit {
+/* ---- Homepage: intro (Intro.tsx) ---- */
+/*
+ * The still intro (reduced motion, short screens, no JavaScript, print) is
+ * the base: the label and the paragraphs one above the other, then the
+ * frame's panels (the renderings and the municipalities' marks) in a quiet
+ * column, beside the copy from tablets up. With the tracks (below) it is
+ * one pinned stage: the copy on the left, one framed panel at a time on the
+ * right, or the frame above the copy on portrait screens.
+ */
+.intro-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.intro-grid {
+  display: grid;
+  gap: 3rem;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: 7rem 1.25rem 6rem;
+}
+.intro-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.intro-eyebrow__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--color-brand-400);
+}
+.intro-copies {
+  display: grid;
+  gap: 2.5rem;
+  margin-top: 2rem;
+}
+.intro-copy {
+  max-width: 24ch;
+  font-size: clamp(1.6rem, 1rem + 2.2vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  text-wrap: pretty;
+}
+.intro-ticks {
+  display: none;
+}
+.intro-figure {
+  margin: 0;
+  min-width: 0;
+}
+.intro-frame {
+  display: grid;
+  gap: 1rem;
+}
+.intro-slide {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--color-stone-300);
+}
+.intro-slide__inner {
   position: absolute;
   inset: 0;
+}
+.intro-slide--marks {
+  background: var(--color-stone-50);
+  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.1);
+}
+/* The marks in a hairline grid, two across and five down; the lines are the panel showing between the cells. */
+.intro-marks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  height: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
-  pointer-events: none;
+  background: rgb(23 23 22 / 0.1);
 }
-.intro-orbit__item {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: var(--size);
-  height: var(--size);
-  overflow: hidden;
-  background: var(--color-stone-300);
-  opacity: 0;
-  transform: translate(-50%, -50%);
-}
-/*
- * The municipalities' seals (Intro.tsx, SEALS): round paper seals with a
- * second ring inside the edge, each logo in the ink of the page, as the
- * logo rows draw them.
- */
-.intro-seal {
-  position: absolute;
-  left: 50%;
-  top: 50%;
+.intro-mark {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--size);
-  height: var(--size);
-  border-radius: 50%;
+  min-height: 0;
   background: var(--color-stone-50);
-  box-shadow:
-    0 0 0 1px rgb(23 23 22 / 0.2),
-    inset 0 0 0 calc(var(--size) * 0.045) var(--color-stone-50),
-    inset 0 0 0 calc(var(--size) * 0.045 + 1px) rgb(23 23 22 / 0.14),
-    0 1.25rem 2.5rem -1.5rem rgb(23 23 22 / 0.35);
-  opacity: 0;
-  visibility: hidden;
-  transform: translate(-50%, -50%);
 }
-.intro-seal__mark {
+.intro-mark__img {
   display: block;
-  max-width: none;
+  width: auto;
+  max-width: 72%;
   object-fit: contain;
   filter: brightness(0);
-  opacity: 0.78;
+  opacity: 0.8;
 }
-/* The paragraphs avoid a lone last word; from tablets up their lines are balanced. */
-.intro-copy {
-  text-wrap: pretty;
+.intro-captions {
+  display: grid;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+.intro-caption {
+  grid-area: 1 / 1;
+}
+.intro-caption:not(:first-child) {
+  display: none;
 }
 @media (min-width: 768px) {
-  .intro-copy {
-    text-wrap: balance;
+  .intro-grid {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    column-gap: clamp(2.5rem, 6vw, 7rem);
+    align-items: start;
+    padding: 9rem 2rem 8rem;
   }
 }
-/* Inside the ring on wider screens (HomeMotion, orbitPath: not portrait), the copy is sized by both sides of the screen, so its five lines clear the pictures. */
-@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (min-aspect-ratio: 4/5) {
-  :root[data-motion] .intro-copy {
-    font-size: clamp(1.65rem, min(3.2vw, 5.1vh), 3.4rem);
+@media (min-width: 1024px) {
+  .intro-grid {
+    padding-inline: 3rem;
   }
 }
+
 /*
- * The still intro (reduced motion, short screens, no JavaScript, print): the
- * paragraphs, then the pictures as a quiet row beneath them, clear of the
- * copy. The same rules twice: a media query cannot be combined with the
- * missing data-motion in one selector.
+ * The tracks. Wide screens: the copy and its hairlines on the left, the
+ * frame on the right, both centred on the stage. Portrait screens (narrower
+ * than 4:5): the frame across the top under the header, the copy below it.
+ * The paragraphs share one cell, each rising through its masks in turn
+ * (HomeMotion, intro module), so the cell is as tall as the longest.
  */
-@media print, (prefers-reduced-motion: reduce), (max-height: 499.98px) {
-  .intro-orbit {
-    position: relative;
-    inset: auto;
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
+  :root[data-motion] .intro-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    background: var(--color-ivory);
+    box-shadow: 0 -2rem 3rem -1.5rem rgb(0 0 0 / 0.4);
+  }
+  :root[data-motion] .intro-grid {
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(2.5rem, 5vw, 6.5rem);
+    align-items: center;
+    padding: 5.5rem clamp(2rem, 4vw, 3rem) 3.5rem;
+  }
+  :root[data-motion] .intro-copies {
+    gap: 0;
+    margin-top: clamp(1.5rem, 3.5vh, 2.5rem);
+  }
+  :root[data-motion] .intro-copy {
+    grid-area: 1 / 1;
+    max-width: 22ch;
+    font-size: clamp(1.65rem, min(3vw, 5vh), 3.1rem);
+  }
+  :root[data-motion] .intro-copy:not([data-split]) {
+    opacity: 0;
+  }
+  :root[data-motion] .intro-copy .split-line__inner {
+    transform: translateY(120%);
+  }
+  :root[data-motion] .intro-ticks {
     display: flex;
-    justify-content: center;
-    gap: clamp(0.5rem, 1.5vw, 1rem);
-    padding: 0 1.25rem 5rem;
+    gap: 0.5rem;
+    margin-top: clamp(1.75rem, 5vh, 3.25rem);
   }
-  .intro-orbit__item,
-  .intro-seal {
+  :root[data-motion] .intro-tick {
     position: relative;
-    left: auto;
-    top: auto;
-    width: clamp(56px, 9vw, 112px);
-    height: auto;
+    width: 2.75rem;
+    height: 1px;
+    overflow: hidden;
+    background: rgb(23 23 22 / 0.16);
+  }
+  :root[data-motion] .intro-tick__fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-ink);
+    transform-origin: left center;
+    transform: scaleX(0);
+  }
+  :root[data-motion] .intro-frame {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    max-height: calc(100svh - 12rem);
+    overflow: hidden;
+  }
+  :root[data-motion] .intro-slide {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+    transform: translateY(100%);
+  }
+  :root[data-motion] .intro-slide__inner {
+    transform: translateY(-100%);
+  }
+  :root[data-motion] .intro-caption {
+    display: block;
+    transform: translateY(120%);
+  }
+}
+@media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) and (max-aspect-ratio: 4/5) {
+  :root[data-motion] .intro-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: start;
+    row-gap: clamp(1.5rem, 3.5svh, 2.5rem);
+    padding: 5.5rem 1.25rem 1.5rem;
+  }
+  :root[data-motion] .intro-figure {
+    grid-row: 1;
+  }
+  :root[data-motion] .intro-text {
+    grid-row: 2;
+  }
+  :root[data-motion] .intro-frame {
+    max-height: 44svh;
+    margin-inline: auto;
+  }
+  :root[data-motion] .intro-copies {
+    margin-top: 1rem;
+  }
+  :root[data-motion] .intro-copy {
+    max-width: 24ch;
+    font-size: clamp(1.4rem, min(6.4vw, 3.3svh), 2.4rem);
+    line-height: 1.14;
+  }
+  :root[data-motion] .intro-ticks {
+    margin-top: 1.5rem;
+  }
+  /* A square frame on phones: more picture beside a taller paragraph. */
+  :root[data-motion] .intro-frame {
     aspect-ratio: 1;
-    opacity: 1;
-    visibility: visible;
-    transform: none;
   }
-  .intro-seals {
-    flex-wrap: wrap;
-    margin-top: -3.5rem;
-    --size: clamp(56px, 9vw, 112px);
-  }
-}
-:root:not([data-motion]) .intro-orbit {
-  position: relative;
-  inset: auto;
-  display: flex;
-  justify-content: center;
-  gap: clamp(0.5rem, 1.5vw, 1rem);
-  padding: 0 1.25rem 5rem;
-}
-:root:not([data-motion]) :is(.intro-orbit__item, .intro-seal) {
-  position: relative;
-  left: auto;
-  top: auto;
-  width: clamp(56px, 9vw, 112px);
-  height: auto;
-  aspect-ratio: 1;
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-}
-:root:not([data-motion]) .intro-seals {
-  flex-wrap: wrap;
-  margin-top: -3.5rem;
-  --size: clamp(56px, 9vw, 112px);
 }
 
 /* ---- Homepage: story (Story.tsx) ---- */
@@ -3483,12 +3592,17 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   .contact-figure {
     grid-column: 8 / -1;
   }
+  /* Five cells: three across the top, two wider ones beneath. */
   .contact-block {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
   .contact-block__cell {
+    grid-column: span 2;
     padding: 0.9rem 1.25rem 1.2rem;
+  }
+  .contact-block__cell:nth-child(n + 4) {
+    grid-column: span 3;
   }
   .contact-block__mark {
     display: block;
@@ -3502,9 +3616,11 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 /* One row: each cell as wide as its longest line, the room left over shared out. */
 @media (min-width: 1440px) {
   .contact-block {
-    grid-template-columns: repeat(6, auto);
+    grid-template-columns: repeat(5, auto);
   }
-  .contact-block__cell {
+  .contact-block__cell,
+  .contact-block__cell:nth-child(n + 4) {
+    grid-column: auto;
     padding-inline: 1rem;
   }
 }
@@ -3601,8 +3717,8 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 }
 /* Phones: a row to swipe, the next card showing at the edge. */
 .praise-scroll {
-  margin: 1.5rem -1.25rem 0;
-  padding-inline: 1.25rem;
+  margin: 1.5rem -1.25rem -2.5rem;
+  padding: 0 1.25rem 2.5rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-padding-inline: 1.25rem;
@@ -3616,11 +3732,59 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   gap: 1.25rem;
   width: max-content;
 }
+/* Each review a Google review card: a raised paper card with the reviewer's initials, name, the source and the stars, then the words. */
 .praise-card {
-  width: min(80vw, 22rem);
+  width: min(82vw, 22rem);
   scroll-snap-align: start;
-  border-top: 1px solid rgb(23 23 22 / 0.55);
-  padding-top: 1.5rem;
+  padding: 1.6rem 1.5rem 1.75rem;
+  border: 1px solid rgb(23 23 22 / 0.1);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.78), rgb(255 255 255 / 0.5));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.8),
+    0 1px 2px rgb(23 23 22 / 0.04),
+    0 1.5rem 3rem -2rem rgb(23 23 22 / 0.28);
+  transition:
+    transform 0.5s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    box-shadow 0.5s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+@media (hover: hover) {
+  .praise-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.8),
+      0 1px 2px rgb(23 23 22 / 0.05),
+      0 2rem 3.5rem -2rem rgb(23 23 22 / 0.36);
+  }
+}
+.praise-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.praise-card__avatar {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-charcoal-900, #1c1c1c);
+  color: var(--color-ivory, #f4f1eb);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.praise-card__source {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  font-size: 0.8125rem;
+  color: var(--color-ink-muted);
+}
+.praise-card__stars {
+  font-size: 1rem;
 }
 .praise-partners {
   margin-top: 5.5rem;
@@ -3662,7 +3826,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   .praise-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 3.5rem 2.5rem;
+    gap: 1.5rem;
     width: auto;
   }
   .praise-card {
@@ -3670,7 +3834,6 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   }
   .praise-card:first-child {
     grid-column: 1 / -1;
-    max-width: 44rem;
   }
   .praise-reviews,
   .praise-partners {
@@ -3683,7 +3846,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   }
   .praise-list {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    column-gap: 3.5rem;
+    gap: 1.5rem;
   }
   .praise-card,
   .praise-card:first-child {
@@ -3923,17 +4086,8 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 
 /* ---- Homepage: the tracks ---- */
 @media screen and (prefers-reduced-motion: no-preference) and (min-height: 500px) {
-  :root[data-motion] :is(.intro-copy, [data-services-heading], [data-works-title], [data-values-desc], [data-contact-heading], [data-contact-body]):not([data-split]) {
+  :root[data-motion] :is([data-services-heading], [data-works-title], [data-values-desc], [data-contact-heading], [data-contact-body]):not([data-split]) {
     opacity: 0;
-  }
-  :root[data-motion] .intro-copy {
-    position: absolute;
-    inset-inline: 1.25rem;
-    top: 50%;
-    translate: 0 -50%;
-  }
-  :root[data-motion] .intro-copy .split-line__inner {
-    transform: translateY(120%);
   }
 
   /* Works: the panels only set the track's length; the stage shows the projects. Everything masked starts below its mask. */
@@ -4226,5 +4380,71 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   }
   50% {
     opacity: 1;
+  }
+}
+
+/*
+ * "As seen on HGTV" over the Mike Holmes quote (Praise.tsx): a hairline
+ * plaque on the page's ground, the brand's red dot, the label in the mono
+ * face, and both marks in the ink of the page, as the logo rows draw them.
+ */
+.seen-on {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: 2.25rem;
+  padding: 0.7rem 1.15rem 0.7rem 0.95rem;
+  border: 1px solid rgb(23 23 22 / 0.16);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.15));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 1.25rem 2.5rem -1.75rem rgb(23 23 22 / 0.35);
+}
+.seen-on__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-brand-400, #ee352f);
+}
+.seen-on__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+.seen-on__hgtv,
+.seen-on__show {
+  display: block;
+  width: auto;
+  max-width: none;
+  filter: brightness(0);
+  opacity: 0.86;
+}
+.seen-on__hgtv {
+  height: 1.95rem;
+}
+.seen-on__show {
+  height: 1.6rem;
+}
+.seen-on__rule {
+  width: 1px;
+  height: 1.35rem;
+  flex: none;
+  background: rgb(23 23 22 / 0.18);
+}
+@media (max-width: 380px) {
+  .seen-on {
+    gap: 0.65rem;
+    padding-inline: 0.8rem 0.95rem;
+  }
+  .seen-on__hgtv {
+    height: 1.3rem;
+  }
+  .seen-on__show {
+    height: 1.2rem;
   }
 }

@@ -400,7 +400,7 @@ test.describe("interactive pieces", () => {
     await expect.poll(() => page.locator(".site-nav__bar").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(ivory);
   });
 
-  test("the intro's ring and paragraphs follow its own section, so no blank screen follows it", async ({ page }) => {
+  test("the intro's frame and paragraphs follow its own section, so no blank screen follows it", async ({ page }) => {
     await page.goto("/");
     // A first load in the tab: the intro screen marks the page as well as the section.
     await expect(page.locator("html")).toHaveAttribute("data-intro", /.*/);
@@ -417,18 +417,12 @@ test.describe("interactive pieces", () => {
     const first = page.locator("[data-intro-copy]").first().locator(".split-line").first();
     // Its first line in place in its mask.
     await expect.poll(() => first.evaluate((el) => Math.abs(el.firstElementChild!.getBoundingClientRect().top - el.getBoundingClientRect().top))).toBeLessThan(2);
-    // Just after the fling starts (3.7 screens), the ring is still on screen around the stage.
-    // Read in the frames right after the jump: on a touch screen the page then settles on through the fling (settle.ts).
-    const ring = await page.evaluate(async (y) => {
-      window.scrollTo(0, y);
-      for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame);
-      return [...document.querySelectorAll("[data-orbit-slot]")].filter((el) => {
-        const r = el.getBoundingClientRect();
-        return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth && Number(getComputedStyle(el).opacity) > 0.5;
-      }).length;
-    }, Math.round(top + 3.75 * vh));
-    // Half the ring or more: on a phone a six-line paragraph spreads it, so the two studies nearest the edges have already dissolved.
-    expect(ring).toBeGreaterThanOrEqual(3);
+    // With the second paragraph (2.75 screens) its picture is whole in the frame, on screen.
+    await go(3.1);
+    const slide = page.locator("[data-frame-slide='1']");
+    await expect.poll(() => slide.evaluate((el) => Math.abs(el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top))).toBeLessThan(1);
+    const box = await slide.boundingBox();
+    expect(box && box.y >= 0 && box.y + box.height <= vh).toBe(true);
   });
 
   test("the transition and intro stay out of the way with reduced motion", async ({ page }) => {
@@ -540,47 +534,10 @@ test.describe("interactive pieces", () => {
     await expect(section.locator("[data-services-body]")).not.toContainText(/\d/);
   });
 
-  test("the story follows one house from idea to permit, and plays backwards on the way up", async ({ page }) => {
+  test("the homepage no longer has the idea-to-permit story; the making of a house tells it", async ({ page }) => {
     await page.goto("/");
-    const story = page.locator("[aria-labelledby=story-heading]");
-    await expect(story.getByRole("heading", { level: 2 })).toHaveText("From idea to permit");
-    await expect(story.getByRole("heading", { level: 3 })).toHaveText(["Every project starts with an idea.", "Designed around you.", "Engineered to be built.", "Ready for the building permit."]);
-    await expect(story.locator("figcaption")).toHaveText("Rendering of a client project, with linework drawn over it for illustration.");
-    await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
-    // e screens of scroll since the stage pinned.
-    const at = async (e: number) => {
-      const y = await page.evaluate((e) => {
-        let top = 0;
-        for (let n = document.querySelector<HTMLElement>("[data-story]"); n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop;
-        const y = Math.round(top + e * window.innerHeight);
-        window.scrollTo(0, y);
-        return y;
-      }, e);
-      await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(y);
-    };
-    // The title block's drawing name, shown at every width: in place, or parked below its mask.
-    const drawingName = () => story.locator(".story-block__drawing [data-story-field]").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m42);
-    // The issued sheet: the lines in ink, the title block filled in, the last chapter marked.
-    await at(4.6);
-    await expect(story.locator("[data-story-lines]")).toHaveAttribute("data-ink", "");
-    await expect(story.locator("[data-story-toc='3']")).toHaveAttribute("data-active", "");
-    await expect.poll(drawingName).toBe(0);
-    // Back at the sketch: no ink, the first chapter marked, the title block empty again.
-    await at(0.3);
-    await expect(story.locator("[data-story-lines]")).not.toHaveAttribute("data-ink", "");
-    await expect(story.locator("[data-story-toc='0']")).toHaveAttribute("data-active", "");
-    await expect.poll(drawingName).toBeGreaterThan(0);
-  });
-
-  test("with reduced motion the story is a still sheet beside its four chapters", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
-    const story = page.locator("[aria-labelledby=story-heading]");
-    await story.scrollIntoViewIfNeeded();
-    for (const title of await story.getByRole("heading", { level: 3 }).all()) await expect(title).toBeVisible();
-    await expect(story.locator("[data-story-sheet]")).toBeVisible();
-    await expect(story.locator("[data-story-toc='0']")).toBeHidden();
-    expect(await story.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(3 * (page.viewportSize()?.height ?? 900));
+    await expect(page.locator("[data-story]")).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 2, name: "From idea to permit" })).toHaveCount(0);
   });
 
   test("the making of a house: one client house drawn from its site to its permit set, ending at dusk, and back again on the way up", async ({ page }) => {
@@ -662,7 +619,7 @@ test.describe("interactive pieces", () => {
     await expect(contact.getByRole("link", { name: "Start a project" })).toHaveAttribute("href", "/contact/");
     await expect(contact.locator("figcaption")).toHaveText("Rendering of a client project.");
     const block = contact.locator("[data-contact-block]");
-    await expect(block.locator("dt")).toHaveText(["Office", "Hours", "Phone and email", "Google rating", "Credentials"]);
+    await expect(block.locator("dt")).toHaveText(["Office", "Hours", "Phone and email", "Google rating"]);
     // The firm's mark joins the block from 768px wide; on phones the footer's logo follows straight after.
     await expect(block.locator(".contact-block__mark")).toBeVisible({ visible: info.project.name !== "mobile" });
     await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
