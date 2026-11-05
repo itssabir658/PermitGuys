@@ -25,8 +25,8 @@ const BODY = "Tell us what you are planning and where. We will review the detail
 /**
  * The close: an invitation beside one picture, then the firm's details set
  * as the title block of a drawing sheet, as the story's sheet is issued
- * with one (Story.tsx): the firm, its office, hours, phone and email, its
- * Google rating and credentials, each in a ruled cell.
+ * with one: the firm, its office, hours, phone and email and Google
+ * rating, each in a ruled cell.
  *
  * The section is an ivory sheet that rises over Services as it recedes
  * into the night (the handover module), the page's second sheet after the
@@ -141,16 +141,6 @@ export function Contact({ reviews }: { reviews: ReviewSummary | null }) {
               {reviews.source === "profile" && reviews.asOf ? (
                 <dd className="contact-block__note">From our Google Business Profile on {dateFormat.format(new Date(reviews.asOf))}.</dd>
               ) : null}
-            </dl>
-          ) : null}
-          {site.credentials.length ? (
-            <dl data-contact-cell="" className="contact-block__cell">
-              <dt className="contact-block__label">Credentials</dt>
-              {site.credentials.map((c) => (
-                <dd key={c} className="contact-block__value">
-                  {c}
-                </dd>
-              ))}
             </dl>
           ) : null}
         </div>

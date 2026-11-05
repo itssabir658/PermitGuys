@@ -6,7 +6,8 @@
  * Everything here was published by PermitGuys on permitguys.ca (read on
  * 30 October 2026) and asked for again by the business on the new site:
  * the reviews are its Google reviews as the old homepage quoted them, word
- * for word (no star counts were shown there, so none are given here); the
+ * for word, each with five stars (confirmed by the business on 5 November
+ * 2026; the old site showed none); the
  * quote is Mike Holmes's, from #HolmesFamilyRescue, shortened only where
  * the ellipsis says. Never write or edit review text by hand.
  *
@@ -17,28 +18,35 @@
 export interface FeaturedReview {
   author: string;
   text: string;
+  /** The review's stars on Google, when the business has confirmed them; the card shows none without. */
+  rating?: number;
 }
 
 export const featuredReviews: FeaturedReview[] = [
   {
     author: "Paul Deol",
     text: "I worked with Mati, Daniel and Aamou to get my basement designed and permitted, and was very happy with the service!  They were responsive, provided great advice, and ultimately came up with a design that is perfect for my needs.  I look forward to working with them again for future projects.",
+    rating: 5,
   },
   {
     author: "Jas Kaur Kalsi",
     text: "Very professional team. Loved working with Aamou. He was always available to answer any questions or concerns. The whole experience was easy and they took care of dealing with the town. I made changes to the designs but they were very patient and made recommendations.",
+    rating: 5,
   },
   {
     author: "Rie Fukasawa-Rowan",
     text: "I was assigned to our new office renovation project but had no experience - let alone applying for city permits but Mati and his team made it easy for me! Tey are professional and waste no time. Highly recommended!",
+    rating: 5,
   },
   {
     author: "James Gillespie",
     text: "Very excellent accurate and professional treatment of our situation, planning and making successful application for construction of an upper rear balcony! The Construction drawings provided were engineered to code and totally comprehensive with inspection requirements.",
+    rating: 5,
   },
   {
     author: "Pamir Rafiq",
     text: "I have made nothing but good experiences with this company. Exceeding expectations always. Mati and Aamou are the perfect leaders and their team shows it. Always professional, reliable with high quality workmanship.",
+    rating: 5,
   },
 ];
 

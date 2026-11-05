@@ -30,17 +30,14 @@ import {
   HERO_DEPTH,
   heroPartWay,
   heroState,
-  introCopy,
+  frameCaption,
+  frameMark,
+  frameSlide,
   introLine,
+  introTick,
   introPartWay,
   introPhases,
   introProgress,
-  orbitItem,
-  orbitLeave,
-  orbitPath,
-  sealItem,
-  sealsStart,
-  sealsTurn,
   pageGround,
   partWay,
   riseInset,
@@ -82,7 +79,6 @@ import {
   worksLine,
   worksPartWay,
   worksShot,
-  type OrbitPath,
   type SwapLayer,
 } from "@/lib/motion/home";
 import { clamp, ease, mix, toHex, tween } from "@/lib/motion/math";
@@ -195,13 +191,14 @@ interface Shared {
  * layout keeps the stylesheet's grounds: ivory, then Services' own charcoal.
  */
 function ground(shared: Shared): MotionModule | null {
+  // Any of the three may be missing (the About page has Works but no Services or Contact): each part of the ground follows only the sections that are there.
   const works = one("[data-works]");
   const services = one("[data-services]");
   const contact = one("[data-contact]");
-  if (!works || !services || !contact) return null;
+  if (!works && !services) return null;
   const html = document.documentElement;
   const bar = one(".site-nav__bar");
-  let rWorks: Range, rServices: Range, rContact: Range;
+  let rWorks: Range | null = null, rServices: Range | null = null, rContact: Range | null = null;
   let night = false;
   const setNight = (isNight: boolean) => {
     if (isNight === night) return;
@@ -212,36 +209,38 @@ function ground(shared: Shared): MotionModule | null {
   return {
     order: ORDER.ground,
     measure() {
-      rWorks = measureRange(works);
-      rServices = measureRange(services);
-      rContact = measureRange(contact);
+      rWorks = works && measureRange(works);
+      rServices = services && measureRange(services);
+      rContact = contact && measureRange(contact);
     },
     update(f) {
       if (!f.tracks) {
         setStyle(document.body, "backgroundColor", "");
         if (bar) setStyle(bar, "--ground", "");
-        setStyle(services, "backgroundColor", "");
+        if (services) setStyle(services, "backgroundColor", "");
         shared.fade = 0;
         setNight(false);
         return;
       }
-      const g = pageGround(sso(rWorks, f), hso(rWorks, f), sso(rServices, f));
+      // A missing Works never turns the ground to stone, a missing Services never brings dusk.
+      const g = pageGround(rWorks ? sso(rWorks, f) : -9, rWorks ? hso(rWorks, f) : 9, rServices ? sso(rServices, f) : -9);
       shared.fade = g.fade;
       setStyle(document.body, "backgroundColor", toHex(g.color));
       // On the tracks Services shows the night ground through itself.
-      setStyle(services, "backgroundColor", "transparent");
+      if (services) setStyle(services, "backgroundColor", "transparent");
       // Night until Contact's ivory reaches the header, and ivory under the header from then on.
-      const h = headerGround(g, rContact.top - f.scroll);
+      const h = headerGround(g, rContact ? rContact.top - f.scroll : Infinity);
       if (bar) setStyle(bar, "--ground", toHex(h.color));
       setNight(h.night);
     },
     zones(f) {
-      return zonesWhere(f, rServices.top - f.vh, rServices.top, (g) => duskPartWay(sso(rServices, g)));
+      const r = rServices;
+      return r ? zonesWhere(f, r.top - f.vh, r.top, (g) => duskPartWay(sso(r, g))) : [];
     },
     destroy() {
       setStyle(document.body, "backgroundColor", "");
       if (bar) setStyle(bar, "--ground", "");
-      setStyle(services, "backgroundColor", "");
+      if (services) setStyle(services, "backgroundColor", "");
       delete html.dataset.ground;
     },
   };
@@ -341,22 +340,21 @@ function hero(): MotionModule | null {
   };
 }
 
-/* Intro: six pictures travel one squircle path around the centre while the paragraphs pass through it; with the last, the ring turns to the municipalities' seals. */
+/* Intro: the paragraphs roll through their masks beside one framed picture at a time; each change of picture wipes up as the text changes over, and the last panel holds the municipalities' marks. */
 function intro(): MotionModule | null {
   // The section, not the page: the first-load intro screen also marks <html> with data-intro.
   const section = one("section[data-intro]");
   if (!section) return null;
-  const stage = one("[data-intro-stage]", section);
-  const items = all("[data-orbit-slot]", section).map((el) => ({ el, slot: Number(el.dataset.orbitSlot), img: one("[data-orbit-img]", el) }));
+  const slides = all("[data-frame-slide]", section)
+    .sort((a, b) => Number(a.dataset.frameSlide) - Number(b.dataset.frameSlide))
+    .map((el) => ({ el, inner: one("[data-frame-inner]", el), marks: all("[data-frame-mark]", el) }));
+  const captions = all("[data-frame-caption]", section).sort((a, b) => Number(a.dataset.frameCaption) - Number(b.dataset.frameCaption));
+  const ticks = all("[data-intro-tick]", section);
   const copies = all("[data-intro-copy]", section);
   splitting.push(...copies);
-  const seals = all("[data-seal]", section);
-  const caption = one("[data-intro-caption]", section);
-  const sealsCaption = one("[data-seals-caption]", section);
-  const { copyIn, exitStart, sectionVh } = introPhases(copies.length);
-  const turnAt = sealsStart(copyIn);
+  const { copyIn, release } = introPhases(copies.length);
+  const n = slides.length;
   let r: Range;
-  let path: OrbitPath;
   let lines: HTMLElement[][] = copies.map(() => []);
   const sleep = sleeper();
   return {
@@ -369,61 +367,47 @@ function intro(): MotionModule | null {
         copies.forEach(unsplit);
         lines = copies.map(() => []);
       }
-      // The ring and the image sizes follow the stage (100svh, so a phone's toolbar does not push the ring under the header or the caption); rebuilt only here, so a resize re-spaces the ring. Portrait screens keep the pictures clear of the taller paragraph.
-      const copyHalf = copies.reduce((m, c) => Math.max(m, c.offsetHeight / 2), 0);
-      path = orbitPath(f.vw, (f.tracks && stage?.offsetHeight) || f.vh, copyHalf, f.vh);
-      for (const it of items) setStyle(it.el, "--size", f.tracks ? px(path.sizes[it.slot] ?? 0) : "");
-      for (const el of seals) setStyle(el, "--size", f.tracks ? px(path.seal) : "");
     },
     update(f) {
       if (sleep.skip(r, f)) return;
-      // Without the tracks the pictures sit in a row under the paragraphs (globals.css), untouched.
+      // Without the tracks the panels stand in a column beside the paragraphs (globals.css), untouched.
       if (!f.tracks) {
-        for (const it of items) {
-          clear(it.el, "transform", "opacity", "visibility");
-          if (it.img) clear(it.img, "transform");
+        for (const s of slides) {
+          clear(s.el, "transform", "visibility");
+          if (s.inner) clear(s.inner, "transform");
+          for (const m of s.marks) clear(m, "transform", "opacity");
         }
-        for (const el of seals) clear(el, "transform", "opacity", "visibility");
+        for (const c of captions) clear(c, "transform");
+        for (const t of ticks) clear(t, "transform");
         lines.forEach((ls) => ls.forEach((line) => clear(line, "transform", "opacity")));
-        if (caption) clear(caption, "opacity");
-        if (sealsCaption) clear(sealsCaption, "opacity");
         return;
       }
-      const { e, exit, raw } = introProgress(sso(r, f), sectionVh / 100, exitStart);
-      const copy = introCopy(raw, copyIn);
-      let ring = 0;
-      for (const it of items) {
-        const o = orbitItem(path, it.slot, e, exit, copy);
-        // Once the ring has turned the picture is gone (and its layer with it), so it is drawn only while it shows.
-        const leave = seals.length ? orbitLeave(it.slot, e, turnAt) : 0;
-        const k = mix(1, 0.55, leave);
-        setStyle(it.el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0)${leave > 0.001 ? ` scale(${num(k)})` : ""}`);
-        setStyle(it.el, "opacity", num(o.opacity * (1 - leave)));
-        setStyle(it.el, "visibility", leave > 0.999 ? "hidden" : "");
-        if (it.img) setStyle(it.img, "transform", `scale(${num(o.imgScale)})`);
-        ring = Math.max(ring, o.arrive);
-      }
-      for (const el of seals) {
-        const o = sealItem(path, Number(el.dataset.seal), seals.length, e, exit, copy, turnAt);
-        setStyle(el, "transform", `translate(-50%, -50%) translate3d(${px(o.x)}, ${px(o.y)}, 0) scale(${num(o.scale)})`);
-        setStyle(el, "opacity", num(o.opacity));
-        setStyle(el, "visibility", o.arrive < 0.001 ? "hidden" : "visible");
-      }
-      // Each caption is there while its ring is, and leaves with it; they cross as the ring turns.
-      const turned = seals.length ? sealsTurn(e, turnAt) : 0;
-      if (caption) setStyle(caption, "opacity", num(Math.min(ring, 1 - exit) * (1 - Math.min(1, turned * 2))));
-      if (sealsCaption) setStyle(sealsCaption, "opacity", num(Math.max(0, turned * 2 - 1) * (1 - exit)));
+      const e = introProgress(sso(r, f), release);
+      slides.forEach((s, k) => {
+        const o = frameSlide(e, k, n, copyIn, release);
+        // A panel's window and the picture held still inside it move together only while it wipes; once whole it is drawn with the page, and once covered it is not drawn.
+        setStyle(s.el, "transform", o.y < 0.01 ? "none" : `translate3d(0, ${o.y.toFixed(3)}%, 0)`);
+        setStyle(s.el, "visibility", o.covered || o.p < 0.0005 ? "hidden" : "visible");
+        if (s.inner) setStyle(s.inner, "transform", `translate3d(0, ${o.innerY.toFixed(3)}%, 0) scale(${num(o.scale)})`);
+        s.marks.forEach((m, j) => {
+          const t = frameMark(o.p, j);
+          setStyle(m, "opacity", num(t));
+          setStyle(m, "transform", t > 0.999 ? "none" : `translate3d(0, ${px(10 * (1 - t))}, 0)`);
+        });
+      });
+      captions.forEach((c, k) => setStyle(c, "transform", liftPercent(frameCaption(e, k, n, copyIn))));
+      ticks.forEach((t, i) => setStyle(t, "transform", `scaleX(${num(introTick(e, i, copyIn, release))})`));
       // Display type never fades: each line only rolls through its mask.
       lines.forEach((ls, i) =>
         ls.forEach((line, j) => {
-          setStyle(line, "transform", liftPercent(introLine(e, copyIn[i], j)));
+          setStyle(line, "transform", liftPercent(introLine(e, copyIn[i], j, i === lines.length - 1)));
           setStyle(line, "opacity", "1");
         }),
       );
     },
     zones(f) {
       const counts = lines.map((ls) => ls.length);
-      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => introPartWay(sso(r, g), counts, seals.length > 0));
+      return zonesWhere(f, r.top - f.vh, r.top + r.height, (g) => introPartWay(sso(r, g), counts));
     },
   };
 }
