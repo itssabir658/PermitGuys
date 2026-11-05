@@ -6,24 +6,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
 import { openingAssets } from "@/lib/motion/opening";
-import { HouseDrawing } from "./HouseDrawing";
+import { Logo } from "./Logo";
 
 /*
- * Page transition (docs/MOTION.md, "Page transitions"): a dark drawing
- * sheet with the loader's house on it, drawn as the loader draws it.
+ * Page transition (docs/MOTION.md, "Page transitions"): a dark sheet with
+ * the loader's mark on it: the logo and its red rule.
  *
  * In: the tapped link dims at once and the page darkens (0.25s) while the
- * sheet rises from the bottom edge (0.6s, --e-sheet). The house draws on the
- * sheet from 0.15s on the loader's own order, at 0.42 of its pace: the
- * ground, the construction lines, the walls, the roof meeting at the ridge,
- * the windows, and the red front door last (about 0.95s). The next page is
- * requested only once the drawing is complete, so React's commit never
- * freezes a line half drawn.
+ * sheet rises from the bottom edge (0.6s, --e-sheet). The logo rises on the
+ * sheet from 0.2s (0.5s) and the red rule is drawn out from the middle under
+ * it from 0.4s (0.45s). The next page is requested only once both are in
+ * (about 0.85s), so React's commit never freezes them half way.
  * Hold: two frames, and the new page's opening pictures decoded (0.9s at
  * most; openingAssets).
  * Out: the sheet leaves through the top (0.6s, power2.inOut, which gets
  * going sooner than the cover's ease) as the dimming clears (0.3s), so the
- * new page is never seen through a grey veil. The drawing stays on the
+ * new page is never seen through a grey veil. The mark stays on the
  * sheet, drifting up a little with it, until the sheet's edge passes over
  * it, so the exit never opens on a plain graphite screen. The pressed link
  * lets go. As it starts, focus moves to the new page's main content and its
@@ -38,7 +36,7 @@ import { HouseDrawing } from "./HouseDrawing";
  *
  * Back and forward: each page's scroll position is kept (by URL, for the
  * session). The browser's own history step is held for a moment while the
- * finished drawing fades in over the page (0.28s), then handed to the
+ * finished mark fades in over the page (0.28s), then handed to the
  * router; the page comes back at the place it was left (engine.restore),
  * with its entrance already played (data-returning), and the cover fades
  * away (0.32s).
@@ -60,13 +58,14 @@ type Exit = "sheet" | "fade" | "quick";
 
 const SHEET_MS = 600;
 const UNDERLAY_MS = 250;
-/** The drawing: the loader's strokes from 0.15s, at this fraction of the loader's timings (each stroke at least 0.2s). */
-const DRAW_AT = 150;
-const DRAW_PACE = 0.42;
-const DRAW_MIN_MS = 200;
+/** The mark: the logo rises from 0.2s, the red rule is drawn from 0.4s. */
+const LOGO_AT = 200;
+const LOGO_MS = 500;
+const RULE_AT = 400;
+const RULE_MS = 450;
 /** At most this long for the new page's opening picture. */
 const HOLD_CAP_MS = 900;
-/** On the way out the drawing rides up this far with the sheet, which clears it as its edge goes by. */
+/** On the way out the mark rides up this far with the sheet, which clears it as its edge goes by. */
 const MARK_LIFT_PX = 16;
 /** The dimming clears with the sheet, so the new page is never shown grey. */
 const UNDERLAY_OUT_MS = 300;
@@ -330,12 +329,16 @@ export function ScreenTransition() {
         return;
       }
       const fill = "both" as const;
-      const strokes = [...(veil.current?.querySelectorAll<SVGPathElement>(".house__stroke") ?? [])].map((path) => {
-        const at = Number(path.dataset.at) || 0;
-        const ms = Math.max(DRAW_MIN_MS, (Number(path.dataset.ms) || 0) * DRAW_PACE);
-        const keyframes = path.classList.contains("house__stroke--dimension") ? [{ opacity: 0 }, { opacity: 1 }] : [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }];
-        return path.animate(keyframes, { duration: ms, delay: DRAW_AT + at * DRAW_PACE, easing: cssEase.power2InOut, fill });
-      });
+      const strokes = [
+        veil.current?.querySelector(".screen-veil__logo")?.animate(
+          [
+            { opacity: 0, transform: "translateY(0.6rem)" },
+            { opacity: 1, transform: "none" },
+          ],
+          { duration: LOGO_MS, delay: LOGO_AT, easing: cssEase.power3Out, fill },
+        ),
+        veil.current?.querySelector(".screen-veil__rule")?.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: RULE_MS, delay: RULE_AT, easing: cssEase.power2InOut, fill }),
+      ].filter((a): a is Animation => Boolean(a));
       const sheet = panel.current?.animate([{ clipPath: "inset(100% 0 0 0)" }, { clipPath: "inset(0% 0 0 0)" }], { duration: SHEET_MS, easing: cssEase.sheet, fill });
       coverAnims.current = [
         underlay.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: UNDERLAY_MS, easing: cssEase.power1Out, fill }),
@@ -343,7 +346,7 @@ export function ScreenTransition() {
         ...strokes,
       ].filter((a): a is Animation => Boolean(a));
       covered.current = Promise.all([sheet?.finished]);
-      // Navigate once the drawing is complete, not on a timer: the router's commit must not freeze a stroke.
+      // Navigate once the mark is in, not on a timer: the router's commit must not freeze it half way.
       Promise.all(strokes.map((a) => a.finished)).then(go, go);
     };
 
@@ -473,7 +476,8 @@ export function ScreenTransition() {
       <div ref={underlay} className="screen-veil__underlay" />
       <div ref={panel} className="screen-veil__panel">
         <div ref={mark} className="screen-veil__mark">
-          <HouseDrawing className="screen-veil__house" ground />
+          <Logo onDark className="screen-veil__logo" />
+          <span className="screen-veil__rule" />
         </div>
       </div>
     </div>

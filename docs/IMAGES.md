@@ -109,4 +109,4 @@ Do not present stock photos or studies as PermitGuys projects.
 
 ## The loader
 
-The loader (`Preloader.tsx`) uses no pictures: it is a line drawing of a house (`src/content/house-drawing.ts`) and the logo. The Greater Toronto Area map, its five cropped renderings in `public/images/intro/` and `scripts/gta-map/build.py` were removed on 5 November 2026 (the client disliked the map loader); they are in the git history.
+The loader (`Preloader.tsx`) uses no pictures: it is a façade of dark blades, a raking light and the logo. The Greater Toronto Area map, its five cropped renderings in `public/images/intro/` and `scripts/gta-map/build.py` were removed on 5 November 2026 (the client disliked the map loader); they are in the git history.

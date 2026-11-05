@@ -1,45 +1,57 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties } from "react";
-import { HOUSE_DOOR, HOUSE_HEIGHT, HOUSE_WIDTH } from "@/content/house-drawing";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
-import { LOADER_DOOR_MS, LOADER_ENTER_AT_MS, LOADER_ENTER_MS, LOADER_GENTLE_FADE_MS, LOADER_GROUND, LOADER_HOLD_MS, LOADER_LOGO, enterScale } from "@/lib/motion/intro";
+import {
+  LOADER_BLADES,
+  LOADER_FADE_MS,
+  LOADER_GENTLE_FADE_MS,
+  LOADER_HOLD_MS,
+  LOADER_JOINTS,
+  LOADER_LIFT_MS,
+  LOADER_LIGHT,
+  LOADER_LINE,
+  LOADER_LOGO,
+  LOADER_OPEN_DEG,
+  LOADER_OPEN_MS,
+  LOADER_RULE,
+  bladeDelay,
+  openDuration,
+} from "@/lib/motion/intro";
 import { openingAssets } from "@/lib/motion/opening";
-import { HouseDrawing } from "./HouseDrawing";
 import { Logo } from "./Logo";
 
 /*
- * The load sequence: through the front door. docs/MOTION.md, "Load
- * sequence"; the timeline is in src/lib/motion/intro.ts, the drawing in
- * src/content/house-drawing.ts.
+ * The load sequence: the façade. docs/MOTION.md, "Load sequence"; the
+ * timeline is in src/lib/motion/intro.ts.
  *
- * On every full load a dark screen holds, a ground line runs out across it,
- * and the front elevation of a house is drawn on it as a drafter would:
- * faint construction lines first, then the walls, the roof meeting at the
- * ridge, the windows, and the front door last, in the brand red. The logo
- * comes up under the ground. Then the door swings open (inward, as front
- * doors do), the page shows through the doorway, and the whole screen grows
- * around the door until the doorway is bigger than the screen: the visitor
- * walks in.
+ * On every full load the screen is a dark façade of tall vertical blades,
+ * seamless at first. A raking light crosses it from left to right, as low
+ * sun crosses a building, and picks out the joints between the blades. The
+ * logo rises in the middle, a red rule is drawn out under it, and the firm's
+ * line comes up below. After a short hold the logo lifts away and the blades
+ * pivot open on their centres, from the middle outward, like a brise-soleil
+ * turning to let the light in; each catches the light as it turns, and the
+ * page is seen through them. The last of the screen fades as they come edge
+ * on.
  *
- * The screen is the dark spread of the doorway's box-shadow, so the doorway
- * is a real hole in it, and the door leaf a dark panel over that hole. The
- * drawing is CSS (stroke-dashoffset), started (data-intro="play") two frames
- * after hydration, since it is painted on the main thread; the head script
- * starts it anyway after 1.5s. The swing and the way in are compositor
- * animations (rotateY on the leaf, scale on the screen). The page underneath
- * is first measured once the drawing is complete (engine.measureAfter), in
- * the hold.
+ * All of it is transforms and opacity: the light is one gradient moved
+ * across each blade (each blade shows its own slice of one screen-wide
+ * gradient, so the light reads as one), and the blades turn with rotateY on
+ * the compositor. The timeline starts (data-intro="play") two frames after
+ * hydration, as before; the head script starts it anyway after 1.5s. The
+ * page underneath is first measured once the façade is complete
+ * (engine.measureAfter), in the hold.
  *
  * The screen waits for the fonts and the page's opening pictures as before
  * (openingAssets, capped at 3.5s). Then, T₀: the page is put back at the
  * top, the document gets data-loaded and data-revealed so the page's own
- * entrance plays as the door opens, and data-preloaded marks the end and
+ * entrance plays as the blades open, and data-preloaded marks the end and
  * removes the screen. The page is held still while the screen is up and
- * released at 60% of the way in, or 8s after navigation whatever happens.
- * With reduced motion (data-gentle) the lines fade up rather than draw, the
- * door stays shut and the screen fades.
+ * released at 60% of the opening, or 8s after navigation whatever happens.
+ * With reduced motion (data-gentle) the light does not travel, the blades
+ * stay still, and the screen fades.
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on for every visitor with JavaScript (visitors who prefer reduced
@@ -55,9 +67,7 @@ const SAFETY_MS = 8000;
 /** Never hold the page for slow assets longer than this. */
 const ASSET_CAP_MS = 3500;
 
-const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(3)}%`;
 const timing = (t: { at: number; ms: number }) => ({ "--at": `${t.at}ms`, "--ms": `${t.ms}ms` }) as CSSProperties;
-const [DX, DY, DW, DH] = HOUSE_DOOR;
 
 export function Preloader() {
   const ref = useRef<HTMLDivElement>(null);
@@ -76,7 +86,7 @@ export function Preloader() {
     const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const settled = (list: Animation[]) => Promise.all(list.map((a) => a.finished.catch(() => undefined)));
     let composedAt = 0;
-    // Two frames on, so every effect of the hydration has run and nothing heavy is left to stall the drawing.
+    // Two frames on, so every effect of the hydration has run and nothing heavy is left to stall the light.
     const composed = frame().then(frame).then(() => {
       html.dataset.intro = "play";
       // Reading them brings the styles up to date, which starts the animations.
@@ -85,12 +95,12 @@ export function Preloader() {
       });
     });
     const fonts = Promise.race([document.fonts?.ready, wait(ASSET_CAP_MS)]);
-    // The page is first measured once the drawing is complete, so the measure lands in the hold, not on a line being drawn.
+    // The page is first measured once the façade is complete, so the measure lands in the hold.
     const measured = engine.measureAfter(Promise.race([Promise.all([composed, fonts]), wait(Math.max(0, SAFETY_MS - performance.now()))]));
     const assets = Promise.all([document.fonts?.ready, ...openingAssets()]);
 
     Promise.all([composed, measured, Promise.race([assets, wait(ASSET_CAP_MS)])])
-      // The finished drawing is held a moment, however long the page took to be ready.
+      // The finished façade is held a moment, however long the page took to be ready.
       .then(() => wait(Math.max(0, LOADER_HOLD_MS - (performance.now() - composedAt))))
       .then(() => {
         if (cancelled) return;
@@ -99,13 +109,10 @@ export function Preloader() {
           engine.unlock("preloader");
           return;
         }
-        const door = el.querySelector(".loader__door")!.getBoundingClientRect();
-        const cx = door.left + door.width / 2;
-        const cy = door.top + door.height / 2;
-        // The hero's picture settles from the doorway.
+        // The hero's picture settles from the middle of the screen, where the façade opens first.
         for (const target of document.querySelectorAll<HTMLElement>("[data-hero-stage]")) {
-          target.style.setProperty("--iris-x", `${cx.toFixed(1)}px`);
-          target.style.setProperty("--iris-y", `${cy.toFixed(1)}px`);
+          target.style.setProperty("--iris-x", `${(innerWidth / 2).toFixed(1)}px`);
+          target.style.setProperty("--iris-y", `${(innerHeight / 2).toFixed(1)}px`);
         }
         // Back at the top before anything shows (data-loaded is what scripts and tests wait for).
         engine.scrollTo(0, true);
@@ -123,32 +130,30 @@ export function Preloader() {
           fade.finished.then(done, done);
           return;
         }
-        const leaf = el.querySelector<HTMLElement>(".loader__leaf");
-        leaf?.animate(
+        el.querySelector(".loader__mark")?.animate(
           [
-            { transform: "rotateY(0deg)", backgroundColor: "#121212" },
-            { transform: "rotateY(84deg)", backgroundColor: "#262523" },
+            { opacity: 1, transform: "none" },
+            { opacity: 0, transform: "translateY(-0.75rem)" },
           ],
-          { duration: LOADER_DOOR_MS, easing: cssEase.power2InOut, fill },
+          { duration: LOADER_LIFT_MS, easing: cssEase.power2InOut, fill },
         );
-        // The leaf is put away as the screen goes in, so its edge never sweeps the view.
-        leaf?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: LOADER_ENTER_AT_MS + 120, easing: cssEase.power1Out, fill: "both" });
-        // The drawing's faint pieces and the logo go first, so the way in is lines and light.
-        for (const extra of el.querySelectorAll(".loader__extras, .house__stroke--guide, .house__stroke--dimension"))
-          extra.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: LOADER_ENTER_AT_MS, easing: cssEase.power1Out, fill: "both" });
-        const scale = enterScale(door, { width: innerWidth, height: innerHeight });
-        el.style.transformOrigin = `${cx.toFixed(1)}px ${cy.toFixed(1)}px`;
-        // Slow to start, as a step through the door, then fast, and soft at the end.
-        const enter = el.animate([{ transform: "scale(1)" }, { transform: `scale(${scale.toFixed(3)})` }], {
-          duration: LOADER_ENTER_MS,
-          delay: LOADER_ENTER_AT_MS,
-          easing: "cubic-bezier(0.7, 0, 0.16, 1)",
-          fill: "both",
+        // Only the blades on show (phones show fewer).
+        const blades = [...el.querySelectorAll<HTMLElement>(".loader__blade")].filter((b) => b.offsetWidth > 0);
+        const count = blades.length;
+        blades.forEach((blade, i) => {
+          const timing = { duration: LOADER_OPEN_MS, delay: bladeDelay(i, count), easing: cssEase.sheet, fill: "both" as const };
+          // Blades left of the middle turn one way, the rest the other, so the façade opens like a pair of shutters.
+          const deg = i < count / 2 ? -LOADER_OPEN_DEG : LOADER_OPEN_DEG;
+          blade.animate([{ transform: "rotateY(0deg)" }, { transform: `rotateY(${deg}deg)` }], timing);
+          // Each blade catches the light as it turns.
+          blade.querySelector(".loader__sheen")?.animate([{ opacity: 0 }, { opacity: 1 }], timing);
         });
+        const total = openDuration(count);
+        const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: LOADER_FADE_MS, delay: total - LOADER_FADE_MS, easing: cssEase.in, fill: "both" });
         release = window.setTimeout(() => {
           if (!cancelled) engine.unlock("preloader");
-        }, LOADER_ENTER_AT_MS + 0.6 * LOADER_ENTER_MS);
-        enter.finished.then(done, done);
+        }, 0.6 * total);
+        fade.finished.then(done, done);
       });
     return () => {
       cancelled = true;
@@ -160,18 +165,22 @@ export function Preloader() {
 
   return (
     <div ref={ref} aria-hidden="true" className="preloader">
-      <div className="loader" style={{ aspectRatio: `${HOUSE_WIDTH} / ${HOUSE_HEIGHT}` }}>
-        {/* The doorway: a hole in the screen, which is this box's shadow, with the door leaf over it. */}
-        <div className="loader__door" style={{ left: pct(DX, HOUSE_WIDTH), top: pct(DY, HOUSE_HEIGHT), width: pct(DW, HOUSE_WIDTH), height: pct(DH, HOUSE_HEIGHT) }}>
-          <div className="loader__leaf">
-            <span className="loader__handle" />
+      <div className="loader__facade" style={{ "--blades": LOADER_BLADES, ...timing(LOADER_LIGHT) } as CSSProperties}>
+        {Array.from({ length: LOADER_BLADES }, (_, i) => (
+          <div key={i} className="loader__blade" style={{ "--i": i, ...timing(LOADER_JOINTS) } as CSSProperties}>
+            <span className="loader__light" />
+            <span className="loader__sheen" />
           </div>
+        ))}
+      </div>
+      <div className="loader__mark">
+        <div className="loader__logo" style={timing(LOADER_LOGO)}>
+          <Logo onDark className="loader__logo-mark" />
         </div>
-        <span className="loader__ground" style={timing(LOADER_GROUND)} />
-        <HouseDrawing className="loader__drawing" />
-        <div className="loader__extras" style={timing(LOADER_LOGO)}>
-          <Logo onDark className="loader__logo" />
-        </div>
+        <span className="loader__rule" style={timing(LOADER_RULE)} />
+        <p className="loader__line" style={timing(LOADER_LINE)}>
+          Architecture <span className="loader__sep" /> Engineering <span className="loader__sep" /> Design
+        </p>
       </div>
     </div>
   );

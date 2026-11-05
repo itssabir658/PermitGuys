@@ -2,33 +2,36 @@ import { expect, test } from "@playwright/test";
 import { watchConsole } from "./helpers";
 
 /*
- * The loader, "through the front door" (Preloader.tsx, docs/MOTION.md "Load
- * sequence"): on every full load a house is drawn in line, its red door
- * opens, and the screen goes in through the doorway onto the page.
+ * The loader, the façade (Preloader.tsx, docs/MOTION.md "Load sequence"):
+ * on every full load a dark façade of blades with the logo on it, a light
+ * crossing it; then the blades pivot open onto the page.
  */
 test.describe("Loader", () => {
-  test("draws the house, opens the door and goes in through it onto the page", async ({ page }) => {
+  test("shows the façade with the logo, then opens the blades from the middle onto the page", async ({ page }) => {
     const console = watchConsole(page);
     await page.goto("/");
     await page.waitForFunction(() => document.documentElement.dataset.intro === "play");
-    // The door is drawn after every other line of the house.
-    const order = await page.locator(".loader__drawing .house__stroke").evaluateAll((els) =>
-      els.map((el) => ({ kind: [...el.classList].find((c) => c.startsWith("house__stroke--"))!, delay: Number((el.getAnimations()[0] as CSSAnimation).effect?.getTiming().delay) })),
-    );
-    const door = order.find((s) => s.kind === "house__stroke--door")!;
-    for (const s of order.filter((x) => x.kind === "house__stroke--ink")) expect(s.delay).toBeLessThanOrEqual(door.delay);
-
-    // The house sits on the screen, the doorway inside it.
-    const fit = await page.evaluate(() => {
-      const house = document.querySelector(".loader")!.getBoundingClientRect();
-      const door = document.querySelector(".loader__door")!.getBoundingClientRect();
-      return { inView: house.left >= 0 && house.top >= 0 && house.right <= innerWidth && house.bottom <= innerHeight, inside: door.left > house.left && door.right < house.right && door.top > house.top && door.bottom <= house.bottom };
+    // The blades cover the screen edge to edge, and the logo sits on them.
+    const cover = await page.evaluate(() => {
+      const blades = [...document.querySelectorAll<HTMLElement>(".loader__blade")].filter((b) => b.offsetWidth > 0).map((b) => b.getBoundingClientRect());
+      const logo = document.querySelector(".loader__logo")!.getBoundingClientRect();
+      return { count: blades.length, left: blades[0].left, right: blades.at(-1)!.right, top: Math.max(...blades.map((b) => b.top)), bottom: Math.min(...blades.map((b) => b.bottom)), logoInView: logo.left > 0 && logo.right < innerWidth, width: innerWidth, height: innerHeight };
     });
-    expect(fit).toEqual({ inView: true, inside: true });
+    expect(cover.count).toBeGreaterThanOrEqual(8);
+    expect(cover.left).toBeLessThanOrEqual(0);
+    expect(cover.right).toBeGreaterThanOrEqual(cover.width - 1);
+    expect(cover.top).toBeLessThanOrEqual(0);
+    expect(cover.bottom).toBeGreaterThanOrEqual(cover.height);
+    expect(cover.logoInView).toBe(true);
 
-    // Then the screen grows around the doorway, and is gone.
+    // Then the blades turn, the middle ones first.
     await page.waitForFunction(() => "loaded" in document.documentElement.dataset, null, { timeout: 9000 });
-    await page.waitForFunction(() => document.querySelector(".preloader")!.getAnimations().some((a) => String((a.effect as KeyframeEffect).getKeyframes().at(-1)?.transform).startsWith("scale(")));
+    const delays = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>(".loader__blade")].filter((b) => b.offsetWidth > 0).map((b) => Number(b.getAnimations().find((a) => !(a instanceof CSSAnimation))?.effect?.getTiming().delay)),
+    );
+    const mid = delays.length / 2;
+    expect(delays[mid]).toBeLessThan(delays[0]);
+    expect(delays[mid - 1]).toBeLessThan(delays.at(-1)!);
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await expect(page.locator(".preloader")).toBeHidden();
     console.expectNone();
@@ -43,21 +46,23 @@ test.describe("Loader", () => {
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
   });
 
-  test("the page transition draws the same house", async ({ page }) => {
+  test("the page transition shows the logo and its red rule", async ({ page }) => {
     await page.goto("/services/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await page.getByRole("link", { name: /deck permit/i }).first().click();
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "cover");
-    await expect(page.locator(".screen-veil .house__stroke--door")).toHaveCount(1);
+    await expect(page.locator(".screen-veil .screen-veil__logo")).toHaveCount(1);
+    await expect(page.locator(".screen-veil .screen-veil__rule")).toHaveCount(1);
     await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
   });
 
-  test("with reduced motion the loader still plays (gentle motion), the door stays shut and the screen fades", async ({ page }) => {
+  test("with reduced motion the loader still plays (gentle motion), the blades stay still and the screen fades", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.locator(".preloader")).toBeVisible();
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await expect(page.locator(".preloader")).toBeHidden();
-    expect(await page.locator(".loader__leaf").evaluate((el) => el.getAnimations().length)).toBe(0);
+    const turned = await page.locator(".loader__blade").evaluateAll((els) => els.filter((el) => el.getAnimations().some((a) => !(a instanceof CSSAnimation))).length);
+    expect(turned).toBe(0);
   });
 });

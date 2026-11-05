@@ -1,50 +1,63 @@
-import { HOUSE_STROKES } from "@/content/house-drawing";
-
 /*
  * The loader's timeline (Preloader.tsx, globals.css "Loader"), in
  * milliseconds from data-intro="play". docs/MOTION.md, "Load sequence".
  *
- * A dark screen; a ground line runs out across it; the house is drawn on it
- * (src/content/house-drawing.ts), the front door last, in red; the logo
- * comes up under the ground; a short hold; the door swings open onto the
- * page; and the screen goes in through the doorway until the opening is
- * bigger than the screen.
+ * A dark façade of tall vertical blades, seamless; a raking light crosses
+ * it from left to right, picking out the joints between the blades; the logo
+ * comes up in the middle with a red rule drawn under it and the firm's line
+ * below; a short hold; then the logo lifts away and the blades pivot open,
+ * from the middle outward, like a brise-soleil turning to let the light in,
+ * and the page is seen through them.
  */
 
-/** The ground line runs out from the middle to both edges of the screen. */
-export const LOADER_GROUND = { at: 80, ms: 750 };
-/** The logo comes up under the ground line once the door is drawn. */
-export const LOADER_LOGO = { at: 1350, ms: 600 };
-/** The finished drawing is held at least this long. */
-export const LOADER_HOLD_MS = 250;
-/** The door swings in (it opens into the house). */
-export const LOADER_DOOR_MS = 650;
-/** The way in starts this far into the door's swing, and takes this long. */
-export const LOADER_ENTER_AT_MS = 260;
-export const LOADER_ENTER_MS = 1050;
-/** With reduced motion: no swing and no way in, the screen fades. */
+/** The light crossing the façade. */
+export const LOADER_LIGHT = { at: 150, ms: 1600 };
+/** The joints between the blades come up as the light reaches them. */
+export const LOADER_JOINTS = { at: 350, ms: 900 };
+/** Each joint 40ms after the one to its left (globals.css, .loader__blade::before). */
+export const LOADER_JOINT_STAGGER_MS = 40;
+/** The logo rises into place. */
+export const LOADER_LOGO = { at: 300, ms: 900 };
+/** The red rule is drawn out from the middle under the logo. */
+export const LOADER_RULE = { at: 800, ms: 700 };
+/** The firm's line comes up under the rule. */
+export const LOADER_LINE = { at: 1050, ms: 700 };
+/** The finished façade is held at least this long. */
+export const LOADER_HOLD_MS = 300;
+/** The logo, rule and line lift away first. */
+export const LOADER_LIFT_MS = 420;
+/** Then the blades pivot open, from the middle outward. */
+export const LOADER_OPEN_AT_MS = 140;
+export const LOADER_OPEN_MS = 1000;
+export const LOADER_OPEN_STAGGER_MS = 55;
+/** How far each blade turns (just short of edge on, so it still catches the light). */
+export const LOADER_OPEN_DEG = 86;
+/** The last of the screen (the blades' thin edges) fades over the end of the turn. */
+export const LOADER_FADE_MS = 550;
+/** With reduced motion: the blades stay still and the screen fades. */
 export const LOADER_GENTLE_FADE_MS = 600;
-/** The opening ends this much bigger than it needs to be to clear the screen. */
-export const LOADER_ENTER_MARGIN = 1.12;
+/** The façade's blades: fewer on phones. */
+export const LOADER_BLADES = 12;
+export const LOADER_BLADES_NARROW = 8;
 
-/** When the drawing is complete, from play. */
-export function drawingDoneAt() {
-  return Math.max(LOADER_GROUND.at + LOADER_GROUND.ms, LOADER_LOGO.at + LOADER_LOGO.ms, ...HOUSE_STROKES.map((s) => s.at + s.ms));
+/** When the façade is complete, from play. */
+export function facadeDoneAt() {
+  const joints = LOADER_JOINTS.at + LOADER_JOINTS.ms + (LOADER_BLADES - 1) * LOADER_JOINT_STAGGER_MS;
+  return Math.max(joints, LOADER_LIGHT.at + LOADER_LIGHT.ms, ...[LOADER_LOGO, LOADER_RULE, LOADER_LINE].map((s) => s.at + s.ms));
+}
+
+/** Each blade's delay as the façade opens: the middle pair first, then outward, one step per blade. */
+export function bladeDelay(index: number, count: number) {
+  const fromMiddle = Math.abs(index - (count - 1) / 2) - 0.5;
+  return LOADER_OPEN_AT_MS + Math.max(0, Math.round(fromMiddle)) * LOADER_OPEN_STAGGER_MS;
+}
+
+/** How long the opening takes, from the end of the hold, for this many blades. */
+export function openDuration(count: number) {
+  return Math.max(...Array.from({ length: count }, (_, i) => bladeDelay(i, count))) + LOADER_OPEN_MS;
 }
 
 /** From play, when the screen is gone if nothing is waited for. */
-export function loaderEndAt() {
-  return drawingDoneAt() + LOADER_HOLD_MS + LOADER_ENTER_AT_MS + LOADER_ENTER_MS;
-}
-
-/**
- * How far the screen must grow, around the door's centre, for the doorway to clear the whole viewport: the door's
- * rectangle, scaled about its own centre, must reach past every edge.
- */
-export function enterScale(door: { left: number; top: number; width: number; height: number }, viewport: { width: number; height: number }) {
-  const cx = door.left + door.width / 2;
-  const cy = door.top + door.height / 2;
-  const sx = (2 * Math.max(cx, viewport.width - cx)) / door.width;
-  const sy = (2 * Math.max(cy, viewport.height - cy)) / door.height;
-  return Math.max(sx, sy, 1) * LOADER_ENTER_MARGIN;
+export function loaderEndAt(count = LOADER_BLADES) {
+  return facadeDoneAt() + LOADER_HOLD_MS + openDuration(count);
 }

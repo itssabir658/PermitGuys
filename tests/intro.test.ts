@@ -1,53 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { HOUSE_DOOR, HOUSE_GROUND, HOUSE_HEIGHT, HOUSE_STROKES, HOUSE_WIDTH } from "@/content/house-drawing";
-import { LOADER_ENTER_MARGIN, drawingDoneAt, enterScale, loaderEndAt } from "@/lib/motion/intro";
-
-const numbers = (d: string) => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
-
-describe("house drawing", () => {
-  it("keeps every line on the sheet", () => {
-    for (const s of HOUSE_STROKES) for (const v of numbers(s.d)) {
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThanOrEqual(HOUSE_WIDTH);
-    }
-  });
-
-  it("stands the door on the ground, in the middle of the house", () => {
-    const [x, y, w, h] = HOUSE_DOOR;
-    expect(y + h).toBe(HOUSE_GROUND);
-    expect(x + w / 2).toBe(HOUSE_WIDTH / 2);
-    expect(y).toBeGreaterThan(0);
-    expect(HOUSE_GROUND).toBeLessThan(HOUSE_HEIGHT);
-  });
-
-  it("draws as a drafter would: construction lines, walls, roof, windows, then the red door", () => {
-    const first = (kind: string) => Math.min(...HOUSE_STROKES.filter((s) => s.kind === kind).map((s) => s.at));
-    expect(first("guide")).toBeLessThan(first("ink"));
-    expect(first("ink")).toBeLessThan(first("door"));
-    const door = HOUSE_STROKES.filter((s) => s.kind === "door");
-    expect(door).toHaveLength(1);
-    for (const s of HOUSE_STROKES.filter((x) => x.kind === "ink")) expect(s.at).toBeLessThanOrEqual(door[0].at);
-  });
-});
+import { LOADER_BLADES, LOADER_BLADES_NARROW, LOADER_OPEN_AT_MS, LOADER_OPEN_STAGGER_MS, bladeDelay, facadeDoneAt, loaderEndAt } from "@/lib/motion/intro";
 
 describe("loader timeline", () => {
-  it("is short: the drawing done in about two seconds, gone in about three and a half", () => {
-    expect(drawingDoneAt()).toBeGreaterThanOrEqual(1500);
-    expect(drawingDoneAt()).toBeLessThanOrEqual(2200);
-    expect(loaderEndAt()).toBeLessThanOrEqual(3800);
+  it("is short: the façade complete in under two seconds, gone in under four", () => {
+    expect(facadeDoneAt()).toBeLessThanOrEqual(2000);
+    expect(loaderEndAt(LOADER_BLADES)).toBeLessThanOrEqual(4000);
+    expect(loaderEndAt(LOADER_BLADES_NARROW)).toBeLessThanOrEqual(loaderEndAt(LOADER_BLADES));
   });
 
-  it("grows the doorway past every edge of the screen, wherever the door sits", () => {
-    for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }, { width: 3840, height: 2160 }]) {
-      const door = { left: viewport.width / 2 - 13, top: viewport.height * 0.6, width: 26, height: 52 };
-      const s = enterScale(door, viewport);
-      const cx = door.left + door.width / 2;
-      const cy = door.top + door.height / 2;
-      expect(cx - (s * door.width) / 2).toBeLessThan(0);
-      expect(cx + (s * door.width) / 2).toBeGreaterThan(viewport.width);
-      expect(cy - (s * door.height) / 2).toBeLessThan(0);
-      expect(cy + (s * door.height) / 2).toBeGreaterThan(viewport.height);
-      expect(s).toBeLessThan(200 * LOADER_ENTER_MARGIN);
+  it("opens the blades from the middle outward, symmetrically", () => {
+    for (const count of [LOADER_BLADES, LOADER_BLADES_NARROW]) {
+      const delays = Array.from({ length: count }, (_, i) => bladeDelay(i, count));
+      // The middle pair go first, together.
+      expect(delays[count / 2 - 1]).toBe(LOADER_OPEN_AT_MS);
+      expect(delays[count / 2]).toBe(LOADER_OPEN_AT_MS);
+      // Mirror images, each step out one stagger later.
+      for (let i = 0; i < count; i++) expect(delays[i]).toBe(delays[count - 1 - i]);
+      for (let i = count / 2; i < count - 1; i++) expect(delays[i + 1] - delays[i]).toBe(LOADER_OPEN_STAGGER_MS);
     }
   });
 });
