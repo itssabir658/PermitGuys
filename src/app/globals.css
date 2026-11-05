@@ -58,6 +58,9 @@
   --color-brand-800: #7f221c;
 
   --color-ink: #171716;
+  /* The review stars: a warm gold (Sebra, 2026-11-05), deep enough to read on ivory, lighter on dark grounds. */
+  --color-star: #c1902e;
+  --color-star-on-dark: #d9ad52;
   --color-ink-muted: #5e5952;
   --color-line: #dcd5ca;
   --color-line-strong: #b9b0a2;
