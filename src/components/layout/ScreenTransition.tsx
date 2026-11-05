@@ -6,21 +6,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
 import { openingAssets } from "@/lib/motion/opening";
-import { GtaOutline } from "./GtaOutline";
+import { HouseDrawing } from "./HouseDrawing";
 
 /*
  * Page transition (docs/MOTION.md, "Page transitions"): a dark drawing
- * sheet with the Greater Toronto Area on it, as the intro draws it: lines,
- * then the regions' pictures.
+ * sheet with the loader's house on it, drawn as the loader draws it.
  *
  * In: the tapped link dims at once and the page darkens (0.25s) while the
- * sheet rises from the bottom edge (0.6s, --e-sheet). The GTA's outline
- * draws on the sheet from 0.15s (0.55s), its borders follow (0.45s each,
- * 0.05s apart), the label's red dot pops as the last line closes, and the
- * five regions' pictures fade up west to east (from 0.4s, 0.07s apart,
- * 0.37s each), so the map comes up with the sheet. The next page is
- * requested only once the map is complete (about 1.05s), so React's commit
- * never freezes a line half drawn or a picture half faded.
+ * sheet rises from the bottom edge (0.6s, --e-sheet). The house draws on the
+ * sheet from 0.15s on the loader's own order, at 0.42 of its pace: the
+ * ground, the construction lines, the walls, the roof meeting at the ridge,
+ * the windows, and the red front door last (about 0.95s). The next page is
+ * requested only once the drawing is complete, so React's commit never
+ * freezes a line half drawn.
  * Hold: two frames, and the new page's opening pictures decoded (0.9s at
  * most; openingAssets).
  * Out: the sheet leaves through the top (0.6s, power2.inOut, which gets
@@ -62,19 +60,10 @@ type Exit = "sheet" | "fade" | "quick";
 
 const SHEET_MS = 600;
 const UNDERLAY_MS = 250;
-/** The drawing: the outline from 0.15s (0.55s), the borders 0.05s apart, 0.45s each, done by about 0.85s; the dot pops as they close. */
-const STROKE_AT = 150;
-const STROKE_STEP = 50;
-const STROKE_MS = 450;
-const MAINLAND_MS = 550;
-const LABEL_AT = 200;
-const LABEL_MS = 300;
-const DOT_AT = 600;
-const DOT_MS = 300;
-/** The regions' pictures fade up west to east as the lines close, each settling from 106%; the last is in by about 1.05s. */
-const REGION_AT = 400;
-const REGION_STEP = 70;
-const REGION_MS = 370;
+/** The drawing: the loader's strokes from 0.15s, at this fraction of the loader's timings (each stroke at least 0.2s). */
+const DRAW_AT = 150;
+const DRAW_PACE = 0.42;
+const DRAW_MIN_MS = 200;
 /** At most this long for the new page's opening picture. */
 const HOLD_CAP_MS = 900;
 /** On the way out the drawing rides up this far with the sheet, which clears it as its edge goes by. */
@@ -341,27 +330,21 @@ export function ScreenTransition() {
         return;
       }
       const fill = "both" as const;
-      const strokes = [...(veil.current?.querySelectorAll<SVGPathElement>(".gta__stroke") ?? [])].map((path, i) =>
-        path.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: i === 0 ? MAINLAND_MS : STROKE_MS, delay: STROKE_AT + i * STROKE_STEP, easing: cssEase.power2InOut, fill }),
-      );
-      const dot = veil.current?.querySelector<HTMLElement>(".screen-veil__dot")?.animate([{ transform: "scale(0)" }, { transform: "scale(1)" }], { duration: DOT_MS, delay: DOT_AT, easing: cssEase.power3Out, fill });
-      const regions = [...(veil.current?.querySelectorAll<HTMLElement>(".gta__region") ?? [])].flatMap((region, i) => {
-        const timing = { duration: REGION_MS, delay: REGION_AT + i * REGION_STEP, easing: cssEase.power2Out, fill };
-        const picture = region.firstElementChild?.animate([{ transform: "scale(1.06)" }, { transform: "scale(1)" }], timing);
-        return [region.animate([{ opacity: 0 }, { opacity: 1 }], timing), ...(picture ? [picture] : [])];
+      const strokes = [...(veil.current?.querySelectorAll<SVGPathElement>(".house__stroke") ?? [])].map((path) => {
+        const at = Number(path.dataset.at) || 0;
+        const ms = Math.max(DRAW_MIN_MS, (Number(path.dataset.ms) || 0) * DRAW_PACE);
+        const keyframes = path.classList.contains("house__stroke--dimension") ? [{ opacity: 0 }, { opacity: 1 }] : [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }];
+        return path.animate(keyframes, { duration: ms, delay: DRAW_AT + at * DRAW_PACE, easing: cssEase.power2InOut, fill });
       });
       const sheet = panel.current?.animate([{ clipPath: "inset(100% 0 0 0)" }, { clipPath: "inset(0% 0 0 0)" }], { duration: SHEET_MS, easing: cssEase.sheet, fill });
       coverAnims.current = [
         underlay.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: UNDERLAY_MS, easing: cssEase.power1Out, fill }),
         sheet,
-        veil.current?.querySelector<HTMLElement>(".screen-veil__label")?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: LABEL_MS, delay: LABEL_AT, easing: cssEase.power2Out, fill }),
-        dot,
         ...strokes,
-        ...regions,
       ].filter((a): a is Animation => Boolean(a));
       covered.current = Promise.all([sheet?.finished]);
-      // Navigate once the map is complete, not on a timer: the router's commit must not freeze a stroke or a picture.
-      Promise.all([...strokes, ...regions, dot].map((a) => a?.finished)).then(go, go);
+      // Navigate once the drawing is complete, not on a timer: the router's commit must not freeze a stroke.
+      Promise.all(strokes.map((a) => a.finished)).then(go, go);
     };
 
     // A jump within the page glides to its section, which then takes focus. Run after the link's own handlers, so a link that
@@ -490,11 +473,7 @@ export function ScreenTransition() {
       <div ref={underlay} className="screen-veil__underlay" />
       <div ref={panel} className="screen-veil__panel">
         <div ref={mark} className="screen-veil__mark">
-          <GtaOutline className="screen-veil__map" />
-          <p className="screen-veil__label">
-            <span className="screen-veil__dot" />
-            Greater Toronto Area
-          </p>
+          <HouseDrawing className="screen-veil__house" ground />
         </div>
       </div>
     </div>

@@ -1,41 +1,45 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties } from "react";
-import { GTA_BORDERS, GTA_HEIGHT, GTA_OUTLINE, GTA_REGIONS, GTA_WIDTH } from "@/content/gta-map";
+import { HOUSE_DOOR, HOUSE_HEIGHT, HOUSE_WIDTH } from "@/content/house-drawing";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
-import { INTRO_COMPLETE_MS, INTRO_EXIT_MS, borderTiming, outlineTiming, revealTiming } from "@/lib/motion/intro";
+import { LOADER_DOOR_MS, LOADER_ENTER_AT_MS, LOADER_ENTER_MS, LOADER_GENTLE_FADE_MS, LOADER_GROUND, LOADER_HOLD_MS, LOADER_LOGO, enterScale } from "@/lib/motion/intro";
 import { openingAssets } from "@/lib/motion/opening";
+import { HouseDrawing } from "./HouseDrawing";
+import { Logo } from "./Logo";
 
 /*
- * The load sequence: the Greater Toronto Area intro. docs/MOTION.md, "Load
- * sequence"; the timeline is in src/lib/motion/intro.ts.
+ * The load sequence: through the front door. docs/MOTION.md, "Load
+ * sequence"; the timeline is in src/lib/motion/intro.ts, the drawing in
+ * src/content/house-drawing.ts.
  *
- * On every full load, a dark grey screen holds, the outline of the
- * Greater Toronto Area draws itself up the lakeshore and round, the borders
- * between its five regions follow, and the regions come to life west to
- * east: Halton, Peel, York, Toronto, Durham, each a client rendering fading
- * up and settling inside its region's shape, under the white lines. The
- * finished map holds, then the screen crossfades onto the page. All of it is
- * CSS; the screen and the pictures' loading start before first paint, and
- * the timeline starts (data-intro="play") two frames after hydration, since
- * the drawing is painted on the main thread and the hydration would stall a
- * line mid-stroke. The head script starts it anyway after 1.5s. The pictures
- * fade and settle on the compositor, and the page underneath is first
- * measured only once the map is complete (engine.measureAfter), in the hold.
+ * On every full load a dark screen holds, a ground line runs out across it,
+ * and the front elevation of a house is drawn on it as a drafter would:
+ * faint construction lines first, then the walls, the roof meeting at the
+ * ridge, the windows, and the front door last, in the brand red. The logo
+ * comes up under the ground. Then the door swings open (inward, as front
+ * doors do), the page shows through the doorway, and the whole screen grows
+ * around the door until the doorway is bigger than the screen: the visitor
+ * walks in.
  *
- * The pictures are CSS backgrounds that apply only during the intro (after
- * the first load they come from the browser's cache); one that fails to
- * load leaves its region in a dark tone. Moving between pages never
- * reloads, so it uses the page transition (ScreenTransition.tsx), which
- * shows the same map.
+ * The screen is the dark spread of the doorway's box-shadow, so the doorway
+ * is a real hole in it, and the door leaf a dark panel over that hole. The
+ * drawing is CSS (stroke-dashoffset), started (data-intro="play") two frames
+ * after hydration, since it is painted on the main thread; the head script
+ * starts it anyway after 1.5s. The swing and the way in are compositor
+ * animations (rotateY on the leaf, scale on the screen). The page underneath
+ * is first measured once the drawing is complete (engine.measureAfter), in
+ * the hold.
  *
  * The screen waits for the fonts and the page's opening pictures as before
  * (openingAssets, capped at 3.5s). Then, T₀: the page is put back at the
  * top, the document gets data-loaded and data-revealed so the page's own
- * entrance plays through the crossfade, and data-preloaded marks the end and
+ * entrance plays as the door opens, and data-preloaded marks the end and
  * removes the screen. The page is held still while the screen is up and
- * released at 60% of the crossfade, or 8s after navigation whatever happens.
+ * released at 60% of the way in, or 8s after navigation whatever happens.
+ * With reduced motion (data-gentle) the lines fade up rather than draw, the
+ * door stays shut and the screen fades.
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on for every visitor with JavaScript (visitors who prefer reduced
@@ -53,6 +57,7 @@ const ASSET_CAP_MS = 3500;
 
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(3)}%`;
 const timing = (t: { at: number; ms: number }) => ({ "--at": `${t.at}ms`, "--ms": `${t.ms}ms` }) as CSSProperties;
+const [DX, DY, DW, DH] = HOUSE_DOOR;
 
 export function Preloader() {
   const ref = useRef<HTMLDivElement>(null);
@@ -80,13 +85,13 @@ export function Preloader() {
       });
     });
     const fonts = Promise.race([document.fonts?.ready, wait(ASSET_CAP_MS)]);
-    // The page is first measured once the map is complete, so the measure lands in the hold, not on a line being drawn.
+    // The page is first measured once the drawing is complete, so the measure lands in the hold, not on a line being drawn.
     const measured = engine.measureAfter(Promise.race([Promise.all([composed, fonts]), wait(Math.max(0, SAFETY_MS - performance.now()))]));
     const assets = Promise.all([document.fonts?.ready, ...openingAssets()]);
 
     Promise.all([composed, measured, Promise.race([assets, wait(ASSET_CAP_MS)])])
-      // The finished map is held a moment, however long the page took to be ready.
-      .then(() => wait(Math.max(0, INTRO_COMPLETE_MS - (performance.now() - composedAt))))
+      // The finished drawing is held a moment, however long the page took to be ready.
+      .then(() => wait(Math.max(0, LOADER_HOLD_MS - (performance.now() - composedAt))))
       .then(() => {
         if (cancelled) return;
         // Too late: the head script has already revealed the page (8s), so leave the page where the visitor has it.
@@ -94,29 +99,56 @@ export function Preloader() {
           engine.unlock("preloader");
           return;
         }
-        // The hero's picture settles from where Toronto was on the map.
-        const map = el.querySelector(".intro")?.getBoundingClientRect();
-        const toronto = GTA_REGIONS.find((r) => r.key === "toronto");
-        const x = map && toronto ? map.left + (toronto.centre[0] / GTA_WIDTH) * map.width : window.innerWidth / 2;
-        const y = map && toronto ? map.top + (toronto.centre[1] / GTA_HEIGHT) * map.height : window.innerHeight / 2;
+        const door = el.querySelector(".loader__door")!.getBoundingClientRect();
+        const cx = door.left + door.width / 2;
+        const cy = door.top + door.height / 2;
+        // The hero's picture settles from the doorway.
         for (const target of document.querySelectorAll<HTMLElement>("[data-hero-stage]")) {
-          target.style.setProperty("--iris-x", `${x.toFixed(1)}px`);
-          target.style.setProperty("--iris-y", `${y.toFixed(1)}px`);
+          target.style.setProperty("--iris-x", `${cx.toFixed(1)}px`);
+          target.style.setProperty("--iris-y", `${cy.toFixed(1)}px`);
         }
         // Back at the top before anything shows (data-loaded is what scripts and tests wait for).
         engine.scrollTo(0, true);
         html.dataset.loaded = "";
         html.dataset.revealed = "";
-        const ms = INTRO_EXIT_MS;
-        const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: cssEase.power1InOut, fill: "forwards" });
-        el.querySelector(".intro")?.animate([{ transform: "scale(1)" }, { transform: "scale(1.035)" }], { duration: ms, easing: cssEase.power2Out, fill: "forwards" });
-        release = window.setTimeout(() => {
-          if (!cancelled) engine.unlock("preloader");
-        }, 0.6 * ms);
         const done = () => {
           html.dataset.preloaded = "";
         };
-        fade.finished.then(done, done);
+        const fill = "forwards" as const;
+        if ("gentle" in html.dataset) {
+          const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: LOADER_GENTLE_FADE_MS, easing: cssEase.power1InOut, fill });
+          release = window.setTimeout(() => {
+            if (!cancelled) engine.unlock("preloader");
+          }, 0.6 * LOADER_GENTLE_FADE_MS);
+          fade.finished.then(done, done);
+          return;
+        }
+        const leaf = el.querySelector<HTMLElement>(".loader__leaf");
+        leaf?.animate(
+          [
+            { transform: "rotateY(0deg)", backgroundColor: "#121212" },
+            { transform: "rotateY(84deg)", backgroundColor: "#262523" },
+          ],
+          { duration: LOADER_DOOR_MS, easing: cssEase.power2InOut, fill },
+        );
+        // The leaf is put away as the screen goes in, so its edge never sweeps the view.
+        leaf?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: LOADER_ENTER_AT_MS + 120, easing: cssEase.power1Out, fill: "both" });
+        // The drawing's faint pieces and the logo go first, so the way in is lines and light.
+        for (const extra of el.querySelectorAll(".loader__extras, .house__stroke--guide, .house__stroke--dimension"))
+          extra.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: LOADER_ENTER_AT_MS, easing: cssEase.power1Out, fill: "both" });
+        const scale = enterScale(door, { width: innerWidth, height: innerHeight });
+        el.style.transformOrigin = `${cx.toFixed(1)}px ${cy.toFixed(1)}px`;
+        // Slow to start, as a step through the door, then fast, and soft at the end.
+        const enter = el.animate([{ transform: "scale(1)" }, { transform: `scale(${scale.toFixed(3)})` }], {
+          duration: LOADER_ENTER_MS,
+          delay: LOADER_ENTER_AT_MS,
+          easing: "cubic-bezier(0.7, 0, 0.16, 1)",
+          fill: "both",
+        });
+        release = window.setTimeout(() => {
+          if (!cancelled) engine.unlock("preloader");
+        }, LOADER_ENTER_AT_MS + 0.6 * LOADER_ENTER_MS);
+        enter.finished.then(done, done);
       });
     return () => {
       cancelled = true;
@@ -128,62 +160,18 @@ export function Preloader() {
 
   return (
     <div ref={ref} aria-hidden="true" className="preloader">
-      <div className="intro" style={{ aspectRatio: `${GTA_WIDTH} / ${GTA_HEIGHT}` }}>
-        {GTA_REGIONS.map((r, i) => {
-          const [x, y, w, h] = r.box;
-          return (
-            <div
-              key={r.key}
-              className="intro__region"
-              style={{
-                left: pct(x, GTA_WIDTH),
-                top: pct(y, GTA_HEIGHT),
-                width: pct(w, GTA_WIDTH),
-                height: pct(h, GTA_HEIGHT),
-                clipPath: `url(#intro-clip-${r.key})`,
-                ...timing(revealTiming(i)),
-              }}
-            >
-              <div
-                className="intro__picture"
-                style={
-                  {
-                    "--picture-small": `url(${r.picture.small})`,
-                    "--picture-medium": `url(${r.picture.medium})`,
-                    "--picture-full": `url(${r.picture.full})`,
-                    transformOrigin: `${pct(r.centre[0] - x, w)} ${pct(r.centre[1] - y, h)}`,
-                  } as CSSProperties
-                }
-              />
-            </div>
-          );
-        })}
-        <svg className="intro__lines" viewBox={`0 0 ${GTA_WIDTH} ${GTA_HEIGHT}`} fill="none" focusable="false">
-          <defs>
-            {GTA_REGIONS.map((r) => (
-              <clipPath key={r.key} id={`intro-clip-${r.key}`} clipPathUnits="objectBoundingBox">
-                <path d={r.clip} />
-              </clipPath>
-            ))}
-          </defs>
-          {/* A soft dark line under the white ones, for the pictures' pale skies. */}
-          <g className="intro__keyline" style={timing(revealTiming(1))}>
-            {[...GTA_OUTLINE, ...GTA_BORDERS].map((d) => (
-              <path key={d.slice(0, 32)} d={d} />
-            ))}
-          </g>
-          {GTA_BORDERS.map((d, i) => (
-            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke intro__stroke--border" style={timing(borderTiming(i))} />
-          ))}
-          {GTA_OUTLINE.map((d, i) => (
-            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke" style={timing(outlineTiming(i))} />
-          ))}
-        </svg>
-        {/* The old loader's label: its words come up as the outline starts, its red dot pops as the outline closes. */}
-        <p className="intro__label" style={timing(outlineTiming(0))}>
-          <span className="intro__dot" />
-          Greater Toronto Area
-        </p>
+      <div className="loader" style={{ aspectRatio: `${HOUSE_WIDTH} / ${HOUSE_HEIGHT}` }}>
+        {/* The doorway: a hole in the screen, which is this box's shadow, with the door leaf over it. */}
+        <div className="loader__door" style={{ left: pct(DX, HOUSE_WIDTH), top: pct(DY, HOUSE_HEIGHT), width: pct(DW, HOUSE_WIDTH), height: pct(DH, HOUSE_HEIGHT) }}>
+          <div className="loader__leaf">
+            <span className="loader__handle" />
+          </div>
+        </div>
+        <span className="loader__ground" style={timing(LOADER_GROUND)} />
+        <HouseDrawing className="loader__drawing" />
+        <div className="loader__extras" style={timing(LOADER_LOGO)}>
+          <Logo onDark className="loader__logo" />
+        </div>
       </div>
     </div>
   );

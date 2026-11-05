@@ -630,14 +630,14 @@
   transform-box: fill-box;
   transform-origin: center;
 }
-/* ---- Intro (Preloader.tsx; timeline in src/lib/motion/intro.ts) ---- */
+/* ---- Loader (Preloader.tsx; timeline in src/lib/motion/intro.ts) ---- */
 /*
- * Shown up until its crossfade has finished, for visitors who allow motion
- * (data-motion, set by the head script). Each piece takes its delay and
- * duration from --at and --ms, set inline from the timeline. The map and its
- * pictures play on every full load (data-intro, when the pictures start
- * loading); they start moving at data-intro="play", once the page has
- * hydrated.
+ * Shown up until the way in has finished, for visitors who allow motion
+ * (data-motion, set by the head script). The dark screen is the doorway's
+ * box-shadow, so the doorway is a real hole in it; the door leaf covers the
+ * hole until it swings open. Each piece takes its delay and duration from
+ * --at and --ms, set inline from the timeline, and starts at
+ * data-intro="play", once the page has hydrated.
  */
 .preloader {
   position: fixed;
@@ -645,130 +645,167 @@
   z-index: 120;
   display: none;
   place-items: center;
-  background: #121212;
+  overflow: hidden;
+  /* The screen's colour is the doorway's shadow (.loader__door). */
+  background: transparent;
 }
 :root[data-motion]:not([data-preloaded]) .preloader {
   display: grid;
 }
-/* The page is live from the moment the crossfade starts. */
+/* The page is live from the moment the door opens. */
 :root[data-loaded] .preloader {
   pointer-events: none;
+  will-change: transform;
 }
 /* Sized by the height, and by the width on narrow screens, with a gutter all round. */
-.intro {
+.loader {
   position: relative;
-  width: min(calc(85vw - 2rem), calc(71svh * 1000 / 1096.7), 39rem);
+  width: min(calc(100vw - 2rem), calc(66svh * 320 / 200), 50rem);
 }
-/* On the intro, the label waits for the timeline. */
-:root[data-intro]:not([data-intro="play"]) .intro__label {
-  opacity: 0;
-}
-/* Under the map, in the old loader's type and red. */
-.intro__label {
+.loader__door {
   position: absolute;
-  top: calc(100% + clamp(1.25rem, 3.5svh, 2rem));
-  left: 50%;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0;
-  translate: -50% 0;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-charcoal-300);
+  box-shadow: 0 0 0 200vmax #121212;
+  perspective: 26rem;
 }
-.intro__dot {
-  width: 0.4rem;
-  height: 0.4rem;
+/* A hair over the opening on every side, so no light shows round a shut door. */
+.loader__leaf {
+  position: absolute;
+  inset: -1px;
+  background: #121212;
+  transform-origin: 0 50%;
+  backface-visibility: hidden;
+}
+.loader__handle {
+  position: absolute;
+  top: 54%;
+  right: 16%;
+  width: 0.22rem;
+  height: 0.22rem;
   border-radius: 9999px;
   background: var(--color-brand-400);
-}
-:root[data-intro="play"] .intro__label {
-  animation: fade-in 0.6s var(--e-out) var(--at) both;
-}
-:root[data-intro="play"] .intro__dot {
-  animation: dot-in 0.45s var(--e-out-strong) calc(var(--at) + var(--ms)) both;
-}
-.intro__region {
-  position: absolute;
-  overflow: hidden;
-  /* What a region shows if its picture never arrives. */
-  background: #1e1e1e;
   opacity: 0;
 }
-.intro__picture {
+:root[data-intro="play"] .loader__handle {
+  animation: dot-in 0.45s var(--e-out-strong) 1.7s both;
+  opacity: 1;
+}
+/* The ground runs out across the whole screen, under the house. */
+.loader__ground {
   position: absolute;
-  inset: 0;
-  background-position: center;
-  background-size: cover;
+  top: 90%;
+  left: 50%;
+  width: 100vw;
+  height: 1px;
+  margin-left: -50vw;
+  background: var(--color-ivory);
+  opacity: 0.55;
+  transform: scaleX(0);
 }
-/*
- * Only during the intro, so a page shown without it never fetches them. Phones take the
- * smaller cut, or the middle one on high-density screens; larger screens the
- * middle cut, or the full-resolution one on high-density screens; screens
- * 1920px wide and up (4K monitors included) always the full one.
- */
-:root[data-intro] .intro__picture {
-  background-image: var(--picture-medium);
-  background-image: -webkit-image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
-  background-image: image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
+:root[data-intro="play"] .loader__ground {
+  animation: loader-ground var(--ms) var(--e-inout-2) var(--at) both;
+  transform: none;
 }
-@media (min-width: 40rem) {
-  :root[data-intro] .intro__picture {
-    background-image: var(--picture-full);
-    background-image: -webkit-image-set(var(--picture-medium) 1x, var(--picture-full) 2x);
-    background-image: image-set(var(--picture-medium) 1x, var(--picture-full) 2x);
-  }
-}
-@media (min-width: 120rem) {
-  :root[data-intro] .intro__picture {
-    background-image: var(--picture-full);
-  }
-}
-.intro__lines {
+.loader__drawing {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   overflow: visible;
 }
-.intro__lines path {
-  vector-effect: non-scaling-stroke;
-  stroke-linejoin: miter;
-  stroke-linecap: butt;
-}
-.intro__stroke {
-  stroke: #fff;
-  stroke-width: 1.5px;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-.intro__stroke--border {
-  stroke-width: 1.25px;
-}
-.intro__keyline {
-  stroke: #000;
-  stroke-opacity: 0.4;
-  stroke-width: 4px;
+.loader__extras {
+  position: absolute;
+  top: calc(90% + clamp(1.5rem, 4svh, 2.25rem));
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
   opacity: 0;
 }
-:root[data-intro="play"] .intro__stroke {
+.loader__logo {
+  height: clamp(1.1rem, 3svh, 1.5rem);
+  width: auto;
+}
+:root[data-intro="play"] .loader__extras {
+  animation: loader-rise var(--ms) var(--e-out) var(--at) both;
+  opacity: 1;
+}
+@keyframes loader-ground {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes loader-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+/*
+ * The house (HouseDrawing.tsx), in the loader and on the page transition's
+ * sheet. Widths are in the drawing's own units, about one screen pixel each
+ * per --hu (no non-scaling-stroke: with it, Chrome measures a pathLength dash
+ * in screen pixels, and a drawing shown bigger than its viewBox stops part
+ * way). The lines thicken as the loader goes in through the door.
+ */
+.house__stroke {
+  --hu: 1;
+  stroke: var(--color-ivory);
+  stroke-width: calc(var(--hu) * 1.5px);
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+/* About 1.5 screen pixels at the loader's width (2.5 screen pixels a unit on a laptop, about 1.1 on a phone). */
+.loader__drawing .house__stroke {
+  --hu: 0.62;
+}
+@media (max-width: 40rem) {
+  .loader__drawing .house__stroke {
+    --hu: 1.1;
+  }
+}
+.house__stroke--guide {
+  stroke-width: calc(var(--hu) * 0.75px);
+  stroke-opacity: 0.22;
+  stroke-linecap: butt;
+}
+.house__stroke--ground {
+  stroke-opacity: 0.55;
+  stroke-width: calc(var(--hu) * 1px);
+}
+.house__stroke--door {
+  stroke: var(--color-brand-400);
+  stroke-width: calc(var(--hu) * 2px);
+}
+.house__stroke--dimension {
+  stroke: var(--color-charcoal-300);
+  stroke-width: calc(var(--hu) * 0.75px);
+  stroke-dasharray: none;
+  stroke-linecap: butt;
+}
+/* In the loader, each line waits for the timeline. */
+:root[data-intro] .loader__drawing .house__stroke {
+  stroke-dashoffset: 1;
+}
+:root[data-intro] .loader__drawing .house__stroke--dimension {
+  opacity: 0;
+}
+:root[data-intro="play"] .loader__drawing .house__stroke {
   animation: intro-draw var(--ms) var(--e-inout-2) var(--at) both;
+  stroke-dashoffset: 0;
 }
-/* A region comes in as its picture fades up and settles from 106% around the region's heart. */
-:root[data-intro="play"] .intro__region {
+:root[data-intro="play"] .loader__drawing .house__stroke--dimension {
   animation: fade-in var(--ms) var(--e-out) var(--at) both;
   opacity: 1;
 }
-:root[data-intro="play"] .intro__picture {
-  animation: intro-settle var(--ms) var(--e-out) var(--at) both;
-}
-:root[data-intro="play"] .intro__keyline {
-  animation: fade-in var(--ms) var(--e-out) var(--at) both;
-  opacity: 1;
+/* Gentle motion: the lines and the ground fade up where they are, rather than drawing or running out. */
+:root[data-gentle][data-intro="play"] .loader__drawing .house__stroke,
+:root[data-gentle][data-intro="play"] .loader__ground {
+  animation-name: fade-in;
+  stroke-dashoffset: 0;
+  transform: none;
 }
 @keyframes intro-draw {
   from {
@@ -778,34 +815,11 @@
     stroke-dashoffset: 0;
   }
 }
-@keyframes intro-settle {
-  from {
-    transform: scale(1.06);
-  }
-}
 
 /* The page transition's mark (ScreenTransition.tsx). */
 .screen-veil__mark {
   display: grid;
   justify-items: center;
-  gap: 2rem;
-}
-.screen-veil__label {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-charcoal-300);
-}
-.screen-veil__dot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 9999px;
-  background: var(--color-brand-400);
 }
 
 /* ---- Page transition (ScreenTransition.tsx) ---- */
@@ -844,51 +858,12 @@
   place-items: center;
   background: #121212;
 }
-.screen-veil__mark {
-  gap: 1.75rem;
-}
-/* The intro's map, smaller: the regions' pictures under the outline and the borders between them. */
-.screen-veil__map {
-  position: relative;
-  height: min(44svh, 24rem, calc((100vw - 4rem) * 1096.4 / 1000));
-  aspect-ratio: 1000 / 1096.4;
-}
-.gta__region {
-  position: absolute;
-  overflow: hidden;
-  /* What a region shows if its picture never arrives. */
-  background: #1e1e1e;
-}
-.gta__picture {
-  position: absolute;
-  inset: 0;
-  background-position: center;
-  background-size: cover;
-}
-/* Only while the veil is up, so a page that is never left never fetches them (the intro has usually cached them). */
-.screen-veil:not([data-phase="idle"]) .gta__picture {
-  background-image: var(--picture-medium);
-  background-image: -webkit-image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
-  background-image: image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
-}
-.gta__lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+/* The loader's house, smaller, drawn on the sheet as it rises. */
+.screen-veil__house {
+  width: min(calc(100vw - 4rem), 20rem);
+  height: auto;
+  aspect-ratio: 320 / 200;
   overflow: visible;
-}
-.gta__stroke {
-  stroke: #fff;
-  stroke-width: 1.5px;
-  vector-effect: non-scaling-stroke;
-  stroke-linejoin: miter;
-  stroke-linecap: butt;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-}
-.gta__stroke--border {
-  stroke-width: 1.25px;
 }
 /* The tapped link answers at once, before the sheet has covered it. */
 [data-pressed] {

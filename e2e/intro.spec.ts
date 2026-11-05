@@ -2,72 +2,62 @@ import { expect, test } from "@playwright/test";
 import { watchConsole } from "./helpers";
 
 /*
- * The Greater Toronto Area intro (Preloader.tsx, docs/MOTION.md "Load
- * sequence"): on every full load, the map draws and its five regions come in west
- * to east, each aligned with its region of the map; then the page.
+ * The loader, "through the front door" (Preloader.tsx, docs/MOTION.md "Load
+ * sequence"): on every full load a house is drawn in line, its red door
+ * opens, and the screen goes in through the doorway onto the page.
  */
-test.describe("GTA intro", () => {
-  test("draws the map, reveals the five regions in order inside it, then fades onto the page", async ({ page }) => {
+test.describe("Loader", () => {
+  test("draws the house, opens the door and goes in through it onto the page", async ({ page }) => {
     const console = watchConsole(page);
     await page.goto("/");
     await page.waitForFunction(() => document.documentElement.dataset.intro === "play");
-    // The regions' pictures start in order, west to east.
-    const starts = await page.locator(".intro__region").evaluateAll((els) =>
-      els.map((el) => {
-        const a = el.getAnimations()[0] as CSSAnimation;
-        return { delay: Number(a.effect?.getTiming().delay), name: a.animationName };
-      }),
+    // The door is drawn after every other line of the house.
+    const order = await page.locator(".loader__drawing .house__stroke").evaluateAll((els) =>
+      els.map((el) => ({ kind: [...el.classList].find((c) => c.startsWith("house__stroke--"))!, delay: Number((el.getAnimations()[0] as CSSAnimation).effect?.getTiming().delay) })),
     );
-    expect(starts.map((s) => s.name)).toEqual(Array(5).fill("fade-in"));
-    for (let i = 1; i < 5; i++) expect(starts[i].delay).toBeGreaterThan(starts[i - 1].delay);
+    const door = order.find((s) => s.kind === "house__stroke--door")!;
+    for (const s of order.filter((x) => x.kind === "house__stroke--ink")) expect(s.delay).toBeLessThanOrEqual(door.delay);
 
-    // Each region's frame sits exactly where its shape is on the map.
+    // The house sits on the screen, the doorway inside it.
     const fit = await page.evaluate(() => {
-      const map = document.querySelector(".intro")!.getBoundingClientRect();
-      const lines = document.querySelector(".intro__lines")!.getBoundingClientRect();
-      const edge = document.querySelector(".intro__stroke:not(.intro__stroke--border)")!.getBoundingClientRect();
-      const regions = [...document.querySelectorAll(".intro__region")].map((el) => el.getBoundingClientRect());
-      const union = { left: Math.min(...regions.map((r) => r.left)), top: Math.min(...regions.map((r) => r.top)), right: Math.max(...regions.map((r) => r.right)), bottom: Math.max(...regions.map((r) => r.bottom)) };
-      return { map: [map.left, map.top, map.width, map.height], lines: [lines.left, lines.top, lines.width, lines.height], edge: [edge.left, edge.top, edge.right, edge.bottom], union: [union.left, union.top, union.right, union.bottom], inView: map.left >= 0 && map.top >= 0 && map.right <= innerWidth && map.bottom <= innerHeight };
+      const house = document.querySelector(".loader")!.getBoundingClientRect();
+      const door = document.querySelector(".loader__door")!.getBoundingClientRect();
+      return { inView: house.left >= 0 && house.top >= 0 && house.right <= innerWidth && house.bottom <= innerHeight, inside: door.left > house.left && door.right < house.right && door.top > house.top && door.bottom <= house.bottom };
     });
-    expect(fit.inView).toBe(true);
-    fit.lines.forEach((v, i) => expect(v).toBeCloseTo(fit.map[i], 0));
-    fit.union.forEach((v, i) => expect(Math.abs(v - fit.edge[i])).toBeLessThan(1.5));
+    expect(fit).toEqual({ inView: true, inside: true });
 
+    // Then the screen grows around the doorway, and is gone.
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset, null, { timeout: 9000 });
+    await page.waitForFunction(() => document.querySelector(".preloader")!.getAnimations().some((a) => String((a.effect as KeyframeEffect).getKeyframes().at(-1)?.transform).startsWith("scale(")));
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await expect(page.locator(".preloader")).toBeHidden();
     console.expectNone();
   });
 
-  test("plays again, pictures and all, on a later load in the same tab", async ({ page }) => {
+  test("plays again on a later load in the same tab", async ({ page }) => {
     await page.goto("/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await page.reload();
+    await expect(page.locator(".preloader")).toBeVisible();
     await page.waitForFunction(() => document.documentElement.dataset.intro === "play");
-    // Every region's picture is set, and every region comes up.
-    const pictures = await page.locator(".intro__picture").evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
-    expect(pictures).toHaveLength(5);
-    for (const p of pictures) expect(p).toContain("/images/intro/");
-    await page.waitForFunction(() => [...document.querySelectorAll(".intro__region")].every((el) => Number(getComputedStyle(el).opacity) > 0.99), null, { timeout: 6000 });
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
   });
 
-  test("the page transition shows the same map, its five pictures coming up in their regions", async ({ page }) => {
+  test("the page transition draws the same house", async ({ page }) => {
     await page.goto("/services/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await page.getByRole("link", { name: /deck permit/i }).first().click();
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "cover");
-    const pictures = await page.locator(".screen-veil .gta__picture").evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
-    expect(pictures).toHaveLength(5);
-    for (const p of pictures) expect(p).toContain("/images/intro/");
-    await page.waitForFunction(() => [...document.querySelectorAll(".screen-veil .gta__region")].every((el) => Number(getComputedStyle(el).opacity) > 0.99));
+    await expect(page.locator(".screen-veil .house__stroke--door")).toHaveCount(1);
     await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
   });
 
-  test("with reduced motion the intro still plays (gentle motion) and lets the page go", async ({ page }) => {
+  test("with reduced motion the loader still plays (gentle motion), the door stays shut and the screen fades", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.locator(".preloader")).toBeVisible();
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await expect(page.locator(".preloader")).toBeHidden();
+    expect(await page.locator(".loader__leaf").evaluate((el) => el.getAnimations().length)).toBe(0);
   });
 });
