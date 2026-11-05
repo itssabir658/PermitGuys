@@ -1,41 +1,57 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties } from "react";
-import { GTA_BORDERS, GTA_HEIGHT, GTA_OUTLINE, GTA_REGIONS, GTA_WIDTH } from "@/content/gta-map";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
-import { INTRO_COMPLETE_MS, INTRO_EXIT_MS, borderTiming, outlineTiming, revealTiming } from "@/lib/motion/intro";
+import {
+  LOADER_BLADES,
+  LOADER_FADE_MS,
+  LOADER_GENTLE_FADE_MS,
+  LOADER_HOLD_MS,
+  LOADER_JOINTS,
+  LOADER_LIFT_MS,
+  LOADER_LIGHT,
+  LOADER_LINE,
+  LOADER_LOGO,
+  LOADER_OPEN_DEG,
+  LOADER_OPEN_MS,
+  LOADER_RULE,
+  bladeDelay,
+  openDuration,
+} from "@/lib/motion/intro";
 import { openingAssets } from "@/lib/motion/opening";
+import { Logo } from "./Logo";
 
 /*
- * The load sequence: the Greater Toronto Area intro. docs/MOTION.md, "Load
- * sequence"; the timeline is in src/lib/motion/intro.ts.
+ * The load sequence: the façade. docs/MOTION.md, "Load sequence"; the
+ * timeline is in src/lib/motion/intro.ts.
  *
- * On every full load, a dark grey screen holds, the outline of the
- * Greater Toronto Area draws itself up the lakeshore and round, the borders
- * between its five regions follow, and the regions come to life west to
- * east: Halton, Peel, York, Toronto, Durham, each a client rendering fading
- * up and settling inside its region's shape, under the white lines. The
- * finished map holds, then the screen crossfades onto the page. All of it is
- * CSS; the screen and the pictures' loading start before first paint, and
- * the timeline starts (data-intro="play") two frames after hydration, since
- * the drawing is painted on the main thread and the hydration would stall a
- * line mid-stroke. The head script starts it anyway after 1.5s. The pictures
- * fade and settle on the compositor, and the page underneath is first
- * measured only once the map is complete (engine.measureAfter), in the hold.
+ * On every full load the screen is a dark façade of tall vertical blades,
+ * seamless at first. A raking light crosses it from left to right, as low
+ * sun crosses a building, and picks out the joints between the blades. The
+ * logo rises in the middle, a red rule is drawn out under it, and the firm's
+ * line comes up below. After a short hold the logo lifts away and the blades
+ * pivot open on their centres, from the middle outward, like a brise-soleil
+ * turning to let the light in; each catches the light as it turns, and the
+ * page is seen through them. The last of the screen fades as they come edge
+ * on.
  *
- * The pictures are CSS backgrounds that apply only during the intro (after
- * the first load they come from the browser's cache); one that fails to
- * load leaves its region in a dark tone. Moving between pages never
- * reloads, so it uses the page transition (ScreenTransition.tsx), which
- * shows the same map.
+ * All of it is transforms and opacity: the light is one gradient moved
+ * across each blade (each blade shows its own slice of one screen-wide
+ * gradient, so the light reads as one), and the blades turn with rotateY on
+ * the compositor. The timeline starts (data-intro="play") two frames after
+ * hydration, as before; the head script starts it anyway after 1.5s. The
+ * page underneath is first measured once the façade is complete
+ * (engine.measureAfter), in the hold.
  *
  * The screen waits for the fonts and the page's opening pictures as before
  * (openingAssets, capped at 3.5s). Then, T₀: the page is put back at the
  * top, the document gets data-loaded and data-revealed so the page's own
- * entrance plays through the crossfade, and data-preloaded marks the end and
+ * entrance plays as the blades open, and data-preloaded marks the end and
  * removes the screen. The page is held still while the screen is up and
- * released at 60% of the crossfade, or 8s after navigation whatever happens.
+ * released at 60% of the opening, or 8s after navigation whatever happens.
+ * With reduced motion (data-gentle) the light does not travel, the blades
+ * stay still, and the screen fades.
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on for every visitor with JavaScript (visitors who prefer reduced
@@ -51,7 +67,6 @@ const SAFETY_MS = 8000;
 /** Never hold the page for slow assets longer than this. */
 const ASSET_CAP_MS = 3500;
 
-const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(3)}%`;
 const timing = (t: { at: number; ms: number }) => ({ "--at": `${t.at}ms`, "--ms": `${t.ms}ms` }) as CSSProperties;
 
 export function Preloader() {
@@ -71,7 +86,7 @@ export function Preloader() {
     const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const settled = (list: Animation[]) => Promise.all(list.map((a) => a.finished.catch(() => undefined)));
     let composedAt = 0;
-    // Two frames on, so every effect of the hydration has run and nothing heavy is left to stall the drawing.
+    // Two frames on, so every effect of the hydration has run and nothing heavy is left to stall the light.
     const composed = frame().then(frame).then(() => {
       html.dataset.intro = "play";
       // Reading them brings the styles up to date, which starts the animations.
@@ -80,13 +95,13 @@ export function Preloader() {
       });
     });
     const fonts = Promise.race([document.fonts?.ready, wait(ASSET_CAP_MS)]);
-    // The page is first measured once the map is complete, so the measure lands in the hold, not on a line being drawn.
+    // The page is first measured once the façade is complete, so the measure lands in the hold.
     const measured = engine.measureAfter(Promise.race([Promise.all([composed, fonts]), wait(Math.max(0, SAFETY_MS - performance.now()))]));
     const assets = Promise.all([document.fonts?.ready, ...openingAssets()]);
 
     Promise.all([composed, measured, Promise.race([assets, wait(ASSET_CAP_MS)])])
-      // The finished map is held a moment, however long the page took to be ready.
-      .then(() => wait(Math.max(0, INTRO_COMPLETE_MS - (performance.now() - composedAt))))
+      // The finished façade is held a moment, however long the page took to be ready.
+      .then(() => wait(Math.max(0, LOADER_HOLD_MS - (performance.now() - composedAt))))
       .then(() => {
         if (cancelled) return;
         // Too late: the head script has already revealed the page (8s), so leave the page where the visitor has it.
@@ -94,28 +109,50 @@ export function Preloader() {
           engine.unlock("preloader");
           return;
         }
-        // The hero's picture settles from where Toronto was on the map.
-        const map = el.querySelector(".intro")?.getBoundingClientRect();
-        const toronto = GTA_REGIONS.find((r) => r.key === "toronto");
-        const x = map && toronto ? map.left + (toronto.centre[0] / GTA_WIDTH) * map.width : window.innerWidth / 2;
-        const y = map && toronto ? map.top + (toronto.centre[1] / GTA_HEIGHT) * map.height : window.innerHeight / 2;
+        // The hero's picture settles from the middle of the screen, where the façade opens first.
         for (const target of document.querySelectorAll<HTMLElement>("[data-hero-stage]")) {
-          target.style.setProperty("--iris-x", `${x.toFixed(1)}px`);
-          target.style.setProperty("--iris-y", `${y.toFixed(1)}px`);
+          target.style.setProperty("--iris-x", `${(innerWidth / 2).toFixed(1)}px`);
+          target.style.setProperty("--iris-y", `${(innerHeight / 2).toFixed(1)}px`);
         }
         // Back at the top before anything shows (data-loaded is what scripts and tests wait for).
         engine.scrollTo(0, true);
         html.dataset.loaded = "";
         html.dataset.revealed = "";
-        const ms = INTRO_EXIT_MS;
-        const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: cssEase.power1InOut, fill: "forwards" });
-        el.querySelector(".intro")?.animate([{ transform: "scale(1)" }, { transform: "scale(1.035)" }], { duration: ms, easing: cssEase.power2Out, fill: "forwards" });
-        release = window.setTimeout(() => {
-          if (!cancelled) engine.unlock("preloader");
-        }, 0.6 * ms);
         const done = () => {
           html.dataset.preloaded = "";
         };
+        const fill = "forwards" as const;
+        if ("gentle" in html.dataset) {
+          const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: LOADER_GENTLE_FADE_MS, easing: cssEase.power1InOut, fill });
+          release = window.setTimeout(() => {
+            if (!cancelled) engine.unlock("preloader");
+          }, 0.6 * LOADER_GENTLE_FADE_MS);
+          fade.finished.then(done, done);
+          return;
+        }
+        el.querySelector(".loader__mark")?.animate(
+          [
+            { opacity: 1, transform: "none" },
+            { opacity: 0, transform: "translateY(-0.75rem)" },
+          ],
+          { duration: LOADER_LIFT_MS, easing: cssEase.power2InOut, fill },
+        );
+        // Only the blades on show (phones show fewer).
+        const blades = [...el.querySelectorAll<HTMLElement>(".loader__blade")].filter((b) => b.offsetWidth > 0);
+        const count = blades.length;
+        blades.forEach((blade, i) => {
+          const timing = { duration: LOADER_OPEN_MS, delay: bladeDelay(i, count), easing: cssEase.sheet, fill: "both" as const };
+          // Blades left of the middle turn one way, the rest the other, so the façade opens like a pair of shutters.
+          const deg = i < count / 2 ? -LOADER_OPEN_DEG : LOADER_OPEN_DEG;
+          blade.animate([{ transform: "rotateY(0deg)" }, { transform: `rotateY(${deg}deg)` }], timing);
+          // Each blade catches the light as it turns.
+          blade.querySelector(".loader__sheen")?.animate([{ opacity: 0 }, { opacity: 1 }], timing);
+        });
+        const total = openDuration(count);
+        const fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: LOADER_FADE_MS, delay: total - LOADER_FADE_MS, easing: cssEase.in, fill: "both" });
+        release = window.setTimeout(() => {
+          if (!cancelled) engine.unlock("preloader");
+        }, 0.6 * total);
         fade.finished.then(done, done);
       });
     return () => {
@@ -128,61 +165,21 @@ export function Preloader() {
 
   return (
     <div ref={ref} aria-hidden="true" className="preloader">
-      <div className="intro" style={{ aspectRatio: `${GTA_WIDTH} / ${GTA_HEIGHT}` }}>
-        {GTA_REGIONS.map((r, i) => {
-          const [x, y, w, h] = r.box;
-          return (
-            <div
-              key={r.key}
-              className="intro__region"
-              style={{
-                left: pct(x, GTA_WIDTH),
-                top: pct(y, GTA_HEIGHT),
-                width: pct(w, GTA_WIDTH),
-                height: pct(h, GTA_HEIGHT),
-                clipPath: `url(#intro-clip-${r.key})`,
-                ...timing(revealTiming(i)),
-              }}
-            >
-              <div
-                className="intro__picture"
-                style={
-                  {
-                    "--picture-small": `url(${r.picture.small})`,
-                    "--picture-medium": `url(${r.picture.medium})`,
-                    "--picture-full": `url(${r.picture.full})`,
-                    transformOrigin: `${pct(r.centre[0] - x, w)} ${pct(r.centre[1] - y, h)}`,
-                  } as CSSProperties
-                }
-              />
-            </div>
-          );
-        })}
-        <svg className="intro__lines" viewBox={`0 0 ${GTA_WIDTH} ${GTA_HEIGHT}`} fill="none" focusable="false">
-          <defs>
-            {GTA_REGIONS.map((r) => (
-              <clipPath key={r.key} id={`intro-clip-${r.key}`} clipPathUnits="objectBoundingBox">
-                <path d={r.clip} />
-              </clipPath>
-            ))}
-          </defs>
-          {/* A soft dark line under the white ones, for the pictures' pale skies. */}
-          <g className="intro__keyline" style={timing(revealTiming(1))}>
-            {[...GTA_OUTLINE, ...GTA_BORDERS].map((d) => (
-              <path key={d.slice(0, 32)} d={d} />
-            ))}
-          </g>
-          {GTA_BORDERS.map((d, i) => (
-            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke intro__stroke--border" style={timing(borderTiming(i))} />
-          ))}
-          {GTA_OUTLINE.map((d, i) => (
-            <path key={d.slice(0, 32)} d={d} pathLength={1} className="intro__stroke" style={timing(outlineTiming(i))} />
-          ))}
-        </svg>
-        {/* The old loader's label: its words come up as the outline starts, its red dot pops as the outline closes. */}
-        <p className="intro__label" style={timing(outlineTiming(0))}>
-          <span className="intro__dot" />
-          Greater Toronto Area
+      <div className="loader__facade" style={{ "--blades": LOADER_BLADES, ...timing(LOADER_LIGHT) } as CSSProperties}>
+        {Array.from({ length: LOADER_BLADES }, (_, i) => (
+          <div key={i} className="loader__blade" style={{ "--i": i, ...timing(LOADER_JOINTS) } as CSSProperties}>
+            <span className="loader__light" />
+            <span className="loader__sheen" />
+          </div>
+        ))}
+      </div>
+      <div className="loader__mark">
+        <div className="loader__logo" style={timing(LOADER_LOGO)}>
+          <Logo onDark className="loader__logo-mark" />
+        </div>
+        <span className="loader__rule" style={timing(LOADER_RULE)} />
+        <p className="loader__line" style={timing(LOADER_LINE)}>
+          Architecture <span className="loader__sep" /> Engineering <span className="loader__sep" /> Design
         </p>
       </div>
     </div>

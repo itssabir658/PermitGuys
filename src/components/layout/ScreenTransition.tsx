@@ -6,26 +6,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { engine } from "@/lib/motion/engine";
 import { cssEase } from "@/lib/motion/math";
 import { openingAssets } from "@/lib/motion/opening";
-import { GtaOutline } from "./GtaOutline";
+import { Logo } from "./Logo";
 
 /*
- * Page transition (docs/MOTION.md, "Page transitions"): a dark drawing
- * sheet with the Greater Toronto Area on it, as the intro draws it: lines,
- * then the regions' pictures.
+ * Page transition (docs/MOTION.md, "Page transitions"): a dark sheet with
+ * the loader's mark on it: the logo and its red rule.
  *
  * In: the tapped link dims at once and the page darkens (0.25s) while the
- * sheet rises from the bottom edge (0.6s, --e-sheet). The GTA's outline
- * draws on the sheet from 0.15s (0.55s), its borders follow (0.45s each,
- * 0.05s apart), the label's red dot pops as the last line closes, and the
- * five regions' pictures fade up west to east (from 0.4s, 0.07s apart,
- * 0.37s each), so the map comes up with the sheet. The next page is
- * requested only once the map is complete (about 1.05s), so React's commit
- * never freezes a line half drawn or a picture half faded.
+ * sheet rises from the bottom edge (0.6s, --e-sheet). The logo rises on the
+ * sheet from 0.2s (0.5s) and the red rule is drawn out from the middle under
+ * it from 0.4s (0.45s). The next page is requested only once both are in
+ * (about 0.85s), so React's commit never freezes them half way.
  * Hold: two frames, and the new page's opening pictures decoded (0.9s at
  * most; openingAssets).
  * Out: the sheet leaves through the top (0.6s, power2.inOut, which gets
  * going sooner than the cover's ease) as the dimming clears (0.3s), so the
- * new page is never seen through a grey veil. The drawing stays on the
+ * new page is never seen through a grey veil. The mark stays on the
  * sheet, drifting up a little with it, until the sheet's edge passes over
  * it, so the exit never opens on a plain graphite screen. The pressed link
  * lets go. As it starts, focus moves to the new page's main content and its
@@ -40,7 +36,7 @@ import { GtaOutline } from "./GtaOutline";
  *
  * Back and forward: each page's scroll position is kept (by URL, for the
  * session). The browser's own history step is held for a moment while the
- * finished drawing fades in over the page (0.28s), then handed to the
+ * finished mark fades in over the page (0.28s), then handed to the
  * router; the page comes back at the place it was left (engine.restore),
  * with its entrance already played (data-returning), and the cover fades
  * away (0.32s).
@@ -62,22 +58,14 @@ type Exit = "sheet" | "fade" | "quick";
 
 const SHEET_MS = 600;
 const UNDERLAY_MS = 250;
-/** The drawing: the outline from 0.15s (0.55s), the borders 0.05s apart, 0.45s each, done by about 0.85s; the dot pops as they close. */
-const STROKE_AT = 150;
-const STROKE_STEP = 50;
-const STROKE_MS = 450;
-const MAINLAND_MS = 550;
-const LABEL_AT = 200;
-const LABEL_MS = 300;
-const DOT_AT = 600;
-const DOT_MS = 300;
-/** The regions' pictures fade up west to east as the lines close, each settling from 106%; the last is in by about 1.05s. */
-const REGION_AT = 400;
-const REGION_STEP = 70;
-const REGION_MS = 370;
+/** The mark: the logo rises from 0.2s, the red rule is drawn from 0.4s. */
+const LOGO_AT = 200;
+const LOGO_MS = 500;
+const RULE_AT = 400;
+const RULE_MS = 450;
 /** At most this long for the new page's opening picture. */
 const HOLD_CAP_MS = 900;
-/** On the way out the drawing rides up this far with the sheet, which clears it as its edge goes by. */
+/** On the way out the mark rides up this far with the sheet, which clears it as its edge goes by. */
 const MARK_LIFT_PX = 16;
 /** The dimming clears with the sheet, so the new page is never shown grey. */
 const UNDERLAY_OUT_MS = 300;
@@ -341,27 +329,25 @@ export function ScreenTransition() {
         return;
       }
       const fill = "both" as const;
-      const strokes = [...(veil.current?.querySelectorAll<SVGPathElement>(".gta__stroke") ?? [])].map((path, i) =>
-        path.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: i === 0 ? MAINLAND_MS : STROKE_MS, delay: STROKE_AT + i * STROKE_STEP, easing: cssEase.power2InOut, fill }),
-      );
-      const dot = veil.current?.querySelector<HTMLElement>(".screen-veil__dot")?.animate([{ transform: "scale(0)" }, { transform: "scale(1)" }], { duration: DOT_MS, delay: DOT_AT, easing: cssEase.power3Out, fill });
-      const regions = [...(veil.current?.querySelectorAll<HTMLElement>(".gta__region") ?? [])].flatMap((region, i) => {
-        const timing = { duration: REGION_MS, delay: REGION_AT + i * REGION_STEP, easing: cssEase.power2Out, fill };
-        const picture = region.firstElementChild?.animate([{ transform: "scale(1.06)" }, { transform: "scale(1)" }], timing);
-        return [region.animate([{ opacity: 0 }, { opacity: 1 }], timing), ...(picture ? [picture] : [])];
-      });
+      const strokes = [
+        veil.current?.querySelector(".screen-veil__logo")?.animate(
+          [
+            { opacity: 0, transform: "translateY(0.6rem)" },
+            { opacity: 1, transform: "none" },
+          ],
+          { duration: LOGO_MS, delay: LOGO_AT, easing: cssEase.power3Out, fill },
+        ),
+        veil.current?.querySelector(".screen-veil__rule")?.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: RULE_MS, delay: RULE_AT, easing: cssEase.power2InOut, fill }),
+      ].filter((a): a is Animation => Boolean(a));
       const sheet = panel.current?.animate([{ clipPath: "inset(100% 0 0 0)" }, { clipPath: "inset(0% 0 0 0)" }], { duration: SHEET_MS, easing: cssEase.sheet, fill });
       coverAnims.current = [
         underlay.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: UNDERLAY_MS, easing: cssEase.power1Out, fill }),
         sheet,
-        veil.current?.querySelector<HTMLElement>(".screen-veil__label")?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: LABEL_MS, delay: LABEL_AT, easing: cssEase.power2Out, fill }),
-        dot,
         ...strokes,
-        ...regions,
       ].filter((a): a is Animation => Boolean(a));
       covered.current = Promise.all([sheet?.finished]);
-      // Navigate once the map is complete, not on a timer: the router's commit must not freeze a stroke or a picture.
-      Promise.all([...strokes, ...regions, dot].map((a) => a?.finished)).then(go, go);
+      // Navigate once the mark is in, not on a timer: the router's commit must not freeze it half way.
+      Promise.all(strokes.map((a) => a.finished)).then(go, go);
     };
 
     // A jump within the page glides to its section, which then takes focus. Run after the link's own handlers, so a link that
@@ -490,11 +476,8 @@ export function ScreenTransition() {
       <div ref={underlay} className="screen-veil__underlay" />
       <div ref={panel} className="screen-veil__panel">
         <div ref={mark} className="screen-veil__mark">
-          <GtaOutline className="screen-veil__map" />
-          <p className="screen-veil__label">
-            <span className="screen-veil__dot" />
-            Greater Toronto Area
-          </p>
+          <Logo onDark className="screen-veil__logo" />
+          <span className="screen-veil__rule" />
         </div>
       </div>
     </div>

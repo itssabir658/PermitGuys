@@ -633,14 +633,12 @@
   transform-box: fill-box;
   transform-origin: center;
 }
-/* ---- Intro (Preloader.tsx; timeline in src/lib/motion/intro.ts) ---- */
+/* ---- Loader (Preloader.tsx; timeline in src/lib/motion/intro.ts) ---- */
 /*
- * Shown up until its crossfade has finished, for visitors who allow motion
+ * Shown up until the façade has opened, for visitors who allow motion
  * (data-motion, set by the head script). Each piece takes its delay and
- * duration from --at and --ms, set inline from the timeline. The map and its
- * pictures play on every full load (data-intro, when the pictures start
- * loading); they start moving at data-intro="play", once the page has
- * hydrated.
+ * duration from --at and --ms, set inline from the timeline, and starts at
+ * data-intro="play", once the page has hydrated.
  */
 .preloader {
   position: fixed;
@@ -648,142 +646,161 @@
   z-index: 120;
   display: none;
   place-items: center;
-  background: #121212;
+  overflow: hidden;
+  /* The blades are the screen. */
+  background: transparent;
 }
 :root[data-motion]:not([data-preloaded]) .preloader {
   display: grid;
 }
-/* The page is live from the moment the crossfade starts. */
+/* The page is live from the moment the façade starts to open. */
 :root[data-loaded] .preloader {
   pointer-events: none;
 }
-/* Sized by the height, and by the width on narrow screens, with a gutter all round. */
-.intro {
-  position: relative;
-  width: min(calc(85vw - 2rem), calc(71svh * 1000 / 1096.7), 39rem);
-}
-/* On the intro, the label waits for the timeline. */
-:root[data-intro]:not([data-intro="play"]) .intro__label {
-  opacity: 0;
-}
-/* Under the map, in the old loader's type and red. */
-.intro__label {
-  position: absolute;
-  top: calc(100% + clamp(1.25rem, 3.5svh, 2rem));
-  left: 50%;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0;
-  translate: -50% 0;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-charcoal-300);
-}
-.intro__dot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 9999px;
-  background: var(--color-brand-400);
-}
-:root[data-intro="play"] .intro__label {
-  animation: fade-in 0.6s var(--e-out) var(--at) both;
-}
-:root[data-intro="play"] .intro__dot {
-  animation: dot-in 0.45s var(--e-out-strong) calc(var(--at) + var(--ms)) both;
-}
-.intro__region {
-  position: absolute;
-  overflow: hidden;
-  /* What a region shows if its picture never arrives. */
-  background: #1e1e1e;
-  opacity: 0;
-}
-.intro__picture {
+.loader__facade {
   position: absolute;
   inset: 0;
-  background-position: center;
-  background-size: cover;
+  display: flex;
+  perspective: 1400px;
+}
+/* A blade, a hair wider than its share so no light shows between shut blades. */
+.loader__blade {
+  position: relative;
+  flex: 1 1 0;
+  margin-right: -1px;
+  overflow: hidden;
+  /* Lit a little from above, as a façade is. */
+  background: linear-gradient(180deg, #1b1b1a 0%, #121212 45%, #0e0e0e 100%);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+@media (max-width: 40rem) {
+  .loader__blade:nth-child(n + 9) {
+    display: none;
+  }
+}
+/* The joint on each blade's left edge: a dark line with a lit lip beside it. */
+.loader__blade::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.55) 0 1px, rgb(255 255 255 / 0.06) 1px 2px);
+  opacity: 0;
+}
+.loader__blade:first-child::before {
+  display: none;
+}
+:root[data-intro="play"] .loader__blade::before {
+  animation: fade-in var(--ms) var(--e-out) calc(var(--at) + var(--i) * 40ms) both;
+  opacity: 1;
 }
 /*
- * Only during the intro, so a page shown without it never fetches them. Phones take the
- * smaller cut, or the middle one on high-density screens; larger screens the
- * middle cut, or the full-resolution one on high-density screens; screens
- * 1920px wide and up (4K monitors included) always the full one.
+ * The raking light: each blade shows its slice of one band of warm light a
+ * screen wide, moved across from left to right on the compositor, so the
+ * band reads as one light across the joints.
  */
-:root[data-intro] .intro__picture {
-  background-image: var(--picture-medium);
-  background-image: -webkit-image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
-  background-image: image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
+.loader__light {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--i) * -100vw / var(--blades));
+  width: 100vw;
+  background: linear-gradient(105deg, transparent 30%, rgb(255 236 214 / 0.06) 41%, rgb(255 236 214 / 0.14) 50%, rgb(255 236 214 / 0.06) 59%, transparent 70%);
+  transform: translateX(-100%);
 }
-@media (min-width: 40rem) {
-  :root[data-intro] .intro__picture {
-    background-image: var(--picture-full);
-    background-image: -webkit-image-set(var(--picture-medium) 1x, var(--picture-full) 2x);
-    background-image: image-set(var(--picture-medium) 1x, var(--picture-full) 2x);
+@media (max-width: 40rem) {
+  .loader__light {
+    left: calc(var(--i) * -100vw / 8);
   }
 }
-@media (min-width: 120rem) {
-  :root[data-intro] .intro__picture {
-    background-image: var(--picture-full);
-  }
+:root[data-intro="play"] .loader__light {
+  animation: loader-light var(--ms) var(--e-inout-2) var(--at) both;
+  transform: translateX(100%);
 }
-.intro__lines {
+/* What a blade shows of the light as it turns. */
+.loader__sheen {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.intro__lines path {
-  vector-effect: non-scaling-stroke;
-  stroke-linejoin: miter;
-  stroke-linecap: butt;
-}
-.intro__stroke {
-  stroke: #fff;
-  stroke-width: 1.5px;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-.intro__stroke--border {
-  stroke-width: 1.25px;
-}
-.intro__keyline {
-  stroke: #000;
-  stroke-opacity: 0.4;
-  stroke-width: 4px;
+  background: linear-gradient(90deg, rgb(255 240 222 / 0.2), rgb(255 240 222 / 0.04) 60%, rgb(0 0 0 / 0.2));
   opacity: 0;
 }
-:root[data-intro="play"] .intro__stroke {
-  animation: intro-draw var(--ms) var(--e-inout-2) var(--at) both;
+/* The logo, a red rule under it, and the firm's line. */
+.loader__mark {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: clamp(1rem, 2.6svh, 1.5rem);
+  padding: 0 1.5rem;
 }
-/* A region comes in as its picture fades up and settles from 106% around the region's heart. */
-:root[data-intro="play"] .intro__region {
-  animation: fade-in var(--ms) var(--e-out) var(--at) both;
+.loader__logo {
+  opacity: 0;
+}
+.loader__logo-mark {
+  display: block;
+  height: clamp(2rem, 6svh, 3.25rem);
+  width: auto;
+}
+.loader__rule {
+  display: block;
+  width: clamp(3rem, 10vw, 5rem);
+  height: 1px;
+  background: var(--color-brand-400);
+  transform: scaleX(0);
+}
+.loader__line {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-charcoal-300);
+  opacity: 0;
+}
+.loader__sep {
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.6;
+}
+:root[data-intro="play"] .loader__logo {
+  animation: loader-rise var(--ms) var(--e-out-strong) var(--at) both;
   opacity: 1;
 }
-:root[data-intro="play"] .intro__picture {
-  animation: intro-settle var(--ms) var(--e-out) var(--at) both;
+:root[data-intro="play"] .loader__rule {
+  animation: loader-rule var(--ms) var(--e-inout-2) var(--at) both;
+  transform: none;
 }
-:root[data-intro="play"] .intro__keyline {
-  animation: fade-in var(--ms) var(--e-out) var(--at) both;
+:root[data-intro="play"] .loader__line {
+  animation: loader-rise var(--ms) var(--e-out) var(--at) both;
   opacity: 1;
 }
-@keyframes intro-draw {
+/* Gentle motion: the light stays where it ends and nothing travels; the pieces fade up in place. */
+:root[data-gentle][data-intro="play"] :is(.loader__light, .loader__logo, .loader__rule, .loader__line) {
+  animation-name: fade-in;
+}
+@keyframes loader-light {
   from {
-    stroke-dashoffset: 1;
+    transform: translateX(-100%);
   }
   to {
-    stroke-dashoffset: 0;
+    transform: translateX(100%);
   }
 }
-@keyframes intro-settle {
+@keyframes loader-rise {
   from {
-    transform: scale(1.06);
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+@keyframes loader-rule {
+  from {
+    transform: scaleX(0);
   }
 }
 
@@ -791,24 +808,7 @@
 .screen-veil__mark {
   display: grid;
   justify-items: center;
-  gap: 2rem;
-}
-.screen-veil__label {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-charcoal-300);
-}
-.screen-veil__dot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 9999px;
-  background: var(--color-brand-400);
+  gap: 1.25rem;
 }
 
 /* ---- Page transition (ScreenTransition.tsx) ---- */
@@ -847,51 +847,17 @@
   place-items: center;
   background: #121212;
 }
-.screen-veil__mark {
-  gap: 1.75rem;
+/* The loader's logo and red rule, on the sheet as it rises. */
+.screen-veil__logo {
+  display: block;
+  height: clamp(1.75rem, 5svh, 2.5rem);
+  width: auto;
 }
-/* The intro's map, smaller: the regions' pictures under the outline and the borders between them. */
-.screen-veil__map {
-  position: relative;
-  height: min(44svh, 24rem, calc((100vw - 4rem) * 1096.4 / 1000));
-  aspect-ratio: 1000 / 1096.4;
-}
-.gta__region {
-  position: absolute;
-  overflow: hidden;
-  /* What a region shows if its picture never arrives. */
-  background: #1e1e1e;
-}
-.gta__picture {
-  position: absolute;
-  inset: 0;
-  background-position: center;
-  background-size: cover;
-}
-/* Only while the veil is up, so a page that is never left never fetches them (the intro has usually cached them). */
-.screen-veil:not([data-phase="idle"]) .gta__picture {
-  background-image: var(--picture-medium);
-  background-image: -webkit-image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
-  background-image: image-set(var(--picture-small) 1x, var(--picture-medium) 2x);
-}
-.gta__lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.gta__stroke {
-  stroke: #fff;
-  stroke-width: 1.5px;
-  vector-effect: non-scaling-stroke;
-  stroke-linejoin: miter;
-  stroke-linecap: butt;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-}
-.gta__stroke--border {
-  stroke-width: 1.25px;
+.screen-veil__rule {
+  display: block;
+  width: clamp(3rem, 10vw, 5rem);
+  height: 1px;
+  background: var(--color-brand-400);
 }
 /* The tapped link answers at once, before the sheet has covered it. */
 [data-pressed] {

@@ -2,72 +2,67 @@ import { expect, test } from "@playwright/test";
 import { watchConsole } from "./helpers";
 
 /*
- * The Greater Toronto Area intro (Preloader.tsx, docs/MOTION.md "Load
- * sequence"): on every full load, the map draws and its five regions come in west
- * to east, each aligned with its region of the map; then the page.
+ * The loader, the façade (Preloader.tsx, docs/MOTION.md "Load sequence"):
+ * on every full load a dark façade of blades with the logo on it, a light
+ * crossing it; then the blades pivot open onto the page.
  */
-test.describe("GTA intro", () => {
-  test("draws the map, reveals the five regions in order inside it, then fades onto the page", async ({ page }) => {
+test.describe("Loader", () => {
+  test("shows the façade with the logo, then opens the blades from the middle onto the page", async ({ page }) => {
     const console = watchConsole(page);
     await page.goto("/");
     await page.waitForFunction(() => document.documentElement.dataset.intro === "play");
-    // The regions' pictures start in order, west to east.
-    const starts = await page.locator(".intro__region").evaluateAll((els) =>
-      els.map((el) => {
-        const a = el.getAnimations()[0] as CSSAnimation;
-        return { delay: Number(a.effect?.getTiming().delay), name: a.animationName };
-      }),
-    );
-    expect(starts.map((s) => s.name)).toEqual(Array(5).fill("fade-in"));
-    for (let i = 1; i < 5; i++) expect(starts[i].delay).toBeGreaterThan(starts[i - 1].delay);
-
-    // Each region's frame sits exactly where its shape is on the map.
-    const fit = await page.evaluate(() => {
-      const map = document.querySelector(".intro")!.getBoundingClientRect();
-      const lines = document.querySelector(".intro__lines")!.getBoundingClientRect();
-      const edge = document.querySelector(".intro__stroke:not(.intro__stroke--border)")!.getBoundingClientRect();
-      const regions = [...document.querySelectorAll(".intro__region")].map((el) => el.getBoundingClientRect());
-      const union = { left: Math.min(...regions.map((r) => r.left)), top: Math.min(...regions.map((r) => r.top)), right: Math.max(...regions.map((r) => r.right)), bottom: Math.max(...regions.map((r) => r.bottom)) };
-      return { map: [map.left, map.top, map.width, map.height], lines: [lines.left, lines.top, lines.width, lines.height], edge: [edge.left, edge.top, edge.right, edge.bottom], union: [union.left, union.top, union.right, union.bottom], inView: map.left >= 0 && map.top >= 0 && map.right <= innerWidth && map.bottom <= innerHeight };
+    // The blades cover the screen edge to edge, and the logo sits on them.
+    const cover = await page.evaluate(() => {
+      const blades = [...document.querySelectorAll<HTMLElement>(".loader__blade")].filter((b) => b.offsetWidth > 0).map((b) => b.getBoundingClientRect());
+      const logo = document.querySelector(".loader__logo")!.getBoundingClientRect();
+      return { count: blades.length, left: blades[0].left, right: blades.at(-1)!.right, top: Math.max(...blades.map((b) => b.top)), bottom: Math.min(...blades.map((b) => b.bottom)), logoInView: logo.left > 0 && logo.right < innerWidth, width: innerWidth, height: innerHeight };
     });
-    expect(fit.inView).toBe(true);
-    fit.lines.forEach((v, i) => expect(v).toBeCloseTo(fit.map[i], 0));
-    fit.union.forEach((v, i) => expect(Math.abs(v - fit.edge[i])).toBeLessThan(1.5));
+    expect(cover.count).toBeGreaterThanOrEqual(8);
+    expect(cover.left).toBeLessThanOrEqual(0);
+    expect(cover.right).toBeGreaterThanOrEqual(cover.width - 1);
+    expect(cover.top).toBeLessThanOrEqual(0);
+    expect(cover.bottom).toBeGreaterThanOrEqual(cover.height);
+    expect(cover.logoInView).toBe(true);
 
+    // Then the blades turn, the middle ones first.
+    await page.waitForFunction(() => "loaded" in document.documentElement.dataset, null, { timeout: 9000 });
+    const delays = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>(".loader__blade")].filter((b) => b.offsetWidth > 0).map((b) => Number(b.getAnimations().find((a) => !(a instanceof CSSAnimation))?.effect?.getTiming().delay)),
+    );
+    const mid = delays.length / 2;
+    expect(delays[mid]).toBeLessThan(delays[0]);
+    expect(delays[mid - 1]).toBeLessThan(delays.at(-1)!);
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await expect(page.locator(".preloader")).toBeHidden();
     console.expectNone();
   });
 
-  test("plays again, pictures and all, on a later load in the same tab", async ({ page }) => {
+  test("plays again on a later load in the same tab", async ({ page }) => {
     await page.goto("/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await page.reload();
+    await expect(page.locator(".preloader")).toBeVisible();
     await page.waitForFunction(() => document.documentElement.dataset.intro === "play");
-    // Every region's picture is set, and every region comes up.
-    const pictures = await page.locator(".intro__picture").evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
-    expect(pictures).toHaveLength(5);
-    for (const p of pictures) expect(p).toContain("/images/intro/");
-    await page.waitForFunction(() => [...document.querySelectorAll(".intro__region")].every((el) => Number(getComputedStyle(el).opacity) > 0.99), null, { timeout: 6000 });
+    await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
   });
 
-  test("the page transition shows the same map, its five pictures coming up in their regions", async ({ page }) => {
+  test("the page transition shows the logo and its red rule", async ({ page }) => {
     await page.goto("/services/");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await page.getByRole("link", { name: /deck permit/i }).first().click();
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "cover");
-    const pictures = await page.locator(".screen-veil .gta__picture").evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
-    expect(pictures).toHaveLength(5);
-    for (const p of pictures) expect(p).toContain("/images/intro/");
-    await page.waitForFunction(() => [...document.querySelectorAll(".screen-veil .gta__region")].every((el) => Number(getComputedStyle(el).opacity) > 0.99));
+    await expect(page.locator(".screen-veil .screen-veil__logo")).toHaveCount(1);
+    await expect(page.locator(".screen-veil .screen-veil__rule")).toHaveCount(1);
     await expect(page).toHaveURL(/\/services\/deck-permits\/$/);
   });
 
-  test("with reduced motion the intro still plays (gentle motion) and lets the page go", async ({ page }) => {
+  test("with reduced motion the loader still plays (gentle motion), the blades stay still and the screen fades", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.locator(".preloader")).toBeVisible();
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset, null, { timeout: 9000 });
     await expect(page.locator(".preloader")).toBeHidden();
+    const turned = await page.locator(".loader__blade").evaluateAll((els) => els.filter((el) => el.getAnimations().some((a) => !(a instanceof CSSAnimation))).length);
+    expect(turned).toBe(0);
   });
 });
