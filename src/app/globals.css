@@ -3716,9 +3716,11 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   margin-top: 5.5rem;
 }
 /* Phones: a row to swipe, the next card showing at the edge. */
+/* On phones a row to swipe, with room below for the cards' shadows. It contains its paint: Chrome on Android otherwise counts the cards beyond the edge as page width once Services comes up, and zooms the whole page out. */
 .praise-scroll {
   margin: 1.5rem -1.25rem -2.5rem;
   padding: 0 1.25rem 2.5rem;
+  contain: paint;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-padding-inline: 1.25rem;
@@ -3822,6 +3824,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     margin-inline: 0;
     padding-inline: 0;
     overflow: visible;
+    contain: none;
   }
   .praise-list {
     display: grid;

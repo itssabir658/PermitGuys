@@ -468,7 +468,7 @@ test.describe("interactive pieces", () => {
   });
 
   test("every picture says what it is: a rendering of a client project, or a rendered study", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/about/");
     await expect(page.locator("[aria-labelledby=works-heading]")).toContainText("Renderings from client projects");
     await page.goto("/services/custom-home-permits/");
     await expect(page.locator("header figcaption")).toContainText("Rendering of a client project.");
@@ -642,12 +642,12 @@ test.describe("interactive pieces", () => {
     }
   });
 
-  test("a project link on the homepage lands on that project's renderings", async ({ page }) => {
+  test("a project link on the About page lands on that project's renderings", async ({ page }) => {
     await page.goto("/projects/#stone-house");
     const project = page.locator("#stone-house");
     await expect(project).toBeInViewport();
     await expect(project.getByRole("heading", { level: 3 })).toHaveText("Stone house with three gables");
-    await page.goto("/");
+    await page.goto("/about/");
     const href = await page.locator("[aria-labelledby=works-heading]").getByRole("link", { name: /view the project/i }).first().getAttribute("href");
     expect(href).toMatch(/^\/projects\/#[a-z-]+$/);
   });
