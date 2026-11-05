@@ -882,24 +882,46 @@
 .site-nav:is([data-tone="dark"], [data-open]) {
   color: var(--color-ivory);
 }
+/*
+ * The strip: full width, frosted, of the ground's own colour (the homepage
+ * writes the colour under the header on the bar as --ground: stone under
+ * Works, dusk over Services, ivory over Contact), graphite over dark
+ * grounds, with a hairline under it. It is clear at the top of the
+ * homepage's picture and while the menu is open (the menu has its own
+ * ground). It slims once the page has scrolled past 80px.
+ */
 .site-nav__bar {
-  position: relative;
-  isolation: isolate;
+  height: 5rem;
+  background-color: transparent;
+  box-shadow: inset 0 -1px transparent;
   transition:
-    background-color 0.3s var(--e-ui),
-    backdrop-filter 0.3s var(--e-ui),
-    box-shadow 0.3s var(--e-ui);
+    height 0.45s var(--e-out-strong),
+    background-color 0.35s var(--e-ui),
+    box-shadow 0.35s var(--e-ui),
+    backdrop-filter 0.35s var(--e-ui);
 }
-/* The phone bar's shade over the homepage's picture (below), on a layer of its own, so it fades in as the ivory fades out. */
-.site-nav__bar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(rgb(17 17 16 / 0.55), rgb(17 17 16 / 0));
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s var(--e-ui);
+.site-nav[data-solid]:not([data-open]) .site-nav__bar {
+  background-color: color-mix(in srgb, var(--ground, var(--color-ivory)) 88%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: inset 0 -1px rgb(23 23 22 / 0.09);
+  /* The strip takes the clicks that land on it, rather than passing them to the page under it. */
+  pointer-events: auto;
+}
+.site-nav[data-solid][data-tone="dark"]:not([data-open]) .site-nav__bar {
+  background-color: rgb(22 22 21 / 0.86);
+  box-shadow: inset 0 -1px rgb(244 241 235 / 0.08);
+}
+.site-nav[data-collapsed] .site-nav__bar {
+  height: 4rem;
+}
+@media (min-width: 1024px) {
+  .site-nav__bar {
+    height: 6rem;
+  }
+  .site-nav[data-collapsed] .site-nav__bar {
+    height: 4.5rem;
+  }
 }
 /*
  * Both logos share one cell. Only the ivory one (on top) fades; the ink one
@@ -929,41 +951,6 @@
   --lb-fg: var(--color-ink);
   --lb-wipe: var(--color-stone-300);
   --lb-shine: var(--color-charcoal-600);
-}
-
-/*
- * The logo stays put when the row steps away (wide screens), on a small
- * frosted plate of the ground's own colour, as tall as the menu button in
- * the other corner, so it reads over type and pictures alike. Over the
- * homepage's picture it goes bare, as at the top. Phones have their bar.
- */
-.site-nav__logo-stack {
-  position: relative;
-  isolation: isolate;
-}
-@media (min-width: 768px) {
-  .site-nav__logo-stack::before {
-    content: "";
-    position: absolute;
-    inset: -0.625rem -0.875rem;
-    z-index: -1;
-    background: color-mix(in srgb, var(--ground, var(--color-ivory)) 84%, transparent);
-    backdrop-filter: blur(14px);
-    opacity: 0;
-    pointer-events: none;
-    transition:
-      opacity 0.3s var(--e-ui),
-      background-color 0.3s var(--e-ui);
-  }
-  .site-nav:is([data-tone="dark"], [data-open]) .site-nav__logo-stack::before {
-    background: rgb(25 25 24 / 0.84);
-  }
-  .site-nav[data-collapsed] .site-nav__logo-stack::before {
-    opacity: 1;
-  }
-  .site-nav[data-collapsed][data-over-hero]:not([data-open]) .site-nav__logo-stack::before {
-    opacity: 0;
-  }
 }
 
 /*
@@ -1160,10 +1147,11 @@
 }
 
 /*
- * The row steps up and out past 80px (wide screens) from the right, Contact
- * first (--o, 30ms apart, 0.28s on power2.in), and comes back above it from
- * the left (--i, 40ms apart, 0.5s on power3.out) once the menu button has
- * dropped away.
+ * Wide screens: the row stays in the strip all the way down. Past 80px the
+ * links and Contact slide left (0.5s) to make room for the menu button,
+ * which rises into the corner beside Contact; above 80px the button drops
+ * away and they slide back. While the menu is open the row steps up and
+ * out from the right, Contact first, and comes back from the left.
  */
 .site-nav__item {
   transition:
@@ -1172,8 +1160,16 @@
     visibility 0s;
   transition-delay: calc(0.12s + var(--i, 0) * 40ms), calc(0.12s + var(--i, 0) * 40ms), 0s;
 }
+.site-nav__links {
+  transition: transform 0.5s var(--e-out-strong) 0.12s;
+}
+@media (min-width: 1024px) {
+  .site-nav:is([data-collapsed], [data-open]) .site-nav__links {
+    transform: translateX(-4rem);
+    transition-delay: 0s;
+  }
+}
 @media (min-width: 768px) {
-  .site-nav[data-collapsed] .site-nav__item:not(.site-nav__item--logo),
   .site-nav[data-open] .site-nav__item:not(.site-nav__item--logo) {
     opacity: 0;
     transform: translateY(-10px);
@@ -1183,28 +1179,6 @@
       transform 0.28s var(--e-exit),
       visibility 0s linear;
     transition-delay: calc(var(--o, 0) * 30ms), calc(var(--o, 0) * 30ms), calc(0.28s + var(--o, 0) * 30ms);
-  }
-}
-/* Phones keep the row, on a ground of its own once the page has scrolled, with a hairline under it on light grounds. */
-@media (max-width: 767px) {
-  .site-nav[data-collapsed]:not([data-open]) .site-nav__bar {
-    /* The homepage writes the colour under the header here (stone under Works, dusk over Services, ivory over Contact). */
-    background: color-mix(in srgb, var(--ground, var(--color-ivory)) 88%, transparent);
-    backdrop-filter: blur(14px);
-    box-shadow: inset 0 -1px rgb(23 23 22 / 0.08);
-  }
-  .site-nav[data-collapsed][data-tone="dark"]:not([data-open]) .site-nav__bar {
-    background: rgb(25 25 24 / 0.88);
-    box-shadow: none;
-  }
-  /* Over the homepage's picture: a shade that fades into the picture, not a slab across it. The bar's colour and the shade cross over together. */
-  .site-nav[data-over-hero][data-collapsed]:not([data-open]) .site-nav__bar {
-    background-color: transparent;
-    backdrop-filter: none;
-    box-shadow: none;
-  }
-  .site-nav[data-over-hero][data-collapsed]:not([data-open]) .site-nav__bar::before {
-    opacity: 1;
   }
 }
 /*
@@ -1265,9 +1239,8 @@
 }
 /*
  * A hairline in its own colour keeps the button's edge on any ground, even
- * its own. It rises into the corner once Contact has gone (Contact's fade
- * is all but done at 0.26s, and the button shows in its slot from about
- * 0.07s into its rise).
+ * its own. On wide screens it rises into the corner as the links slide over
+ * to make room for it.
  */
 .site-nav__menu-btn {
   position: relative;
@@ -1278,7 +1251,7 @@
   color: var(--color-ivory);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent);
   transition:
-    transform 0.5s var(--e-out-strong) 0.26s,
+    transform 0.5s var(--e-out-strong) 0.12s,
     background-color 0.3s var(--e-ui),
     color 0.3s var(--e-ui),
     box-shadow 0.3s var(--e-ui),
@@ -1296,9 +1269,26 @@
 .site-nav:is([data-tone="dark"], [data-open]) .site-nav__menu-btn:focus-visible {
   outline-color: var(--color-brand-500);
 }
-/* Wide screens at the top of the page: the button drops below its slot, out of sight, before the row comes back. */
+/*
+ * Wide screens at the top of the page: the button drops below its slot, out
+ * of sight, before the row comes back. Between 768px and 1024px the row
+ * fills the strip, so the button stays away all the way down (the footer
+ * lists every page).
+ */
 @media (min-width: 768px) {
   .site-nav:not([data-collapsed], [data-open]) .site-nav__menu-btn {
+    transform: translateY(200%);
+    visibility: hidden;
+    transition:
+      transform 0.2s var(--e-exit),
+      background-color 0.3s var(--e-ui),
+      color 0.3s var(--e-ui),
+      box-shadow 0.3s var(--e-ui),
+      visibility 0s linear 0.2s;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .site-nav:not([data-open]) .site-nav__menu-btn {
     transform: translateY(200%);
     visibility: hidden;
     transition:
