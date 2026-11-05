@@ -30,7 +30,7 @@ export function Stars({ rating, className, onDark }: { rating: number; className
     <span aria-hidden="true" className={cn("relative inline-flex", className)}>
       <StarRow className={onDark ? "text-white/20" : "text-ink/15"} />
       <span className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${filled}%` }}>
-        <StarRow className={onDark ? "text-ivory" : "text-ink"} />
+        <StarRow className={onDark ? "text-star-on-dark" : "text-star"} />
       </span>
     </span>
   );
