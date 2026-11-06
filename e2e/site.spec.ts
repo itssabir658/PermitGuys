@@ -83,7 +83,8 @@ test.describe("accessibility", () => {
 });
 
 test.describe("navigation", () => {
-  test("the menu opens, traps focus, closes with Escape and navigates", async ({ page }) => {
+  test("the menu opens, traps focus, closes with Escape and navigates", async ({ page }, info) => {
+    test.skip(info.project.name === "tablet", "Between 768px and 1024px the header strip holds every link and no menu button");
     await page.goto("/");
     const wide = page.viewportSize()!.width >= 768;
     // Wide screens show the bar's links at the top of the page; the menu button comes in once the page scrolls past 80px.
@@ -155,6 +156,10 @@ test.describe("navigation", () => {
       await expect(logo).toBeVisible();
       await expect.poll(() => logo.evaluate((el) => Number(getComputedStyle(el.closest(".site-nav__item")!).opacity))).toBe(1);
     }
+    // The header is a full-width strip, not a plate behind the logo.
+    const strip = await page.locator(".site-nav__bar").evaluate((el) => ({ width: el.getBoundingClientRect().width, bg: getComputedStyle(el).backgroundColor }));
+    expect(strip.width).toBe(page.viewportSize()!.width);
+    expect(strip.bg).not.toBe("rgba(0, 0, 0, 0)");
     // At the foot of the page one of the two logos (white "guys" over dark grounds) shows whole.
     await expect.poll(() => page.locator(".site-nav__logo").evaluateAll((els) => Math.max(...els.map((el) => Number(getComputedStyle(el).opacity))))).toBe(1);
   });
@@ -260,8 +265,9 @@ test.describe("interactive pieces", () => {
     await expect.poll(y).toBe(700);
   });
 
-  test("from the keyboard, a menu link to the page showing moves focus to the page's content", async ({ page, isMobile }) => {
+  test("from the keyboard, a menu link to the page showing moves focus to the page's content", async ({ page, isMobile }, info) => {
     test.skip(isMobile, "Keyboard test");
+    test.skip(info.project.name === "tablet", "Between 768px and 1024px the header strip holds every link and no menu button");
     await page.goto("/services/");
     await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
     await page.evaluate(() => window.scrollTo(0, 1500));
@@ -364,7 +370,7 @@ test.describe("interactive pieces", () => {
   });
 
   test("a menu link to the page showing closes the menu and returns to the top", async ({ page }, info) => {
-    test.skip(info.project.name === "desktop", "The menu button shows at the top on smaller screens");
+    test.skip(info.project.name !== "mobile", "The menu button shows at the top on phones");
     await page.goto("/services/");
     await page.waitForFunction(() => "loaded" in document.documentElement.dataset);
     await page.evaluate(() => window.scrollTo(0, 1500));

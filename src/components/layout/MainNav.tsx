@@ -22,13 +22,16 @@ import { Logo } from "./Logo";
  * the homepage, where the iris and the name go first, from 0.3s elsewhere
  * (data-entrance, fixed at the first render).
  *
- * On screens 768px and wider, once the page has scrolled past 80px the row
- * steps up and out from the right, Contact first (0.28s each, 30ms apart),
- * and the menu button rises into the corner once Contact has gone; above
- * 80px the button drops away first and the row comes back from the left.
- * On phones the row stays, with the menu button always shown, on a bar of
- * its own once the page has scrolled (over the homepage's picture, a
- * shade that fades into it rather than a slab across it).
+ * The header is a full-width strip across the top of every page: logo on
+ * the left, the main links and Contact on the right (the menu button alone
+ * on phones). It stays put all the way down. At the top of the homepage it
+ * is clear over the photograph; everywhere else, and once any page has
+ * scrolled past 80px, it is a frosted strip of the ground's own colour
+ * (ivory, or graphite over dark grounds) with a hairline under it, and it
+ * slims from 96px to 72px (80px to 64px on phones). On screens 768px and
+ * wider the links slide left as the page scrolls past 80px, and the menu
+ * button rises in beside Contact; above 80px it drops away and they slide
+ * back.
  *
  * The header reads the ground beneath it at the lower half of the button
  * (64px down): ivory type over the hero, the night ground, dark sections
@@ -37,14 +40,10 @@ import { Logo } from "./Logo";
  * Every part of it changes tone together, over 0.3s; the two logos share
  * one cell and crossfade.
  *
- * The logo stays in its corner all the way down every page: when the row
- * steps away on wide screens it keeps its place, on a small frosted plate
- * of the ground's own colour, so it reads over pictures and type.
- *
  * Services opens a dropdown of every service page: on hover, or from the
  * small arrow beside it (a click, a tap or Enter), which keyboard users tab
- * to. It closes on leaving it, Escape, a click outside, focus moving on, the
- * row stepping away and navigation. Phones, which have no row, fold the same
+ * to. It closes on leaving it, Escape, a click outside, focus moving on and
+ * navigation. Phones, which have no row, fold the same
  * list out under Services in the menu.
  *
  * The row is held open only while someone is tabbing through it; a mouse
@@ -128,7 +127,6 @@ export function MainNav({
     let hero: Range | null = null;
     let tone = header.dataset.tone;
     let collapsed = false;
-    let overHero = false;
     // Keyboard focus in the row holds it open; mouse focus (a clicked link) does not.
     let kbdInBar = false;
     const fin = (e: FocusEvent) => {
@@ -162,21 +160,17 @@ export function MainNav({
         const dark = document.documentElement.dataset.ground === "night" || darkRanges.some((r) => y >= r.top && y < r.top + r.height);
         const next = dark ? "dark" : "light";
         if (next !== tone) header.dataset.tone = tone = next;
-        // Over the homepage's picture the phone bar is a shade, not a slab (globals.css).
-        const isOverHero = hero !== null && y >= hero.top && y < hero.top + hero.height;
-        if (isOverHero !== overHero) {
-          overHero = isOverHero;
-          if (overHero) header.dataset.overHero = "";
-          else delete header.dataset.overHero;
-        }
         const isCollapsed = f.scroll > 80 && !kbdInBar;
         if (isCollapsed !== collapsed) {
           collapsed = isCollapsed;
-          if (collapsed) {
-            header.dataset.collapsed = "";
-            // The dropdown leaves with the row.
-            setDrop(false);
-          } else delete header.dataset.collapsed;
+          if (collapsed) header.dataset.collapsed = "";
+          else delete header.dataset.collapsed;
+        }
+        // The strip shows everywhere but at the top of the homepage's picture, which it sits clear over.
+        const solid = f.scroll > 80 || hero === null || y >= hero.top + hero.height;
+        if (solid !== ("solid" in header.dataset)) {
+          if (solid) header.dataset.solid = "";
+          else delete header.dataset.solid;
         }
       },
       destroy() {
@@ -382,97 +376,99 @@ export function MainNav({
 
   return (
     <>
-      <header ref={headerRef} data-tone={pathname === "/" ? "dark" : "light"} data-entrance={entrance} data-open={open ? "" : undefined} className="site-nav">
-        <div className="site-nav__bar mx-auto flex h-20 w-full max-w-site items-center justify-between gap-6 px-5 sm:px-8 lg:h-24 lg:px-12 xl:px-16">
-          <div className="site-nav__item site-nav__item--logo" style={{ "--i": 0, "--o": inline.length + 1 } as CSSProperties}>
-            <Link href="/" className="nav-intro site-nav__logo-stack" aria-label={`${site.name} home`}>
-              <Logo className="site-nav__logo site-nav__logo--dark h-[1.35rem] w-auto sm:h-6" />
-              <Logo onDark className="site-nav__logo site-nav__logo--light h-[1.35rem] w-auto sm:h-6" />
-            </Link>
-          </div>
+      <header ref={headerRef} data-tone={pathname === "/" ? "dark" : "light"} data-solid={pathname === "/" ? undefined : ""} data-entrance={entrance} data-open={open ? "" : undefined} className="site-nav">
+        <div className="site-nav__bar">
+          <div className="site-nav__row mx-auto flex h-full w-full max-w-site items-center justify-between gap-6 px-5 sm:px-8 lg:px-12 xl:px-16">
+            <div className="site-nav__item site-nav__item--logo" style={{ "--i": 0, "--o": inline.length + 1 } as CSSProperties}>
+              <Link href="/" className="nav-intro site-nav__logo-stack" aria-label={`${site.name} home`}>
+                <Logo className="site-nav__logo site-nav__logo--dark h-[1.35rem] w-auto sm:h-6" />
+                <Logo onDark className="site-nav__logo site-nav__logo--light h-[1.35rem] w-auto sm:h-6" />
+              </Link>
+            </div>
 
-          <div className="hidden items-center gap-10 md:flex">
-            <nav aria-label="Main">
-              <ul className="flex items-center gap-8 text-[0.9375rem] lg:gap-10">
-                {inline.map((link, i) => {
-                  const active = isActive(pathname, link.href);
-                  const item = (
-                    <Link href={link.href} aria-current={active ? "page" : undefined} className={cn("group relative flex items-center gap-2 py-2", !link.services && "nav-intro")}>
-                      <span aria-hidden="true" className={cn("size-1 rounded-full bg-brand-400 transition-opacity duration-500", active ? "opacity-100" : "opacity-0")} />
-                      <RollText>{link.label}</RollText>
-                    </Link>
-                  );
-                  const style = { "--i": i + 1, "--o": inline.length - i } as CSSProperties;
-                  if (!link.services) {
+            <div className="site-nav__links hidden items-center gap-8 md:flex lg:gap-10">
+              <nav aria-label="Main">
+                <ul className="flex items-center gap-8 text-[0.9375rem] lg:gap-10">
+                  {inline.map((link, i) => {
+                    const active = isActive(pathname, link.href);
+                    const item = (
+                      <Link href={link.href} aria-current={active ? "page" : undefined} className={cn("group relative flex items-center gap-2 py-2", !link.services && "nav-intro")}>
+                        <span aria-hidden="true" className={cn("size-1 rounded-full bg-brand-400 transition-opacity duration-500", active ? "opacity-100" : "opacity-0")} />
+                        <RollText>{link.label}</RollText>
+                      </Link>
+                    );
+                    const style = { "--i": i + 1, "--o": inline.length - i } as CSSProperties;
+                    if (!link.services) {
+                      return (
+                        <li key={link.href} className="site-nav__item" style={style}>
+                          {item}
+                        </li>
+                      );
+                    }
                     return (
-                      <li key={link.href} className="site-nav__item" style={style}>
-                        {item}
+                      <li
+                        key={link.href}
+                        ref={dropRef}
+                        className="site-nav__item site-drop"
+                        style={style}
+                        data-open={drop ? "" : undefined}
+                        onPointerEnter={dropEnter}
+                        onPointerLeave={dropLeave}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape" && drop) {
+                            setDrop(false);
+                            dropBtnRef.current?.focus();
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrop(false);
+                        }}
+                      >
+                        <div className="nav-intro flex items-center gap-1">
+                          {item}
+                          <button
+                            ref={dropBtnRef}
+                            type="button"
+                            aria-expanded={drop}
+                            aria-controls={`${baseId}-services`}
+                            onClick={dropToggle}
+                            className="site-drop__toggle"
+                          >
+                            <span className="sr-only">{drop ? "Hide the services list" : "Show the services list"}</span>
+                            <svg aria-hidden="true" viewBox="0 0 10 6" className="site-drop__chevron">
+                              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.2" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div id={`${baseId}-services`} className="site-drop__panel" inert={!drop}>
+                          <div className="site-drop__sheet">
+                            <ul className="site-drop__list">
+                              {services.map((s, j) => (
+                                <li key={s.href} style={{ "--j": j } as CSSProperties}>
+                                  <Link href={s.href} aria-current={pathname === s.href ? "page" : undefined} className="site-drop__link">
+                                    <span aria-hidden="true" className="site-drop__dot" />
+                                    {s.label}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                            <Link href={link.href} className="site-drop__all">
+                              <span className="link-draw">All services</span>
+                              <span aria-hidden="true">→</span>
+                            </Link>
+                          </div>
+                        </div>
                       </li>
                     );
-                  }
-                  return (
-                    <li
-                      key={link.href}
-                      ref={dropRef}
-                      className="site-nav__item site-drop"
-                      style={style}
-                      data-open={drop ? "" : undefined}
-                      onPointerEnter={dropEnter}
-                      onPointerLeave={dropLeave}
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape" && drop) {
-                          setDrop(false);
-                          dropBtnRef.current?.focus();
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrop(false);
-                      }}
-                    >
-                      <div className="nav-intro flex items-center gap-1">
-                        {item}
-                        <button
-                          ref={dropBtnRef}
-                          type="button"
-                          aria-expanded={drop}
-                          aria-controls={`${baseId}-services`}
-                          onClick={dropToggle}
-                          className="site-drop__toggle"
-                        >
-                          <span className="sr-only">{drop ? "Hide the services list" : "Show the services list"}</span>
-                          <svg aria-hidden="true" viewBox="0 0 10 6" className="site-drop__chevron">
-                            <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.2" />
-                          </svg>
-                        </button>
-                      </div>
-                      <div id={`${baseId}-services`} className="site-drop__panel" inert={!drop}>
-                        <div className="site-drop__sheet">
-                          <ul className="site-drop__list">
-                            {services.map((s, j) => (
-                              <li key={s.href} style={{ "--j": j } as CSSProperties}>
-                                <Link href={s.href} aria-current={pathname === s.href ? "page" : undefined} className="site-drop__link">
-                                  <span aria-hidden="true" className="site-drop__dot" />
-                                  {s.label}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                          <Link href={link.href} className="site-drop__all">
-                            <span className="link-draw">All services</span>
-                            <span aria-hidden="true">→</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-            <div className="site-nav__item" style={{ "--i": inline.length + 1, "--o": 0 } as CSSProperties}>
-              <div className="nav-intro">
-                <LinkButton href={ctaHref} className="site-nav__cta">
-                  Contact
-                </LinkButton>
+                  })}
+                </ul>
+              </nav>
+              <div className="site-nav__item" style={{ "--i": inline.length + 1, "--o": 0 } as CSSProperties}>
+                <div className="nav-intro">
+                  <LinkButton href={ctaHref} className="site-nav__cta">
+                    Contact
+                  </LinkButton>
+                </div>
               </div>
             </div>
           </div>
