@@ -261,9 +261,8 @@ function hero(): MotionModule | null {
   const stage = one("[data-hero-stage]");
   const near = one('[data-hero-layer="near"]');
   const far = one('[data-hero-layer="far"]');
-  const fig = one(".hero-fig");
   const dim = one("[data-hero-dim]");
-  if (!section || !stage || !near || !far || !fig || !dim) return null;
+  if (!section || !stage || !near || !far || !dim) return null;
   // Hold the sky back until the house is there (globals.css, "Hero"), both pictures decoded: decoding them as they appear would stall the frame they come in on.
   const planes = [...stage.querySelectorAll<HTMLImageElement>("[data-hero-plate] img")];
   let live = true;
@@ -305,7 +304,6 @@ function hero(): MotionModule | null {
       if (sleep.skip(r, f)) return;
       if (!f.tracks) {
         subs.forEach((el) => clear(el, "transform"));
-        clear(fig, "opacity");
         clear(near, "transform");
         clear(far, "transform");
         clear(dim, "opacity", "visibility");
@@ -321,7 +319,6 @@ function hero(): MotionModule | null {
         at.y += (aim.y * depth - at.y) * k;
       }
       subs.forEach((el, i) => setStyle(el, "transform", liftPercent(s.subRoll[i] ?? 0)));
-      setStyle(fig, "opacity", num(s.figOpacity));
       setStyle(near, "transform", `translate3d(${px(-at.x * HERO_DEPTH.nearX * w)}, ${px(s.imageY - at.y * HERO_DEPTH.nearY * h)}, 0) scale(${num(z * s.imageScale)})`);
       setStyle(far, "transform", `translate3d(${px(at.x * HERO_DEPTH.farX * w)}, ${px(s.skyY + at.y * HERO_DEPTH.farY * h)}, 0) scale(${num(z * s.skyScale)})`);
       setStyle(dim, "opacity", num(s.dim));

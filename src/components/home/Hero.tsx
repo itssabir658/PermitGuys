@@ -1,6 +1,6 @@
 import { getImageProps } from "next/image";
 import type { CSSProperties } from "react";
-import { coverWidthByHeight, heroLayers, plateNote, plates } from "@/content/imagery";
+import { coverWidthByHeight, heroLayers, plates } from "@/content/imagery";
 
 const sub = ["Beautifully designed.", "Precisely engineered."];
 
@@ -133,9 +133,6 @@ export function Hero() {
                 </span>
               </span>
             ))}
-          </p>
-          <p className="hero-fig max-w-xs text-label text-ivory/70 lg:text-right">
-            {plateNote(plate)}
           </p>
         </div>
       </div>

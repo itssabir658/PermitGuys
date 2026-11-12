@@ -1752,19 +1752,13 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   :root[data-motion] .hero-sub-line .split-line__inner {
     animation: line-up 0.9s var(--ease-out-expo) calc(0.85s + var(--i, 0) * 0.09s) both;
   }
-  :root[data-motion] .hero-fig {
-    animation: fade-in 0.7s var(--e-out) 1.15s both;
-  }
   :root[data-motion][data-arrival="route"] [data-hero-plate] {
     animation-duration: 1.4s;
   }
   :root[data-motion][data-arrival="route"] .hero-sub-line .split-line__inner {
     animation-delay: calc(0.5s + var(--i, 0) * 0.07s);
   }
-  :root[data-motion][data-arrival="route"] .hero-fig {
-    animation-delay: 0.6s;
-  }
-  :root[data-motion]:not([data-revealed]) :is([data-hero-plate], .hero-sub-line .split-line__inner, .hero-fig) {
+  :root[data-motion]:not([data-revealed]) :is([data-hero-plate], .hero-sub-line .split-line__inner) {
     animation-play-state: paused;
   }
 }
@@ -4197,7 +4191,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
  * play again (until the next navigation, which happens under the cover).
  */
 @media all {
-  :root[data-motion][data-returning] :is([data-hero-plate], .hero-sub-line .split-line__inner, .hero-fig, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
+  :root[data-motion][data-returning] :is([data-hero-plate], .hero-sub-line .split-line__inner, .page-crumbs, .page-eyebrow, .page-title .split-line__inner, .motion-rise, .motion-rise-delay, .motion-unveil, .motion-unveil img, figure:has(.motion-unveil) > figcaption, .page-rule, .not-found__numeral, .not-found__map .ontario__stroke path, .not-found__map .ontario__dot) {
     animation: none;
   }
 }
