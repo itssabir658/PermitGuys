@@ -8,7 +8,7 @@ import { WORDMARK } from "@/content/wordmark";
  */
 export function Logo({ onDark, className }: { onDark?: boolean; className?: string }) {
   return (
-    <svg viewBox={WORDMARK.viewBox} role="img" aria-label={site.name} className={className ?? "h-6 w-auto"}>
+    <svg viewBox={WORDMARK.viewBox} overflow="visible" role="img" aria-label={site.name} className={className ?? "h-6 w-auto"}>
       <path fill={WORDMARK.red} d={WORDMARK.permit} />
       <path fill={onDark ? "#fff" : WORDMARK.charcoal} d={WORDMARK.guys} />
     </svg>
