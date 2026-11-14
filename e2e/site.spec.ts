@@ -658,6 +658,28 @@ test.describe("interactive pieces", () => {
     expect(href).toMatch(/^\/projects\/#[a-z-]+$/);
   });
 
+  test("About shows Selected projects as a carousel on graphite after the values, then the invitation", async ({ page }) => {
+    await page.goto("/about/");
+    const showcase = page.locator("[data-showcase]");
+    await expect(showcase).toHaveAttribute("data-tone", "dark");
+    // Order: the values, then Selected projects, then Start a conversation.
+    const order = await page.evaluate(() => ["[data-values]", "[data-showcase]", "[data-cta-panel]"].map((s) => document.querySelector(s)!.getBoundingClientRect().top + scrollY));
+    expect(order[0]).toBeLessThan(order[1]);
+    expect(order[1]).toBeLessThan(order[2]);
+    const middle = showcase.locator("[data-pos=middle]");
+    await expect(middle).toHaveCount(1);
+    await expect(middle).toHaveAttribute("data-showcase-card", "0");
+    await showcase.getByRole("button", { name: "Pause the slideshow" }).click();
+    await showcase.getByRole("button", { name: "Next project" }).click();
+    await expect(middle).toHaveAttribute("data-showcase-card", "1");
+    await showcase.getByRole("button", { name: /^Show project 4/ }).click();
+    await expect(middle).toHaveAttribute("data-showcase-card", "3");
+    // Only the middle card's link is reachable, and it leads to that project's renderings.
+    const link = showcase.locator(".showcase-caption[data-on]").getByRole("link", { name: /view the project/i });
+    await expect(link).toHaveAttribute("href", /^\/projects\/#[a-z-]+$/);
+    await expect(showcase.locator(".showcase-caption:not([data-on])").first()).toHaveAttribute("aria-hidden", "true");
+  });
+
   test("the map loads from Google only when asked", async ({ page }) => {
     await page.route(/^https:\/\/www\.google\.com\/maps/, (route) => route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Map</title>" }));
     await page.goto("/contact/");
