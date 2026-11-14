@@ -24,7 +24,7 @@ export const homeSteps: ProcessStep[] = [
   },
   {
     title: "The municipality decides",
-    body: "Your municipality reviews the application, may ask for revisions, and decides whether to issue the permit. Inspections follow during construction.",
+    body: "Your municipality reviews the application and may ask for revisions. Inspections follow during construction.",
     owner: "Municipality",
   },
 ];

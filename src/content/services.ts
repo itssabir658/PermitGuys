@@ -183,7 +183,7 @@ export const services: Service[] = [
       askAboutPricing,
     ],
     relatedGuides: ["do-i-need-a-building-permit", "permit-costs-and-timelines"],
-    relatedServices: ["landlord-permits", "interior-renovation-permits"],
+    relatedServices: ["interior-renovation-permits", "residential-additions"],
     visual: {
       drawing: "commercial",
       alt: "Line drawing of a commercial storefront elevation with a grid of windows.",
@@ -192,61 +192,6 @@ export const services: Service[] = [
       title: "Commercial Building Permits in the GTA",
       description:
         "Permit drawings and permit coordination for commercial interiors, tenant improvements and changes of use in the Greater Toronto Area.",
-    },
-  },
-  {
-    slug: "landlord-permits",
-    name: "Landlord and Rental Property Permits",
-    navLabel: "Landlord permits",
-    scope: "New rental units and spaces readied for tenants",
-    category: "commercial",
-    featured: true,
-    summary:
-      "Permit drawings for landlords improving rental properties, preparing units for tenants or adding rental units.",
-    directAnswer:
-      "If you own a rental property, work such as adding a unit, altering a layout or preparing a space for a new tenant often needs a building permit. We prepare the drawings and help landlords move through the permit process.",
-    overview: [
-      "Rental properties carry extra considerations. Adding or legalizing a unit can involve the Building Code, the Fire Code, zoning and, in some municipalities, unit registration or licensing.",
-      "We help landlords understand which approvals their project is likely to touch, then prepare the permit drawings so the property can be improved on a sound footing.",
-    ],
-    whoItsFor: [
-      "Owners adding or legalizing a rental unit in a house.",
-      "Landlords altering a rental property between tenancies.",
-      "Owners of small commercial or mixed-use buildings preparing space for a tenant.",
-    ],
-    typicalRequirements: {
-      intro: "Depending on the project, landlords commonly need to consider:",
-      items: [
-        "Building permit drawings for the proposed work.",
-        "Fire separations, smoke alarms and exits between units.",
-        "Zoning permissions for the number and type of units.",
-        "Municipal rental unit registration or licensing, where it applies.",
-        "Electrical inspections, which are handled by the Electrical Safety Authority in Ontario.",
-      ],
-      qualifier,
-    },
-    process: coreProcess("property and existing units"),
-    costFactors: sharedCostFactors,
-    timelineFactors: sharedTimelineFactors,
-    faqs: [
-      {
-        question: "Do I need to register a second unit with the city?",
-        answer: [
-          "Some GTA municipalities require additional units to be registered or licensed, and the rules differ between municipalities. Check with your municipality, and we can help you understand where the permit fits in.",
-        ],
-      },
-      askAboutPricing,
-    ],
-    relatedGuides: ["basement-apartment-permits", "do-i-need-a-building-permit"],
-    relatedServices: ["legal-basement-permits", "commercial-permits"],
-    visual: {
-      drawing: "landlord",
-      alt: "Line drawing of a semi-detached house divided into two stacked units.",
-    },
-    seo: {
-      title: "Landlord and Rental Property Permits in the GTA",
-      description:
-        "Permit drawings and permit guidance for landlords adding units, altering rental properties or preparing space for tenants in the Greater Toronto Area.",
     },
   },
   {
@@ -354,7 +299,7 @@ export const services: Service[] = [
       askAboutPricing,
     ],
     relatedGuides: ["basement-apartment-permits", "do-i-need-a-building-permit", "permit-costs-and-timelines"],
-    relatedServices: ["below-grade-entrance-permits", "finished-basement-permits", "landlord-permits"],
+    relatedServices: ["below-grade-entrance-permits", "finished-basement-permits"],
     visual: {
       drawing: "basement",
       alt: "Line drawing of a house section showing a separate basement unit with its own entrance.",

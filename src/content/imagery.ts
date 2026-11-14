@@ -289,7 +289,6 @@ export function projectOf(plate: Plate) {
 export const servicePlates: Record<string, PlateKey> = {
   "residential-additions": "addition",
   "commercial-permits": "commercial",
-  "landlord-permits": "infill",
   "interior-renovation-permits": "storefront",
   "legal-basement-permits": "basement",
   "deck-permits": "deck",

@@ -11,7 +11,6 @@
 export type DrawingVariant =
   | "addition"
   | "commercial"
-  | "landlord"
   | "interior"
   | "basement"
   | "deck"
