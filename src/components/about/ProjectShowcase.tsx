@@ -29,7 +29,7 @@ import { paths } from "@/lib/routes";
  * hand. Only the card in the middle is in the tab order.
  */
 
-const shown: Plate[] = [plates.stone, plates.prairieFront, plates.dusk, plates.greenBatten, plates.narrow, plates.whiteBatten];
+const shown: Plate[] = [plates.whiteBatten, plates.prairieFront, plates.dusk, plates.farmhouseWide];
 
 const NOTE = "Renderings from client projects. Case studies will appear here as clients approve them.";
 const TAG = "Client project · Rendering";

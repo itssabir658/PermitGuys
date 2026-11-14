@@ -5,9 +5,7 @@ import { ExternalIcon } from "@/components/ui/Icons";
 import { LinkRows } from "@/components/ui/LinkRows";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Placeholder } from "@/components/ui/Placeholder";
-import { PlateBand } from "@/components/ui/PlateBand";
 import { Section } from "@/components/ui/Section";
-import { plates } from "@/content/imagery";
 import { gtaMunicipalities } from "@/content/locations";
 import { getLocations } from "@/lib/content";
 import { paths } from "@/lib/routes";
@@ -32,7 +30,6 @@ export default function ServiceAreasPage() {
         title="Permit support across the Greater Toronto Area."
         lead="Each GTA municipality runs its own building department, with its own by-laws, forms and submission requirements. We work with homeowners and property owners across the GTA."
       />
-      <PlateBand plate={plates.stone} />
 
       <Section labelledBy="confirmed-heading" first>
         <div className="grid gap-10 lg:grid-cols-12">

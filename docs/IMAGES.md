@@ -6,7 +6,24 @@ Two kinds of picture, registered as plates in `src/content/imagery.ts`. Each pla
 
 ### Client renderings
 
-`public/images/projects/` holds design renderings from nine PermitGuys client projects, supplied by PermitGuys in October 2026. Of the 36 images supplied, one or two views of each project were chosen, never more than two. Where a project had several near-identical renders, the best-graded one was used.
+`public/images/projects/` holds design renderings from ten PermitGuys client projects, supplied by PermitGuys in October 2026. Many of the supplied files are the same angle under a different sky; those count as one picture, and the best-graded one was used. That leaves 16 different views.
+
+**No picture is shown twice** (Sebra, 14 November 2026). Each spot on the site has its own view; only the projects page, the archive of every view of every project, shows pictures that also appear elsewhere (Sebra chose to keep it complete). `tests/imagery.test.ts` fails when two spots name the same plate.
+
+| Spot | Picture |
+| --- | --- |
+| Homepage hero | Contemporary house, rear terrace and pool (`terrace`) |
+| Homepage intro frame | Red-brick house (`redBrick`), then contemporary brick house (`brick`) |
+| Homepage making of a house | Contemporary house from the front (`making/`) |
+| Homepage Services, custom homes row | Stone house (`stone`) |
+| Homepage Contact | Two-gabled house, corner view (`greenBatten`) |
+| About band | Contemporary house, corner view at dusk (`side`) |
+| About Values | Prairie corner, farmhouse bungalow, two-gabled house front, narrow contemporary house |
+| About Selected projects (showcase) | Board and batten over stone (`whiteBatten`), prairie front, contemporary house at dusk (`dusk`), farmhouse bungalow across the lawn (`farmhouseWide`) |
+| Custom home permits page | Classical house at dusk (`classical`, `servicePagePlates`) |
+| Projects page | Every view of every project (`clientProjects`) |
+
+The bands on the services, how it works, service areas and permit guides pages were taken off, as no unused picture was left for them; they come back with pictures of their own.
 
 - **Captions.** A caption is only the note "Rendering of a client project." (`PROJECT_NOTE`), with no figure number or picture name. The projects page says it once in its lead and in each project's title column, and its pictures go uncaptioned.
 - **What the site claims.** The pictures are renderings, so the site never presents them as photographs of finished buildings. Nothing on the site describes a project's scope, approval or result.
@@ -27,7 +44,7 @@ Preparation:
 Where they appear:
 
 - On the homepage: the hero, the intro ring, the story (the narrow contemporary house, under the linework traced from it), Selected projects, Values, custom homes in Services, and Contact's picture (the story's house is not repeated there).
-- The bands on the services, how it works, about and service areas pages.
+- The band on the about page.
 - The custom home permits page.
 - All of them on the projects page, where `clientProjects` lists each project and its views. The anchors there are linked from Selected projects, and every service page links to the page from "Examples of our work" until it has approved case studies.
 

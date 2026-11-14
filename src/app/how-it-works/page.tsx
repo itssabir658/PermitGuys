@@ -2,9 +2,7 @@ import { ArticleLayout, ArticleSection, RuledList } from "@/components/ui/Articl
 import { CtaPanel } from "@/components/ui/CtaPanel";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { PlateBand } from "@/components/ui/PlateBand";
 import { StepList } from "@/components/ui/StepList";
-import { plates } from "@/content/imagery";
 import { homeSteps } from "@/content/process";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
@@ -62,7 +60,6 @@ export default function HowItWorksPage() {
         title="From your first question to the municipal review."
         lead="A building permit involves several parties. Here is how the work is divided, so you know what to expect at each step."
       />
-      <PlateBand plate={plates.dusk} />
       <ArticleLayout toc={toc}>
         <ArticleSection id="steps" title="The five steps">
           <StepList steps={homeSteps} />

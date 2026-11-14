@@ -4,7 +4,7 @@ import { CtaPanel } from "@/components/ui/CtaPanel";
 import { DirectAnswer } from "@/components/ui/DirectAnswer";
 import { FaqList } from "@/components/ui/FaqList";
 import { Plate } from "@/components/ui/Plate";
-import { coverWidth, plateForService } from "@/content/imagery";
+import { coverWidth, pagePlateForService } from "@/content/imagery";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StepList } from "@/components/ui/StepList";
@@ -28,7 +28,7 @@ const toc = [
 export function ServiceTemplate({ service }: { service: Service }) {
   const path = paths.service(service.slug);
   const projects = getProjectsForService(service.slug);
-  const plate = plateForService(service.slug);
+  const plate = pagePlateForService(service.slug);
   return (
     <>
       <PageHeader

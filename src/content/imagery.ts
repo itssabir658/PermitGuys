@@ -2,8 +2,11 @@
  * The site's imagery, of two kinds (see docs/IMAGES.md).
  *
  * Client renderings ("project"): design renderings from PermitGuys client
- * projects, supplied by PermitGuys in October 2026, at most two views of any
- * one project. They are renderings, not photographs of finished buildings.
+ * projects, supplied by PermitGuys in October 2026. They are renderings, not
+ * photographs of finished buildings. Since November 2026 no picture is
+ * shown in two places on the site (the projects page, the archive of every
+ * project, aside): each spot has its own view, and near-identical renders of
+ * one angle count as one picture. `tests/imagery.test.ts` checks it.
  * Captions and alt text describe only what the picture shows: never an
  * address, street or town, and nothing about a project's scope or results.
  *
@@ -139,6 +142,52 @@ export const plates = {
     kind: "project",
   },
 
+  side: {
+    src: "/images/projects/contemporary-house-side.jpg",
+    width: 3800,
+    height: 1990,
+    alt: "Rendering of a large contemporary house at dusk, seen across the lawn from one corner: white render, dark panel boxes and a timber-clad wing, a glass-railed balcony over the garage, lit windows and a silver car on the drive.",
+    caption: "Contemporary house at dusk, corner view",
+    focus: "58% 60%",
+    kind: "project",
+  },
+  front: {
+    src: "/images/projects/contemporary-house-front.jpg",
+    width: 3800,
+    height: 1995,
+    alt: "Rendering of a large contemporary house straight on from the front lawn in daylight: white render, dark panels and timber cladding, tall timber doors and two cars on a wide driveway.",
+    caption: "Contemporary house from the front",
+    focus: "55% 55%",
+    kind: "project",
+  },
+  farmhouseWide: {
+    src: "/images/projects/farmhouse-bungalow-wide.jpg",
+    width: 3800,
+    height: 1944,
+    alt: "Rendering of a wide farmhouse bungalow seen from far across its lawn: white board and batten, dark roofs, timber brackets in the gables and a garage at the left end.",
+    caption: "Farmhouse bungalow across the lawn",
+    focus: "55% 58%",
+    kind: "project",
+  },
+  greenBattenFront: {
+    src: "/images/projects/green-board-and-batten-front.jpg",
+    width: 3200,
+    height: 2343,
+    alt: "Rendering of a two-storey house in sage-green board and batten seen straight on: two front gables, black-framed windows, a covered entry with a chevron timber door, a pale stone garage wing and steps up a sloping lawn.",
+    caption: "Two-gabled house, front view",
+    focus: "50% 55%",
+    kind: "project",
+  },
+  classical: {
+    src: "/images/projects/classical-house-dusk.jpg",
+    width: 3800,
+    height: 2138,
+    alt: "Rendering of a symmetrical classical two-storey house at dusk, in pale stone with tall lit windows and a central balcony, behind clipped hedges and a still pond that reflects it.",
+    caption: "Classical house at dusk",
+    focus: "50% 50%",
+    kind: "project",
+  },
+
   /* ---- Rendered studies (no client rendering shows these kinds of project) ---- */
   infill: {
     src: "/images/studies/infill-house-dusk.jpg",
@@ -258,8 +307,8 @@ export const heroLayers = {
 };
 
 /**
- * The client projects, as shown on the projects page. Each has one or two
- * views (never more), and its id is the anchor there: a description of the
+ * The client projects, as shown on the projects page: every distinct view
+ * of each, and its id is the anchor there: a description of the
  * house, never an address.
  */
 export interface ClientProject {
@@ -269,12 +318,13 @@ export interface ClientProject {
 }
 
 export const clientProjects: ClientProject[] = [
-  { id: "contemporary-house", title: "Contemporary house with a pool terrace", views: [plates.dusk, plates.terrace] },
+  { id: "contemporary-house", title: "Contemporary house with a pool terrace", views: [plates.dusk, plates.side, plates.front, plates.terrace] },
+  { id: "classical-house", title: "Classical house at dusk", views: [plates.classical] },
   { id: "stone-house", title: "Stone house with three gables", views: [plates.stone] },
   { id: "prairie-style-house", title: "Prairie-style two-storey", views: [plates.prairieFront, plates.prairieCorner] },
   { id: "red-brick-house", title: "Red-brick house with three gables", views: [plates.redBrick] },
-  { id: "farmhouse-bungalow", title: "Farmhouse bungalow", views: [plates.farmhouse] },
-  { id: "two-gabled-house", title: "Two-gabled house in board and batten", views: [plates.greenBatten] },
+  { id: "farmhouse-bungalow", title: "Farmhouse bungalow", views: [plates.farmhouse, plates.farmhouseWide] },
+  { id: "two-gabled-house", title: "Two-gabled house in board and batten", views: [plates.greenBatten, plates.greenBattenFront] },
   { id: "narrow-contemporary-house", title: "Narrow contemporary house", views: [plates.narrow] },
   { id: "board-and-batten-house", title: "Board and batten over a stone base", views: [plates.whiteBatten] },
   { id: "contemporary-brick-house", title: "Contemporary house in brick and dark cladding", views: [plates.brick] },
@@ -299,8 +349,22 @@ export const servicePlates: Record<string, PlateKey> = {
   "detached-garage-permits": "garage",
 };
 
+/**
+ * A service page's own picture, where the homepage Services list already
+ * shows the service's plate: no picture is shown in two places.
+ */
+export const servicePagePlates: Record<string, PlateKey> = {
+  "custom-home-permits": "classical",
+};
+
 export function plateForService(slug: string): Plate {
   return plates[servicePlates[slug] ?? "infill"];
+}
+
+/** The picture at the top of a service's own page. */
+export function pagePlateForService(slug: string): Plate {
+  const key = servicePagePlates[slug];
+  return key ? plates[key] : plateForService(slug);
 }
 
 /**

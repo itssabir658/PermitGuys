@@ -1,11 +1,25 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PROJECT_NOTE, STUDY_NOTE, clientProjects, coverWidth, coverWidthByHeight, heroLayers, plateForService, plateNote, plates, projectOf, type Plate } from "@/content/imagery";
+import { PROJECT_NOTE, STUDY_NOTE, clientProjects, coverWidth, coverWidthByHeight, heroLayers, pagePlateForService, plateForService, plateNote, plates, projectOf, type Plate } from "@/content/imagery";
 import { getServices } from "@/lib/content";
 
 const all: Plate[] = Object.values(plates);
 const renderings = all.filter((p) => p.kind === "project");
+
+/** The files that place pictures on the site's pages. */
+const sources = [
+  "src/components/home/Hero.tsx",
+  "src/components/home/Intro.tsx",
+  "src/components/about/ProjectShowcase.tsx",
+  "src/components/home/Values.tsx",
+  "src/components/home/Contact.tsx",
+  "src/app/about/page.tsx",
+  "src/app/services/page.tsx",
+  "src/app/how-it-works/page.tsx",
+  "src/app/service-areas/page.tsx",
+  "src/app/permit-guides/page.tsx",
+];
 
 /** Width and height from a JPEG's frame header. */
 function jpegSize(src: string) {
@@ -52,11 +66,10 @@ describe("imagery", () => {
     for (const path of [...Object.values(heroLayers.far), ...Object.values(heroLayers.near)]) expect(path).not.toMatch(/\d/);
   });
 
-  it("shows one or two views of each client project, and every client rendering in exactly one project", () => {
+  it("shows every view of each client project, and every client rendering in exactly one project", () => {
     expect(new Set(clientProjects.map((p) => p.id)).size).toBe(clientProjects.length);
     for (const project of clientProjects) {
       expect(project.views.length, project.id).toBeGreaterThanOrEqual(1);
-      expect(project.views.length, project.id).toBeLessThanOrEqual(2);
       for (const view of project.views) expect(view.kind, project.id).toBe("project");
     }
     for (const plate of renderings) {
@@ -82,7 +95,34 @@ describe("imagery", () => {
   });
 
   it("has a picture for every service", () => {
-    for (const s of getServices()) expect(all, s.slug).toContain(plateForService(s.slug));
+    for (const s of getServices()) {
+      expect(all, s.slug).toContain(plateForService(s.slug));
+      expect(all, s.slug).toContain(pagePlateForService(s.slug));
+    }
+  });
+
+  it("shows no picture in two places: each spot outside the projects page has its own", () => {
+    // Every spot that names a plate in the code (the projects page, the archive of every view, aside; Story.tsx is off the site).
+    const spots: [string, string][] = [];
+    for (const file of sources) {
+      const text = readFileSync(join(process.cwd(), file), "utf8");
+      for (const m of text.matchAll(/plates\.([a-zA-Z]+)/g)) spots.push([m[1], file]);
+    }
+    const homeRows = new Set(getServices().filter((s) => s.homeRow !== false).map((s) => s.slug));
+    for (const s of getServices()) {
+      const key = (Object.keys(plates) as (keyof typeof plates)[]).find((k) => plates[k] === plateForService(s.slug))!;
+      const page = (Object.keys(plates) as (keyof typeof plates)[]).find((k) => plates[k] === pagePlateForService(s.slug))!;
+      if (homeRows.has(s.slug)) spots.push([key, `homepage Services: ${s.slug}`]);
+      if (!homeRows.has(s.slug) || page !== key) spots.push([page, `service page: ${s.slug}`]);
+    }
+    const seen = new Map<string, string>();
+    const repeats: string[] = [];
+    for (const [key, where] of spots) {
+      if (seen.has(key)) repeats.push(`${key}: ${seen.get(key)} and ${where}`);
+      else seen.set(key, where);
+    }
+    // Five service pages still share their study with the homepage Services list until they have studies of their own.
+    expect(repeats.filter((r) => !/homepage Services: (residential-additions|commercial-permits|landlord-permits|interior-renovation-permits|legal-basement-permits|deck-permits)/.test(r))).toEqual([]);
   });
 
   it("asks for a picture as wide as it is drawn when it is wider than its frame", () => {

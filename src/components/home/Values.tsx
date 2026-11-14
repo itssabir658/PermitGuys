@@ -42,12 +42,12 @@ const values: { title: string; body: string; plate: Plate }[] = [
   {
     title: "Ownership",
     body: "You, PermitGuys, other consultants or the municipality: who carries each step is written down, so nothing is assumed.",
-    plate: plates.redBrick,
+    plate: plates.greenBattenFront,
   },
   {
     title: "Integrity",
     body: "We describe what your municipality asks for, not rules of thumb, and we never promise an approval or a date. That decision is the city’s.",
-    plate: plates.brick,
+    plate: plates.narrow,
   },
 ];
 

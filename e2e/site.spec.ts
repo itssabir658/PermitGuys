@@ -486,11 +486,11 @@ test.describe("interactive pieces", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Selected projects.");
     await expect(page.getByText("They show the designs, not finished buildings.")).toBeVisible();
     const projects = page.locator("article[id]");
-    await expect(projects).toHaveCount(9);
+    await expect(projects).toHaveCount(10);
     for (const project of await projects.all()) {
       await expect(project).toContainText("Client project");
       expect(await project.locator("figure").count()).toBeGreaterThanOrEqual(1);
-      expect(await project.locator("figure").count()).toBeLessThanOrEqual(2);
+      expect(await project.locator("figure").count()).toBeLessThanOrEqual(4);
     }
   });
 

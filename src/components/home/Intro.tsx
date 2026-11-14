@@ -23,7 +23,7 @@ const copy = [
   `We work with the building departments of ${placeList}.`,
 ];
 
-/** One client rendering for each paragraph before the last: a traditional and a contemporary house, neither shown again before Values. */
+/** One client rendering for each paragraph before the last: a traditional and a contemporary house, neither shown anywhere else on the site but the projects page. */
 const renderings: Plate[] = [plates.redBrick, plates.brick];
 
 /** The frame is 4:3 on wide screens, as the renderings nearly are, and square on phones. */
