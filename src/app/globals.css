@@ -4294,7 +4294,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 }
 
 /*
- * Website assistant (src/components/chat/ChatAssistant.tsx). The panel rises
+ * Website assistant (src/components/ai/PermitAdvisorWidget.tsx). The panel rises
  * a little as it opens; the three dots breathe while a reply is on its way.
  */
 @layer components {

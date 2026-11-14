@@ -1,5 +1,5 @@
 /*
- * GTA permit reference for the website assistant (src/lib/chat/knowledge.ts).
+ * GTA permit reference for the website assistant (src/lib/ai/knowledge-base.ts).
  *
  * Every line here was read from the official page linked beside it, on the
  * date in `checkedOn`, and is kept close to the source's own wording. It is
