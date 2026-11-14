@@ -1834,36 +1834,121 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   position: absolute;
   inset: 0;
 }
-.intro-slide--marks {
-  background: var(--color-stone-50);
-  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.1);
+/* The projects map fills the last panel (IntroMap): no ruled sheet of its own, the frame is the sheet. */
+.intro-slide--map {
+  background: var(--color-stone-100);
+  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.12);
 }
-/* The marks in a hairline grid, two across and five down; the lines are the panel showing between the cells. */
-.intro-marks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-  gap: 1px;
-  height: 100%;
+.intro-map,
+.intro-map .intro-map__frame {
+  position: absolute;
+  inset: 0;
+}
+.intro-map .intro-map__frame {
+  aspect-ratio: auto;
+  border: 0;
+}
+/* Scrolling past the pinned stage brushes the map often: the map still asks for Ctrl or two fingers to move, without its hint flashing up. */
+.intro-map :is(.mapboxgl-scroll-zoom-blocker, .mapboxgl-touch-pan-blocker) {
+  display: none;
+}
+
+/*
+ * The municipalities' marks under the copy and the frame: one row that
+ * slides right to left for ever, the list set twice so the second copy
+ * takes the first's place as it leaves (translateX −50%, each mark carrying
+ * its own spacing so both halves are the same width). Drawn in the page's
+ * ink and faded at both ends. contain: paint keeps the wide track from
+ * widening the page (Chrome on Android would zoom out to fit it). Still
+ * for reduced motion, and without the tracks it is a centred, wrapped row.
+ */
+.intro-marquee {
+  position: relative;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: 0 1.25rem 4rem;
+  contain: paint;
+  overflow: hidden;
+}
+.intro-marquee__track {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem 0;
   margin: 0;
-  padding: 0;
+  padding: 1.5rem 0 0;
   list-style: none;
-  background: rgb(23 23 22 / 0.1);
+  border-top: 1px solid rgb(23 23 22 / 0.16);
 }
-.intro-mark {
+.intro-marquee__item {
+  flex: none;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 0;
-  background: var(--color-stone-50);
+  padding-inline: clamp(1.25rem, 3vw, 2.75rem);
 }
-.intro-mark__img {
+.intro-marquee__item[aria-hidden] {
+  display: none;
+}
+.intro-marquee__mark {
   display: block;
   width: auto;
-  max-width: 72%;
-  object-fit: contain;
+  max-width: none;
   filter: brightness(0);
-  opacity: 0.8;
+  opacity: 0.72;
+}
+@media (min-width: 768px) {
+  .intro-marquee {
+    padding: 0 2rem 6rem;
+  }
+}
+@media (min-width: 1024px) {
+  .intro-marquee {
+    padding-inline: 3rem;
+  }
+}
+@keyframes intro-marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .intro-marquee {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .intro-marquee__track {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: max-content;
+    border-top: 0;
+    animation: intro-marquee 46s linear infinite;
+  }
+  .intro-marquee__item[aria-hidden] {
+    display: flex;
+  }
+  /* The hairline stays put above the moving row. */
+  .intro-marquee::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 1.25rem;
+    right: 1.25rem;
+    height: 1px;
+    background: rgb(23 23 22 / 0.16);
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+  .intro-marquee::before {
+    left: 2rem;
+    right: 2rem;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+  .intro-marquee::before {
+    left: 3rem;
+    right: 3rem;
+  }
 }
 .intro-captions {
   display: grid;
@@ -1901,16 +1986,33 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   :root[data-motion] .intro-stage {
     position: sticky;
     top: 0;
+    display: flex;
+    flex-direction: column;
     height: 100svh;
     background: var(--color-ivory);
     box-shadow: 0 -2rem 3rem -1.5rem rgb(0 0 0 / 0.4);
   }
   :root[data-motion] .intro-grid {
-    height: 100%;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: clamp(2.5rem, 5vw, 6.5rem);
     align-items: center;
-    padding: 5.5rem clamp(2rem, 4vw, 3rem) 3.5rem;
+    padding: 5.5rem clamp(2rem, 4vw, 3rem) 1.5rem;
+  }
+  :root[data-motion] .intro-marquee {
+    flex: none;
+    width: 100%;
+    padding-inline: clamp(2rem, 4vw, 3rem);
+    padding-bottom: clamp(1.25rem, 3.5vh, 2.25rem);
+  }
+  :root[data-motion] .intro-marquee::before {
+    left: clamp(2rem, 4vw, 3rem);
+    right: clamp(2rem, 4vw, 3rem);
+  }
+  :root[data-motion] .intro-marquee__track {
+    padding-top: clamp(1rem, 2.5vh, 1.6rem);
   }
   :root[data-motion] .intro-copies {
     gap: 0;
@@ -1950,7 +2052,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     position: relative;
     display: block;
     aspect-ratio: 4 / 3;
-    max-height: calc(100svh - 12rem);
+    max-height: calc(100svh - 17rem);
     overflow: hidden;
   }
   :root[data-motion] .intro-slide {
@@ -1973,8 +2075,20 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     grid-template-rows: auto auto;
     align-content: center;
     align-items: start;
-    row-gap: clamp(1.5rem, 3.5svh, 2.5rem);
-    padding: 5.5rem 1.25rem 1.5rem;
+    row-gap: clamp(1.25rem, 3svh, 2.25rem);
+    padding: 5rem 1.25rem 1rem;
+  }
+  :root[data-motion] .intro-marquee {
+    padding-inline: 1.25rem;
+    padding-bottom: 1rem;
+  }
+  :root[data-motion] .intro-marquee::before {
+    left: 1.25rem;
+    right: 1.25rem;
+  }
+  :root[data-motion] .intro-marquee__track {
+    padding-top: 0.9rem;
+    animation-duration: 34s;
   }
   :root[data-motion] .intro-figure {
     grid-row: 1;
@@ -1983,7 +2097,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     grid-row: 2;
   }
   :root[data-motion] .intro-frame {
-    max-height: 44svh;
+    max-height: 40svh;
     margin-inline: auto;
   }
   :root[data-motion] .intro-copies {
@@ -3674,11 +3788,18 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 .praise-reviews {
   margin-top: 5.5rem;
 }
-/* Phones: a row to swipe, the next card showing at the edge. */
-/* On phones a row to swipe, with room below for the cards' shadows. It contains its paint: Chrome on Android otherwise counts the cards beyond the edge as page width once Services comes up, and zooms the whole page out. */
+/*
+ * The reviews: one row of cards. With motion it slides right to left for
+ * ever (the list is set twice and moves by half its width, each card
+ * carrying its own spacing so both halves match), faded at both ends, and
+ * stops under the pointer or keyboard focus. With reduced motion it is a
+ * still row to swipe, the next card showing at the edge. Either way it
+ * contains its paint: Chrome on Android otherwise counts the cards beyond
+ * the edge as page width and zooms the whole page out.
+ */
 .praise-scroll {
   margin: 1.5rem -1.25rem -2.5rem;
-  padding: 0 1.25rem 2.5rem;
+  padding: 0.5rem 1.25rem 2.5rem;
   contain: paint;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -3690,13 +3811,53 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 }
 .praise-list {
   display: flex;
-  gap: 1.25rem;
+  align-items: stretch;
   width: max-content;
+}
+.praise-item {
+  flex: none;
+  width: min(82vw, 23rem);
+  padding-right: 1.25rem;
+  scroll-snap-align: start;
+}
+.praise-item[aria-hidden] {
+  display: none;
+}
+@keyframes praise-slide {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .praise-scroll {
+    overflow: hidden;
+    scroll-snap-type: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+  }
+  .praise-list {
+    animation: praise-slide 70s linear infinite;
+  }
+  .praise-item[aria-hidden] {
+    display: block;
+  }
+  .praise-scroll:is(:hover, :focus-within) .praise-list {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  .praise-list {
+    animation-duration: 55s;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+  .praise-scroll {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 4rem, #000 calc(100% - 4rem), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 4rem, #000 calc(100% - 4rem), transparent);
+  }
 }
 /* Each review a Google review card: a raised paper card with the reviewer's initials, name, the source and the stars, then the words. */
 .praise-card {
-  width: min(82vw, 22rem);
-  scroll-snap-align: start;
   padding: 1.6rem 1.5rem 1.75rem;
   border: 1px solid rgb(23 23 22 / 0.1);
   border-radius: 1.25rem;
@@ -3757,7 +3918,6 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     scroll-padding-inline: 2rem;
   }
 }
-/* From 768px the reviews are a grid: the first across the top, then two a row; from 1024px two over three. */
 @media (min-width: 768px) {
   .praise {
     padding-block: 9rem 8rem;
@@ -3779,23 +3939,9 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   .praise-quote {
     grid-column: 7 / -1;
   }
-  .praise-scroll {
-    margin-inline: 0;
-    padding-inline: 0;
-    overflow: visible;
-    contain: none;
-  }
-  .praise-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-    width: auto;
-  }
-  .praise-card {
-    width: auto;
-  }
-  .praise-card:first-child {
-    grid-column: 1 / -1;
+  .praise-item {
+    width: 26rem;
+    padding-right: 1.5rem;
   }
   .praise-reviews,
   .praise-partners {
@@ -3805,18 +3951,6 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 @media (min-width: 1024px) {
   .praise {
     padding-block: 11rem 10rem;
-  }
-  .praise-list {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 1.5rem;
-  }
-  .praise-card,
-  .praise-card:first-child {
-    grid-column: span 2;
-    max-width: none;
-  }
-  .praise-card:nth-child(-n + 2) {
-    grid-column: span 3;
   }
 }
 

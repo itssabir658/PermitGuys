@@ -42,8 +42,12 @@ function partnerLogo(name: string) {
  * It flows on the page's cream ground, between the intro's pinned stage and
  * the story's, with no stage of its own: the heading's lines rise out of
  * their masks and the pieces fade up as they reach the screen
- * (InteractionEffects), the same reveals as the inner pages. On phones the
- * reviews are a row to swipe; from 768px they are set in columns.
+ * (InteractionEffects), the same reveals as the inner pages. The reviews
+ * are one row of cards that slides right to left for ever, right above the
+ * partners' logos, in the same motion as the municipalities' row in the
+ * intro (the list set twice, the second copy hidden from screen readers);
+ * it stops under the pointer or keyboard focus so a card can be read. With
+ * reduced motion it is a still row to swipe.
  *
  * The review text and the quote are the business's own published copy
  * (src/content/recognition.ts); no review structured data is added.
@@ -123,33 +127,41 @@ export function Praise({ reviews }: { reviews: ReviewSummary | null }) {
           </h3>
           <div role="region" aria-label="Google reviews" tabIndex={0} className="praise-scroll">
             <ul role="list" className="praise-list">
-              {featuredReviews.map((review, i) => (
-                <li key={review.author} data-reveal="" className="praise-card" style={{ "--d": i * 70 } as CSSProperties}>
-                  <figure className="flex h-full flex-col">
-                    <figcaption className="praise-card__head">
-                      <span className="praise-card__avatar" aria-hidden="true">
-                        {initials(review.author)}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-ink">{review.author}</span>
-                        <span className="praise-card__source">
-                          <GoogleMark />
-                          Google review
+              {[0, 1].map((copyNo) =>
+                featuredReviews.map((review, i) => (
+                  <li
+                    key={`${copyNo}-${review.author}`}
+                    data-reveal=""
+                    aria-hidden={copyNo === 1 || undefined}
+                    className="praise-item"
+                    style={{ "--d": copyNo === 0 ? i * 70 : 0 } as CSSProperties}
+                  >
+                    <figure className="praise-card flex h-full flex-col">
+                      <figcaption className="praise-card__head">
+                        <span className="praise-card__avatar" aria-hidden="true">
+                          {initials(review.author)}
                         </span>
-                      </span>
-                    </figcaption>
-                    {review.rating ? (
-                      <p className="mt-5 flex items-center gap-2">
-                        <Stars rating={review.rating} className="praise-card__stars" />
-                        <span className="sr-only">Rated {review.rating} out of 5</span>
-                      </p>
-                    ) : null}
-                    <blockquote className="mt-4 flex-1">
-                      <p className="text-[1.0625rem] leading-relaxed text-ink">{review.text}</p>
-                    </blockquote>
-                  </figure>
-                </li>
-              ))}
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium text-ink">{review.author}</span>
+                          <span className="praise-card__source">
+                            <GoogleMark />
+                            Google review
+                          </span>
+                        </span>
+                      </figcaption>
+                      {review.rating ? (
+                        <p className="mt-5 flex items-center gap-2">
+                          <Stars rating={review.rating} className="praise-card__stars" />
+                          <span className="sr-only">Rated {review.rating} out of 5</span>
+                        </p>
+                      ) : null}
+                      <blockquote className="mt-4 flex-1">
+                        <p className="text-[1.0625rem] leading-relaxed text-ink">{review.text}</p>
+                      </blockquote>
+                    </figure>
+                  </li>
+                )),
+              )}
             </ul>
           </div>
         </div>
