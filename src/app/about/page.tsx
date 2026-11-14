@@ -36,7 +36,7 @@ export default function AboutPage() {
         title="Architecture and engineering, with the permit in mind."
         lead={withWordmark("PermitGuys is a team of architects and designers in Oakville, working with homeowners, landlords and businesses across the Greater Toronto Area.")}
       />
-      <PlateBand plate={plates.terrace} />
+      <PlateBand plate={plates.side} />
       <ArticleLayout toc={toc}>
         <ArticleSection id="what-we-do" title="What we do">
           <div className="prose-pg">
