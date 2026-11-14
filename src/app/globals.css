@@ -1605,7 +1605,7 @@
   background-position: 0 0;
   transition: background-position 0.6s var(--e-ui);
 }
-/* A link button's icon cell on its own (LinkRows, the footer's call to action): the cube turns as its link is hovered or focused. */
+/* A link button's icon cell on its own (LinkRows): the cube turns as its link is hovered or focused. */
 .link-cube {
   --lb-h: 2.75rem;
   --lb-bg: transparent;
@@ -1616,17 +1616,6 @@
   overflow: hidden;
   perspective: 12rem;
   box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.15);
-}
-/* The footer's call to action keeps the site's one red fill, and turns to a deeper red. */
-.site-footer__cta-cell {
-  --lb-h: 3.5rem;
-  --lb-bg: var(--color-brand-500);
-  --lb-wipe: var(--color-brand-600);
-  color: #fff;
-  box-shadow: none;
-}
-.site-footer__cta-cell .link-button__face--side {
-  color: #fff;
 }
 
 /* The notched sheet outline for framed pictures (NotchClip.tsx). */
@@ -1668,10 +1657,6 @@
 /* The content rises out from under the sheet above: the footer's top edge clips it. */
 .site-footer {
   overflow: clip;
-}
-/* A page that closes on paper (the homepage's Contact, a CtaPanel, the contact form) has already asked: the footer does not ask again. */
-body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
-  display: none;
 }
 
 /* ---- Homepage: hero (Hero.tsx) ---- */

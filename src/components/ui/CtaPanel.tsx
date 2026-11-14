@@ -12,9 +12,7 @@ const nextSteps = [
 /**
  * Closing invitation shared by inner pages: one large line, one action, and
  * what happens next. It closes on paper, as the homepage closes on its
- * Contact sheet, so the footer is the page's one dark band (and the
- * footer's own call to action stands down while this is on the page:
- * data-cta-panel, globals.css).
+ * Contact sheet, so the footer is the page's one dark band.
  */
 export function CtaPanel({
   title = "Tell us about your project.",

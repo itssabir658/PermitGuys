@@ -112,9 +112,9 @@ test.describe("navigation", () => {
   test("the desktop bar links to the main sections", async ({ page }, info) => {
     test.skip(info.project.name !== "desktop", "Desktop navigation");
     await page.goto("/");
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Guides" }).click();
-    await expect(page).toHaveURL(/\/permit-guides\/$/);
-    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Guides" })).toHaveAttribute("aria-current", "page");
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Projects" }).click();
+    await expect(page).toHaveURL(/\/projects\/$/);
+    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Projects" })).toHaveAttribute("aria-current", "page");
   });
 
   test("Services opens a dropdown of every service page, by hover and from the keyboard", async ({ page }, info) => {
@@ -237,7 +237,8 @@ test.describe("interactive pieces", () => {
     const projectType = page.locator("select[name=projectType]");
     await expect(projectType).not.toHaveValue("");
     const preset = await projectType.inputValue();
-    await page.locator("footer").getByRole("link", { name: "Contact", exact: true }).click();
+    // The header's Contact link, clicked in place (phones keep it behind the menu).
+    await page.locator("a.site-nav__cta").evaluate((a: HTMLElement) => a.click());
     await expect(page).toHaveURL(/\/contact\/$/);
     await expect(page.locator("html")).not.toHaveAttribute("data-test-covered");
     // The form keeps the service it was opened with.
@@ -251,8 +252,8 @@ test.describe("interactive pieces", () => {
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
     await page.evaluate(() => window.scrollTo(0, 1500));
     await expect.poll(y).toBe(1500);
-    // Clicked in place: a test click would first scroll the footer into view.
-    await page.locator("footer").getByRole("link", { name: "Contact", exact: true }).evaluate((a: HTMLElement) => a.click());
+    // Clicked in place: a test click would first scroll the header into view.
+    await page.locator("a.site-nav__cta").evaluate((a: HTMLElement) => a.click());
     await expect(page).toHaveURL(/\/contact\/$/);
     await expect.poll(y).toBe(0);
     await page.evaluate(() => window.scrollTo(0, 700));
@@ -346,8 +347,8 @@ test.describe("interactive pieces", () => {
     await page.evaluate(() => window.scrollTo(0, 1500));
     await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(1500);
     // Clicked in place: a test click would first scroll the footer into view.
-    await page.locator("footer").getByRole("link", { name: "About", exact: true }).evaluate((a: HTMLElement) => a.click());
-    await expect(page).toHaveURL(/\/about\/$/);
+    await page.locator("footer").getByRole("link", { name: "Service areas", exact: true }).evaluate((a: HTMLElement) => a.click());
+    await expect(page).toHaveURL(/\/service-areas\/$/);
     await expect(page.locator(".screen-veil")).toHaveAttribute("data-phase", "idle");
     await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
     await page.goBack();
