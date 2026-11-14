@@ -1,0 +1,125 @@
+/*
+ * The permit strategist's context pill and cards (PermitAdvisorWidget.tsx,
+ * AdvisorCards.tsx). Launcher, panel head and live mark are shared with the
+ * homepage showcase in src/components/chat/chat.css. Motion is opacity and
+ * transform only, on CSS transitions that always finish, so nothing waits on
+ * the scroll engine or stalls half way on a phone.
+ */
+
+/* The pill sits above the launcher and rises in once; text changes cross-fade. */
+.advisor-pill {
+  bottom: 5.25rem;
+  width: min(22rem, calc(100vw - 2rem));
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition:
+    opacity 0.45s var(--e-out-strong),
+    transform 0.6s var(--e-out-strong),
+    visibility 0s linear 0.6s;
+  visibility: hidden;
+}
+@media (min-width: 640px) {
+  .advisor-pill {
+    bottom: 6.25rem;
+  }
+}
+.advisor-pill--in {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition:
+    opacity 0.45s var(--e-out-strong),
+    transform 0.6s var(--e-out-strong),
+    visibility 0s;
+}
+.advisor-pill--in .advisor-pill__text {
+  animation: advisor-fade 0.5s var(--e-out-strong) both;
+}
+/* A notch pointing at the launcher. */
+.advisor-pill > div::after {
+  content: "";
+  position: absolute;
+  right: 1.6rem;
+  bottom: -0.4rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--color-ivory);
+  border-right: 1px solid var(--color-charcoal-900);
+  border-bottom: 1px solid var(--color-charcoal-900);
+  transform: rotate(45deg);
+}
+
+/* The scope card is a drawing sheet: a faint grid, ruled like the panel head. */
+.advisor-sheet__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgb(244 241 235 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(244 241 235 / 0.05) 1px, transparent 1px);
+  background-size: 16px 16px;
+  mask-image: linear-gradient(170deg, #000 0%, transparent 70%);
+}
+.advisor-sheet {
+  animation: advisor-rise 0.6s var(--e-out-strong) both;
+}
+.advisor-closer {
+  animation: advisor-rise 0.5s var(--e-out-strong) both;
+}
+
+/* Check marks drawn as a short red tick, like a checked item on a drawing list. */
+.advisor-tick::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.42em;
+  width: 0.55rem;
+  height: 0.3rem;
+  border-left: 1.5px solid var(--color-brand-400);
+  border-bottom: 1.5px solid var(--color-brand-400);
+  transform: rotate(-45deg);
+}
+.advisor-tick--ink::before {
+  border-color: var(--color-brand-500);
+}
+
+.advisor-drafting {
+  animation: advisor-breathe 1.6s var(--e-inout) infinite alternate;
+}
+
+@keyframes advisor-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes advisor-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+@keyframes advisor-breathe {
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .advisor-pill,
+  .advisor-pill--in {
+    transform: none;
+    transition: opacity 0.2s linear;
+  }
+  .advisor-pill--in .advisor-pill__text,
+  .advisor-sheet,
+  .advisor-closer,
+  .advisor-drafting {
+    animation: none;
+  }
+}
+
+@media print {
+  .advisor-pill {
+    display: none;
+  }
+}

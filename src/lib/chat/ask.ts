@@ -1,6 +1,6 @@
 /*
  * Opening the website assistant from anywhere on the page: the homepage's
- * showcase asks with a window event, and the assistant (ChatAssistant.tsx)
+ * showcase asks with a window event, and the assistant (src/components/ai/PermitAdvisorWidget.tsx)
  * opens and sends the question.
  */
 
@@ -32,3 +32,6 @@ export const askExamples = [
   "Do I need an architect for a 3-storey addition?",
   "Can I take out a load-bearing wall?",
 ];
+
+/** Characters in one visitor message; the server (src/lib/ai/chat-handler.ts) enforces the same. */
+export const MESSAGE_MAX = 1200;

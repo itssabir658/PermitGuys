@@ -18,6 +18,23 @@ export interface Lead {
   submittedAt: string;
   inquiry: Inquiry;
   attribution: Attribution;
+  /** Present when the lead came from the website assistant's closing card (src/lib/ai/submit-lead.ts). */
+  assistant?: AssistantLeadContext;
+}
+
+/** What the permit strategist learned, sent with a lead only when the visitor submits it. */
+export interface AssistantLeadContext {
+  /** Optional street address of the property, given by the visitor on the card. */
+  propertyAddress: string;
+  /** When the visitor would like a call, if they said. */
+  bestTimeToCall: string;
+  recommendedAction: string;
+  /** The project scope the assistant showed, rebuilt on the server from the scope's inputs. */
+  scope: unknown;
+  /** The conversation's visible text, oldest first and capped. */
+  transcript: { role: "visitor" | "assistant"; text: string }[];
+  /** First-party visit context (src/lib/ai/visitor-snapshot.ts). */
+  visit: unknown;
 }
 
 export type DeliveryResult =
@@ -35,7 +52,7 @@ type Fetch = typeof fetch;
 
 const TIMEOUT_MS = 10_000;
 
-function isAllowedEndpoint(raw: string): boolean {
+export function isAllowedEndpoint(raw: string): boolean {
   try {
     const u = new URL(raw);
     if (u.protocol === "https:") return true;
@@ -52,7 +69,7 @@ export function leadPayload(lead: Lead) {
   return {
     id: lead.id,
     submittedAt: lead.submittedAt,
-    source: "website-inquiry-form",
+    source: lead.assistant ? "website-assistant" : "website-inquiry-form",
     contact: {
       name: inquiry.name,
       email: inquiry.email,
@@ -67,6 +84,7 @@ export function leadPayload(lead: Lead) {
     },
     consent: { contactAboutInquiry: inquiry.consent },
     attribution: lead.attribution,
+    ...(lead.assistant ? { assistant: lead.assistant } : {}),
   };
 }
 
@@ -96,7 +114,7 @@ export function webhookDestination(url: string, secret?: string, fetchImpl: Fetc
   };
 }
 
-const oneLine = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
+export const oneLine = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
 
 export function leadEmailText(lead: Lead): string {
   const { inquiry, attribution } = lead;
@@ -110,8 +128,22 @@ export function leadEmailText(lead: Lead): string {
     ["Project stage", inquiry.stage || "Not given"],
   ];
   const attr = Object.entries(attribution);
+  const a = lead.assistant;
+  const assistantLines = a
+    ? [
+        "",
+        `Requested through the website assistant: ${a.recommendedAction}.`,
+        ...(a.propertyAddress ? [`Property address: ${a.propertyAddress}`] : []),
+        ...(a.bestTimeToCall ? [`Best time to call: ${a.bestTimeToCall}`] : []),
+        "",
+        "Conversation with the assistant:",
+        ...a.transcript.map((t) => `${t.role === "visitor" ? "Visitor" : "Assistant"}: ${t.text}`),
+        "",
+        "The scope and the visit context are attached to the webhook payload as JSON.",
+      ]
+    : [];
   return [
-    "New project inquiry from the PermitGuys website.",
+    a ? "New project request from the PermitGuys website assistant." : "New project inquiry from the PermitGuys website.",
     "",
     ...rows.map(([k, v]) => `${k}: ${v}`),
     "",
@@ -119,6 +151,7 @@ export function leadEmailText(lead: Lead): string {
     inquiry.details,
     "",
     "The visitor agreed that PermitGuys may contact them about this inquiry.",
+    ...assistantLines,
     ...(attr.length ? ["", "How they found the site:", ...attr.map(([k, v]) => `${k}: ${v}`)] : []),
     "",
     `Reference: ${lead.id}`,
@@ -151,7 +184,7 @@ export function resendDestination(
             from: config.from,
             to: config.to,
             reply_to: inquiry.email,
-            subject: oneLine(`New inquiry: ${inquiry.projectType}, ${inquiry.municipality}`).slice(0, 200),
+            subject: oneLine(`${lead.assistant ? "Assistant request" : "New inquiry"}: ${inquiry.projectType}, ${inquiry.municipality}`).slice(0, 200),
             text: leadEmailText(lead),
           }),
           signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -183,10 +216,11 @@ export function configuredDestinations(env: Env = process.env, fetchImpl: Fetch 
   const destinations: LeadDestination[] = [];
   const problems: string[] = [];
 
-  const webhook = env.INQUIRY_WEBHOOK_URL?.trim();
+  // LEAD_WEBHOOK_URL is accepted as another name for INQUIRY_WEBHOOK_URL; set one of them.
+  const webhook = (env.INQUIRY_WEBHOOK_URL || env.LEAD_WEBHOOK_URL)?.trim();
   if (webhook) {
-    if (isAllowedEndpoint(webhook)) destinations.push(webhookDestination(webhook, env.INQUIRY_WEBHOOK_SECRET || undefined, fetchImpl));
-    else problems.push("INQUIRY_WEBHOOK_URL must be an https URL");
+    if (isAllowedEndpoint(webhook)) destinations.push(webhookDestination(webhook, (env.INQUIRY_WEBHOOK_SECRET || env.LEAD_WEBHOOK_SECRET) || undefined, fetchImpl));
+    else problems.push("INQUIRY_WEBHOOK_URL (or LEAD_WEBHOOK_URL) must be an https URL");
   }
 
   const apiKey = env.RESEND_API_KEY?.trim();

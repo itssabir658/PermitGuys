@@ -1,6 +1,6 @@
 /*
  * The website assistant's launcher, panel head and homepage showcase
- * (ChatAssistant.tsx, AskShowcase.tsx). Colours are the theme's
+ * (src/components/ai/PermitAdvisorWidget.tsx, AskShowcase.tsx). Colours are the theme's
  * (globals.css): charcoal #191918, brand red #ee352f and #c2352c, ivory
  * #f4f1eb.
  */
