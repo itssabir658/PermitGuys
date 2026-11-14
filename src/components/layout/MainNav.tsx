@@ -562,7 +562,7 @@ export function MainNav({
             </ul>
           </nav>
           <div data-menu-item="" className="site-menu__aside grid content-between gap-10">
-            {/* Phones leave the services out (the footer and the Services page list them), so the call to action fits. */}
+            {/* Phones leave the services out (the Services page lists them), so the call to action fits. */}
             <div className="hidden md:block">
               <p className="text-label text-charcoal-300">Services</p>
               <ul className="mt-4 space-y-2 text-[0.9375rem]">
