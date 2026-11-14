@@ -43,9 +43,6 @@ export default function AboutPage() {
             <p>
               We design residential additions, legal basement apartments, decks, custom homes, interior renovations and commercial projects, work out the engineering they need, and prepare the permit drawings and documentation. Then we help our clients through the building permit process.
             </p>
-            <p>
-              We do not issue permits, and we cannot promise an approval or a date. Your municipality reviews each application and decides whether to issue a permit. Our role is to make your application clear and complete, and to help you respond when the municipality has questions.
-            </p>
           </div>
         </ArticleSection>
         <ArticleSection id="how-we-work" title="How we work">
