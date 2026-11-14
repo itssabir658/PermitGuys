@@ -1,87 +1,54 @@
 import Link from "next/link";
 import { footerNav } from "@/content/navigation";
 import { site } from "@/content/site";
-import { EmailLink, PhoneLink } from "@/components/ui/ContactLinks";
 import { Container } from "@/components/ui/Container";
-import { ArrowRight } from "@/components/ui/Icons";
-import { Placeholder } from "@/components/ui/Placeholder";
 import { RollText } from "@/components/ui/RollText";
 import { paths } from "@/lib/routes";
 import { Logo } from "./Logo";
 import { Wordmark } from "@/components/ui/Wordmark";
 
 /*
- * The one dark band at the foot of every page. Pages close on paper (the
- * homepage's Contact, an inner page's CtaPanel, the contact form), so the
- * footer's own call to action shows only where none of those is on the
- * page (data-footer-cta, globals.css); in its place the column opens on
- * the logo. The footer's content rises out from under the sheet above it
- * (MotionRoot, footer module).
+ * The one dark band at the foot of every page, kept short: the logo, the
+ * links that neither the header nor the homepage carries (footerNav), and
+ * the closing line. Services, the firm, Contact and the phone, email,
+ * address and hours are all in the header or on the homepage, so the
+ * footer does not repeat them. The content rises out from under the sheet
+ * above it (MotionRoot, footer module).
  */
 export function SiteFooter() {
-  const { contact } = site;
   return (
     <footer data-tone="dark" data-site-footer="" className="site-footer bg-charcoal-900 text-ivory">
-      <Container className="site-footer__inner pt-20 pb-10 sm:pt-28">
-        <div className="grid gap-16 lg:grid-cols-12 lg:gap-8">
-          <div className="min-w-0 lg:col-span-5">
-            <div data-footer-cta="" className="mb-16">
-              <p className="text-label text-charcoal-300">Have a project in mind?</p>
-              <Link href={paths.contact} data-cube-host="" className="group mt-8 inline-flex items-center gap-5 font-display text-[clamp(1.75rem,0.25rem+2.75vw,3.6rem)] leading-[1.04] font-light tracking-[-0.036em] sm:gap-6">
-                <span className="link-rule pb-2 sm:whitespace-nowrap">Start a conversation</span>
-                {/* The site's one red fill: a square that turns a quarter on its cube, as the link buttons' icon cells do. */}
-                <span aria-hidden="true" className="link-cube site-footer__cta-cell shrink-0">
-                  <span className="link-button__cube">
-                    <span className="link-button__face">
-                      <ArrowRight className="size-5" />
-                    </span>
-                    <span className="link-button__face link-button__face--side">
-                      <ArrowRight className="size-5" />
-                    </span>
-                  </span>
-                </span>
-              </Link>
-            </div>
+      <Container className="site-footer__inner pt-14 pb-8 sm:pt-16 lg:pt-20">
+        <div className="grid gap-10 md:grid-cols-12 md:gap-8">
+          <div className="md:col-span-4 lg:col-span-5">
             <Link href={paths.home} aria-label={`${site.name} home`} className="inline-block">
-              <Logo onDark className="h-9 w-auto sm:h-10" />
+              <Logo onDark className="h-8 w-auto sm:h-9" />
             </Link>
-            <address className="mt-10 grid gap-2 text-[0.875rem] not-italic text-charcoal-300">
-              <p>{contact.phone ? <PhoneLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>phone number</Placeholder>}</p>
-              <p>{contact.email ? <EmailLink location="footer" className="link-draw text-ivory" /> : <Placeholder onDark>email address</Placeholder>}</p>
-              <p>{contact.address ?? <Placeholder onDark>business address, if it will be published</Placeholder>}</p>
-              {contact.hours ? <p>{contact.hours}</p> : null}
-            </address>
           </div>
-          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:col-span-7 lg:grid-cols-[1fr_1fr_auto] lg:gap-x-6 xl:grid-cols-3">
-            {footerNav.map((col) => (
-              <div key={col.heading}>
-                <h2 className="text-label text-charcoal-300">{col.heading}</h2>
-                <ul className="mt-6 space-y-3 text-[0.9375rem] lg:text-[0.875rem]">
-                  {col.links.map((link) => (
-                    <li key={link.href}>
-                      <Link href={link.href} className="text-ivory/80 transition-colors hover:text-ivory">
-                        <RollText>{link.label}</RollText>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <nav aria-label="Footer" className="md:col-span-8 lg:col-span-7">
+            <h2 className="text-label text-charcoal-300">Resources</h2>
+            <ul className="mt-5 grid gap-x-8 gap-y-2.5 text-[0.9375rem] sm:grid-cols-2 lg:text-[0.875rem]">
+              {footerNav.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-ivory/80 transition-colors hover:text-ivory">
+                    <RollText>{link.label}</RollText>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </nav>
         </div>
 
-        <div className="mt-24 border-t border-ivory/15 pt-10 lg:mt-32">
-          <div className="space-y-3 text-sm text-charcoal-300 lg:max-w-xl">
-            <p>
-              © {new Date().getFullYear()} {site.legalName ?? <Wordmark />}. Serving homeowners and property owners in the {site.region}.{" "}
-              <Link href={paths.privacy} className="link-rule text-ivory/80 hover:text-ivory">
-                Privacy policy
-              </Link>
-            </p>
-            <p className="text-xs leading-relaxed">
-              Information on this website is general guidance, not legal or code advice. Permit requirements are set by your municipality, which decides whether a permit is issued. Images are renderings of client projects, except those captioned as rendered studies.
-            </p>
-          </div>
+        <div className="mt-12 grid gap-3 border-t border-ivory/15 pt-6 text-sm text-charcoal-300 lg:mt-14 lg:grid-cols-12 lg:gap-8">
+          <p className="lg:col-span-5">
+            © {new Date().getFullYear()} {site.legalName ?? <Wordmark />}.{" "}
+            <Link href={paths.privacy} className="link-rule text-ivory/80 hover:text-ivory">
+              Privacy policy
+            </Link>
+          </p>
+          <p className="text-xs leading-relaxed lg:col-span-7">
+            Information on this website is general guidance, not legal or code advice. Permit requirements are set by your municipality, which decides whether a permit is issued. Images are renderings of client projects, except those captioned as rendered studies.
+          </p>
         </div>
       </Container>
     </footer>

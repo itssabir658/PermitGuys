@@ -27,9 +27,9 @@ const groups = [
   },
   {
     id: "commercial",
-    eyebrow: "Businesses and landlords",
-    title: "Commercial and rental",
-    intro: "Interior renovations, commercial spaces and rental properties.",
+    eyebrow: "Businesses",
+    title: "Commercial",
+    intro: "Commercial spaces and interior renovations.",
     category: "commercial" as const,
   },
 ];

@@ -121,21 +121,6 @@ const variants: Record<DrawingVariant, () => ReactNode> = {
       <Label x={60} y={80}>COMMERCIAL UNIT · STOREFRONT</Label>
     </>
   ),
-  landlord: () => (
-    <>
-      <Ground />
-      <polygon points="90,140 240,64 390,140" />
-      <rect x={104} y={140} width={272} height={160} />
-      <line x1={104} y1={220} x2={376} y2={220} stroke={RED} strokeWidth={1.5} strokeDasharray="6 4" />
-      <Windows x={128} y={160} cols={4} rows={1} w={36} h={40} gap={24} />
-      <Windows x={128} y={238} cols={2} rows={1} w={36} h={40} gap={24} />
-      <rect x={272} y={236} width={34} height={64} />
-      <rect x={322} y={236} width={34} height={64} stroke={RED} />
-      <Label x={384} y={186}>UNIT 2</Label>
-      <Label x={384} y={266}>UNIT 1</Label>
-      <Label x={104} y={330}>FIRE SEPARATION BETWEEN UNITS</Label>
-    </>
-  ),
   basement: () => (
     <>
       <polygon points="80,120 220,50 360,120" />

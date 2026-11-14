@@ -48,16 +48,33 @@ export interface MapStat {
   label: string;
 }
 
-/** `stats`: the first is set large (the permits issued); the rest are listed under it. */
-export function ProjectsMap({ points, stats, className }: { points: [number, number][]; stats: MapStat[]; className?: string }) {
-  const [lead, ...rest] = stats;
+/**
+ * The map itself, in its ruled frame: the drawn points first, the Mapbox
+ * map over them once it has drawn. `wake`: when set, the map waits for
+ * this to turn true as well as for the frame to near the screen (the
+ * homepage intro holds it back until its panel is about to come up, so
+ * the page's first screens never pay for it). `panel`: the trust panel
+ * sits over the map's left side on wide screens, so the GTA is framed to
+ * its right.
+ */
+export function ProjectsMapFrame({
+  points,
+  className,
+  wake = true,
+  panel = false,
+}: {
+  points: [number, number][];
+  className?: string;
+  wake?: boolean;
+  panel?: boolean;
+}) {
   const frame = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const el = frame.current;
-    if (!token || !el) return;
+    if (!token || !el || !wake) return;
     let unmount: (() => void) | undefined;
     let cancelled = false;
     const io = new IntersectionObserver(
@@ -68,7 +85,7 @@ export function ProjectsMap({ points, stats, className }: { points: [number, num
           .then(({ mountProjectsMapbox }) => {
             if (cancelled || !canvas.current) return;
             // Without WebGL (switched off, or blocked by Chrome after a graphics crash) Mapbox throws: the drawn points stay.
-            unmount = mountProjectsMapbox(canvas.current, token, points, () => setReady(true), () => setReady(false));
+            unmount = mountProjectsMapbox(canvas.current, token, points, () => setReady(true), () => setReady(false), { panel });
           })
           .catch(() => setReady(false));
       },
@@ -80,23 +97,31 @@ export function ProjectsMap({ points, stats, className }: { points: [number, num
       io.disconnect();
       unmount?.();
     };
-  }, [points]);
+  }, [points, wake, panel]);
 
+  return (
+    <div ref={frame} className={cn("projects-map__frame", className)}>
+      <div className={cn("projects-map__cover", ready && "is-gone")}>
+        <DotField points={points} />
+      </div>
+      {token ? <div ref={canvas} className="projects-map__canvas" role="region" aria-label="Map of our client projects" /> : null}
+      <p className="projects-map__legend">
+        <span aria-hidden="true" className="projects-map__dot" />
+        Client project
+        <span aria-hidden="true" className="projects-map__group">12</span>
+        Grouped
+      </p>
+    </div>
+  );
+}
+
+/** `stats`: the first is set large (the permits issued); the rest are listed under it. */
+export function ProjectsMap({ points, stats, className }: { points: [number, number][]; stats: MapStat[]; className?: string }) {
+  const [lead, ...rest] = stats;
   return (
     <div className={cn("projects-map", className)}>
       <div className="projects-map__body">
-        <div ref={frame} className="projects-map__frame">
-          <div className={cn("projects-map__cover", ready && "is-gone")}>
-            <DotField points={points} />
-          </div>
-          {token ? <div ref={canvas} className="projects-map__canvas" role="region" aria-label="Map of our client projects" /> : null}
-          <p className="projects-map__legend">
-            <span aria-hidden="true" className="projects-map__dot" />
-            Client project
-            <span aria-hidden="true" className="projects-map__group">12</span>
-            Grouped
-          </p>
-        </div>
+        <ProjectsMapFrame points={points} panel={Boolean(lead)} />
         {lead ? (
           <dl className="projects-map__panel">
             <div className="projects-map__lead">
