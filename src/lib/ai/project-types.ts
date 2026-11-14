@@ -4,7 +4,7 @@
  * labels without loading the site's content into the page.
  */
 
-export const TO_BE_CONFIRMED = "To be confirmed by PermitGuys in your quote";
+export const TO_BE_CONFIRMED = "Custom fixed-fee quote & exact timeline prepared directly by PermitGuys upon handoff.";
 
 /**
  * Project types the tools understand. Each maps to a service page where the

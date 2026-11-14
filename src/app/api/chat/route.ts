@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { clientIp } from "@/lib/inquiry/protection";
 import { handleChat, sharedAdvisorLimiter } from "@/lib/ai/chat-handler";
 
@@ -19,5 +20,7 @@ export async function POST(request: Request) {
     ip: clientIp(request.headers),
     rateLimiter: sharedAdvisorLimiter(process.env),
     signal: request.signal,
+    // Contact details typed in the chat reach the team after the reply has started streaming.
+    background: (task) => after(task),
   });
 }

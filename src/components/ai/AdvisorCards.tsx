@@ -8,12 +8,13 @@ import { getVisitorSnapshot } from "@/context/VisitorTelemetryContext";
 import { track } from "@/lib/analytics";
 import { HANDOFF_STORAGE_KEY, type Handoff } from "@/lib/chat/handoff";
 import { ATTRIBUTION_STORAGE_KEY } from "@/lib/inquiry/attribution";
-import { PROJECT_TYPES, type ProjectTypeKey } from "@/lib/ai/project-types";
+import { PROJECT_TYPES, TO_BE_CONFIRMED, type ProjectTypeKey } from "@/lib/ai/project-types";
 import { site } from "@/content/site";
 import type { LeadRequest, LeadResult } from "@/lib/ai/submit-lead";
 import type { ComplianceCheck, DealCloser, ProjectScope, Stage } from "@/lib/ai/tools";
 import { paths } from "@/lib/routes";
 import { SourceLink } from "./AdvisorReply";
+import { advisorSessionId, markAdvisorClosed } from "./session-summary";
 
 /*
  * The cards the permit strategist puts in the conversation: the project
@@ -193,6 +194,7 @@ export function ScopeCard({
               stage: scope.stage,
               scopeSummary: scope.summary,
               recommendedAction: "Scope review and quote",
+              pricing: TO_BE_CONFIRMED,
               responseTime: null,
               hours: null,
               phone: null,
@@ -324,6 +326,7 @@ export function DealCloserCard({
     const get = (k: string) => String(form.get(k) ?? "");
     const body: LeadRequest = {
       submissionId: meta.current?.submissionId,
+      sessionId: advisorSessionId(),
       startedAt: meta.current?.startedAt,
       website: get("website"),
       contact: { name: get("name"), email: get("email"), phone: get("phone"), propertyAddress: get("address"), bestTimeToCall: get("bestTime") },
@@ -350,6 +353,7 @@ export function DealCloserCard({
         } catch {
           // The confirmation still shows; it just won't survive a reload.
         }
+        markAdvisorClosed();
         track("advisor_lead_sent", { project_type: closer.projectType, action });
         setState({ status: "sent", reference: result.reference });
         return;
@@ -421,6 +425,8 @@ export function DealCloserCard({
             <dd className="line-clamp-4 text-ink">{closer.scopeSummary}</dd>
           </>
         ) : null}
+        <dt className="text-ink-muted">Price and timeline</dt>
+        <dd className="text-ink">{closer.pricing}</dd>
       </dl>
       <form onSubmit={onSubmit} className="px-4 pt-2 pb-4" noValidate>
         <fieldset className="mt-2">

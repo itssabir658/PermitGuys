@@ -14,6 +14,9 @@ import {
 import { MESSAGE_MAX } from "@/lib/chat/ask";
 import { chatConfigured, chatSettings } from "@/lib/chat/config";
 import { memoryRateLimiter, type RateLimiter } from "@/lib/inquiry/protection";
+import { buildDossier, hasReachableContact, extractContact, type ScopeInputLike } from "./chat-dossier";
+import { isSessionId, sharedLeadLedger, type LeadLedger } from "./lead-sessions";
+import { chatContactNotice, notifyOwners } from "./notify-owners";
 import { staticSystemPrompt, visitorContextPrompt } from "./system-prompt";
 import { advisorTools } from "./tools";
 import type { AdvisorFailure, AdvisorMessage } from "./types";
@@ -52,7 +55,11 @@ export interface ChatDeps {
   /** Injected in tests; built from the API key otherwise. */
   model?: LanguageModel;
   signal?: AbortSignal;
-  log?: Pick<Console, "warn" | "error">;
+  log?: Pick<Console, "info" | "warn" | "error">;
+  /** Runs work after the response (Next's `after`); awaited in tests. */
+  background?: (task: () => Promise<unknown>) => void;
+  ledger?: LeadLedger;
+  fetch?: typeof fetch;
 }
 
 const fail = (status: number, reason: AdvisorFailure) =>
@@ -66,7 +73,7 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
   if (rawBody.length > advisorLimits.body) return fail(413, "too_long");
   if (!deps.rateLimiter.hit(deps.ip)) return fail(429, "rate_limited");
 
-  let body: { messages?: unknown; snapshot?: unknown };
+  let body: { messages?: unknown; snapshot?: unknown; sessionId?: unknown };
   try {
     body = JSON.parse(rawBody) as typeof body;
   } catch {
@@ -81,6 +88,9 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
   const last = messages[messages.length - 1];
   if (last.role !== "user" || messages.some((m) => m.role === "system")) return fail(400, "invalid");
   if (messages.some((m) => m.role === "user" && textLength(m) > advisorLimits.message)) return fail(413, "too_long");
+
+  // A phone number or email typed in the chat goes to the team as a closed lead, in the background.
+  if (isSessionId(body.sessionId)) captureTypedContact(body.sessionId, messages, body.snapshot, deps);
 
   const settings = chatSettings(deps.env);
   const model = deps.model ?? createAnthropic({ apiKey: deps.env.ANTHROPIC_API_KEY })(settings.model);
@@ -127,4 +137,49 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
       },
     }),
   });
+}
+
+const textOf = (m: AdvisorMessage) =>
+  m.parts
+    .map((p) => (p.type === "text" ? p.text : ""))
+    .join("\n")
+    .trim();
+
+/** The inputs of the latest scope card in the conversation, if any. */
+export function latestScopeInput(messages: readonly AdvisorMessage[]): ScopeInputLike | null {
+  for (const m of [...messages].reverse())
+    for (const p of [...m.parts].reverse()) if (p.type === "tool-generateProjectScope" && p.state === "output-available") return p.input as ScopeInputLike;
+  return null;
+}
+
+function captureTypedContact(sessionId: string, messages: AdvisorMessage[], snapshot: unknown, deps: ChatDeps) {
+  const log = deps.log ?? console;
+  const visitorTexts = messages.filter((m) => m.role === "user").map(textOf);
+  const contact = extractContact(visitorTexts);
+  if (!hasReachableContact(contact)) return;
+  const ledger = deps.ledger ?? sharedLeadLedger();
+  const key = `${contact.email.toLowerCase()}|${contact.phone.replace(/\D/g, "")}`;
+  if (!ledger.claimContact(sessionId, key)) return;
+
+  const task = async () => {
+    const dossier = buildDossier({
+      sessionId,
+      messageCount: messages.length,
+      transcript: messages.map((m) => ({ role: m.role === "user" ? ("visitor" as const) : ("assistant" as const), text: textOf(m) })),
+      snapshot,
+      scopeInput: latestScopeInput(messages),
+    });
+    const reference = crypto.randomUUID().slice(0, 8).toUpperCase();
+    const outcome = await notifyOwners(chatContactNotice(dossier, reference), { env: deps.env, fetch: deps.fetch });
+    if (outcome.status === "delivered") {
+      ledger.markClosed(sessionId, reference);
+      log.info("[advisor] contact typed in the chat sent to the team", { session: sessionId.slice(0, 8) });
+    } else {
+      ledger.releaseContact(sessionId, key);
+      log.error(`[advisor] contact typed in the chat not sent: ${outcome.status}`);
+    }
+  };
+  const run = () => task().catch((err: unknown) => log.error("[advisor] contact capture failed", err instanceof Error ? err.message : err));
+  if (deps.background) deps.background(run);
+  else void run();
 }

@@ -9,8 +9,8 @@ import { submitClosedLead, type LeadRequest } from "@/lib/ai/submit-lead";
 import { staticSystemPrompt, visitorContextPrompt } from "@/lib/ai/system-prompt";
 import { buildComplianceCheck, buildProjectScope, disciplineOf } from "@/lib/ai/tools";
 import { describeSnapshot, sanitizeSnapshot } from "@/lib/ai/visitor-snapshot";
-import type { Lead, LeadDestination } from "@/lib/inquiry/delivery";
-import { leadEmailText, leadPayload } from "@/lib/inquiry/delivery";
+import { memoryLeadLedger } from "@/lib/ai/lead-sessions";
+import { LEAD_ENV, SESSION, fakeFetch } from "./lead-helpers";
 import { projectTypes } from "@/lib/validation/inquiry";
 
 const quiet = { info() {}, warn() {}, error() {} };
@@ -190,9 +190,10 @@ describe("/api/chat", () => {
   });
 });
 
-describe("submitClosedLead", () => {
+describe("submitClosedLead (closed_handoff)", () => {
   const request = (over: Partial<LeadRequest> = {}): LeadRequest => ({
     submissionId: "0b8f3a3c-7f53-4b0f-9b5c-1d2e3f4a5b6c",
+    sessionId: SESSION,
     startedAt: String(Date.now() - 60_000),
     contact: { name: "Sam Visitor", email: "sam@example.com", phone: "416 555 0100", propertyAddress: "1 Main St", bestTimeToCall: "" },
     consent: true,
@@ -206,36 +207,46 @@ describe("submitClosedLead", () => {
     ...over,
   });
 
-  const capture = () => {
-    const leads: Lead[] = [];
-    const destination: LeadDestination = { name: "test", deliver: async (lead) => (leads.push(lead), { ok: true, destination: "test" }) };
-    return { leads, destination };
+  const deps = (env: Record<string, string> = LEAD_ENV) => {
+    const outbox = fakeFetch();
+    return { outbox, deps: { env, ip: "1", rateLimiter: allow, duplicates: new Set<string>(), ledger: memoryLeadLedger(), fetch: outbox.fetch, log: quiet } };
   };
-  const deps = (destinations: LeadDestination[]) => ({ env: {}, ip: "1", rateLimiter: allow, duplicates: new Set<string>(), destinations, log: quiet });
 
-  it("delivers the lead with the scope, the conversation and the visit, and returns a reference", async () => {
-    const { leads, destination } = capture();
-    const result = await submitClosedLead(request(), deps([destination]));
+  it("emails the team a CLOSED LEAD, posts closed_handoff to the webhook and confirms to the visitor", async () => {
+    const { outbox, deps: d } = deps();
+    const result = await submitClosedLead(request(), d);
     expect(result).toEqual({ status: "sent", reference: "0B8F3A3C" });
-    const lead = leads[0];
-    expect(lead.inquiry).toMatchObject({ name: "Sam Visitor", projectType: "Legal basement apartment", municipality: "Oakville", preferredContact: "phone" });
-    expect(lead.assistant?.transcript).toHaveLength(2);
-    expect((lead.assistant?.scope as { drawings: unknown[] }).drawings.length).toBeGreaterThan(0);
-    expect(leadPayload(lead).source).toBe("website-assistant");
-    expect(leadEmailText(lead)).toMatch(/Property address: 1 Main St/);
+
+    const [team, visitor] = outbox.emails();
+    expect(team.subject).toBe("[CLOSED LEAD] Legal basement apartment in Oakville — Sam Visitor (0B8F3A3C)");
+    expect(team.to).toEqual(["team@permitguys.test"]);
+    expect(team.from).toBe("Assistant <ai@permitguys.test>");
+    expect(team.reply_to).toBe("sam@example.com");
+    expect(team.text).toMatch(/Property address: 1 Main St/);
+    expect(team.text).toMatch(/Visitor: Can my basement be a legal unit\?/);
+    expect(visitor.to).toEqual(["sam@example.com"]);
+    expect(visitor.subject).toMatch(/0B8F3A3C/);
+
+    const hook = outbox.webhooks()[0];
+    expect(hook.leadStatus).toBe("closed_handoff");
+    expect(hook).toMatchObject({ source: "website-assistant", reference: "0B8F3A3C", sessionId: SESSION, upgradedFromPossibleLead: false });
+    expect((hook.assistant as { scope: { drawings: unknown[] } }).scope.drawings.length).toBeGreaterThan(0);
   });
 
   it("checks contact details and consent, and drops bots", async () => {
-    const { destination } = capture();
-    const invalid = await submitClosedLead(request({ contact: { name: "S", email: "nope", phone: "" }, consent: false }), deps([destination]));
+    const { deps: d } = deps();
+    const invalid = await submitClosedLead(request({ contact: { name: "S", email: "nope", phone: "" }, consent: false }), d);
     expect(invalid.status).toBe("invalid");
     if (invalid.status === "invalid") expect(Object.keys(invalid.errors)).toEqual(expect.arrayContaining(["name", "email", "consent"]));
-    expect((await submitClosedLead(request({ website: "spam" }), deps([destination]))).status).toBe("blocked");
-    expect((await submitClosedLead(request({ startedAt: String(Date.now()) }), deps([destination]))).status).toBe("blocked");
-    expect((await submitClosedLead({ nonsense: true }, deps([destination]))).status).toBe("invalid");
+    expect((await submitClosedLead(request({ website: "spam" }), d)).status).toBe("blocked");
+    expect((await submitClosedLead(request({ startedAt: String(Date.now()) }), d)).status).toBe("blocked");
+    expect((await submitClosedLead({ nonsense: true }, d)).status).toBe("invalid");
   });
 
-  it("says so when no destination is configured", async () => {
-    expect((await submitClosedLead(request(), deps([]))).status).toBe("not_configured");
+  it("says so when nothing is configured, and leaves the session open for a summary", async () => {
+    const { outbox, deps: d } = deps({});
+    expect((await submitClosedLead(request(), d)).status).toBe("not_configured");
+    expect(outbox.sent).toHaveLength(0);
+    expect(d.ledger.closedReference(SESSION)).toBeNull();
   });
 });

@@ -52,7 +52,7 @@ type Fetch = typeof fetch;
 
 const TIMEOUT_MS = 10_000;
 
-function isAllowedEndpoint(raw: string): boolean {
+export function isAllowedEndpoint(raw: string): boolean {
   try {
     const u = new URL(raw);
     if (u.protocol === "https:") return true;
@@ -114,7 +114,7 @@ export function webhookDestination(url: string, secret?: string, fetchImpl: Fetc
   };
 }
 
-const oneLine = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
+export const oneLine = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
 
 export function leadEmailText(lead: Lead): string {
   const { inquiry, attribution } = lead;

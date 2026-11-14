@@ -4,8 +4,9 @@ import { submitClosedLead } from "@/lib/ai/submit-lead";
 
 /**
  * POST /api/lead: the assistant's closing card sends the visitor's request
- * here (src/lib/ai/submit-lead.ts). Same delivery, rate limit and duplicate
- * guard as the inquiry form. Answers JSON with a status the card explains.
+ * here (src/lib/ai/submit-lead.ts): a CLOSED LEAD for the team and a
+ * confirmation for the visitor. Same rate limit and duplicate guard as the
+ * inquiry form. Answers JSON with a status the card explains.
  */
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");

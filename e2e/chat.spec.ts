@@ -24,7 +24,7 @@ const toolCall = (toolName: string, input: unknown, output: unknown, toolCallId 
 ];
 
 async function mockChat(page: Page, ...bodies: string[]) {
-  const sent: { messages: { role: string; parts: { type: string; text?: string }[] }[]; snapshot: Record<string, unknown> }[] = [];
+  const sent: { messages: { role: string; parts: { type: string; text?: string }[] }[]; snapshot: Record<string, unknown>; sessionId: string }[] = [];
   await page.route("**/api/chat/", async (route) => {
     sent.push(route.request().postDataJSON());
     const body = bodies[Math.min(sent.length - 1, bodies.length - 1)];
@@ -59,7 +59,7 @@ const scopeOutput = {
     { discipline: "Structural", items: ["A framing plan with joist, beam and post sizes."] },
   ],
   qualifier: "Your local building department makes the final determination.",
-  draftingTurnaround: "To be confirmed by PermitGuys in your quote",
+  draftingTurnaround: "Custom fixed-fee quote & exact timeline prepared directly by PermitGuys upon handoff.",
   cityReview: { window: "10 business days for a complete application (City of Toronto, houses)", note: "The clock starts once the application is complete.", source: "", page: "/permit-guides/permit-costs-and-timelines/" },
   recommendedPackage: "Scope review and custom quote",
   timelineFactors: [],
@@ -125,6 +125,7 @@ test.describe("permit strategist", () => {
     const closer = panel.getByRole("article", { name: "Lock in your project" });
     await expect(closer).toBeVisible();
     await expect(closer.getByLabel("Town or city")).toHaveValue("Toronto");
+    await expect(closer).toContainText("Custom fixed-fee quote & exact timeline prepared directly by PermitGuys upon handoff.");
     await closer.getByLabel("Name").fill("Sam Visitor");
     await closer.getByLabel("Phone").fill("416 555 0100");
     await closer.getByLabel("Email").fill("sam@example.com");
@@ -135,8 +136,51 @@ test.describe("permit strategist", () => {
     expect(body.project).toMatchObject({ projectType: "deck", municipality: "Toronto" });
     expect(body.scopeInput).toMatchObject({ projectType: "deck" });
     expect(body.transcript[0]).toEqual({ role: "visitor", text: "A raised deck in Toronto, ready for drawings" });
+    expect(body.sessionId).toMatch(/^[0-9a-f-]{36}$/);
     await expect(panel.getByRole("status")).toContainText("Your reference is");
     await expectNoHorizontalOverflow(page);
+
+    // A closed lead: closing the chat sends no possible-lead summary.
+    const summaries: unknown[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("/api/chat/session-summary/")) summaries.push(r.postDataJSON());
+    });
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    expect(summaries).toEqual([]);
+  });
+
+  test("a conversation the visitor walks away from is summarized for the team once", async ({ page }) => {
+    const sent = await mockChat(page, stream(...text("Most decks need a permit. Our senior permit team tailors pricing and timelines.")));
+    const summaries: Record<string, unknown>[] = [];
+    await page.route("**/api/chat/session-summary/", async (route) => {
+      summaries.push(route.request().postDataJSON());
+      await route.fulfill({ status: 202 });
+    });
+    const panel = await openAssistant(page, "/services/deck-permits/");
+    await expect(panel).toContainText("shared with the PermitGuys team");
+    await panel.getByLabel("Your question").fill("How much is a deck permit in Whitby?");
+    await panel.getByLabel("Your question").press("Enter");
+    await expect(panel.getByText("Most decks need a permit.")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect.poll(() => summaries.length).toBe(1);
+    expect(summaries[0]).toMatchObject({
+      sessionId: sent[0].sessionId,
+      reason: "chat_closed",
+      messageCount: 2,
+      messages: [
+        { role: "visitor", text: "How much is a deck permit in Whitby?" },
+        { role: "assistant", text: "Most decks need a permit. Our senior permit team tailors pricing and timelines." },
+      ],
+    });
+    expect((summaries[0].visitorSnapshot as { currentPath: string }).currentPath).toBe("/services/deck-permits/");
+
+    // Nothing new since: opening and closing again, or hiding the page, sends nothing more.
+    await page.getByRole("button", { name: /Ask PermitGuys/ }).click();
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pagehide")));
+    await page.waitForTimeout(500);
+    expect(summaries).toHaveLength(1);
   });
 
   test("explains a failure and offers the phone and form", async ({ page }) => {

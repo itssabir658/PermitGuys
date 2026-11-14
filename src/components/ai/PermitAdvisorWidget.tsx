@@ -19,6 +19,7 @@ import { engine } from "@/lib/motion/engine";
 import { paths } from "@/lib/routes";
 import { AdvisorReply } from "./AdvisorReply";
 import { ComplianceCard, DealCloserCard, ScopeCard, type ScopeInput, type Transcript } from "./AdvisorCards";
+import { advisorSessionId, resetAdvisorSession, sendSessionSummary, type SummaryReason } from "./session-summary";
 import "@/components/chat/chat.css";
 import "./advisor.css";
 
@@ -39,6 +40,8 @@ const PILL_KEY = "pg_advisor_pill";
 const PHONE_QUERY = "(max-width: 639px)";
 /** Seconds on the site before the context pill first appears. */
 const PILL_DELAY_MS = 7000;
+/** A conversation left this long without a new message is summarized for the team. */
+const IDLE_SUMMARY_MS = 120_000;
 
 const failures: Record<AdvisorFailure, string> = {
   not_configured: "The assistant is not available right now.",
@@ -80,13 +83,15 @@ export function PermitAdvisorWidget() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const restored = useRef(false);
+  /** Sends the possible-lead summary when one is due; set below, once the conversation is known. */
+  const summarize = useRef<(reason: SummaryReason) => void>(() => {});
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport<AdvisorMessage>({
         api: "/api/chat/",
         // Every turn carries the visit snapshot; only the visible conversation is sent back.
-        prepareSendMessagesRequest: ({ messages }) => ({ body: { messages, snapshot: getVisitorSnapshot() } }),
+        prepareSendMessagesRequest: ({ messages }) => ({ body: { messages, snapshot: getVisitorSnapshot(), sessionId: advisorSessionId() } }),
       }),
     [],
   );
@@ -166,6 +171,7 @@ export function PermitAdvisorWidget() {
 
   const close = useCallback(() => {
     setOpen(false);
+    summarize.current("chat_closed");
     const target = showcaseInView ? document.getElementById("ask-input") : launcherRef.current;
     requestAnimationFrame(() => target?.focus({ preventScroll: true }));
   }, [showcaseInView]);
@@ -237,6 +243,7 @@ export function PermitAdvisorWidget() {
     void stop();
     clearError();
     setMessages([]);
+    resetAdvisorSession();
     try {
       sessionStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -259,6 +266,31 @@ export function PermitAdvisorWidget() {
       for (const p of [...m.parts].reverse()) if (p.type === "tool-generateProjectScope" && p.state === "output-available") return p.input as ScopeInput;
     return null;
   }, [messages]);
+
+  // Possible lead: a conversation the visitor walks away from reaches the team (src/lib/ai/session-summary.ts).
+  useEffect(() => {
+    summarize.current = (reason) => {
+      if (busy && reason !== "page_exit") return;
+      sendSessionSummary({ messages, reason, scope: latestScopeInput, snapshot: getVisitorSnapshot() });
+    };
+  });
+  useEffect(() => {
+    if (busy || messages.length < 2) return;
+    const t = window.setTimeout(() => summarize.current("idle"), IDLE_SUMMARY_MS);
+    return () => window.clearTimeout(t);
+  }, [messages, busy]);
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") summarize.current("page_exit");
+    };
+    const onPageHide = () => summarize.current("page_exit");
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, []);
 
   // Quick replies: the assistant's own, after its latest turn; otherwise the context's starters.
   const last = messages[messages.length - 1];
@@ -508,7 +540,7 @@ export function PermitAdvisorWidget() {
             </button>
           </div>
           <p className="mt-2.5 text-xs leading-relaxed text-ink-muted">
-            AI answers are general and can be wrong; your municipality decides on permits. The assistant sees which pages you viewed here.{" "}
+            AI answers are general and can be wrong; your municipality decides on permits. This conversation and the pages you viewed here are shared with the PermitGuys team so we can follow up.{" "}
             <Link href={paths.privacy} onClick={closeOnPhone} className="underline underline-offset-2">
               Privacy
             </Link>

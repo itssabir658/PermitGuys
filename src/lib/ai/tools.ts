@@ -206,6 +206,8 @@ export function buildDealCloser(input: {
   return {
     ...input,
     projectLabel: PROJECT_TYPES[input.projectType].label,
+    /** Never a price or a date: the team prepares both after the hand-off. */
+    pricing: TO_BE_CONFIRMED,
     responseTime: K.pending.responseTime,
     hours: K.firm.hours,
     phone: K.firm.phone,
@@ -240,7 +242,7 @@ export const advisorTools = {
 
   presentDealCloserCard: tool({
     description:
-      "Show the closing card: the visitor's project already filled in, so they only add their name, phone and email to request a scope review and quote, or a priority call back. Call it when the visitor has seen their scope, asks about price, timing or next steps, or says they want to go ahead. Before calling it, write one short sentence inviting them to lock it in. Never ask for contact details in the chat: the card collects them.",
+      "Show the closing card: the visitor's project already filled in, so they only add their name, phone and email to request a scope review and quote, or a priority call back. Call it as soon as the scope is clear, the visitor asks how much or how long (price, fees, cost, turnaround, timeline), asks about next steps, or says they want to go ahead. Before calling it, write one or two short sentences: final pricing and timelines are tailored by our senior permit team to their property and municipality, and the card gets that started. Never ask for contact details in the chat: the card collects them.",
     inputSchema: z.object({
       projectType: z.enum(PROJECT_TYPE_KEYS),
       municipality: line(80).describe("Town or city, or empty string."),

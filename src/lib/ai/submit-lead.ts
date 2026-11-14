@@ -1,21 +1,24 @@
 import { z } from "zod";
 import { sanitizeAttribution } from "@/lib/inquiry/attribution";
-import { configuredDestinations, deliverLead, type LeadDestination } from "@/lib/inquiry/delivery";
 import { protectionSettings } from "@/lib/inquiry/handle";
 import { isValidSubmissionId, submittedTooFast, type RateLimiter } from "@/lib/inquiry/protection";
 import { projectStages, validateInquiry, type InquiryErrors } from "@/lib/validation/inquiry";
 import { PROJECT_TYPES, PROJECT_TYPE_KEYS } from "./knowledge-base";
 import { RECOMMENDED_ACTIONS, STAGES, buildProjectScope } from "./tools";
+import { isSessionId, sharedLeadLedger, type LeadLedger } from "./lead-sessions";
+import { closedLeadNotice, notifyOwners, ownerNotifyConfig } from "./notify-owners";
 import { sanitizeSnapshot } from "./visitor-snapshot";
 
 /*
  * submitClosedLead: the closing card's "lock it in". The visitor's contact
  * details go from the card straight to this handler (POST /api/lead/), never
  * through the model. It checks everything again, rebuilds the scope from its
- * inputs (a scope posted from the browser is never trusted), and delivers the
- * lead through the same pipeline as the inquiry form: Resend email and/or the
- * webhook (INQUIRY_WEBHOOK_URL or LEAD_WEBHOOK_URL). The reference it returns
- * is the one the team sees.
+ * inputs (a scope posted from the browser is never trusted), and sends a
+ * CLOSED LEAD to the team (src/lib/ai/notify-owners.ts: Resend email plus the
+ * lead webhook with leadStatus "closed_handoff") and a confirmation email to
+ * the visitor. If a possible-lead summary was sent for the same chat session,
+ * the closed lead says it was upgraded. The reference it returns is the one
+ * the team sees.
  */
 
 export const LEAD_TRANSCRIPT_MAX = 6000;
@@ -33,6 +36,8 @@ const scopeInputSchema = z.object({
 
 export const leadRequestSchema = z.object({
   submissionId: z.string().max(80).optional(),
+  /** The chat session (src/components/ai/session-summary.ts), to link a possible lead to this request. */
+  sessionId: z.string().max(80).optional(),
   startedAt: z.string().max(20).optional(),
   /** Honeypot: people never see it. */
   website: z.string().max(200).optional(),
@@ -73,7 +78,9 @@ export interface LeadDeps {
   ip: string;
   rateLimiter: RateLimiter;
   duplicates: { has(id: string): boolean; add(id: string): void };
-  destinations?: LeadDestination[];
+  ledger?: LeadLedger;
+  /** Injected in tests; the global fetch otherwise. */
+  fetch?: typeof fetch;
   now?: () => number;
   log?: Pick<Console, "info" | "warn" | "error">;
 }
@@ -140,30 +147,30 @@ export async function submitClosedLead(raw: unknown, deps: LeadDeps): Promise<Le
     return { status: "rate_limited" };
   }
 
-  let destinations = deps.destinations;
-  if (!destinations) {
-    const configured = configuredDestinations(deps.env);
-    for (const p of configured.problems) log.error(`[lead] configuration: ${p}`);
-    destinations = configured.destinations;
-  }
+  const config = ownerNotifyConfig(deps.env);
+  for (const p of config.problems) log.error(`[lead] configuration: ${p}`);
 
-  const outcome = await deliverLead(
-    {
-      id,
-      submittedAt: new Date(now()).toISOString(),
-      inquiry: validated.value,
-      attribution: sanitizeAttribution(req.attribution),
-      assistant: {
-        propertyAddress: req.contact.propertyAddress,
-        bestTimeToCall: req.contact.bestTimeToCall,
-        recommendedAction: req.project.recommendedAction,
-        scope: req.scopeInput ? buildProjectScope(req.scopeInput) : null,
-        transcript: capTranscript(req.transcript),
-        visit: sanitizeSnapshot(req.snapshot),
-      },
+  const lead = {
+    id,
+    submittedAt: new Date(now()).toISOString(),
+    inquiry: validated.value,
+    attribution: sanitizeAttribution(req.attribution),
+    assistant: {
+      propertyAddress: req.contact.propertyAddress,
+      bestTimeToCall: req.contact.bestTimeToCall,
+      recommendedAction: req.project.recommendedAction,
+      scope: req.scopeInput ? buildProjectScope(req.scopeInput) : null,
+      transcript: capTranscript(req.transcript),
+      visit: sanitizeSnapshot(req.snapshot),
     },
-    destinations,
-  );
+  };
+  const ledger = deps.ledger ?? sharedLeadLedger();
+  const sessionId = isSessionId(req.sessionId) ? req.sessionId : null;
+  // Closed before sending, so a page-exit summary racing this request is not sent as a possible lead;
+  // reopened below if the request could not be delivered.
+  const { upgradedFromPossibleLead, alreadyClosed } = sessionId ? ledger.markClosed(sessionId, reference) : { upgradedFromPossibleLead: false, alreadyClosed: true };
+  const notice = closedLeadNotice(lead, { reference, projectLabel: PROJECT_TYPES[req.project.projectType].label, sessionId, upgradedFromPossibleLead });
+  const outcome = await notifyOwners(notice, { env: deps.env, fetch: deps.fetch }, config);
 
   // Outcome metadata only, never the visitor's details.
   const summary = outcome.results.map((r) => (r.ok ? `${r.destination}: ok` : `${r.destination}: ${r.reason}`));
@@ -173,9 +180,11 @@ export async function submitClosedLead(raw: unknown, deps: LeadDeps): Promise<Le
     return { status: "sent", reference };
   }
   if (outcome.status === "not_configured") {
+    if (sessionId && !alreadyClosed) ledger.reopen(sessionId);
     log.error("[lead] no lead destination is configured; request not sent", { id });
     return { status: "not_configured" };
   }
+  if (sessionId && !alreadyClosed) ledger.reopen(sessionId);
   log.error("[lead] delivery failed", { id, results: summary });
   return { status: "failed" };
 }
