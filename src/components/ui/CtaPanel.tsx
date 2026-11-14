@@ -1,6 +1,7 @@
 import type { Route } from "next";
 import { paths } from "@/lib/routes";
 import { Container } from "./Container";
+import { CtaRise } from "./CtaRise";
 import { LinkButton } from "./LinkButton";
 
 const nextSteps = [
@@ -21,6 +22,7 @@ export function CtaPanel({
   href = paths.contact,
   secondary = { href: paths.howItWorks, label: "How it works" },
   id = "cta-heading",
+  rise = false,
 }: {
   /** Inquiry link; service pages pass a link that preselects the project type. */
   href?: Route;
@@ -30,9 +32,11 @@ export function CtaPanel({
   /** The quieter second action; a page that is itself the default's target passes another, or null for none. */
   secondary?: { href: Route; label: string } | null;
   id?: string;
+  /** Come up the way the footer does, out from under the section above (CtaRise); for a panel that follows a dark section. */
+  rise?: boolean;
 }) {
   return (
-    <section aria-labelledby={id} data-cta-panel="" className="bg-stone-100 text-ink">
+    <section aria-labelledby={id} data-cta-panel="" data-cta-rise={rise ? "" : undefined} className={rise ? "overflow-clip bg-stone-100 text-ink" : "bg-stone-100 text-ink"}>
       <Container className="py-20 sm:py-28 lg:py-32">
         <div className="grid gap-16 lg:grid-cols-12 lg:gap-8">
           <div data-reveal-type="rows" className="lg:col-span-7">
@@ -63,6 +67,7 @@ export function CtaPanel({
           </div>
         </div>
       </Container>
+      {rise ? <CtaRise /> : null}
     </section>
   );
 }

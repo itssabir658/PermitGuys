@@ -1,6 +1,6 @@
 import { HomeMotion } from "@/components/home/HomeMotion";
 import { Values } from "@/components/home/Values";
-import { Works } from "@/components/home/Works";
+import { ProjectShowcase } from "@/components/about/ProjectShowcase";
 import { ArticleLayout, ArticleSection, RuledList } from "@/components/ui/Article";
 import { CtaPanel } from "@/components/ui/CtaPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -65,10 +65,10 @@ export default function AboutPage() {
           <Placeholder block className="max-w-(--measure-article)">{withWordmark("a short account of how and why PermitGuys started, written or approved by the business.")}</Placeholder>
         </ArticleSection>
       </ArticleLayout>
-      {/* Selected projects and the values, moved here from the homepage, with the same scroll motion (HomeMotion finds them by their data attributes). */}
-      <Works />
+      {/* The values, moved here from the homepage with the same scroll motion (HomeMotion finds them by their data attributes), then Selected projects as a showcase on graphite, and the invitation coming up from under it as the footer does. */}
       <Values />
-      <CtaPanel />
+      <ProjectShowcase />
+      <CtaPanel rise />
       <HomeMotion />
     </>
   );
