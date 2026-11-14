@@ -51,11 +51,11 @@ const BEARING = -16;
  * (a GPU reset, or the browser reclaiming memory) and `onReady` again once
  * it is restored.
  */
-export function mountProjectsMapbox(el: HTMLElement, token: string, points: [number, number][], onReady: () => void, onLost: () => void) {
+export function mountProjectsMapbox(el: HTMLElement, token: string, points: [number, number][], onReady: () => void, onLost: () => void, { panel = true } = {}) {
   mapboxgl.accessToken = token;
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // Wide, the trust panel sits over the map's left side (globals.css), so the GTA is framed to its right.
-  const wide = el.clientWidth >= 1024;
+  // Wide, the trust panel (when there is one) sits over the map's left side (globals.css), so the GTA is framed to its right.
+  const wide = panel && el.clientWidth >= 1024;
   const narrow = el.clientWidth < 640;
   const pitch = narrow ? 30 : 48;
   const padding = wide ? { top: 40, bottom: 40, left: 360, right: 40 } : 16;

@@ -218,7 +218,7 @@ export const guides: Guide[] = [
       },
     ],
     relatedGuides: ["do-i-need-a-building-permit", "permit-costs-and-timelines"],
-    relatedServices: ["legal-basement-permits", "landlord-permits"],
+    relatedServices: ["legal-basement-permits", "below-grade-entrance-permits"],
     seo: {
       title: "How to Make a Basement Apartment Legal in the GTA",
       description:

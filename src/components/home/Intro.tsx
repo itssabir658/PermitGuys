@@ -5,20 +5,21 @@ import { escapeHtml } from "@/lib/html";
 import { wordmarkInHtml } from "@/content/wordmark";
 import { introPhases } from "@/lib/motion/home";
 import { logoHeight, municipalities, type Municipality } from "@/content/recognition";
+import { IntroMap } from "./IntroMap";
 
 /** The municipalities as a sentence, in the order of their marks: "A, B and C". */
 const places = municipalities.map((m) => m.place);
 const placeList = `${places.slice(0, -1).join(", ")} and ${places[places.length - 1]}`;
 
-/** A municipality's mark in its cell, as a fraction of the cell's height: drawn at a weight like its neighbours' (logoHeight). */
+/** A municipality's mark in the sliding row, in rem: drawn at a weight like its neighbours' (logoHeight). */
 function markHeight(m: Municipality) {
-  return `${(logoHeight(m, 0.62, 0.22, 0.5) * 100).toFixed(1)}%`;
+  return `${logoHeight(m, 2.9, 1.35, 3.1).toFixed(3)}rem`;
 }
 
-/** The paragraphs that roll in and out beside the frame; the last, naming the municipalities, keeps their marks in the frame. */
+/** The paragraphs that roll in and out beside the frame; the last, naming the municipalities, has the map of the firm's projects in the frame. */
 const copy = [
-  "PermitGuys is an architecture and engineering firm in Oakville, working with homeowners, landlords and businesses across the Greater Toronto Area.",
-  "From a deck in the backyard to a custom home or a tenant fit-out on a main street, one team handles the design, the engineering and the drawings for the permit.",
+  "PermitGuys is an architecture and engineering firm in Oakville, working with homeowners and businesses across the Greater Toronto Area.",
+  "From a deck in the backyard to a custom home or a tenant fit-out on a commercial unit, one team handles the design, the engineering and the drawings for the permit.",
   `We work with the building departments of ${placeList}.`,
 ];
 
@@ -28,7 +29,7 @@ const renderings: Plate[] = [plates.redBrick, plates.brick];
 /** The frame is 4:3 on wide screens, as the renderings nearly are, and square on phones. */
 const FRAME_ASPECT = 4 / 3;
 
-const captions = [...renderings.map(() => "Rendering of a client project."), "Municipalities we work with."];
+const captions = [...renderings.map(() => "Rendering of a client project."), "Our client projects across the GTA."];
 
 /**
  * The introduction: an ivory sheet that rises over the pinned hero (its
@@ -36,18 +37,20 @@ const captions = [...renderings.map(() => "Rendering of a client project."), "Mu
  * length of the copy (introPhases). The statement is set large on the left,
  * one paragraph at a time rising through its masks; on the right one framed
  * picture at a time, a client rendering for each of the first two and, for
- * the last, the marks of the municipalities the firm works with, set in a
- * hairline grid. Each change of picture wipes up from the frame's lower
+ * the last, the map of the firm's projects (IntroMap). Under both, the
+ * marks of the municipalities it works with slide past in an endless row
+ * (a CSS marquee, still for reduced motion). Each change of picture wipes up from the frame's lower
  * edge as the text changes over, and the picture inside closes in very
  * slowly while it is read. A short hairline per paragraph fills under the
  * copy as it is read. All of it is scrubbed by scroll (HomeMotion, intro
  * module), so it runs backwards on the way up; on phones the frame sits
  * above the copy.
  *
- * The pictures are decoration here, so the frame is hidden from assistive
- * technology; the paragraphs are the content (the last names every
- * municipality). Without the tracks the paragraphs stand one above the
- * other with the frame's panels in a quiet column beside or below them.
+ * The renderings and captions are decoration here, so they are hidden from
+ * assistive technology; the paragraphs are the content (the last names
+ * every municipality), and the map is a labelled region. Without the
+ * tracks the paragraphs stand one above the other with the frame's panels
+ * in a quiet column beside or below them, and the marks stand still.
  */
 export function Intro() {
   const { sectionVh } = introPhases(copy.length);
@@ -84,10 +87,10 @@ export function Intro() {
             </div>
           </div>
 
-          <figure aria-hidden="true" className="intro-figure">
+          <figure className="intro-figure">
             <div className="intro-frame">
               {renderings.map((plate, k) => (
-                <div key={plate.src} data-frame-slide={k} className="intro-slide">
+                <div key={plate.src} data-frame-slide={k} aria-hidden="true" className="intro-slide">
                   <div data-frame-inner="" className="intro-slide__inner">
                     <Image
                       src={plate.src}
@@ -101,20 +104,13 @@ export function Intro() {
                   </div>
                 </div>
               ))}
-              <div data-frame-slide={renderings.length} className="intro-slide intro-slide--marks">
+              <div data-frame-slide={renderings.length} data-frame-flat="" className="intro-slide intro-slide--map">
                 <div data-frame-inner="" className="intro-slide__inner">
-                  <ul className="intro-marks">
-                    {municipalities.map((m) => (
-                      <li key={m.src} data-frame-mark="" className="intro-mark">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- small vector and line-art marks, drawn as they are */}
-                        <img src={m.src} alt="" width={m.width} height={m.height} loading="lazy" decoding="async" className="intro-mark__img" style={{ height: markHeight(m) }} />
-                      </li>
-                    ))}
-                  </ul>
+                  <IntroMap />
                 </div>
               </div>
             </div>
-            <figcaption className="intro-captions text-label text-ink-muted">
+            <figcaption aria-hidden="true" className="intro-captions text-label text-ink-muted">
               {captions.map((text, k) => (
                 <span key={k} data-frame-caption={k} className="intro-caption">
                   {text}
@@ -122,6 +118,20 @@ export function Intro() {
               ))}
             </figcaption>
           </figure>
+        </div>
+
+        <div className="intro-marquee">
+          <ul aria-label="Municipalities we work with" className="intro-marquee__track">
+            {[0, 1].map((copyNo) =>
+              municipalities.map((m) => (
+                <li key={`${copyNo}-${m.src}`} aria-hidden={copyNo === 1 || undefined} className="intro-marquee__item">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- small vector and line-art marks, drawn as they are */}
+                  <img src={m.src} alt="" width={m.width} height={m.height} loading="lazy" decoding="async" className="intro-marquee__mark" style={{ height: markHeight(m) }} />
+                  {copyNo === 0 ? <span className="sr-only">{m.name}</span> : null}
+                </li>
+              )),
+            )}
+          </ul>
         </div>
       </div>
     </section>

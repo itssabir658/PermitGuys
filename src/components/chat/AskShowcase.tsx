@@ -9,8 +9,8 @@ import "./chat.css";
 import { Wordmark } from "@/components/ui/Wordmark";
 
 /*
- * The homepage's showcase for the website assistant, after the making of a
- * house and before the values: an invitation on the left, and on the right
+ * The homepage's showcase for the website assistant, after the reviews and
+ * before the making of a house: an invitation on the left, and on the right
  * a console, a charcoal sheet ruled like drawing paper, that types out the
  * kind of question visitors ask, runs the names of the building departments
  * whose pages the assistant can link, and takes the visitor's own question.

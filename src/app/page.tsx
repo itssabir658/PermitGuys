@@ -27,8 +27,9 @@ export const revalidate = 86400;
 /**
  * The homepage, section by section: hero, intro (the statement beside one
  * framed picture at a time), praise (reviews, Mike Holmes and the companies
- * worked with), the making of a house (one client house from its site to
- * its permit set), services, contact. Selected projects and the values are
+ * worked with), the website assistant's showcase (when the assistant is
+ * on), the making of a house (one client house from its site to its permit
+ * set), services, contact. Selected projects and the values are
  * on the About page. HomeMotion drives all of it from the scroll engine,
  * including the page ground (dusk falling over the start of Services).
  */
@@ -39,8 +40,8 @@ export default async function HomePage() {
       <Hero />
       <Intro />
       <Praise reviews={reviews} />
-      <Making />
       {chatConfigured(process.env) ? <AskShowcase /> : null}
+      <Making />
       <Services />
       <Contact reviews={reviews} />
       <HomeMotion />
