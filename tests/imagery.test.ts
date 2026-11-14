@@ -11,7 +11,7 @@ const renderings = all.filter((p) => p.kind === "project");
 const sources = [
   "src/components/home/Hero.tsx",
   "src/components/home/Intro.tsx",
-  "src/components/home/Works.tsx",
+  "src/components/about/ProjectShowcase.tsx",
   "src/components/home/Values.tsx",
   "src/components/home/Contact.tsx",
   "src/app/about/page.tsx",

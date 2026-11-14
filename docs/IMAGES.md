@@ -19,7 +19,7 @@ Two kinds of picture, registered as plates in `src/content/imagery.ts`. Each pla
 | Homepage Contact | Two-gabled house, corner view (`greenBatten`) |
 | About band | Contemporary house, corner view at dusk (`side`) |
 | About Values | Prairie corner, farmhouse bungalow, two-gabled house front, narrow contemporary house |
-| About Selected projects | Board and batten over stone (`whiteBatten`), prairie front, contemporary house at dusk (`dusk`) |
+| About Selected projects (showcase) | Board and batten over stone (`whiteBatten`), prairie front, contemporary house at dusk (`dusk`), farmhouse bungalow across the lawn (`farmhouseWide`) |
 | Custom home permits page | Classical house at dusk (`classical`, `servicePagePlates`) |
 | Projects page | Every view of every project (`clientProjects`) |
 
