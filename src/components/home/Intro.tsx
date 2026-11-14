@@ -18,7 +18,7 @@ function markHeight(m: Municipality) {
 /** The paragraphs that roll in and out beside the frame; the last, naming the municipalities, keeps their marks in the frame. */
 const copy = [
   "PermitGuys is an architecture and engineering firm in Oakville, working with homeowners and businesses across the Greater Toronto Area.",
-  "From a deck in the backyard to a custom home or a tenant fit-out on a main street, one team handles the design, the engineering and the drawings for the permit.",
+  "From a deck in the backyard to a custom home or a tenant fit-out on a commercial unit, one team handles the design, the engineering and the drawings for the permit.",
   `We work with the building departments of ${placeList}.`,
 ];
 
