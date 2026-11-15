@@ -126,6 +126,7 @@ test.describe("permit strategist", () => {
     await expect(closer).toBeVisible();
     await expect(closer.getByLabel("Town or city")).toHaveValue("Toronto");
     await expect(closer).toContainText("Custom fixed-fee quote & exact timeline prepared directly by PermitGuys upon handoff.");
+    await expect(closer.getByRole("link", { name: "Message Scope on WhatsApp (+1 647-968-6284)" })).toHaveAttribute("href", /^https:\/\/wa\.me\/16479686284\?text=/);
     await closer.getByLabel("Name").fill("Sam Visitor");
     await closer.getByLabel("Phone").fill("416 555 0100");
     await closer.getByLabel("Email").fill("sam@example.com");
@@ -138,6 +139,7 @@ test.describe("permit strategist", () => {
     expect(body.transcript[0]).toEqual({ role: "visitor", text: "A raised deck in Toronto, ready for drawings" });
     expect(body.sessionId).toMatch(/^[0-9a-f-]{36}$/);
     await expect(panel.getByRole("status")).toContainText("Your reference is");
+    await expect(panel.getByRole("status").getByRole("link", { name: /Message Scope on WhatsApp/ })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     // A closed lead: closing the chat sends no possible-lead summary.

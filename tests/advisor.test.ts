@@ -218,7 +218,10 @@ describe("submitClosedLead (closed_handoff)", () => {
     expect(result).toEqual({ status: "sent", reference: "0B8F3A3C" });
 
     const [team, visitor] = outbox.emails();
-    expect(team.subject).toBe("[CLOSED LEAD] Legal basement apartment in Oakville — Sam Visitor (0B8F3A3C)");
+    expect(team.subject).toBe("🔥 [CLOSED LEAD] Legal basement apartment in Oakville — Sam Visitor (416 555 0100)");
+    expect(team.html).toContain("Reply to visitor on WhatsApp");
+    expect(team.html).toContain("https://wa.me/14165550100?text=");
+    expect(team.text).toMatch(/Reference: 0B8F3A3C/);
     expect(team.to).toEqual(["team@permitguys.test"]);
     expect(team.from).toBe("Assistant <ai@permitguys.test>");
     expect(team.reply_to).toBe("sam@example.com");

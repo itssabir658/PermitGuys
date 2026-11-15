@@ -15,6 +15,7 @@ import type { ComplianceCheck, DealCloser, ProjectScope, Stage } from "@/lib/ai/
 import { paths } from "@/lib/routes";
 import { SourceLink } from "./AdvisorReply";
 import { advisorSessionId, markAdvisorClosed } from "./session-summary";
+import { publicOwnerWhatsapp, waLink, whatsappDisplay, whatsappShort } from "@/lib/ai/owner-contact";
 
 /*
  * The cards the permit strategist puts in the conversation: the project
@@ -200,6 +201,7 @@ export function ScopeCard({
               phone: null,
             }}
             scopeInput={input}
+            drawings={scope.drawings.flatMap((g) => g.items)}
             getTranscript={getTranscript}
             onNavigate={onNavigate}
           />
@@ -292,16 +294,56 @@ const failureText: Record<string, string> = {
 const fieldClass =
   "mt-1 block min-h-11 w-full border-0 border-b border-ink/30 bg-transparent px-0 py-2 text-base text-ink placeholder:text-ink-muted/60 focus:border-ink focus:ring-0 focus:outline-none aria-invalid:border-brand-600";
 
+const OWNER_WHATSAPP = publicOwnerWhatsapp();
+
+/** The message a visitor sends from the closing card's WhatsApp button. */
+export function scopeWhatsappText(input: { reference: string; projectLabel: string; municipality: string; drawings: readonly string[] }): string {
+  return [
+    "Hi PermitGuys, I'd like my project scoped and quoted.",
+    `Reference: ${input.reference}`,
+    `Project: ${input.projectLabel}`,
+    `Municipality: ${input.municipality || "Not sure yet"}`,
+    ...(input.drawings.length ? [`Drawings needed: ${input.drawings.slice(0, 8).map((d) => d.replace(/\.$/, "")).join("; ")}`] : []),
+  ].join("\n");
+}
+
+/** "Message Scope on WhatsApp": opens WhatsApp with the project written out. Built on click, so it carries the latest town and reference. */
+function WhatsAppButton({ text, className }: { text: () => string; className?: string }) {
+  return (
+    <a
+      href={waLink(OWNER_WHATSAPP, "Hi PermitGuys")}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => {
+        e.currentTarget.href = waLink(OWNER_WHATSAPP, text());
+        track("advisor_whatsapp", { page: window.location.pathname });
+      }}
+      className={cn(
+        "flex min-h-11 w-full items-center justify-center gap-2 border border-ink/70 px-4 py-2.5 text-center text-[0.875rem] text-ink transition-colors duration-200 hover:bg-charcoal-900 hover:text-ivory",
+        className,
+      )}
+    >
+      <svg viewBox="0 0 24 24" className="size-4 shrink-0" aria-hidden="true" focusable="false" fill="currentColor">
+        <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" />
+      </svg>
+      Message Scope on WhatsApp ({whatsappShort(OWNER_WHATSAPP)})
+    </a>
+  );
+}
+
 export function DealCloserCard({
   id,
   closer,
   scopeInput,
+  drawings = [],
   getTranscript,
   onNavigate,
 }: {
   id: string;
   closer: DealCloser;
   scopeInput: ScopeInput | null;
+  /** The scoped drawing set, for the WhatsApp message. */
+  drawings?: readonly string[];
   getTranscript: () => Transcript;
   onNavigate: () => void;
 }) {
@@ -364,6 +406,9 @@ export function DealCloserCard({
     }
   };
 
+  const whatsappText = (reference = meta.current?.submissionId.slice(0, 8).toUpperCase() ?? "") =>
+    scopeWhatsappText({ reference, projectLabel: closer.projectLabel, municipality, drawings });
+
   const toForm = () => {
     const handoff: Handoff = {
       projectType: PROJECT_TYPES[closer.projectType].formType as Handoff["projectType"],
@@ -391,6 +436,7 @@ export function DealCloserCard({
           We&rsquo;ll be in touch {closer.responseTime ? closer.responseTime : "during business hours"} with next steps for your {closer.projectLabel.toLowerCase()}. Your reference is{" "}
           <strong className="font-mono font-normal tracking-wide">{state.reference}</strong>.
         </p>
+        <WhatsAppButton text={() => whatsappText(state.reference)} className="mt-3.5" />
       </div>
     );
   }
@@ -533,7 +579,7 @@ export function DealCloserCard({
                 <a href={`tel:${site.contact.phone.replace(/\D/g, "")}`} className="underline underline-offset-2">
                   {site.contact.phone}
                 </a>{" "}
-                or{" "}
+                , message us on WhatsApp at {whatsappDisplay(OWNER_WHATSAPP)}, or{" "}
                 <Link href={paths.contact} onClick={toForm} className="underline underline-offset-2">
                   use the inquiry form
                 </Link>
@@ -550,6 +596,7 @@ export function DealCloserCard({
           {state.status === "sending" ? "Sending…" : action === "Priority call back" ? "Request my call back" : "Lock in my scope and quote"}
           {state.status === "sending" ? null : <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />}
         </button>
+        <WhatsAppButton text={() => whatsappText()} className="mt-2" />
         <p className="mt-2.5 text-center text-xs text-ink-muted">
           Prefer the full form?{" "}
           <Link href={`${paths.contact}?from=chat` as never} onClick={toForm} className="underline underline-offset-2">

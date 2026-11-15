@@ -8,6 +8,7 @@ import { services } from "@/content/services";
 import { site } from "@/content/site";
 import type { Faq, ProcessStep } from "@/content/types";
 import { paths } from "@/lib/routes";
+import { ownerWhatsapp, whatsappDisplay } from "./owner-contact";
 import { PROJECT_TYPES, type ProjectTypeKey } from "./project-types";
 
 export * from "./project-types";
@@ -158,6 +159,8 @@ export const PERMIT_GUYS_KNOWLEDGE = {
     hours: site.contact.hours,
     phone: site.contact.phone,
     email: site.contact.email,
+    /** The owners' WhatsApp for project hand-offs (OWNER_WHATSAPP_NUMBER, default +1 (647) 968-6284). */
+    whatsapp: whatsappDisplay(ownerWhatsapp(process.env)),
     credentials: site.credentials,
     reviews: site.reviews ? { rating: site.reviews.rating, count: site.reviews.count, asOf: site.reviews.asOf } : null,
     permitsIssued: site.projectsMap?.permits ?? null,
