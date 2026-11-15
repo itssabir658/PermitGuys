@@ -4,7 +4,9 @@ import { IndexList } from "@/components/ui/IndexList";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { ArrowRight } from "@/components/ui/Icons";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { PlateBand } from "@/components/ui/PlateBand";
 import { Section } from "@/components/ui/Section";
+import { plates } from "@/content/imagery";
 import { otherWork } from "@/content/other-work";
 import { getServicesByCategory } from "@/lib/content";
 import { paths } from "@/lib/routes";
@@ -44,6 +46,7 @@ export default function ServicesPage() {
         title="Architecture, engineering and permit drawings, from the first idea to the municipal review."
         lead="We design the project, work out its engineering and prepare the drawings and documentation a building permit application needs. Choose a service to see what it involves."
       />
+      <PlateBand plate={plates.architectDesk} />
       {groups.map((g, i) => (
         <Section key={g.id} labelledBy={`${g.id}-heading`} bordered={i > 0} first={i === 0}>
           <div className="grid gap-10 lg:grid-cols-12">

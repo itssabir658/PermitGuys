@@ -2,7 +2,9 @@ import { CtaPanel } from "@/components/ui/CtaPanel";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { LinkRows } from "@/components/ui/LinkRows";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { PlateBand } from "@/components/ui/PlateBand";
 import { Section } from "@/components/ui/Section";
+import { plates } from "@/content/imagery";
 import { getGuides } from "@/lib/content";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
@@ -24,6 +26,7 @@ export default function GuidesPage() {
         title="Permit guides for homeowners."
         lead="Clear answers to common building permit questions, with links to the official sources. Your municipality has the final word on your project."
       />
+      <PlateBand plate={plates.permitBinder} />
       <Section labelledBy="guides-list-heading" first>
         <div className="grid gap-10 lg:grid-cols-12">
           <div data-row="" className="lg:col-span-4">

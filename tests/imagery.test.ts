@@ -121,8 +121,7 @@ describe("imagery", () => {
       if (seen.has(key)) repeats.push(`${key}: ${seen.get(key)} and ${where}`);
       else seen.set(key, where);
     }
-    // Five service pages still share their study with the homepage Services list until they have studies of their own.
-    expect(repeats.filter((r) => !/homepage Services: (residential-additions|commercial-permits|landlord-permits|interior-renovation-permits|legal-basement-permits|deck-permits)/.test(r))).toEqual([]);
+    expect(repeats).toEqual([]);
   });
 
   it("asks for a picture as wide as it is drawn when it is wider than its frame", () => {
