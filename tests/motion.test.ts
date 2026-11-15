@@ -201,20 +201,18 @@ describe("motion vocabulary", () => {
 describe("homepage choreography", () => {
   it("hero: nothing has moved at the top, and the first scroll already moves the statement and the picture", () => {
     const top = heroState(0, 0, VH);
-    expect(top).toEqual({ subRoll: [0, 0], figOpacity: 1, imageScale: 1, imageY: -0, skyScale: 1, skyY: -0, dim: 0 });
+    expect(top).toEqual({ subRoll: [0, 0], imageScale: 1, imageY: -0, skyScale: 1, skyY: -0, dim: 0 });
     // Before the track starts, the same.
     expect(heroState(-500, 0, VH)).toEqual(top);
     const notch = heroState(0.05 * VH, 0, VH);
     expect(notch.subRoll[0]).toBeLessThan(0);
     expect(notch.imageScale).toBeGreaterThan(1);
-    expect(notch.figOpacity).toBeLessThan(1);
   });
 
   it("hero: the statement has left through its masks before the intro's sheet reaches them", () => {
     // The sheet's top edge is at (1.5 − s) screens from the top of the screen: at the bottom at 0.5, the middle at 1.0.
     const sheetArrives = heroState(0.5 * VH, 0, VH);
     expect(sheetArrives.subRoll).toEqual([-MASK, -MASK]);
-    expect(sheetArrives.figOpacity).toBe(0);
     // Leaving only ever goes up: the rolls never return below 0 on the way out.
     for (let s = 0; s <= 1.5; s += 0.01) {
       const h = heroState(s * VH, 0, VH);

@@ -60,8 +60,7 @@ export function sectionLabel(s: number, from: number) {
 /**
  * The hero as the intro's ivory sheet rises over it (from 0.5 to 1.5
  * screens; Intro.tsx). The statement leaves upward through its masks first,
- * since the sheet arrives at its edge (0.02 → 0.37). The caption fades by
- * 0.3. The picture recedes under the sheet the
+ * since the sheet arrives at its edge (0.02 → 0.37). The picture recedes under the sheet the
  * whole time, each plane at its own depth: the house drifts up 0.04 screen,
  * grows 8% and darkens, the sky drifts 0.015 screen and grows 3%, so the
  * sky slides behind the roof. Each plane's growth covers its drift, so no
@@ -72,7 +71,6 @@ export function heroState(scroll: number, top: number, vh: number) {
   const pic = tween(s, 0, 1.5, ease.power1InOut);
   return {
     subRoll: [0, 1].map((i) => roll(1, tween(s, 0.02 + i * 0.05, 0.3, ease.power2In))),
-    figOpacity: 1 - tween(s, 0, 0.3),
     imageScale: 1 + 0.08 * pic,
     imageY: -0.04 * vh * pic,
     skyScale: 1 + 0.03 * pic,
