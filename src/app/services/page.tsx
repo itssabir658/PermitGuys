@@ -29,9 +29,9 @@ const groups = [
   },
   {
     id: "commercial",
-    eyebrow: "Businesses and landlords",
-    title: "Commercial and rental",
-    intro: "Interior renovations, commercial spaces and rental properties.",
+    eyebrow: "Businesses",
+    title: "Commercial",
+    intro: "Commercial spaces and interior renovations.",
     category: "commercial" as const,
   },
 ];
@@ -46,7 +46,7 @@ export default function ServicesPage() {
         title="Architecture, engineering and permit drawings, from the first idea to the municipal review."
         lead="We design the project, work out its engineering and prepare the drawings and documentation a building permit application needs. Choose a service to see what it involves."
       />
-      <PlateBand plate={plates.farmhouse} />
+      <PlateBand plate={plates.architectDesk} />
       {groups.map((g, i) => (
         <Section key={g.id} labelledBy={`${g.id}-heading`} bordered={i > 0} first={i === 0}>
           <div className="grid gap-10 lg:grid-cols-12">

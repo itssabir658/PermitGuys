@@ -1,6 +1,6 @@
 # PermitGuys website
 
-Marketing website for PermitGuys, an architecture and engineering firm in Oakville that designs projects for homeowners, landlords and businesses across the Greater Toronto Area and prepares their drawings for the building permit.
+Marketing website for PermitGuys, an architecture and engineering firm in Oakville that designs projects for homeowners and businesses across the Greater Toronto Area and prepares their drawings for the building permit.
 
 Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS 4
 

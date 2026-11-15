@@ -4,14 +4,13 @@ import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 
 import { Container } from "@/components/ui/Container";
 import { ArrowRight } from "@/components/ui/Icons";
 import { GTA_PERMITS_CHECKED_ON, gtaPermits } from "@/content/gta-permits";
-import { askAssistant, askExamples, askSuggestions } from "@/lib/chat/ask";
-import { chatLimits } from "@/lib/chat/conversation";
+import { MESSAGE_MAX, askAssistant, askExamples, askSuggestions } from "@/lib/chat/ask";
 import "./chat.css";
 import { Wordmark } from "@/components/ui/Wordmark";
 
 /*
- * The homepage's showcase for the website assistant, after the making of a
- * house and before the values: an invitation on the left, and on the right
+ * The homepage's showcase for the website assistant, after the reviews and
+ * before the making of a house: an invitation on the left, and on the right
  * a console, a charcoal sheet ruled like drawing paper, that types out the
  * kind of question visitors ask, runs the names of the building departments
  * whose pages the assistant can link, and takes the visitor's own question.
@@ -119,7 +118,7 @@ export function AskShowcase() {
 
   const ask = (question: string) => {
     askAssistant({
-      question: question.trim().slice(0, chatLimits.message),
+      question: question.trim().slice(0, MESSAGE_MAX),
       source: "home-showcase",
     });
     setDraft("");
@@ -210,7 +209,7 @@ export function AskShowcase() {
                   id="ask-input"
                   type="text"
                   value={draft}
-                  maxLength={chatLimits.message}
+                  maxLength={MESSAGE_MAX}
                   autoComplete="off"
                   enterKeyHint="send"
                   onChange={(e) => setDraft(e.target.value)}

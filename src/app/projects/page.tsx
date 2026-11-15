@@ -20,7 +20,7 @@ import { pageMetadata } from "@/lib/seo";
 // studies (the sitemap applies the same rule).
 export const metadata = pageMetadata({
   title: "Projects",
-  description: "Renderings from PermitGuys client projects, one or two views of each house, and case studies as clients approve them.",
+  description: "Renderings from PermitGuys client projects, every view of each house, and case studies as clients approve them.",
   path: paths.projects,
   noindex: getProjects().length === 0 && clientProjects.length === 0,
 });
@@ -36,6 +36,9 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * each title column say they are renderings, so the pictures go
  * uncaptioned.
  */
+/** Counts of views, as words for the project label. */
+const words: Record<number, string> = { 2: "Two", 3: "Three", 4: "Four" };
+
 export default function ProjectsPage() {
   const projects = getProjects();
   return (
@@ -45,7 +48,7 @@ export default function ProjectsPage() {
         pageType="CollectionPage"
         eyebrow="Projects"
         title="Selected projects."
-        lead="Renderings from our client projects, one or two views of each house. They show the designs, not finished buildings."
+        lead="Renderings from our client projects, every view of each house. They show the designs, not finished buildings."
       />
       <Section labelledBy="renderings-heading" first>
         <h2 id="renderings-heading" className="sr-only">
@@ -59,7 +62,7 @@ export default function ProjectsPage() {
                 <h3 id={`${p.id}-title`} className="mt-4 max-w-[18ch] font-display text-display-md font-light text-balance text-charcoal-900">
                   {p.title}
                 </h3>
-                <p className="mt-3 text-label text-ink-muted">Client project · {p.views.length === 1 ? "Rendering" : "Two renderings"}</p>
+                <p className="mt-3 text-label text-ink-muted">Client project · {p.views.length === 1 ? "Rendering" : `${words[p.views.length] ?? p.views.length} renderings`}</p>
               </div>
               <div className="grid gap-10 lg:col-span-8 lg:gap-14">
                 {p.views.map((plate) => (

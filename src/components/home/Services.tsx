@@ -58,7 +58,7 @@ const LEAD = "Design, engineering and permits for every kind of project.";
  * they show.
  */
 export function Services() {
-  // Homes first, then businesses and landlords.
+  // Homes first, then businesses.
   const services = getServices()
     .filter((s) => s.homeRow !== false)
     .sort((a, b) => (a.category === b.category ? 0 : a.category === "residential" ? -1 : 1));

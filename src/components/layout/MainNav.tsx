@@ -562,7 +562,7 @@ export function MainNav({
             </ul>
           </nav>
           <div data-menu-item="" className="site-menu__aside grid content-between gap-10">
-            {/* Phones leave the services out (the footer and the Services page list them), so the call to action fits. */}
+            {/* Phones leave the services out (the Services page lists them), so the call to action fits. */}
             <div className="hidden md:block">
               <p className="text-label text-charcoal-300">Services</p>
               <ul className="mt-4 space-y-2 text-[0.9375rem]">
@@ -576,7 +576,7 @@ export function MainNav({
               </ul>
             </div>
             <div className="space-y-5">
-              <p className="site-menu__blurb max-w-xs text-[0.9375rem] leading-relaxed text-charcoal-300">Architecture, engineering and permit drawings for homeowners, landlords and businesses across the {site.region}.</p>
+              <p className="site-menu__blurb max-w-xs text-[0.9375rem] leading-relaxed text-charcoal-300">Architecture, engineering and permit drawings for homeowners and businesses across the {site.region}.</p>
               <LinkButton href={ctaHref} tone="light">
                 Start a project
               </LinkButton>

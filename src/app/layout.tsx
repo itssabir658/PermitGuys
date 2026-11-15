@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headingFont, logoFont, monoFont } from "./fonts";
-import { ChatAssistant } from "@/components/chat/ChatAssistant";
+import { PermitAdvisorWidget } from "@/components/ai/PermitAdvisorWidget";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { InteractionEffects } from "@/components/layout/InteractionEffects";
@@ -12,6 +12,7 @@ import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { NotchClipDefs } from "@/components/ui/NotchClip";
 import { site } from "@/content/site";
+import { VisitorTelemetryProvider } from "@/context/VisitorTelemetryContext";
 import { chatConfigured } from "@/lib/chat/config";
 import { organizationSchema, websiteSchema } from "@/lib/jsonld";
 import "./globals.css";
@@ -49,6 +50,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: motionScript }} />
       </head>
       <body className="flex min-h-screen flex-col">
+        {/* First-party visit context for the permit strategist; renders nothing and holds state across page changes. */}
+        <VisitorTelemetryProvider>
         {/* First in the body, so it is in place before any content paints. */}
         <Preloader />
         <SkipLink />
@@ -64,8 +67,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <InteractionEffects />
         <MotionRoot />
         <ScreenTransition />
-        {/* The website assistant, on only when ANTHROPIC_API_KEY is set (docs/CHAT.md). */}
-        {chatConfigured(process.env) ? <ChatAssistant /> : null}
+        {/* The permit strategist, on only when ANTHROPIC_API_KEY is set at build time (docs/CHAT.md). */}
+        {chatConfigured(process.env) ? <PermitAdvisorWidget /> : null}
+        </VisitorTelemetryProvider>
       </body>
     </html>
   );

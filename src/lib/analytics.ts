@@ -14,7 +14,9 @@ export type AnalyticsEvent =
   | "click_to_email"
   | "chat_open"
   | "chat_message"
-  | "chat_handoff";
+  | "chat_handoff"
+  | "advisor_scope_cta"
+  | "advisor_lead_sent";
 
 type Params = Record<string, string | number | boolean | undefined>;
 
