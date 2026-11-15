@@ -26,7 +26,7 @@ export default function GuidesPage() {
         title="Permit guides for homeowners."
         lead="Clear answers to common building permit questions, with links to the official sources. Your municipality has the final word on your project."
       />
-      <PlateBand plate={plates.basement} />
+      <PlateBand plate={plates.permitBinder} />
       <Section labelledBy="guides-list-heading" first>
         <div className="grid gap-10 lg:grid-cols-12">
           <div data-row="" className="lg:col-span-4">

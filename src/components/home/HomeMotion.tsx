@@ -33,6 +33,7 @@ import {
   frameCaption,
   frameMark,
   frameSlide,
+  frameStart,
   introLine,
   introTick,
   introPartWay,
@@ -337,14 +338,14 @@ function hero(): MotionModule | null {
   };
 }
 
-/* Intro: the paragraphs roll through their masks beside one framed picture at a time; each change of picture wipes up as the text changes over, and the last panel holds the municipalities' marks. */
+/* Intro: the paragraphs roll through their masks beside one framed picture at a time; each change of picture wipes up as the text changes over, and the last panel holds the projects map (IntroMap), woken a little before it comes up. */
 function intro(): MotionModule | null {
   // The section, not the page: the first-load intro screen also marks <html> with data-intro.
   const section = one("section[data-intro]");
   if (!section) return null;
   const slides = all("[data-frame-slide]", section)
     .sort((a, b) => Number(a.dataset.frameSlide) - Number(b.dataset.frameSlide))
-    .map((el) => ({ el, inner: one("[data-frame-inner]", el), marks: all("[data-frame-mark]", el) }));
+    .map((el) => ({ el, inner: one("[data-frame-inner]", el), marks: all("[data-frame-mark]", el), flat: el.hasAttribute("data-frame-flat") }));
   const captions = all("[data-frame-caption]", section).sort((a, b) => Number(a.dataset.frameCaption) - Number(b.dataset.frameCaption));
   const ticks = all("[data-intro-tick]", section);
   const copies = all("[data-intro-copy]", section);
@@ -370,6 +371,7 @@ function intro(): MotionModule | null {
       // Without the tracks the panels stand in a column beside the paragraphs (globals.css), untouched.
       if (!f.tracks) {
         for (const s of slides) {
+          s.el.setAttribute("data-awake", "");
           clear(s.el, "transform", "visibility");
           if (s.inner) clear(s.inner, "transform");
           for (const m of s.marks) clear(m, "transform", "opacity");
@@ -382,10 +384,12 @@ function intro(): MotionModule | null {
       const e = introProgress(sso(r, f), release);
       slides.forEach((s, k) => {
         const o = frameSlide(e, k, n, copyIn, release);
+        // A live map loads a little ahead of its wipe; it is never scaled (Mapbox reads the pointer in the frame's own pixels).
+        if (e > frameStart(k, copyIn) - 0.75 && !s.el.hasAttribute("data-awake")) s.el.setAttribute("data-awake", "");
         // A panel's window and the picture held still inside it move together only while it wipes; once whole it is drawn with the page, and once covered it is not drawn.
         setStyle(s.el, "transform", o.y < 0.01 ? "none" : `translate3d(0, ${o.y.toFixed(3)}%, 0)`);
         setStyle(s.el, "visibility", o.covered || o.p < 0.0005 ? "hidden" : "visible");
-        if (s.inner) setStyle(s.inner, "transform", `translate3d(0, ${o.innerY.toFixed(3)}%, 0) scale(${num(o.scale)})`);
+        if (s.inner) setStyle(s.inner, "transform", s.flat ? (o.y < 0.01 ? "none" : `translate3d(0, ${o.innerY.toFixed(3)}%, 0)`) : `translate3d(0, ${o.innerY.toFixed(3)}%, 0) scale(${num(o.scale)})`);
         s.marks.forEach((m, j) => {
           const t = frameMark(o.p, j);
           setStyle(m, "opacity", num(t));

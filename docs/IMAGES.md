@@ -6,7 +6,30 @@ Two kinds of picture, registered as plates in `src/content/imagery.ts`. Each pla
 
 ### Client renderings
 
-`public/images/projects/` holds design renderings from nine PermitGuys client projects, supplied by PermitGuys in October 2026. Of the 36 images supplied, one or two views of each project were chosen, never more than two. Where a project had several near-identical renders, the best-graded one was used.
+`public/images/projects/` holds design renderings from ten PermitGuys client projects, supplied by PermitGuys in October 2026. Many of the supplied files are the same angle under a different sky; those count as one picture, and the best-graded one was used. That leaves 16 different views.
+
+**No picture is shown twice** (Sebra, 14 November 2026). Each spot on the site has its own view; only the projects page, the archive of every view of every project, shows pictures that also appear elsewhere (Sebra chose to keep it complete). `tests/imagery.test.ts` fails when two spots name the same plate.
+
+| Spot | Picture |
+| --- | --- |
+| Homepage hero | Contemporary house, rear terrace and pool (`terrace`) |
+| Homepage intro frame | Red-brick house (`redBrick`), then contemporary brick house (`brick`) |
+| Homepage making of a house | Contemporary house from the front (`making/`) |
+| Homepage Services, custom homes row | Stone house (`stone`) |
+| Homepage Contact | Two-gabled house, corner view (`greenBatten`) |
+| About band | Contemporary house, corner view at dusk (`side`) |
+| About Values | Prairie corner, farmhouse bungalow, two-gabled house front, narrow contemporary house |
+| About Selected projects (showcase) | Board and batten over stone (`whiteBatten`), prairie front, contemporary house at dusk (`dusk`), farmhouse bungalow across the lawn (`farmhouseWide`) |
+| Custom home permits page | Classical house at dusk (`classical`, `servicePagePlates`) |
+| Projects page | Every view of every project (`clientProjects`) |
+
+| Services band | Architect's desk with drawings (study, `architectDesk`) |
+| How it works band | Drawings with markups (study, `drawingsMarkup`) |
+| Service areas band | Neighbourhood by the lake from the air (study, `aerial`) |
+| Permit guides band | Permit documents in a binder (study, `permitBinder`) |
+| Service pages for additions, commercial, interior renovations, basement apartments, decks | Their own studies (`servicePagePlates`); the homepage Services rows keep the older studies |
+
+The nine studies added in November 2026 were generated with Higgsfield (GPT Image 2.6) at 1024 × 688 and enlarged to 2048 × 1376 (Lanczos, light sharpening); like every study, their captions say they are not client projects.
 
 - **Captions.** A caption is only the note "Rendering of a client project." (`PROJECT_NOTE`), with no figure number or picture name. The projects page says it once in its lead and in each project's title column, and its pictures go uncaptioned.
 - **What the site claims.** The pictures are renderings, so the site never presents them as photographs of finished buildings. Nothing on the site describes a project's scope, approval or result.
@@ -27,7 +50,7 @@ Preparation:
 Where they appear:
 
 - On the homepage: the hero, the intro ring, the story (the narrow contemporary house, under the linework traced from it), Selected projects, Values, custom homes in Services, and Contact's picture (the story's house is not repeated there).
-- The bands on the services, how it works, about and service areas pages.
+- The band on the about page.
 - The custom home permits page.
 - All of them on the projects page, where `clientProjects` lists each project and its views. The anchors there are linked from Selected projects, and every service page links to the page from "Examples of our work" until it has approved case studies.
 
@@ -66,7 +89,7 @@ The section "The making of a house" (`Making.tsx`) is told on the big contempora
 
 ### Rendered studies
 
-`public/images/studies/` holds original renders made for this website. They are kept only for kinds of project that no client rendering shows: a rear addition, a basement second unit, main-street commercial units and a storefront, a rear deck, and an infill house for landlord permits.
+`public/images/studies/` holds original renders made for this website. They are kept only for kinds of project that no client rendering shows: a rear addition, a basement second unit, main-street commercial units and a storefront, a rear deck, and an infill house (the fallback picture for any service without its own).
 
 Four more were added in October 2026 with the service pages for below-grade entrances, detached garages, finished basements and load-bearing wall removal (`below-grade-entrance.jpg`, `detached-garage.jpg`, `finished-basement.jpg`, `beam-open-plan.jpg`). These were generated with Higgsfield (GPT Image 2, 2048 × 1360) rather than modelled in Blender, saved as progressive JPEGs at quality 84, and carry the same study caption. They show only the kind of work, with no people, signs or house numbers.
 

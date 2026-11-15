@@ -62,7 +62,7 @@ export default function HowItWorksPage() {
         title="From your first question to the municipal review."
         lead="A building permit involves several parties. Here is how the work is divided, so you know what to expect at each step."
       />
-      <PlateBand plate={plates.dusk} />
+      <PlateBand plate={plates.drawingsMarkup} />
       <ArticleLayout toc={toc}>
         <ArticleSection id="steps" title="The five steps">
           <StepList steps={homeSteps} />

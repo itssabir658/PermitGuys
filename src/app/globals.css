@@ -1605,7 +1605,7 @@
   background-position: 0 0;
   transition: background-position 0.6s var(--e-ui);
 }
-/* A link button's icon cell on its own (LinkRows, the footer's call to action): the cube turns as its link is hovered or focused. */
+/* A link button's icon cell on its own (LinkRows): the cube turns as its link is hovered or focused. */
 .link-cube {
   --lb-h: 2.75rem;
   --lb-bg: transparent;
@@ -1616,17 +1616,6 @@
   overflow: hidden;
   perspective: 12rem;
   box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.15);
-}
-/* The footer's call to action keeps the site's one red fill, and turns to a deeper red. */
-.site-footer__cta-cell {
-  --lb-h: 3.5rem;
-  --lb-bg: var(--color-brand-500);
-  --lb-wipe: var(--color-brand-600);
-  color: #fff;
-  box-shadow: none;
-}
-.site-footer__cta-cell .link-button__face--side {
-  color: #fff;
 }
 
 /* The notched sheet outline for framed pictures (NotchClip.tsx). */
@@ -1668,10 +1657,6 @@
 /* The content rises out from under the sheet above: the footer's top edge clips it. */
 .site-footer {
   overflow: clip;
-}
-/* A page that closes on paper (the homepage's Contact, a CtaPanel, the contact form) has already asked: the footer does not ask again. */
-body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
-  display: none;
 }
 
 /* ---- Homepage: hero (Hero.tsx) ---- */
@@ -1828,36 +1813,121 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   position: absolute;
   inset: 0;
 }
-.intro-slide--marks {
-  background: var(--color-stone-50);
-  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.1);
+/* The projects map fills the last panel (IntroMap): no ruled sheet of its own, the frame is the sheet. */
+.intro-slide--map {
+  background: var(--color-stone-100);
+  box-shadow: inset 0 0 0 1px rgb(23 23 22 / 0.12);
 }
-/* The marks in a hairline grid, two across and five down; the lines are the panel showing between the cells. */
-.intro-marks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-  gap: 1px;
-  height: 100%;
+.intro-map,
+.intro-map .intro-map__frame {
+  position: absolute;
+  inset: 0;
+}
+.intro-map .intro-map__frame {
+  aspect-ratio: auto;
+  border: 0;
+}
+/* Scrolling past the pinned stage brushes the map often: the map still asks for Ctrl or two fingers to move, without its hint flashing up. */
+.intro-map :is(.mapboxgl-scroll-zoom-blocker, .mapboxgl-touch-pan-blocker) {
+  display: none;
+}
+
+/*
+ * The municipalities' marks under the copy and the frame: one row that
+ * slides right to left for ever, the list set twice so the second copy
+ * takes the first's place as it leaves (translateX −50%, each mark carrying
+ * its own spacing so both halves are the same width). Drawn in the page's
+ * ink and faded at both ends. contain: paint keeps the wide track from
+ * widening the page (Chrome on Android would zoom out to fit it). Still
+ * for reduced motion, and without the tracks it is a centred, wrapped row.
+ */
+.intro-marquee {
+  position: relative;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: 0 1.25rem 4rem;
+  contain: paint;
+  overflow: hidden;
+}
+.intro-marquee__track {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem 0;
   margin: 0;
-  padding: 0;
+  padding: 1.5rem 0 0;
   list-style: none;
-  background: rgb(23 23 22 / 0.1);
+  border-top: 1px solid rgb(23 23 22 / 0.16);
 }
-.intro-mark {
+.intro-marquee__item {
+  flex: none;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 0;
-  background: var(--color-stone-50);
+  padding-inline: clamp(1.25rem, 3vw, 2.75rem);
 }
-.intro-mark__img {
+.intro-marquee__item[aria-hidden] {
+  display: none;
+}
+.intro-marquee__mark {
   display: block;
   width: auto;
-  max-width: 72%;
-  object-fit: contain;
+  max-width: none;
   filter: brightness(0);
-  opacity: 0.8;
+  opacity: 0.72;
+}
+@media (min-width: 768px) {
+  .intro-marquee {
+    padding: 0 2rem 6rem;
+  }
+}
+@media (min-width: 1024px) {
+  .intro-marquee {
+    padding-inline: 3rem;
+  }
+}
+@keyframes intro-marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .intro-marquee {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .intro-marquee__track {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: max-content;
+    border-top: 0;
+    animation: intro-marquee 46s linear infinite;
+  }
+  .intro-marquee__item[aria-hidden] {
+    display: flex;
+  }
+  /* The hairline stays put above the moving row. */
+  .intro-marquee::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 1.25rem;
+    right: 1.25rem;
+    height: 1px;
+    background: rgb(23 23 22 / 0.16);
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+  .intro-marquee::before {
+    left: 2rem;
+    right: 2rem;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+  .intro-marquee::before {
+    left: 3rem;
+    right: 3rem;
+  }
 }
 .intro-captions {
   display: grid;
@@ -1895,16 +1965,33 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   :root[data-motion] .intro-stage {
     position: sticky;
     top: 0;
+    display: flex;
+    flex-direction: column;
     height: 100svh;
     background: var(--color-ivory);
     box-shadow: 0 -2rem 3rem -1.5rem rgb(0 0 0 / 0.4);
   }
   :root[data-motion] .intro-grid {
-    height: 100%;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: clamp(2.5rem, 5vw, 6.5rem);
     align-items: center;
-    padding: 5.5rem clamp(2rem, 4vw, 3rem) 3.5rem;
+    padding: 5.5rem clamp(2rem, 4vw, 3rem) 1.5rem;
+  }
+  :root[data-motion] .intro-marquee {
+    flex: none;
+    width: 100%;
+    padding-inline: clamp(2rem, 4vw, 3rem);
+    padding-bottom: clamp(1.25rem, 3.5vh, 2.25rem);
+  }
+  :root[data-motion] .intro-marquee::before {
+    left: clamp(2rem, 4vw, 3rem);
+    right: clamp(2rem, 4vw, 3rem);
+  }
+  :root[data-motion] .intro-marquee__track {
+    padding-top: clamp(1rem, 2.5vh, 1.6rem);
   }
   :root[data-motion] .intro-copies {
     gap: 0;
@@ -1944,7 +2031,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     position: relative;
     display: block;
     aspect-ratio: 4 / 3;
-    max-height: calc(100svh - 12rem);
+    max-height: calc(100svh - 17rem);
     overflow: hidden;
   }
   :root[data-motion] .intro-slide {
@@ -1967,8 +2054,20 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     grid-template-rows: auto auto;
     align-content: center;
     align-items: start;
-    row-gap: clamp(1.5rem, 3.5svh, 2.5rem);
-    padding: 5.5rem 1.25rem 1.5rem;
+    row-gap: clamp(1.25rem, 3svh, 2.25rem);
+    padding: 5rem 1.25rem 1rem;
+  }
+  :root[data-motion] .intro-marquee {
+    padding-inline: 1.25rem;
+    padding-bottom: 1rem;
+  }
+  :root[data-motion] .intro-marquee::before {
+    left: 1.25rem;
+    right: 1.25rem;
+  }
+  :root[data-motion] .intro-marquee__track {
+    padding-top: 0.9rem;
+    animation-duration: 34s;
   }
   :root[data-motion] .intro-figure {
     grid-row: 1;
@@ -1977,7 +2076,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     grid-row: 2;
   }
   :root[data-motion] .intro-frame {
-    max-height: 44svh;
+    max-height: 40svh;
     margin-inline: auto;
   }
   :root[data-motion] .intro-copies {
@@ -2682,6 +2781,332 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   }
   .works-note {
     max-width: min(20rem, calc(50vw - 5.5rem));
+  }
+}
+
+/* ---- About: Selected projects showcase (ProjectShowcase.tsx) ---- */
+/*
+ * The cards stand in one line through the middle of the track. Each is
+ * placed from the middle by its offset in line (--a, with its side --sgn):
+ * the middle card at full width (--w), the rest at --s of it, --gap apart,
+ * and moved by a finger or pointer (--drag, on the track). Phones keep the
+ * portrait frame and leave out the moving blur; tablets and desktops get
+ * wider cards, and desktops the frosted, blurred waiting cards.
+ */
+.showcase {
+  --w: min(76vw, 22rem);
+  --ratio: 0.8;
+  --s: 0.84;
+  --gap: 0.75rem;
+  --slide: 0.95s;
+  position: relative;
+  overflow: clip;
+  padding-block: 6rem 4.5rem;
+}
+@media (min-width: 768px) {
+  .showcase {
+    --w: min(62vw, 46rem);
+    --ratio: 1.3333;
+    --s: 0.8;
+    --gap: 1.25rem;
+    --slide: 1.1s;
+    padding-block: 8rem 6rem;
+  }
+}
+@media (min-width: 1024px) {
+  .showcase {
+    --w: min(64vw, 68rem, max(36rem, (100svh - 26rem) * 1.6));
+    --ratio: 1.6;
+    --gap: 1.5rem;
+    padding-block: 9rem 6.5rem;
+  }
+}
+.showcase__head {
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .showcase__head {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: end;
+    gap: 2rem;
+  }
+}
+.showcase__note {
+  max-width: 34ch;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+@media (min-width: 1024px) {
+  .showcase__note {
+    grid-column: 9 / span 4;
+    justify-self: end;
+    padding-bottom: 0.6rem;
+  }
+}
+.showcase__track {
+  position: relative;
+  height: calc(var(--w) / var(--ratio));
+  margin-top: 3rem;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  /* A row wider than the screen: without paint containment Chrome on Android zooms the page out to fit it. */
+  contain: paint;
+}
+@media (min-width: 1024px) {
+  .showcase__track {
+    margin-top: 4rem;
+  }
+}
+.showcase-card {
+  --sc: var(--s);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--w);
+  height: 100%;
+  transform: translate3d(calc(-50% + var(--sgn) * (var(--w) * 0.5 + var(--w) * var(--s) * (var(--a) - 0.5) + var(--a) * var(--gap)) + var(--drag, 0px)), 0, 0) scale(var(--sc));
+  transition: transform var(--slide) var(--e-inout-2), opacity 0.6s var(--e-ui);
+  cursor: pointer;
+}
+.showcase-card[data-pos="middle"] {
+  --sc: 1;
+  cursor: grab;
+}
+.showcase-card[data-far] {
+  opacity: 0;
+  visibility: hidden;
+}
+/* A card that goes round from one end of the line to the other does so off screen, at once. */
+.showcase-card[data-jump],
+.showcase__track[data-dragging] .showcase-card {
+  transition: none;
+}
+.showcase__track[data-dragging] .showcase-card {
+  cursor: grabbing;
+}
+.showcase-card__frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-charcoal-700);
+}
+/* The rendering, a little larger than its frame so its drift never shows an edge. */
+.showcase-card__pic {
+  position: absolute;
+  inset: 0;
+  scale: 1.1;
+  translate: -2.5% 0;
+  transition: filter var(--slide) var(--e-inout-2);
+}
+.showcase-card[data-pos="after"] .showcase-card__pic {
+  translate: 2.5% 0;
+}
+/* The middle card's rendering drifts from right to left while it holds the middle, and a little past. */
+.showcase-card[data-pos="middle"] .showcase-card__pic {
+  animation: showcase-drift calc(var(--hold) + var(--slide)) linear both;
+  animation-play-state: paused;
+}
+.showcase[data-running] .showcase-card[data-pos="middle"] .showcase-card__pic {
+  animation-play-state: running;
+}
+@keyframes showcase-drift {
+  from {
+    translate: 2.5% 0;
+  }
+  to {
+    translate: -2.5% 0;
+  }
+}
+/* Glass over the waiting cards: a cool tint with a lit edge. */
+.showcase-card__glass {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.04) 45%, rgb(17 17 16 / 0.38));
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+  opacity: 1;
+  transition: opacity var(--slide) var(--e-inout-2);
+  pointer-events: none;
+}
+.showcase-card[data-pos="middle"] .showcase-card__glass {
+  opacity: 0;
+}
+/* Phones: a light frost only, cheap enough to move with the card. Desktops: the full frosted glass. */
+.showcase-card:not([data-pos="middle"]) .showcase-card__pic {
+  filter: blur(3px) brightness(0.8);
+}
+@media (min-width: 1024px) and (hover: hover) {
+  .showcase-card:not([data-pos="middle"]) .showcase-card__pic {
+    filter: blur(10px) saturate(0.85) brightness(0.82);
+  }
+}
+.showcase__captions {
+  display: grid;
+  width: var(--w);
+  max-width: calc(100% - 2.5rem);
+  margin: 1.75rem auto 0;
+}
+.showcase-caption {
+  grid-area: 1 / 1;
+  align-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  align-content: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+  visibility: hidden;
+}
+.showcase-caption:is([data-on], [data-leaving]) {
+  visibility: visible;
+}
+.showcase-caption[data-leaving] {
+  visibility: hidden;
+  transition: visibility 0s linear 0.5s;
+}
+@media (min-width: 768px) {
+  .showcase-caption {
+    flex-wrap: nowrap;
+  }
+  .showcase-caption__action {
+    flex-shrink: 0;
+  }
+}
+.showcase-caption__mask {
+  display: block;
+  overflow: clip;
+  overflow-clip-margin: 0.12em;
+  padding-bottom: 0.08em;
+}
+/* Each line waits under its mask, rises into place with its card, and leaves upward through the mask as the next rises. */
+.showcase-caption__line {
+  display: block;
+  transform: translateY(112%);
+}
+.showcase-caption[data-leaving] .showcase-caption__line {
+  transform: translateY(-112%);
+  transition: transform 0.45s var(--e-exit);
+}
+.showcase-caption[data-on] .showcase-caption__line {
+  transform: none;
+  transition: transform 0.9s var(--e-out-strong) 0.35s;
+}
+.showcase-caption[data-on] h3 .showcase-caption__line {
+  transition-delay: 0.42s;
+}
+.showcase-caption__action {
+  opacity: 0;
+  translate: 0 0.75rem;
+  transition: opacity 0.35s var(--e-exit), translate 0.35s var(--e-exit);
+}
+.showcase-caption[data-on] .showcase-caption__action {
+  opacity: 1;
+  translate: none;
+  transition: opacity 0.8s var(--e-out-strong) 0.55s, translate 0.8s var(--e-out-strong) 0.55s;
+}
+.showcase__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  margin-top: 2.5rem;
+}
+.showcase__dots,
+.showcase__arrow {
+  background: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.showcase__dots {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 2.75rem;
+  padding-inline: 0.625rem;
+  border-radius: 999px;
+}
+.showcase__dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 2.75rem;
+  transition: width 0.5s var(--e-out-strong);
+}
+.showcase__dot::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.4);
+  transition: width 0.5s var(--e-out-strong), background-color 0.3s var(--e-ui);
+}
+.showcase__dot:hover::before {
+  background: rgb(255 255 255 / 0.7);
+}
+.showcase__dot[data-on] {
+  width: 3.5rem;
+}
+.showcase__dot[data-on]::before {
+  width: 2.5rem;
+  background: rgb(255 255 255 / 0.32);
+}
+/* The active dot fills over the 7 seconds its card holds the middle; the fill's end moves the line on. */
+.showcase__fill {
+  position: absolute;
+  top: 50%;
+  left: 0.5rem;
+  width: 2.5rem;
+  height: 0.5rem;
+  margin-top: -0.25rem;
+  border-radius: 999px;
+  background: var(--color-ivory);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: showcase-fill var(--hold) linear forwards;
+  animation-play-state: paused;
+}
+.showcase[data-running] .showcase__fill {
+  animation-play-state: running;
+}
+.showcase[data-reduced] .showcase__fill {
+  animation: none;
+  transform: none;
+}
+@keyframes showcase-fill {
+  to {
+    transform: scaleX(1);
+  }
+}
+.showcase__arrow {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  color: var(--color-ivory);
+  transition: background-color 0.3s var(--e-ui);
+}
+.showcase__arrow:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+.showcase__play {
+  margin-left: 0.375rem;
+}
+/* Reduced motion: the cards change places at once, the rendering holds still. */
+@media (prefers-reduced-motion: reduce) {
+  .showcase-card,
+  .showcase-card__pic,
+  .showcase-card__glass,
+  .showcase-caption__line,
+  .showcase-caption__action {
+    transition: none !important;
+    animation: none !important;
+  }
+  .showcase-card__pic {
+    translate: none !important;
   }
 }
 
@@ -3668,11 +4093,18 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 .praise-reviews {
   margin-top: 5.5rem;
 }
-/* Phones: a row to swipe, the next card showing at the edge. */
-/* On phones a row to swipe, with room below for the cards' shadows. It contains its paint: Chrome on Android otherwise counts the cards beyond the edge as page width once Services comes up, and zooms the whole page out. */
+/*
+ * The reviews: one row of cards. With motion it slides right to left for
+ * ever (the list is set twice and moves by half its width, each card
+ * carrying its own spacing so both halves match), faded at both ends, and
+ * stops under the pointer or keyboard focus. With reduced motion it is a
+ * still row to swipe, the next card showing at the edge. Either way it
+ * contains its paint: Chrome on Android otherwise counts the cards beyond
+ * the edge as page width and zooms the whole page out.
+ */
 .praise-scroll {
   margin: 1.5rem -1.25rem -2.5rem;
-  padding: 0 1.25rem 2.5rem;
+  padding: 0.5rem 1.25rem 2.5rem;
   contain: paint;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -3684,13 +4116,53 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 }
 .praise-list {
   display: flex;
-  gap: 1.25rem;
+  align-items: stretch;
   width: max-content;
+}
+.praise-item {
+  flex: none;
+  width: min(82vw, 23rem);
+  padding-right: 1.25rem;
+  scroll-snap-align: start;
+}
+.praise-item[aria-hidden] {
+  display: none;
+}
+@keyframes praise-slide {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .praise-scroll {
+    overflow: hidden;
+    scroll-snap-type: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+  }
+  .praise-list {
+    animation: praise-slide 70s linear infinite;
+  }
+  .praise-item[aria-hidden] {
+    display: block;
+  }
+  .praise-scroll:is(:hover, :focus-within) .praise-list {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  .praise-list {
+    animation-duration: 55s;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+  .praise-scroll {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 4rem, #000 calc(100% - 4rem), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 4rem, #000 calc(100% - 4rem), transparent);
+  }
 }
 /* Each review a Google review card: a raised paper card with the reviewer's initials, name, the source and the stars, then the words. */
 .praise-card {
-  width: min(82vw, 22rem);
-  scroll-snap-align: start;
   padding: 1.6rem 1.5rem 1.75rem;
   border: 1px solid rgb(23 23 22 / 0.1);
   border-radius: 1.25rem;
@@ -3751,7 +4223,6 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
     scroll-padding-inline: 2rem;
   }
 }
-/* From 768px the reviews are a grid: the first across the top, then two a row; from 1024px two over three. */
 @media (min-width: 768px) {
   .praise {
     padding-block: 9rem 8rem;
@@ -3773,23 +4244,9 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
   .praise-quote {
     grid-column: 7 / -1;
   }
-  .praise-scroll {
-    margin-inline: 0;
-    padding-inline: 0;
-    overflow: visible;
-    contain: none;
-  }
-  .praise-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-    width: auto;
-  }
-  .praise-card {
-    width: auto;
-  }
-  .praise-card:first-child {
-    grid-column: 1 / -1;
+  .praise-item {
+    width: 26rem;
+    padding-right: 1.5rem;
   }
   .praise-reviews,
   .praise-partners {
@@ -3799,18 +4256,6 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 @media (min-width: 1024px) {
   .praise {
     padding-block: 11rem 10rem;
-  }
-  .praise-list {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 1.5rem;
-  }
-  .praise-card,
-  .praise-card:first-child {
-    grid-column: span 2;
-    max-width: none;
-  }
-  .praise-card:nth-child(-n + 2) {
-    grid-column: span 3;
   }
 }
 
@@ -4288,7 +4733,7 @@ body:has([data-contact], [data-cta-panel], [data-inquiry]) [data-footer-cta] {
 }
 
 /*
- * Website assistant (src/components/chat/ChatAssistant.tsx). The panel rises
+ * Website assistant (src/components/ai/PermitAdvisorWidget.tsx). The panel rises
  * a little as it opens; the three dots breathe while a reply is on its way.
  */
 @layer components {

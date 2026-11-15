@@ -29,7 +29,7 @@ import { paths } from "@/lib/routes";
  * fetched as wide as it is drawn at the frame's height, with the shots'
  * 14% scale.
  */
-const shown: Plate[] = [plates.stone, plates.prairieFront, plates.dusk];
+const shown: Plate[] = [plates.whiteBatten, plates.prairieFront, plates.dusk];
 
 const NOTE = "Renderings from client projects. Case studies will appear here as clients approve them.";
 const TAG = "Client project · Rendering";

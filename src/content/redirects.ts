@@ -17,6 +17,8 @@ export const legacyRedirects: { source: string; destination: string }[] = [
   { source: "/laneway-suite/", destination: "/services/" },
   // Point at /service-areas/burlington/ once Burlington is a confirmed service area.
   { source: "/burlington-building-permits/", destination: "/service-areas/" },
+  // The landlord permits page was removed on 2026-11-14.
+  { source: "/services/landlord-permits/", destination: "/services/" },
   { source: "/blogs/", destination: "/permit-guides/" },
   // Old blog posts until each one is mapped to a matching guide.
   { source: "/blogs/:slug*/", destination: "/permit-guides/" },

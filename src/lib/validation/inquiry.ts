@@ -8,7 +8,6 @@
 export const projectTypes = [
   { label: "Residential addition", service: "residential-additions" },
   { label: "Commercial permit", service: "commercial-permits" },
-  { label: "Landlord or rental property", service: "landlord-permits" },
   { label: "Interior renovation", service: "interior-renovation-permits" },
   { label: "Legal basement apartment", service: "legal-basement-permits" },
   { label: "Deck", service: "deck-permits" },
