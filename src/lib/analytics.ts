@@ -16,7 +16,8 @@ export type AnalyticsEvent =
   | "chat_message"
   | "chat_handoff"
   | "advisor_scope_cta"
-  | "advisor_lead_sent";
+  | "advisor_lead_sent"
+  | "advisor_whatsapp";
 
 type Params = Record<string, string | number | boolean | undefined>;
 

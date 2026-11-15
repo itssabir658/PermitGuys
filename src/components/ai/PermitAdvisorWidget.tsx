@@ -267,6 +267,13 @@ export function PermitAdvisorWidget() {
     return null;
   }, [messages]);
 
+  /** The latest scope's drawing set, for the closing card's WhatsApp message. */
+  const latestDrawings = useMemo((): string[] => {
+    for (const m of [...messages].reverse())
+      for (const p of [...m.parts].reverse()) if (p.type === "tool-generateProjectScope" && p.state === "output-available") return p.output.drawings.flatMap((g) => g.items);
+    return [];
+  }, [messages]);
+
   // Possible lead: a conversation the visitor walks away from reaches the team (src/lib/ai/session-summary.ts).
   useEffect(() => {
     summarize.current = (reason) => {
@@ -469,7 +476,7 @@ export function PermitAdvisorWidget() {
                       );
                     case "tool-presentDealCloserCard":
                       return p.state === "output-available" ? (
-                        <DealCloserCard key={key} id={p.toolCallId} closer={p.output} scopeInput={latestScopeInput} getTranscript={getTranscript} onNavigate={closeOnPhone} />
+                        <DealCloserCard key={key} id={p.toolCallId} closer={p.output} scopeInput={latestScopeInput} drawings={latestDrawings} getTranscript={getTranscript} onNavigate={closeOnPhone} />
                       ) : null;
                     default:
                       return null;

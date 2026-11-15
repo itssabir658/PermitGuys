@@ -22,7 +22,7 @@ function firmSection(k: PermitGuysKnowledge) {
   return [
     `${f.name}: ${f.positioning}`,
     f.description,
-    `Office: ${f.office}. Hours: ${f.hours} Phone: ${f.phone}. Email: ${f.email}.`,
+    `Office: ${f.office}. Hours: ${f.hours} Phone: ${f.phone}. Email: ${f.email}. WhatsApp for sending a project to the owners: ${f.whatsapp} (the closing card has a button for it).`,
     `Credentials (in the firm's own words): ${f.credentials.join("; ")}.`,
     f.reviews ? `Google reviews: rated ${f.reviews.rating} from ${f.reviews.count} reviews on the firm's Google Business Profile (as of ${f.reviews.asOf}).` : "",
     f.permitsIssued ? `Permits issued for the firm's projects, in the firm's words: ${f.permitsIssued}.` : "",

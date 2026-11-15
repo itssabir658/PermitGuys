@@ -10,17 +10,23 @@ export const LEAD_ENV = {
 };
 
 type Sent = { url: string; headers: Record<string, string>; body: Record<string, unknown> };
+type Email = { to: string[]; from: string; subject: string; text: string; html?: string; reply_to?: string };
 
-export function fakeFetch() {
+/** Records every request. `respond` can override the answer, for example to refuse a sender. */
+export function fakeFetch(respond?: (url: string, body: Record<string, unknown>) => Response | undefined) {
   const sent: Sent[] = [];
   const fetch = (async (url: string | URL | Request, init?: RequestInit) => {
-    sent.push({ url: String(url), headers: (init?.headers ?? {}) as Record<string, string>, body: JSON.parse(String(init?.body)) as Record<string, unknown> });
-    return String(url).includes("resend") ? Response.json({ id: `email_${sent.length}` }) : new Response(null, { status: 200 });
+    const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+    sent.push({ url: String(url), headers: (init?.headers ?? {}) as Record<string, string>, body });
+    const custom = respond?.(String(url), body);
+    if (custom) return custom;
+    return String(url).includes("api.resend.com") ? Response.json({ id: `email_${sent.length}` }) : new Response(null, { status: 200 });
   }) as typeof globalThis.fetch;
   return {
     fetch,
     sent,
-    emails: () => sent.filter((s) => s.url.includes("resend")).map((s) => s.body as { to: string[]; from: string; subject: string; text: string; reply_to?: string }),
-    webhooks: () => sent.filter((s) => !s.url.includes("resend")).map((s) => s.body),
+    emails: () => sent.filter((s) => s.url.includes("api.resend.com")).map((s) => s.body as Email),
+    webhooks: () => sent.filter((s) => s.url.startsWith(LEAD_ENV.LEAD_WEBHOOK_URL)).map((s) => s.body),
+    whatsapp: () => sent.filter((s) => s.url.includes("graph.facebook.com") || s.url.includes("callmebot")),
   };
 }

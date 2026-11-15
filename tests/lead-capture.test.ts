@@ -5,6 +5,8 @@ import { buildDossier, extractContact } from "@/lib/ai/chat-dossier";
 import { handleChat } from "@/lib/ai/chat-handler";
 import { memoryLeadLedger } from "@/lib/ai/lead-sessions";
 import { ownerNotifyConfig } from "@/lib/ai/notify-owners";
+import { waLink, whatsappDisplay } from "@/lib/ai/owner-contact";
+import { scopeWhatsappText } from "@/components/ai/AdvisorCards";
 import { summarizeSession, type SummaryRequest } from "@/lib/ai/session-summary";
 import { submitClosedLead } from "@/lib/ai/submit-lead";
 import { staticSystemPrompt } from "@/lib/ai/system-prompt";
@@ -58,10 +60,12 @@ describe("/api/chat/session-summary (possible_lead_abandoned)", () => {
 
     const [email] = outbox.emails();
     expect(outbox.emails()).toHaveLength(1);
-    expect(email.subject).toBe("[POSSIBLE LEAD — CHAT SUMMARY] Residential addition in Burlington (5E3C1D2A)");
+    expect(email.subject).toBe("👀 [POSSIBLE LEAD — CHAT SUMMARY] Residential addition in Burlington (Visitor Left)");
     expect(email.to).toEqual(["team@permitguys.test"]);
     expect(email.reply_to).toBe("priya@example.com");
-    expect(email.text).toMatch(/^POSSIBLE LEAD \(Visitor Chatted & Left Without Submitting Form\)/);
+    expect(email.text).toMatch(/^👀 POSSIBLE LEAD \(Visitor Chatted & Left Without Submitting Form\)/);
+    expect(email.html).toContain("https://wa.me/19055550142?text=");
+    expect(email.html).toContain("Scoped drawing set");
     expect(email.text).toMatch(/Phone: 905-555-0142/);
     expect(email.text).toMatch(/Address: 12 Maple Avenue/);
     expect(email.text).toMatch(/How long does the city take\?/);
@@ -100,7 +104,7 @@ describe("/api/chat/session-summary (possible_lead_abandoned)", () => {
     expect(closed.status).toBe("sent");
     const hook = outbox.webhooks().at(-1)!;
     expect(hook).toMatchObject({ leadStatus: "closed_handoff", upgradedFromPossibleLead: true, sessionId: SESSION });
-    expect(outbox.emails().find((e) => e.subject.startsWith("[CLOSED LEAD]"))?.text).toMatch(/Upgraded from POSSIBLE LEAD/);
+    expect(outbox.emails().find((e) => e.subject.startsWith("🔥 [CLOSED LEAD]"))?.text).toMatch(/Upgraded from POSSIBLE LEAD/);
     expect((await summarizeSession(summary({ messageCount: 8 }), d)).status).toBe("closed");
   });
 
@@ -121,15 +125,66 @@ describe("/api/chat/session-summary (possible_lead_abandoned)", () => {
   });
 });
 
-describe("owner notification settings", () => {
-  it("prefers the assistant's names and falls back to the inquiry form's", () => {
-    expect(ownerNotifyConfig({ RESEND_API_KEY: "k", INQUIRY_EMAIL_FROM: "a@x.test", INQUIRY_EMAIL_TO: "b@x.test, c@x.test", INQUIRY_WEBHOOK_URL: "https://h.test" })).toMatchObject({
-      resend: { from: "a@x.test", to: ["b@x.test", "c@x.test"] },
-      webhook: { url: "https://h.test" },
+describe("owner notifications", () => {
+  it("defaults to the owners' inbox and WhatsApp, overridable by env", () => {
+    expect(ownerNotifyConfig({ RESEND_API_KEY: "k" })).toMatchObject({
+      resend: { to: ["Mzaman@permitguys.ca"], from: "PermitGuys AI Strategist <advisor@permitguys.ca>", fallbackFrom: "PermitGuys AI <onboarding@resend.dev>" },
+      whatsapp: null,
+      webhook: null,
       problems: [],
     });
-    expect(ownerNotifyConfig({ RESEND_API_KEY: "k", LEAD_WEBHOOK_URL: "http://example.com" }).problems).toHaveLength(2);
-    expect(ownerNotifyConfig({})).toEqual({ resend: null, webhook: null, problems: [] });
+    expect(ownerNotifyConfig({ RESEND_API_KEY: "k", LEAD_NOTIFICATION_EMAIL: "a@x.test, b@x.test", RESEND_FROM_EMAIL: "Me <me@x.test>", INQUIRY_WEBHOOK_URL: "https://h.test" })).toMatchObject({
+      resend: { from: "Me <me@x.test>", to: ["a@x.test", "b@x.test"] },
+      webhook: { url: "https://h.test" },
+    });
+    expect(ownerNotifyConfig({ WHATSAPP_CALLMEBOT_API_KEY: "cb" }).whatsapp).toEqual({ to: "16479686284", meta: null, callmebotKey: "cb" });
+    expect(ownerNotifyConfig({ WHATSAPP_CALLMEBOT_API_KEY: "cb", OWNER_WHATSAPP_NUMBER: "(416) 555-0100" }).whatsapp?.to).toBe("14165550100");
+    expect(ownerNotifyConfig({ WHATSAPP_ACCESS_TOKEN: "t", LEAD_WEBHOOK_URL: "http://example.com" }).problems).toHaveLength(2);
+    expect(ownerNotifyConfig({})).toEqual({ resend: null, whatsapp: null, webhook: null, problems: [] });
+  });
+
+  it("retries from onboarding@resend.dev when the sender's domain is not verified", async () => {
+    const outbox = fakeFetch((url, body) =>
+      url.includes("api.resend.com") && String(body.from).includes("advisor@permitguys.ca") ? Response.json({ message: "The permitguys.ca domain is not verified." }, { status: 403 }) : undefined,
+    );
+    const d = { env: { ANTHROPIC_API_KEY: "k", RESEND_API_KEY: "k" }, ip: "1", rateLimiter: allow, ledger: memoryLeadLedger(), fetch: outbox.fetch, log: quiet };
+    expect((await summarizeSession(summary(), d)).status).toBe("sent");
+    expect(outbox.emails().map((e) => [e.from, e.to])).toEqual([
+      ["PermitGuys AI Strategist <advisor@permitguys.ca>", ["Mzaman@permitguys.ca"]],
+      ["PermitGuys AI <onboarding@resend.dev>", ["Mzaman@permitguys.ca"]],
+    ]);
+  });
+
+  it("pushes a short summary to the owner's WhatsApp through the Cloud API and CallMeBot, all in parallel", async () => {
+    const outbox = fakeFetch();
+    const env = { ...ENV, WHATSAPP_ACCESS_TOKEN: "tok", WHATSAPP_PHONE_NUMBER_ID: "123", WHATSAPP_CALLMEBOT_API_KEY: "cb" };
+    expect((await summarizeSession(summary(), { env, ip: "1", rateLimiter: allow, ledger: memoryLeadLedger(), fetch: outbox.fetch, log: quiet })).status).toBe("sent");
+    const [cloud, callmebot] = outbox.whatsapp();
+    expect(cloud.url).toBe("https://graph.facebook.com/v21.0/123/messages");
+    expect(cloud.headers.authorization).toBe("Bearer tok");
+    expect(cloud.body).toMatchObject({ messaging_product: "whatsapp", to: "16479686284", type: "text" });
+    const text = (cloud.body.text as { body: string }).body;
+    expect(text).toMatch(/^👀 POSSIBLE LEAD/);
+    expect(text).toMatch(/Phone: 905-555-0142/);
+    expect(text).toMatch(/Municipality: Burlington/);
+    expect(text).toMatch(/Drawings: /);
+    expect(text.length).toBeLessThanOrEqual(1500);
+    expect(callmebot.url).toMatch(/^https:\/\/api\.callmebot\.com\/whatsapp\.php\?phone=16479686284&text=.+&apikey=cb$/);
+    expect(outbox.webhooks()[0]).toMatchObject({ leadStatus: "possible_lead_abandoned", whatsappSummary: text });
+  });
+
+  it("counts the lead as delivered when WhatsApp alone works", async () => {
+    const outbox = fakeFetch((url) => (url.includes("api.resend.com") ? new Response(null, { status: 500 }) : undefined));
+    const env = { ANTHROPIC_API_KEY: "k", RESEND_API_KEY: "k", WHATSAPP_CALLMEBOT_API_KEY: "cb" };
+    expect((await summarizeSession(summary(), { env, ip: "1", rateLimiter: allow, ledger: memoryLeadLedger(), fetch: outbox.fetch, log: quiet })).status).toBe("sent");
+  });
+
+  it("writes the visitor's WhatsApp message from the closing card", () => {
+    expect(scopeWhatsappText({ reference: "0B8F3A3C", projectLabel: "Deck", municipality: "Toronto", drawings: ["A site plan.", "A framing plan."] })).toBe(
+      "Hi PermitGuys, I'd like my project scoped and quoted.\nReference: 0B8F3A3C\nProject: Deck\nMunicipality: Toronto\nDrawings needed: A site plan; A framing plan",
+    );
+    expect(waLink("16479686284", "Hi there")).toBe("https://wa.me/16479686284?text=Hi%20there");
+    expect(whatsappDisplay("16479686284")).toBe("+1 (647) 968-6284");
   });
 });
 
@@ -164,8 +219,9 @@ describe("contact typed in /api/chat", () => {
     await Promise.all(tasks.map((t) => t()));
 
     const [email] = outbox.emails();
-    expect(email.subject).toMatch(/^\[CLOSED LEAD\] Deck in Whitby — 905 555 0199 \([0-9A-F]{8}\)$/);
+    expect(email.subject).toBe("🔥 [CLOSED LEAD] Deck in Whitby — Visitor (905 555 0199)");
     expect(email.text).toMatch(/contact details typed in the chat/);
+    expect(email.text).toMatch(/Reference: [0-9A-F]{8}/);
     expect(outbox.webhooks()[0]).toMatchObject({ leadStatus: "closed_handoff", origin: "chat_message" });
     expect(ledger.closedReference(SESSION)).not.toBeNull();
 
