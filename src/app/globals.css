@@ -578,6 +578,18 @@
 .split-line__inner {
   display: block;
 }
+/*
+ * A line with the wordmark in it: the g, y and p of the logo drop 0.221em
+ * below the baseline, further than the text's own descenders, so a tight
+ * line (the intro statement is 1.12) cut their feet off. overflow-clip-margin
+ * hid that in Chrome but Safari ignores it, so the room is real padding,
+ * handed back by the margin so the lines still sit where they did.
+ */
+.split-line:has(.wordmark) {
+  padding-bottom: 0.26em;
+  margin-bottom: -0.24em;
+  overflow-clip-margin: 0px;
+}
 
 @keyframes line-up {
   from {
