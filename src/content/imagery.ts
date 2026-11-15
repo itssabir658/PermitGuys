@@ -280,6 +280,88 @@ export const plates = {
     focus: "70% 45%",
     kind: "study",
   },
+  /* Generated with Higgsfield (GPT Image 2.6) for this website, November 2026, so no picture is shown in two places: the service pages' own pictures and the index pages' bands. */
+  additionGarden: {
+    src: "/images/studies/rear-addition-garden.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "A red-brick two-storey house seen from its garden, with a new two-storey rear addition in dark standing-seam metal over cedar boards and wide glass doors onto a stone patio.",
+    caption: "Rear addition from the garden",
+    focus: "50% 55%",
+    kind: "study",
+  },
+  commercialFitout: {
+    src: "/images/studies/commercial-unit-fitout.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "An empty, newly fitted-out commercial unit: polished concrete floor, white walls, an oak reception counter, linear lights under an exposed white ceiling and a black-framed glass storefront.",
+    caption: "Fitted-out commercial unit",
+    focus: "50% 55%",
+    kind: "study",
+  },
+  renovationOpening: {
+    src: "/images/studies/renovation-new-opening.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "A room mid-renovation: fresh drywall partly taped, a wide new opening framed in timber studs under a header, a step ladder and drywall sheets against the wall.",
+    caption: "Renovation with a new opening",
+    focus: "55% 50%",
+    kind: "study",
+  },
+  basementApartment: {
+    src: "/images/studies/basement-apartment-kitchen.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "A bright basement apartment kitchen: white cabinets, a small island with stools, pot lights, an egress window with a window well, and a separate entry door at the end of a hall.",
+    caption: "Basement apartment kitchen",
+    focus: "50% 55%",
+    kind: "study",
+  },
+  raisedDeck: {
+    src: "/images/studies/raised-deck-evening.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "A raised composite deck with black aluminium railings and a wide stair down to a lawn, behind a grey-sided two-storey house, a dining set on it in evening light.",
+    caption: "Raised deck in the evening",
+    focus: "45% 60%",
+    kind: "study",
+  },
+  architectDesk: {
+    src: "/images/studies/architect-desk-drawings.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "An architect's desk: floor plans and elevations spread out, rolled drawings, a scale ruler, a pen, a laptop showing a 3D model of a house and a cup of coffee.",
+    caption: "Drawings on the desk",
+    focus: "50% 55%",
+    kind: "study",
+  },
+  drawingsMarkup: {
+    src: "/images/studies/drawings-markup.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "Printed construction drawings on an oak table, an elevation of a house above a floor plan, with a few red pen markups, coloured tabs and a black pen.",
+    caption: "Drawings with markups",
+    focus: "50% 55%",
+    kind: "study",
+  },
+  aerial: {
+    src: "/images/studies/gta-neighbourhood-aerial.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "An aerial view at sunset over a leafy suburban neighbourhood by a lake: curving tree-lined streets and detached houses, a city skyline faint on the horizon.",
+    caption: "Neighbourhood by the lake",
+    focus: "50% 60%",
+    kind: "study",
+  },
+  permitBinder: {
+    src: "/images/studies/permit-binder.jpg",
+    width: 2048,
+    height: 1376,
+    alt: "An open ring binder of permit documents with coloured tabs beside a site plan sheet, reading glasses and a pencil on a pale oak table.",
+    caption: "Permit documents in a binder",
+    focus: "45% 55%",
+    kind: "study",
+  },
 } satisfies Record<string, Plate>;
 
 export type PlateKey = keyof typeof plates;
@@ -355,6 +437,11 @@ export const servicePlates: Record<string, PlateKey> = {
  */
 export const servicePagePlates: Record<string, PlateKey> = {
   "custom-home-permits": "classical",
+  "residential-additions": "additionGarden",
+  "commercial-permits": "commercialFitout",
+  "interior-renovation-permits": "renovationOpening",
+  "legal-basement-permits": "basementApartment",
+  "deck-permits": "raisedDeck",
 };
 
 export function plateForService(slug: string): Plate {

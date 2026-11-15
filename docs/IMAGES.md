@@ -23,7 +23,13 @@ Two kinds of picture, registered as plates in `src/content/imagery.ts`. Each pla
 | Custom home permits page | Classical house at dusk (`classical`, `servicePagePlates`) |
 | Projects page | Every view of every project (`clientProjects`) |
 
-The bands on the services, how it works, service areas and permit guides pages were taken off, as no unused picture was left for them; they come back with pictures of their own.
+| Services band | Architect's desk with drawings (study, `architectDesk`) |
+| How it works band | Drawings with markups (study, `drawingsMarkup`) |
+| Service areas band | Neighbourhood by the lake from the air (study, `aerial`) |
+| Permit guides band | Permit documents in a binder (study, `permitBinder`) |
+| Service pages for additions, commercial, interior renovations, basement apartments, decks | Their own studies (`servicePagePlates`); the homepage Services rows keep the older studies |
+
+The nine studies added in November 2026 were generated with Higgsfield (GPT Image 2.6) at 1024 × 688 and enlarged to 2048 × 1376 (Lanczos, light sharpening); like every study, their captions say they are not client projects.
 
 - **Captions.** A caption is only the note "Rendering of a client project." (`PROJECT_NOTE`), with no figure number or picture name. The projects page says it once in its lead and in each project's title column, and its pictures go uncaptioned.
 - **What the site claims.** The pictures are renderings, so the site never presents them as photographs of finished buildings. Nothing on the site describes a project's scope, approval or result.
