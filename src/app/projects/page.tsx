@@ -74,19 +74,19 @@ export default function ProjectsPage() {
         </div>
       </Section>
       {site.projectsMap ? (
-        <Section labelledBy="map-heading">
+        <Section labelledBy="map-heading" bordered>
           <Eyebrow>On the map</Eyebrow>
-          <h2 id="map-heading" data-reveal-lines="" className="mt-6 max-w-[22ch] font-display text-display-md text-charcoal-900">
+          <h2 id="map-heading" data-reveal-lines="" className="mt-6 max-w-[22ch] font-display text-display-md font-light text-charcoal-900">
             {site.projectsMap.title}
           </h2>
           <ProjectsMap points={projectPoints} stats={projectsMapStats()} className="mt-10" />
         </Section>
       ) : null}
-      <Section labelledBy="case-studies-heading" tone="light">
+      <Section labelledBy="case-studies-heading" bordered>
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-4">
             <Eyebrow>Case studies</Eyebrow>
-            <h2 id="case-studies-heading" data-reveal-lines="" className="mt-6 font-display text-display-md text-charcoal-900">
+            <h2 id="case-studies-heading" data-reveal-lines="" className="mt-6 font-display text-display-md font-light text-charcoal-900">
               Projects, written up
             </h2>
           </div>

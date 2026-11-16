@@ -37,7 +37,7 @@ export default function ServiceAreasPage() {
       <Section labelledBy="confirmed-heading" first>
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <h2 id="confirmed-heading" data-reveal-lines="" className="font-display text-display-md text-charcoal-900">
+            <h2 id="confirmed-heading" data-reveal-lines="" className="font-display text-display-md font-light text-charcoal-900">
               Municipalities we serve
             </h2>
           </div>
@@ -53,10 +53,10 @@ export default function ServiceAreasPage() {
         </div>
       </Section>
 
-      <Section tone="light" labelledBy="official-heading">
+      <Section labelledBy="official-heading" bordered>
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <h2 id="official-heading" data-reveal-lines="" className="font-display text-display-md text-charcoal-900">
+            <h2 id="official-heading" data-reveal-lines="" className="font-display text-display-md font-light text-charcoal-900">
               Find your building department
             </h2>
             <p className="mt-5 text-lg leading-relaxed text-ink-muted">
