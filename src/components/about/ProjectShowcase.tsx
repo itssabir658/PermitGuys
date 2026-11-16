@@ -1,46 +1,51 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { Container } from "@/components/ui/Container";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { coverWidth, plates, projectOf, type Plate } from "@/content/imagery";
 import { paths } from "@/lib/routes";
 
 /*
- * Selected projects on the About page: a showcase carousel on graphite, in
- * the manner of a product gallery. One project card sits in the middle at
- * full size; the cards before and after it wait in line, smaller, behind
- * frosted glass (blurred on desktops; on phones only the tint, since a
- * moving blur is costly there). Every 7 seconds the line slides left and
- * the next card takes the middle; inside the card in the middle, the
- * rendering drifts slowly from right to left. The active dot fills over
- * those 7 seconds, and its animation's end is the clock, so the dot and
- * the slide never disagree.
+ * Selected projects on the About page, laid out like the project index of
+ * an architecture monograph: one large plate on the left, the index of
+ * projects on the right (below it on phones and tablets), numbered 01 to 04.
  *
- * The cards keep the site's notched sheet frame (.notch-clip): portrait on
- * phones, as before, and wider from tablets up.
+ * Choosing a project (a row of the index, the arrows, the arrow keys or a
+ * swipe across the plate) draws its rendering across the plate like a sheet
+ * pulled over a drawing table: the new picture's frame slides in from the
+ * side it comes from while the picture inside it slides the other way, so
+ * the picture itself stays still and only its edge travels. The picture
+ * underneath eases a little away. Both are transforms only (composited), so
+ * the change never waits on the page's main thread and always finishes: a
+ * new choice mid-way simply starts a new sheet over the old one.
  *
- * Autoplay stops while the section is off screen, while the page is
- * hidden, while a visitor's focus or finger is in the carousel, when the
- * pause button is pressed, and never starts with reduced motion (the
- * cards then change without sliding or drifting). Swipe, drag, the arrow
- * buttons, the dots, the arrow keys or a click on a waiting card move it by
- * hand. Only the card in the middle is in the tab order.
+ * While a project holds the plate its rendering settles slowly closer, and
+ * a hairline under its row in the index fills over 7 seconds; the end of
+ * that fill is the clock that moves to the next project, so the line and
+ * the change never disagree.
+ *
+ * Autoplay stops while the section is off screen, while the page is hidden,
+ * while a mouse is over it, while a visitor's focus or finger is in it, when
+ * the pause button is pressed, and never starts with reduced motion (then
+ * the pictures change at once, without sliding or settling).
+ *
+ * Keyboard: the index is a tab list (arrow keys, Home and End move along it
+ * and show that project; only the chosen row is in the tab order), the plate
+ * and its link are its tab panel.
  */
 
 const shown: Plate[] = [plates.whiteBatten, plates.prairieFront, plates.dusk, plates.farmhouseWide];
 
 const NOTE = "Renderings from client projects. Case studies will appear here as clients approve them.";
 const TAG = "Client project · Rendering";
-/** How long a card holds the middle, in seconds. */
+/** How long a project holds the plate, in seconds. */
 const HOLD = 7;
+/** How far a finger or pointer must travel across the plate to change project, in pixels. */
+const SWIPE = 48;
 
-/** Card i's place in line with card `active` in the middle: 0 in the middle, negative before it (left), positive after it. */
-function offsetOf(i: number, active: number, n: number) {
-  const half = Math.floor(n / 2);
-  return ((((i - active + half) % n) + n) % n) - half;
-}
+const two = (i: number) => String(i).padStart(2, "0");
 
 export function ProjectShowcase() {
   const items = shown.flatMap((plate) => {
@@ -50,20 +55,23 @@ export function ProjectShowcase() {
   const n = items.length;
 
   const [active, setActive] = useState(0);
-  /** The card that last held the middle, whose caption is on its way out. */
-  const [leaving, setLeaving] = useState(-1);
-  /** Bumped on every move, so the dot's 7-second fill starts again. */
+  /** The project that held the plate before, lying under the new sheet as it is drawn. */
+  const [under, setUnder] = useState(-1);
+  /** The way the last sheet was drawn; unset until the first change, so nothing animates on arrival. */
+  const [dir, setDir] = useState<"next" | "prev" | null>(null);
+  /** Bumped on every change, so the row's 7-second line and the plate's settle start again. */
   const [cycle, setCycle] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
   const [inView, setInView] = useState(false);
   const [visible, setVisible] = useState(true);
+  const [hovered, setHovered] = useState(false);
   const [held, setHeld] = useState(false);
   const [focused, setFocused] = useState(false);
 
   const root = useRef<HTMLElement>(null);
-  const track = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ id: number; x: number; y: number; dx: number; on: boolean; moved: boolean } | null>(null);
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -76,7 +84,7 @@ export function ProjectShowcase() {
     const onVis = () => setVisible(document.visibilityState === "visible");
     document.addEventListener("visibilitychange", onVis);
     const el = root.current;
-    const io = el ? new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.35 }) : null;
+    const io = el ? new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.3 }) : null;
     if (el && io) io.observe(el);
     return () => {
       mq.removeEventListener("change", sync);
@@ -85,76 +93,51 @@ export function ProjectShowcase() {
     };
   }, []);
 
+  /** Show project `i`; the sheet comes from the right going forward, from the left going back. */
   const go = useCallback(
-    (i: number) => {
+    (i: number, way?: "next" | "prev") => {
       const to = ((i % n) + n) % n;
       if (to === active) return;
-      setLeaving(active);
+      setUnder(active);
       setActive(to);
+      setDir(way ?? (to > active ? "next" : "prev"));
       setCycle((c) => c + 1);
     },
     [n, active],
   );
-  const next = useCallback(() => go(active + 1), [go, active]);
-  const prev = useCallback(() => go(active - 1), [go, active]);
+  const next = useCallback(() => go(active + 1, "next"), [go, active]);
+  const prev = useCallback(() => go(active - 1, "prev"), [go, active]);
 
-  const running = playing && !reduced && inView && visible && !held && !focused;
+  const running = playing && !reduced && inView && visible && !hovered && !held && !focused;
 
-  const setDrag = (px: number) => track.current?.style.setProperty("--drag", `${px.toFixed(1)}px`);
+  const onTabKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    let to = -1;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") to = (active + 1) % n;
+    else if (e.key === "ArrowUp" || e.key === "ArrowLeft") to = (active - 1 + n) % n;
+    else if (e.key === "Home") to = 0;
+    else if (e.key === "End") to = n - 1;
+    if (to < 0) return;
+    e.preventDefault();
+    go(to, e.key === "ArrowUp" || e.key === "ArrowLeft" || e.key === "Home" ? "prev" : "next");
+    tabs.current[to]?.focus();
+  };
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || drag.current) return;
-    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, on: false, moved: false };
+    if (e.button !== 0) return;
+    swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    if (e.pointerType !== "mouse") setHeld(true);
   };
-  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    const d = drag.current;
-    if (!d || d.id !== e.pointerId) return;
-    const dx = e.clientX - d.x;
-    const dy = e.clientY - d.y;
-    if (!d.on) {
-      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
-      d.on = true;
-      d.moved = true;
-      setHeld(true);
-      track.current?.setAttribute("data-dragging", "");
-      e.currentTarget.setPointerCapture(e.pointerId);
-    }
-    d.dx = dx;
-    setDrag(dx * 0.85);
-  };
-  const endDrag = (e: PointerEvent<HTMLDivElement>, cancelled: boolean) => {
-    const d = drag.current;
-    if (!d || d.id !== e.pointerId) return;
-    drag.current = d.moved ? { ...d, id: -1 } : null;
-    track.current?.removeAttribute("data-dragging");
-    setDrag(0);
+  const onPointerEnd = (e: PointerEvent<HTMLDivElement>, cancelled: boolean) => {
+    const s = swipe.current;
+    if (!s || s.id !== e.pointerId) return;
+    swipe.current = null;
     setHeld(false);
-    if (!d.on || cancelled) return;
-    const w = track.current?.offsetWidth ?? 400;
-    const far = Math.max(40, Math.min(120, w * 0.12));
-    if (d.dx <= -far) next();
-    else if (d.dx >= far) prev();
-  };
-  const onTrackClick = (e: MouseEvent<HTMLDivElement>) => {
-    // A drag ends in a click on whatever is under the pointer: swallow it.
-    if (drag.current?.moved) {
-      drag.current = null;
-      e.preventDefault();
-      return;
-    }
-    drag.current = null;
-    const card = (e.target as Element).closest<HTMLElement>("[data-showcase-card]");
-    const i = card ? Number(card.dataset.showcaseCard) : -1;
-    if (i >= 0 && i !== active) go(i);
-  };
-  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      next();
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      prev();
-    }
+    if (cancelled) return;
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    if (Math.abs(dx) < SWIPE || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    if (dx < 0) next();
+    else prev();
   };
 
   const current = items[active];
@@ -165,152 +148,156 @@ export function ProjectShowcase() {
       data-showcase=""
       data-tone="dark"
       aria-labelledby="works-heading"
-      className="showcase bg-charcoal-900 text-ivory"
+      className="pj bg-charcoal-900 text-ivory"
       style={{ "--hold": `${HOLD}s` } as CSSProperties}
       data-running={running ? "" : undefined}
       data-reduced={reduced ? "" : undefined}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setHovered(false)}
     >
-      <Container className="showcase__head">
+      <Container className="pj__head">
         <div className="lg:col-span-7">
           <p className="text-label text-stone-300">Client project renderings</p>
           <h2 id="works-heading" className="mt-6 font-display text-display-xl font-light text-ivory">
             Selected projects
           </h2>
         </div>
-        <p className="showcase__note text-stone-300">{NOTE}</p>
+        <p className="pj__note text-stone-300">{NOTE}</p>
       </Container>
 
-      <div
-        role="group"
-        aria-roledescription="carousel"
-        aria-label="Client project renderings"
-        onKeyDown={onKeyDown}
-        onFocus={() => setFocused(true)}
-        onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
-        }}
-      >
+      <Container>
         <div
-          ref={track}
-          className="showcase__track"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={(e) => endDrag(e, false)}
-          onPointerCancel={(e) => endDrag(e, true)}
-          onClickCapture={onTrackClick}
+          className="pj__body"
+          aria-roledescription="carousel"
+          role="region"
+          aria-label="Client project renderings"
+          onFocus={() => setFocused(true)}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+          }}
         >
-          {items.map((s, i) => {
-            const d = offsetOf(i, active, n);
-            const jump = leaving >= 0 && Math.abs(d - offsetOf(i, leaving, n)) > 1;
-            const a = Math.abs(d);
-            const style = { "--sgn": Math.sign(d), "--a": a, zIndex: n - a } as CSSProperties;
-            return (
-              <div
-                key={s.href}
-                data-showcase-card={i}
-                data-pos={d === 0 ? "middle" : d < 0 ? "before" : "after"}
-                data-far={a > 2 ? "" : undefined}
-                data-jump={jump ? "" : undefined}
-                className="showcase-card"
-                style={style}
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${i + 1} of ${n}: ${s.plate.caption}`}
-                aria-hidden={d === 0 ? undefined : true}
-              >
-                <div className="showcase-card__frame notch-clip">
-                  <div className="showcase-card__pic">
-                    <Image
-                      src={s.plate.src}
-                      alt={s.plate.alt}
-                      fill
-                      draggable={false}
-                      loading="eager"
-                      sizes={`(min-width: 1024px) ${coverWidth(s.plate, 1.6, "64vw", 1.1)}, (min-width: 768px) ${coverWidth(s.plate, 4 / 3, "62vw", 1.1)}, ${coverWidth(s.plate, 0.8, "78vw", 1.1)}`}
-                      quality={80}
-                      className="object-cover"
-                      style={{ objectPosition: s.plate.focus }}
-                    />
+          <div id="pj-panel" role="tabpanel" aria-labelledby={`pj-tab-${active}`} className="pj__panel">
+            {/* The plate: every project's rendering is a layer; the chosen one is drawn over the one before. */}
+            <div
+              className="pj__stage notch-clip"
+              data-dir={dir ?? undefined}
+              onPointerDown={onPointerDown}
+              onPointerUp={(e) => onPointerEnd(e, false)}
+              onPointerCancel={(e) => onPointerEnd(e, true)}
+            >
+              {items.map((s, i) => (
+                <div
+                  key={s.href}
+                  className="pj-layer"
+                  data-pj-layer={i}
+                  data-state={i === active ? "on" : i === under ? "under" : "off"}
+                  aria-hidden={i === active ? undefined : true}
+                >
+                  <div className="pj-layer__pic">
+                    {/* Keyed by the change that brought it in, so its settle starts afresh then and holds where it got to while it lies under the next sheet. */}
+                    <div key={i === active ? cycle : i === under ? cycle - 1 : "off"} className="pj-layer__settle">
+                      <Image
+                        src={s.plate.src}
+                        alt={s.plate.alt}
+                        fill
+                        draggable={false}
+                        sizes={`(min-width: 1024px) ${coverWidth(s.plate, 1.6, "60vw", 1.1)}, (min-width: 768px) ${coverWidth(s.plate, 1.5, "92vw", 1.1)}, ${coverWidth(s.plate, 0.8, "92vw", 1.1)}`}
+                        quality={80}
+                        className="object-cover"
+                        style={{ objectPosition: s.plate.focus }}
+                      />
+                    </div>
                   </div>
-                  <span aria-hidden="true" className="showcase-card__glass" />
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* The middle card's caption: every project's is set in one place, and the middle one's rises in as the line slides. */}
-        <div className="showcase__captions">
-          {items.map((s, i) => (
-            <div key={s.href} className="showcase-caption" data-on={i === active ? "" : undefined} data-leaving={i === leaving && i !== active ? "" : undefined} aria-hidden={i === active ? undefined : true}>
-              <div className="showcase-caption__text">
-                <p className="text-label text-stone-300">
-                  <span className="showcase-caption__mask">
-                    <span className="showcase-caption__line">{TAG}</span>
-                  </span>
-                </p>
-                <h3 className="mt-3 font-display text-display-md font-light text-ivory">
-                  <span className="showcase-caption__mask">
-                    <span className="showcase-caption__line">
-                      {s.plate.caption}
-                    </span>
-                  </span>
-                </h3>
-              </div>
-              <div className="showcase-caption__action">
-                <LinkButton href={s.href} tone="light" className={i === active ? undefined : "pointer-events-none"}>
-                  View the project<span className="sr-only">: {s.plate.caption}</span>
-                </LinkButton>
-              </div>
+              ))}
+              <span aria-hidden="true" className="pj__shade" />
             </div>
-          ))}
-        </div>
 
-        <div className="showcase__controls">
-          <button type="button" className="showcase__arrow" onClick={prev} aria-label="Previous project">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-4" aria-hidden="true" focusable="false">
-              <path d="M17 10H4M9 5l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <div className="showcase__dots">
-            {items.map((s, i) => (
-              <button
-                key={s.href}
-                type="button"
-                className="showcase__dot"
-                data-on={i === active ? "" : undefined}
-                aria-label={`Show project ${i + 1}: ${s.plate.caption}`}
-                aria-current={i === active ? "true" : undefined}
-                onClick={() => go(i)}
-              >
-                {i === active ? <span key={cycle} className="showcase__fill" onAnimationEnd={next} /> : null}
-              </button>
-            ))}
+            <div className="pj__foot">
+              <p className="pj__count text-label text-stone-300" aria-hidden="true">
+                <span className="pj__digits">
+                  {items.map((s, i) => (
+                    <span key={s.href} className="pj__digit" data-on={i === active ? "" : undefined}>
+                      {two(i + 1)}
+                    </span>
+                  ))}
+                </span>
+                <span className="pj__of">/ {two(n)}</span>
+                <span className="pj__tag">{TAG}</span>
+              </p>
+              <LinkButton href={current.href} tone="light">
+                View the project<span className="sr-only">: {current.plate.caption}</span>
+              </LinkButton>
+            </div>
           </div>
-          <button type="button" className="showcase__arrow" onClick={next} aria-label="Next project">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-4" aria-hidden="true" focusable="false">
-              <path d="M3 10h13M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          {reduced ? null : (
-            <button type="button" className="showcase__arrow showcase__play" onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause the slideshow" : "Play the slideshow"}>
-              {playing ? (
-                <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden="true" focusable="false">
-                  <rect x="5" y="4" width="3.2" height="12" rx="0.8" />
-                  <rect x="11.8" y="4" width="3.2" height="12" rx="0.8" />
+
+          <div className="pj__index">
+            <p className="text-label text-stone-400" aria-hidden="true">
+              Index
+            </p>
+            <div role="tablist" aria-label="Projects" aria-orientation="vertical" className="pj__list" onKeyDown={onTabKey}>
+              {items.map((s, i) => {
+                const on = i === active;
+                return (
+                  <button
+                    key={s.href}
+                    ref={(el) => {
+                      tabs.current[i] = el;
+                    }}
+                    id={`pj-tab-${i}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    aria-controls="pj-panel"
+                    tabIndex={on ? 0 : -1}
+                    className="pj-row"
+                    data-on={on ? "" : undefined}
+                    onClick={() => go(i)}
+                  >
+                    <span className="pj-row__num">{two(i + 1)}</span>
+                    <span className="pj-row__title">{s.plate.caption}</span>
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} className="pj-row__arrow" aria-hidden="true" focusable="false">
+                      <path d="M3 10h13M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {on && !reduced ? <span key={cycle} aria-hidden="true" className="pj-row__line" onAnimationEnd={next} /> : null}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pj__controls">
+              <button type="button" className="pj__btn" onClick={prev} aria-label="Previous project">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-4" aria-hidden="true" focusable="false">
+                  <path d="M17 10H4M9 5l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-              ) : (
-                <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden="true" focusable="false">
-                  <path d="M6 3.8v12.4a.8.8 0 0 0 1.2.7l10-6.2a.8.8 0 0 0 0-1.4l-10-6.2A.8.8 0 0 0 6 3.8Z" />
+              </button>
+              <button type="button" className="pj__btn" onClick={next} aria-label="Next project">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-4" aria-hidden="true" focusable="false">
+                  <path d="M3 10h13M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
+              </button>
+              {reduced ? null : (
+                <button type="button" className="pj__btn pj__play" onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause the slideshow" : "Play the slideshow"}>
+                  {playing ? (
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden="true" focusable="false">
+                      <rect x="5" y="4" width="3.2" height="12" rx="0.8" />
+                      <rect x="11.8" y="4" width="3.2" height="12" rx="0.8" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden="true" focusable="false">
+                      <path d="M6 3.8v12.4a.8.8 0 0 0 1.2.7l10-6.2a.8.8 0 0 0 0-1.4l-10-6.2A.8.8 0 0 0 6 3.8Z" />
+                    </svg>
+                  )}
+                </button>
               )}
-            </button>
-          )}
+            </div>
+          </div>
+
+          <p className="sr-only" aria-live="polite">
+            {running ? "" : `Project ${active + 1} of ${n}: ${current?.plate.caption ?? ""}`}
+          </p>
         </div>
-        <p className="sr-only" aria-live="polite">
-          {running ? "" : `Project ${active + 1} of ${n}: ${current?.plate.caption ?? ""}`}
-        </p>
-      </div>
+      </Container>
     </section>
   );
 }

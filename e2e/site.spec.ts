@@ -667,18 +667,42 @@ test.describe("interactive pieces", () => {
     const order = await page.evaluate(() => ["[data-values]", "[data-showcase]", "[data-cta-panel]"].map((s) => document.querySelector(s)!.getBoundingClientRect().top + scrollY));
     expect(order[0]).toBeLessThan(order[1]);
     expect(order[1]).toBeLessThan(order[2]);
-    const middle = showcase.locator("[data-pos=middle]");
-    await expect(middle).toHaveCount(1);
-    await expect(middle).toHaveAttribute("data-showcase-card", "0");
+    const shown = showcase.locator('[data-pj-layer][data-state="on"]');
+    await expect(shown).toHaveCount(1);
+    await expect(shown).toHaveAttribute("data-pj-layer", "0");
     await showcase.getByRole("button", { name: "Pause the slideshow" }).click();
     await showcase.getByRole("button", { name: "Next project" }).click();
-    await expect(middle).toHaveAttribute("data-showcase-card", "1");
-    await showcase.getByRole("button", { name: /^Show project 4/ }).click();
-    await expect(middle).toHaveAttribute("data-showcase-card", "3");
-    // Only the middle card's link is reachable, and it leads to that project's renderings.
-    const link = showcase.locator(".showcase-caption[data-on]").getByRole("link", { name: /view the project/i });
+    await expect(shown).toHaveAttribute("data-pj-layer", "1");
+    // The index is a tab list: a row shows its project, and the arrow keys move along it.
+    const tabs = showcase.getByRole("tab");
+    await expect(tabs).toHaveCount(4);
+    await tabs.nth(3).click();
+    await expect(shown).toHaveAttribute("data-pj-layer", "3");
+    await expect(tabs.nth(3)).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("ArrowDown");
+    await expect(shown).toHaveAttribute("data-pj-layer", "0");
+    await expect(tabs.nth(0)).toBeFocused();
+    // The one link leads to the shown project's renderings, and only the shown picture is exposed.
+    const link = showcase.getByRole("tabpanel").getByRole("link", { name: /view the project/i });
     await expect(link).toHaveAttribute("href", /^\/projects\/#[a-z-]+$/);
-    await expect(showcase.locator(".showcase-caption:not([data-on])").first()).toHaveAttribute("aria-hidden", "true");
+    await expect(showcase.locator('[data-pj-layer]:not([data-state="on"])').first()).toHaveAttribute("aria-hidden", "true");
+    // Every sheet comes to rest: after a change the new layer stands square in the plate.
+    await showcase.getByRole("button", { name: "Next project" }).click();
+    await expect.poll(() => shown.evaluate((el) => getComputedStyle(el).translate)).toMatch(/^(none|0px|0%)$/);
+  });
+
+  test("a swipe across the About plate changes the project", async ({ page }, info) => {
+    test.skip(info.project.name !== "mobile", "touch");
+    await page.goto("/about/");
+    const showcase = page.locator("[data-showcase]");
+    await showcase.getByRole("button", { name: "Pause the slideshow" }).click();
+    const stage = showcase.locator(".pj__stage");
+    await stage.scrollIntoViewIfNeeded();
+    const box = (await stage.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await stage.dispatchEvent("pointerdown", { pointerId: 7, pointerType: "touch", button: 0, clientX: box.x + box.width * 0.8, clientY: y });
+    await stage.dispatchEvent("pointerup", { pointerId: 7, pointerType: "touch", button: 0, clientX: box.x + box.width * 0.2, clientY: y });
+    await expect(showcase.locator('[data-pj-layer][data-state="on"]')).toHaveAttribute("data-pj-layer", "1");
   });
 
   test("the map loads from Google only when asked", async ({ page }) => {
