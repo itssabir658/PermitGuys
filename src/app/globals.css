@@ -4271,11 +4271,6 @@
   }
 }
 
-/* ---- Homepage: the projects map, under the title block (Contact.tsx) ---- */
-.contact-map {
-  grid-column: 1 / -1;
-}
-
 /*
  * The projects map (ProjectsMap.tsx): a sheet ruled as the title block is,
  * a light map inside, and the trust panel: over the map's left side on wide
