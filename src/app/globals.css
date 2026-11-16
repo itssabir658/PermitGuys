@@ -1246,7 +1246,8 @@
 }
 @media (min-width: 1280px) {
   .site-nav__menu-slot {
-    right: 4rem;
+    /* Level with the row's own right edge: the row stops at the site's width (100rem), so on wider screens the button moves in with it rather than sitting alone at the window's edge. */
+    right: max(4rem, calc((100% - var(--container-site)) / 2 + 4rem));
   }
 }
 /*
@@ -3755,8 +3756,11 @@
   margin-top: 2rem;
   max-width: min(22rem, calc(var(--values-frame-w, 26rem) - 3rem));
 }
+/* Over the picture the description needs more than a glow to stay readable on a bright sky or a pale wall: a tight shadow for the letters' edges and a wide one for the ground behind them. */
 [data-values-mask] .values-text__descs {
-  text-shadow: 0 1px 14px rgb(0 0 0 / 0.35);
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.45),
+    0 1px 18px rgb(0 0 0 / 0.55);
 }
 
 /* ---- Homepage: services (Services.tsx) ---- */
@@ -4371,6 +4375,15 @@
   .praise-reviews,
   .praise-partners {
     margin-top: 7rem;
+  }
+}
+/* Tablets: the quote runs long in a half column, so the picture takes half the width and sits level with the quote's middle rather than alone at its foot. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .praise-feature {
+    align-items: center;
+  }
+  .praise-photo {
+    grid-column: 1 / span 6;
   }
 }
 @media (min-width: 1024px) {

@@ -78,7 +78,7 @@ export function Values() {
       {/* On the tracks: a screen-high sticky layer over the whole track, so the label stays in the corner and scrolls away with the last value. It sits under the pictures, so a passing picture covers it rather than the label printing on the picture. Label and note roll in with the stage. */}
       <div className="relative z-0 tracks:pointer-events-none tracks:absolute tracks:inset-0">
         <div className="tracks:sticky tracks:top-0 tracks:h-svh">
-          <Container className="pt-28 lg:pt-32">
+          <Container className="pt-28 lg:pt-32 max-md:[@media(height<=40rem)]:pt-20">
             <h2 id="values-heading" className="text-label text-ink">
               <span className="split-line">
                 <span data-label-roll="" className="block">
@@ -86,7 +86,7 @@ export function Values() {
                 </span>
               </span>
             </h2>
-            <p className="mt-3 max-w-[16rem] text-[0.875rem] leading-relaxed text-ink-muted">
+            <p className="mt-3 max-w-[16rem] text-[0.875rem] leading-relaxed text-ink-muted max-md:[@media(height<=40rem)]:hidden">
               <span className="split-line">
                 <span data-label-roll="" className="block">
                   How we work on every project, whatever its size.

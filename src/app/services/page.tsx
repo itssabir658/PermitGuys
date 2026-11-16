@@ -52,7 +52,7 @@ export default function ServicesPage() {
           <div className="grid gap-10 lg:grid-cols-12">
             <div className="lg:col-span-4">
               <Eyebrow>{g.eyebrow}</Eyebrow>
-              <h2 id={`${g.id}-heading`} data-reveal-lines="" className="mt-6 font-display text-display-md text-charcoal-900">
+              <h2 id={`${g.id}-heading`} data-reveal-lines="" className="mt-6 font-display text-display-md font-light text-charcoal-900">
                 {g.title}
               </h2>
               <p className="mt-4 max-w-sm leading-relaxed text-ink-muted">{g.intro}</p>
@@ -71,11 +71,11 @@ export default function ServicesPage() {
           </div>
         </Section>
       ))}
-      <Section labelledBy="other-work-heading" tone="light">
+      <Section labelledBy="other-work-heading" bordered>
         <div className="grid gap-8 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <Eyebrow>Also on our drawing board</Eyebrow>
-            <h2 id="other-work-heading" data-reveal-lines="" className="mt-6 font-display text-display-sm text-charcoal-900">
+            <h2 id="other-work-heading" data-reveal-lines="" className="mt-6 font-display text-display-md font-light text-charcoal-900">
               Other work we take on
             </h2>
           </div>

@@ -127,7 +127,7 @@ test.describe("navigation", () => {
     await bar.getByRole("link", { name: "Services", exact: true }).hover();
     const list = page.locator(".site-drop__list");
     await expect(list).toBeVisible();
-    await expect(list.getByRole("link")).toHaveCount(11);
+    await expect(list.getByRole("link")).toHaveCount(10);
     await expect(list.getByRole("link", { name: "Load-bearing wall removal" })).toHaveAttribute("href", "/services/load-bearing-wall-removal/");
     await page.mouse.move(700, 700);
     await expect(list).toBeHidden();
@@ -535,7 +535,7 @@ test.describe("interactive pieces", () => {
     const section = page.locator("#services");
     await expect(section.getByRole("heading", { level: 3 })).toHaveText(["For homes", "For businesses"]);
     await expect(section.getByRole("list", { name: "For homes" }).getByRole("link")).toHaveCount(4);
-    await expect(section.getByRole("list", { name: "For businesses" }).getByRole("link")).toHaveCount(3);
+    await expect(section.getByRole("list", { name: "For businesses" }).getByRole("link")).toHaveCount(2);
     // The name and what it covers make each link's name.
     await expect(section.getByRole("link", { name: "Deck permits New and replacement decks, raised or attached" })).toHaveAttribute("href", "/services/deck-permits/");
     await expect(section.locator("[data-services-body]")).not.toContainText(/\d/);

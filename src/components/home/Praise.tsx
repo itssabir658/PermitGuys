@@ -142,7 +142,7 @@ export function Praise({ reviews }: { reviews: ReviewSummary | null }) {
                           {initials(review.author)}
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate font-medium text-ink">{review.author}</span>
+                          <span className="block font-medium text-pretty text-ink">{review.author}</span>
                           <span className="praise-card__source">
                             <GoogleMark />
                             Google review
