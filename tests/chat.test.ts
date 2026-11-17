@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chatConfigured, chatSettings, DEFAULT_CHAT_MODEL } from "@/lib/chat/config";
 import { HANDOFF_TOOL, handoffTool, sanitizeHandoff } from "@/lib/chat/handoff";
-import { staticSystemPrompt } from "@/lib/ai/system-prompt";
+import { STATIC_SYSTEM_PROMPT } from "@/lib/ai/system-prompt";
 import { gtaPermits, officialHosts, ontarioPermitFacts } from "@/content/gta-permits";
 import { projectStages, projectTypes } from "@/lib/validation/inquiry";
 
@@ -52,7 +52,7 @@ describe("GTA permit reference", () => {
   });
 
   it("is in the assistant's knowledge with the rule to cite it", () => {
-    const prompt = staticSystemPrompt();
+    const prompt = STATIC_SYSTEM_PROMPT;
     expect(prompt).toContain("### Toronto (City of Toronto)");
     expect(prompt).toContain("https://www.toronto.ca/services-payments/building-construction/building-permit/before-you-apply-for-a-building-permit/when-do-i-need-a-building-permit/");
     expect(prompt).toMatch(/say it is what that government's website says, link it/);
@@ -65,7 +65,9 @@ describe("settings", () => {
     expect(chatConfigured({})).toBe(false);
     expect(chatConfigured(env)).toBe(true);
     expect(chatSettings({}).model).toBe(DEFAULT_CHAT_MODEL);
+    expect(DEFAULT_CHAT_MODEL).toBe("claude-sonnet-4-5");
     expect(chatSettings({ CHAT_MODEL: "claude-sonnet-5-5" }).model).toBe("claude-sonnet-5-5");
+    expect(chatSettings({ ANTHROPIC_MODEL: "claude-sonnet-4-5-20250929", CHAT_MODEL: "claude-opus-5-5" }).model).toBe("claude-sonnet-4-5-20250929");
     expect(chatSettings({ CHAT_RATE_LIMIT_MAX: "-3" }).rateLimitMax).toBe(30);
   });
 });
