@@ -1,11 +1,9 @@
 import { createAnthropic, type AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import {
   APICallError,
-  convertToModelMessages,
   createUIMessageStreamResponse,
   hasToolCall,
   isStepCount,
-  safeValidateUIMessages,
   streamText,
   toUIMessageStream,
   type LanguageModel,
@@ -15,6 +13,7 @@ import { MESSAGE_MAX } from "@/lib/chat/ask";
 import { chatConfigured, chatSettings } from "@/lib/chat/config";
 import { memoryRateLimiter, type RateLimiter } from "@/lib/inquiry/protection";
 import { buildDossier, hasReachableContact, extractContact, type ScopeInputLike } from "./chat-dossier";
+import { parseConversation, toModelHistory } from "./history";
 import { isSessionId, sharedLeadLedger, type LeadLedger } from "./lead-sessions";
 import { chatContactNotice, notifyOwners } from "./notify-owners";
 import { staticSystemPrompt, visitorContextPrompt } from "./system-prompt";
@@ -82,12 +81,21 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
   if (!Array.isArray(body.messages) || body.messages.length === 0) return fail(400, "invalid");
   if (body.messages.length > advisorLimits.messages) return fail(413, "too_long");
 
-  const validated = await safeValidateUIMessages<AdvisorMessage>({ messages: body.messages, tools: advisorTools });
-  if (!validated.success) return fail(400, "invalid");
-  const messages = validated.data;
+  // Earlier assistant turns are accepted in any shape (src/lib/ai/history.ts): only the visitor's text is checked.
+  const messages = parseConversation(body.messages);
+  if (!messages) {
+    log.warn("[advisor] request rejected: messages are not a conversation");
+    return fail(400, "invalid");
+  }
   const last = messages[messages.length - 1];
-  if (last.role !== "user" || messages.some((m) => m.role === "system")) return fail(400, "invalid");
+  if (last.role !== "user" || messages.some((m) => m.role === "system")) {
+    log.warn(`[advisor] request rejected: last message is ${last.role}, or a system message was sent`);
+    return fail(400, "invalid");
+  }
+  if (textLength(last) === 0) return fail(400, "invalid");
   if (messages.some((m) => m.role === "user" && textLength(m) > advisorLimits.message)) return fail(413, "too_long");
+  const history = toModelHistory(messages);
+  if (!history.length) return fail(400, "invalid");
 
   // A phone number or email typed in the chat goes to the team as a closed lead, in the background.
   if (isSessionId(body.sessionId)) captureTypedContact(body.sessionId, messages, body.snapshot, deps);
@@ -103,10 +111,12 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
       { role: "system", content: staticSystemPrompt(), providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } } },
       { role: "system", content: visitorContextPrompt(snapshot) },
     ],
-    messages: await convertToModelMessages(messages, { tools: advisorTools, ignoreIncompleteToolCalls: true }),
+    // Plain alternating text, with a record of each card already shown: valid for Anthropic on every turn.
+    messages: history,
     tools: advisorTools,
-    // A turn ends with its quick replies or the closing card; at most a scope and a check before that.
-    stopWhen: [isStepCount(4), hasToolCall("suggestReplies", "presentDealCloserCard")],
+    // Every tool runs on the server, so a turn never waits on the browser. It ends with its quick
+    // replies or the closing card; at most a scope, a check and a written reply before that.
+    stopWhen: [isStepCount(5), hasToolCall("suggestReplies", "presentDealCloserCard")],
     maxOutputTokens: 6000,
     maxRetries: 1,
     abortSignal: deps.signal,

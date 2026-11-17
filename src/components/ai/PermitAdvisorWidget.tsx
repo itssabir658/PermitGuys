@@ -95,7 +95,12 @@ export function PermitAdvisorWidget() {
       }),
     [],
   );
-  const { messages, sendMessage, setMessages, status, error, stop, clearError } = useChat<AdvisorMessage>({ transport, throttle: 40 });
+  const { messages, sendMessage, regenerate, setMessages, status, error, stop, clearError } = useChat<AdvisorMessage>({
+    transport,
+    throttle: 40,
+    // A failed turn is logged with its reason (the response body, such as "invalid" or "unavailable"), and the panel offers a retry.
+    onError: (err) => console.error(`[advisor] reply failed: ${err.message}`),
+  });
   const busy = status === "submitted" || status === "streaming";
 
   useEffect(() => {
@@ -200,15 +205,26 @@ export function PermitAdvisorWidget() {
       stick.current = true;
       setDraft("");
       track("chat_message", { turn: messages.filter((m) => m.role === "user").length + 1, page: pathname });
-      void sendMessage({ text: question });
+      // sendMessage reads the conversation from the chat's own state, never from this render.
+      sendMessage({ text: question }).catch((err: unknown) => console.error("[advisor] send failed", err));
     },
     [busy, error, clearError, messages, pathname, sendMessage],
   );
 
+  // Chips, quick replies and the showcase always call the latest send, whatever render created them.
   const sendRef = useRef(send);
   useEffect(() => {
     sendRef.current = send;
   });
+  const sendLatest = useCallback((text: string) => sendRef.current(text), []);
+
+  /** Asks again after a failed turn: the visitor's last message is sent once more. */
+  const retry = () => {
+    if (busy) return;
+    stick.current = true;
+    clearError();
+    regenerate().catch((err: unknown) => console.error("[advisor] retry failed", err));
+  };
 
   useEffect(() => {
     const onAsk = (e: Event) => {
@@ -308,6 +324,8 @@ export function PermitAdvisorWidget() {
   }, [busy, last]);
 
   const notice = failureOf(error);
+  // Too long, rate limited or switched off: asking again at once would fail the same way.
+  const retryable = Boolean(error) && !/too_long|rate_limited|not_configured/.test(error?.message ?? "");
 
   return (
     <>
@@ -430,7 +448,7 @@ export function PermitAdvisorWidget() {
             <ul className="mt-6 flex flex-wrap gap-2" aria-label="Suggested questions">
               {prompt.chips.map((s) => (
                 <li key={s}>
-                  <button type="button" onClick={() => send(s)} className="border border-line-strong px-3.5 py-2 text-left text-sm text-ink transition-colors duration-300 hover:border-ink hover:bg-stone-50">
+                  <button type="button" onClick={() => sendLatest(s)} className="border border-line-strong px-3.5 py-2 text-left text-sm text-ink transition-colors duration-300 hover:border-ink hover:bg-stone-50">
                     {s}
                   </button>
                 </li>
@@ -468,7 +486,7 @@ export function PermitAdvisorWidget() {
                       );
                     case "tool-checkPermitComplianceRisk":
                       return p.state === "output-available" ? (
-                        <ComplianceCard key={key} check={p.output} onScope={() => send("Scope this project for me")} onNavigate={closeOnPhone} />
+                        <ComplianceCard key={key} check={p.output} onScope={() => sendLatest("Scope this project for me")} onNavigate={closeOnPhone} />
                       ) : p.state === "output-error" ? null : (
                         <p key={key} className="advisor-drafting mt-4 border border-dashed border-ink/30 px-4 py-3 font-mono text-xs text-ink-muted">
                           Checking what applies…
@@ -497,7 +515,7 @@ export function PermitAdvisorWidget() {
             <ul className="mt-5 flex flex-wrap gap-2 pl-4" aria-label="Quick replies">
               {quickReplies.map((r) => (
                 <li key={r}>
-                  <button type="button" onClick={() => send(r)} className="min-h-10 border border-ink/70 px-3.5 py-2 text-left text-sm text-ink transition-colors duration-200 hover:bg-charcoal-900 hover:text-ivory">
+                  <button type="button" onClick={() => sendLatest(r)} className="min-h-10 border border-ink/70 px-3.5 py-2 text-left text-sm text-ink transition-colors duration-200 hover:bg-charcoal-900 hover:text-ivory">
                     {r}
                   </button>
                 </li>
@@ -506,18 +524,25 @@ export function PermitAdvisorWidget() {
           ) : null}
 
           {notice ? (
-            <p role="alert" className="mt-6 border-l-2 border-brand-500 bg-brand-500/5 px-4 py-3 text-sm text-brand-800">
-              {notice}{" "}
-              {site.contact.phone ? (
-                <>
-                  You can also call us at <a href={`tel:${site.contact.phone.replace(/\D/g, "")}`} className="underline underline-offset-4">{site.contact.phone}</a> or{" "}
-                </>
+            <div role="alert" className="mt-6 border-l-2 border-brand-500 bg-brand-500/5 px-4 py-3 text-sm text-brand-800">
+              <p>
+                {notice}{" "}
+                {site.contact.phone ? (
+                  <>
+                    You can also call us at <a href={`tel:${site.contact.phone.replace(/\D/g, "")}`} className="underline underline-offset-4">{site.contact.phone}</a> or{" "}
+                  </>
+                ) : null}
+                <Link href={paths.contact} onClick={closeOnPhone} className="underline underline-offset-4">
+                  send an inquiry
+                </Link>
+                .
+              </p>
+              {retryable ? (
+                <button type="button" onClick={retry} className="mt-3 min-h-10 border border-brand-800/50 px-3.5 py-2 text-sm text-brand-800 transition-colors duration-200 hover:bg-brand-500 hover:text-white">
+                  Try again
+                </button>
               ) : null}
-              <Link href={paths.contact} onClick={closeOnPhone} className="underline underline-offset-4">
-                send an inquiry
-              </Link>
-              .
-            </p>
+            </div>
           ) : null}
         </div>
 
