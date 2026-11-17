@@ -1,4 +1,4 @@
-import { createAnthropic, type AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import {
   APICallError,
   createUIMessageStreamResponse,
@@ -16,7 +16,8 @@ import { buildDossier, hasReachableContact, extractContact, type ScopeInputLike 
 import { parseConversation, toModelHistory } from "./history";
 import { isSessionId, sharedLeadLedger, type LeadLedger } from "./lead-sessions";
 import { chatContactNotice, notifyOwners } from "./notify-owners";
-import { staticSystemPrompt, visitorContextPrompt } from "./system-prompt";
+import { strategistModelOptions } from "./model-options";
+import { STATIC_SYSTEM_PROMPT, buildDynamicVisitorContext } from "./system-prompt";
 import { advisorTools } from "./tools";
 import type { AdvisorFailure, AdvisorMessage } from "./types";
 import { sanitizeSnapshot } from "./visitor-snapshot";
@@ -102,14 +103,19 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
 
   const settings = chatSettings(deps.env);
   const model = deps.model ?? createAnthropic({ apiKey: deps.env.ANTHROPIC_API_KEY })(settings.model);
+  const modelId = typeof model === "string" ? model : model.modelId;
   const snapshot = sanitizeSnapshot(body.snapshot);
 
   const result = streamText({
     model,
     instructions: [
-      // Tools and these rules are the same on every request, so they are read from the prompt cache.
-      { role: "system", content: staticSystemPrompt(), providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } } },
-      { role: "system", content: visitorContextPrompt(snapshot) },
+      // Prompt caching. Anthropic caches the prefix tools -> system: the four tool definitions
+      // (breakpoint on the last tool, src/lib/ai/tools.ts) and then these rules and the knowledge
+      // base (breakpoint here). Both are byte-identical for every visitor, so after the first
+      // turn they are read from the cache (about a tenth of the input price, and a faster start).
+      { role: "system", content: STATIC_SYSTEM_PROMPT, providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } } },
+      // This visit's context comes after the breakpoint, so it never invalidates the cached part.
+      { role: "system", content: buildDynamicVisitorContext(snapshot) },
     ],
     // Plain alternating text, with a record of each card already shown: valid for Anthropic on every turn.
     messages: history,
@@ -120,14 +126,7 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
     maxOutputTokens: 6000,
     maxRetries: 1,
     abortSignal: deps.signal,
-    providerOptions: {
-      anthropic: {
-        // A front-desk conversation: quick answers matter more than long reasoning.
-        effort: "low",
-        // If the model declines for policy reasons, the API retries on its default fallback model.
-        fallbacks: "default",
-      } satisfies AnthropicLanguageModelOptions,
-    },
+    providerOptions: { anthropic: strategistModelOptions(modelId) },
   });
 
   return createUIMessageStreamResponse({

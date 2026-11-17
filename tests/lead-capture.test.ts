@@ -9,7 +9,7 @@ import { waLink, whatsappDisplay } from "@/lib/ai/owner-contact";
 import { scopeWhatsappText } from "@/components/ai/AdvisorCards";
 import { summarizeSession, type SummaryRequest } from "@/lib/ai/session-summary";
 import { submitClosedLead } from "@/lib/ai/submit-lead";
-import { staticSystemPrompt } from "@/lib/ai/system-prompt";
+import { STATIC_SYSTEM_PROMPT } from "@/lib/ai/system-prompt";
 import { LEAD_ENV, SESSION, fakeFetch } from "./lead-helpers";
 
 const quiet = { info() {}, warn() {}, error() {} };
@@ -231,7 +231,7 @@ describe("contact typed in /api/chat", () => {
   });
 
   it("tells the model to stop before quoting and not to repeat typed details", () => {
-    const p = staticSystemPrompt();
+    const p = STATIC_SYSTEM_PROMPT;
     expect(p).toMatch(/stop before quoting/i);
     expect(p).toMatch(/tailored by our senior permit team based on their property and municipality/);
     expect(p).toMatch(/do not repeat, confirm or ask again for those details/);

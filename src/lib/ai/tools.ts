@@ -262,6 +262,8 @@ export const advisorTools = {
       replies: z.array(line(60)).min(1).max(3),
     }),
     execute: async ({ replies }) => ({ replies: replies.filter(Boolean).slice(0, 3) }),
+    // Last tool: a cache breakpoint here caches all four tool definitions (tools come first in Anthropic's cached prefix).
+    providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
   }),
 };
 

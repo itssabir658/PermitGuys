@@ -14,7 +14,7 @@ import { fakeAnthropicFetch } from "./fake-anthropic";
 
 const quiet = { info() {}, warn() {}, error() {} };
 
-function conversation() {
+function conversation(modelId = "claude-opus-5-5") {
   const api = {
     requests: [] as Record<string, unknown>[],
     rejected: [] as string[],
@@ -22,7 +22,7 @@ function conversation() {
   const model = createAnthropic({
     apiKey: "test",
     fetch: fakeAnthropicFetch(api) as typeof fetch,
-  })("claude-opus-5-5");
+  })(modelId);
   const posted: { messages: AdvisorMessage[] }[] = [];
   const statuses: number[] = [];
   const chat = new Chat<AdvisorMessage>({
@@ -184,5 +184,56 @@ describe("permit strategist, three turns", () => {
     expect(api.rejected).toEqual([]);
     const sent = (api.requests[0] as { messages: { role: string }[] }).messages;
     expect(sent.map((m) => m.role)).toEqual(["user", "assistant", "user"]);
+  });
+});
+
+type WireRequest = {
+  model: string;
+  thinking?: { type: string };
+  output_config?: { effort?: string };
+  fallbacks?: unknown;
+  system: { type: string; text: string; cache_control?: { type: string } }[];
+  tools: { name: string; cache_control?: { type: string } }[];
+};
+
+describe("prompt caching and model options", () => {
+  async function twoTurns(modelId: string) {
+    const { chat, api } = conversation(modelId);
+    await chat.sendMessage({ text: "I want to remove a load-bearing wall in Toronto" });
+    await chat.sendMessage({ text: "What drawings do I need?" });
+    expect(api.rejected).toEqual([]);
+    return api.requests as unknown as WireRequest[];
+  }
+
+  it("caches the tools and the static prompt, and keeps the visit context after the breakpoint", async () => {
+    const requests = await twoTurns("claude-sonnet-4-5");
+    for (const r of requests) {
+      // Tools: one breakpoint, on the last tool, which covers all four definitions.
+      expect(r.tools.map((t) => t.cache_control?.type ?? null)).toEqual([null, null, null, "ephemeral"]);
+      // System: the static block is cached, the visitor context after it is not.
+      expect(r.system).toHaveLength(2);
+      expect(r.system[0].cache_control).toEqual({ type: "ephemeral" });
+      expect(r.system[1].cache_control).toBeUndefined();
+      expect(r.system[1].text).toContain("<visitor_context>");
+    }
+    // The cached prefix is byte-identical from turn to turn.
+    expect(JSON.stringify(requests[1].tools)).toBe(JSON.stringify(requests[0].tools));
+    expect(requests[1].system[0].text).toBe(requests[0].system[0].text);
+  });
+
+  it("runs Claude Sonnet 4.5 without thinking, effort or fallbacks, which it does not accept", async () => {
+    const [r] = await twoTurns("claude-sonnet-4-5");
+    expect(r.model).toBe("claude-sonnet-4-5");
+    expect(r.thinking).toEqual({ type: "disabled" });
+    expect(r.output_config?.effort).toBeUndefined();
+    expect(r.fallbacks).toBeUndefined();
+  });
+
+  it("keeps low effort and fallbacks for a Claude 5 model set through ANTHROPIC_MODEL", async () => {
+    const [r] = await twoTurns("claude-opus-5-5");
+    expect(r.output_config?.effort).toBe("low");
+    expect(r.fallbacks).toBe("default");
+    // Opus 5.5 cannot turn thinking off (a 400), so the setting is not sent.
+    expect(r.thinking).toBeUndefined();
   });
 });

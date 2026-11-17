@@ -5,8 +5,12 @@
 
 type Env = Record<string, string | undefined>;
 
-/** Claude Opus 5.5 unless CHAT_MODEL names another model. */
-export const DEFAULT_CHAT_MODEL = "claude-opus-5-5";
+/**
+ * Claude Sonnet 4.5 unless ANTHROPIC_MODEL (or the older name CHAT_MODEL)
+ * names another model. The alias follows Anthropic's latest Sonnet 4.5
+ * snapshot; set ANTHROPIC_MODEL=claude-sonnet-4-5-20250929 to pin it.
+ */
+export const DEFAULT_CHAT_MODEL = "claude-sonnet-4-5";
 
 const num = (v: string | undefined, fallback: number) => {
   const n = Number(v);
@@ -18,7 +22,7 @@ export const chatConfigured = (env: Env) => Boolean(env.ANTHROPIC_API_KEY);
 
 export function chatSettings(env: Env) {
   return {
-    model: env.CHAT_MODEL || DEFAULT_CHAT_MODEL,
+    model: env.ANTHROPIC_MODEL || env.CHAT_MODEL || DEFAULT_CHAT_MODEL,
     rateLimitMax: num(env.CHAT_RATE_LIMIT_MAX, 30),
     rateLimitWindowMs: num(env.CHAT_RATE_LIMIT_WINDOW_MINUTES, 10) * 60_000,
   };
