@@ -20,6 +20,8 @@ export function anthropicRequestProblem(body: Json): string | null {
   const thinking = (body.thinking as Json | undefined)?.type;
   const blocks = (m: ApiMessage): Content[] => (typeof m.content === "string" ? [{ type: "text", text: m.content }] : m.content);
 
+  const breakpoints = (JSON.stringify(body).match(/"cache_control":\{/g) ?? []).length;
+  if (breakpoints > 4) return `A maximum of 4 blocks with cache_control may be provided. Found ${breakpoints}.`;
   if (messages[0].role !== "user") return 'messages: first message must use the "user" role';
   if (messages[messages.length - 1].role !== "user") return 'messages: the final message must use the "user" role';
   for (let i = 0; i < messages.length; i++) {
@@ -228,10 +230,18 @@ export function scriptedReply(body: Json): FakeBlock[] {
 }
 
 /** A fetch for createAnthropic({ fetch }) that checks every request and answers from the script. */
-export function fakeAnthropicFetch(log: { requests: Json[]; rejected: string[] }) {
+export function fakeAnthropicFetch(log: { requests: Json[]; rejected: string[] }, opts: { unavailableModels?: readonly string[] } = {}) {
   return async (_url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const body = JSON.parse(String(init?.body)) as Json;
     log.requests.push(body);
+    // Like the live API for a model this account cannot use (production, 2026-11-17: claude-sonnet-4-5).
+    if (opts.unavailableModels?.includes(String(body.model))) {
+      log.rejected.push(`model: ${String(body.model)}`);
+      return new Response(JSON.stringify({ type: "error", error: { type: "not_found_error", message: `model: ${String(body.model)}` } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
+    }
     const problem = anthropicRequestProblem(body);
     if (problem) {
       log.rejected.push(problem);

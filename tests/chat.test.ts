@@ -65,7 +65,9 @@ describe("settings", () => {
     expect(chatConfigured({})).toBe(false);
     expect(chatConfigured(env)).toBe(true);
     expect(chatSettings({}).model).toBe(DEFAULT_CHAT_MODEL);
-    expect(DEFAULT_CHAT_MODEL).toBe("claude-sonnet-4-5");
+    expect(DEFAULT_CHAT_MODEL).toBe("claude-opus-5-5");
+    expect(chatSettings({}).fallbackModel).toBe("claude-sonnet-5-5");
+    expect(chatSettings({ ANTHROPIC_MODEL: "claude-sonnet-4-5" }).fallbackModel).toBe("claude-opus-5-5");
     expect(chatSettings({ CHAT_MODEL: "claude-sonnet-5-5" }).model).toBe("claude-sonnet-5-5");
     expect(chatSettings({ ANTHROPIC_MODEL: "claude-sonnet-4-5-20250929", CHAT_MODEL: "claude-opus-5-5" }).model).toBe("claude-sonnet-4-5-20250929");
     expect(chatSettings({ CHAT_RATE_LIMIT_MAX: "-3" }).rateLimitMax).toBe(30);
