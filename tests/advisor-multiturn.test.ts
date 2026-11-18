@@ -12,17 +12,17 @@ import { fakeAnthropicFetch } from "./fake-anthropic";
  * API that enforces the Messages API's rules (tests/fake-anthropic.ts).
  */
 
-const quiet = { info() {}, warn() {}, error() {} };
+type Log = { info(...a: unknown[]): void; warn(...a: unknown[]): void; error(...a: unknown[]): void };
+const quiet: Log = { info() {}, warn() {}, error() {} };
 
-function conversation(modelId = "claude-opus-5-5") {
+function conversation(modelId = "claude-opus-5-5", live?: { env: Record<string, string>; unavailableModels: string[]; log: Log }) {
   const api = {
     requests: [] as Record<string, unknown>[],
     rejected: [] as string[],
   };
-  const model = createAnthropic({
-    apiKey: "test",
-    fetch: fakeAnthropicFetch(api) as typeof fetch,
-  })(modelId);
+  const apiFetch = fakeAnthropicFetch(api, { unavailableModels: live?.unavailableModels }) as typeof fetch;
+  // With `live`, the handler builds its own models from env (main + fallback), as in production.
+  const model = live ? undefined : createAnthropic({ apiKey: "test", fetch: apiFetch })(modelId);
   const posted: { messages: AdvisorMessage[] }[] = [];
   const statuses: number[] = [];
   const chat = new Chat<AdvisorMessage>({
@@ -35,11 +35,12 @@ function conversation(modelId = "claude-opus-5-5") {
         const body = String(init?.body);
         posted.push(JSON.parse(body));
         const res = await handleChat(body, {
-          env: {},
+          env: live?.env ?? {},
           ip: "1",
           rateLimiter: { hit: () => true },
           model,
-          log: quiet,
+          anthropicFetch: apiFetch,
+          log: live?.log ?? quiet,
           background: () => {},
         });
         statuses.push(res.status);
@@ -235,5 +236,75 @@ describe("prompt caching and model options", () => {
     expect(r.fallbacks).toBe("default");
     // Opus 5.5 cannot turn thinking off (a 400), so the setting is not sent.
     expect(r.thinking).toBeUndefined();
+  });
+});
+
+describe("the stand-in API enforces Anthropic's limits", () => {
+  it("refuses five cache_control blocks, as the live API does", async () => {
+    // Sent raw: the AI SDK's Anthropic provider itself drops any breakpoint past the fourth, so the
+    // handler cannot produce this body; the stand-in still refuses it like the live API.
+    const api = { requests: [] as Record<string, unknown>[], rejected: [] as string[] };
+    const cc = { type: "ephemeral" };
+    const body = (n: number) => ({
+      model: "claude-opus-5-5",
+      max_tokens: 100,
+      system: [{ type: "text", text: "rules", cache_control: cc }],
+      tools: ["a", "b", "c", "d"].map((name, i) => ({ name, input_schema: { type: "object" }, ...(i >= 4 - (n - 1) && { cache_control: cc }) })),
+      messages: [{ role: "user", content: "I want to build a legal basement apartment in Mississauga" }],
+    });
+    const send = (n: number) => fakeAnthropicFetch(api)("https://api.anthropic.com/v1/messages", { method: "POST", body: JSON.stringify(body(n)) });
+    expect((await send(5)).status).toBe(400);
+    expect(api.rejected).toEqual(["A maximum of 4 blocks with cache_control may be provided. Found 5."]);
+    expect((await send(2)).status).toBe(200);
+    expect(api.rejected).toHaveLength(1);
+  });
+
+  it("accepts the handler's requests: two breakpoints over three turns", async () => {
+    const { chat, api, statuses } = conversation("claude-opus-5-5");
+    for (const text of ["I want to build a legal basement apartment in Mississauga", "What drawings do I need?", "How do we get started and what does it cost?"]) {
+      await chat.sendMessage({ text });
+      expect(chat.error).toBeUndefined();
+    }
+    expect(statuses).toEqual([200, 200, 200]);
+    expect(api.rejected).toEqual([]);
+    for (const r of api.requests) expect((JSON.stringify(r).match(/"cache_control":\{/g) ?? []).length).toBe(2);
+  });
+});
+
+describe("model fallback", () => {
+  it("answers every turn on the fallback model when Anthropic does not know the main one, and logs why", async () => {
+    const logged: string[] = [];
+    const log: Log = { info() {}, warn: (m) => void logged.push(String(m)), error: (m) => void logged.push(String(m)) };
+    const { chat, api, statuses } = conversation(undefined, {
+      env: { ANTHROPIC_API_KEY: "test", ANTHROPIC_MODEL: "claude-sonnet-4-5" },
+      unavailableModels: ["claude-sonnet-4-5"],
+      log,
+    });
+    for (const text of ["I want to build a legal basement apartment in Mississauga", "What drawings do I need?", "How do we get started and what does it cost?"]) {
+      await chat.sendMessage({ text });
+      expect(chat.error).toBeUndefined();
+      expect(lastReply(chat).parts.some((p) => p.type === "text" && p.text.trim())).toBe(true);
+    }
+    expect(statuses).toEqual([200, 200, 200]);
+    const models = (api.requests as { model: string }[]).map((r) => r.model);
+    expect(models).toContain("claude-sonnet-4-5");
+    expect(models).toContain("claude-opus-5-5");
+    // The retry carries no cache_control and the fallback model's own options.
+    for (const r of api.requests as WireRequest[]) {
+      if (r.model !== "claude-opus-5-5") continue;
+      expect(JSON.stringify(r)).not.toContain("cache_control");
+      expect(r.output_config?.effort).toBe("low");
+    }
+    expect(logged.some((l) => l.includes("status 404") && l.includes("not_found_error"))).toBe(true);
+  });
+
+  it("does not hide a rejected API key behind the fallback", async () => {
+    const { shouldFallBack } = await import("@/lib/ai/model-fallback");
+    const { APICallError } = await import("ai");
+    const err = (statusCode: number) => new APICallError({ message: "x", url: "u", requestBodyValues: {}, statusCode });
+    expect(shouldFallBack(err(401))).toBe(false);
+    expect(shouldFallBack(err(404))).toBe(true);
+    expect(shouldFallBack(err(400))).toBe(true);
+    expect(shouldFallBack(err(529))).toBe(true);
   });
 });

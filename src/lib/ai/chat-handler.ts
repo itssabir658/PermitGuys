@@ -16,6 +16,7 @@ import { buildDossier, hasReachableContact, extractContact, type ScopeInputLike 
 import { parseConversation, toModelHistory } from "./history";
 import { isSessionId, sharedLeadLedger, type LeadLedger } from "./lead-sessions";
 import { chatContactNotice, notifyOwners } from "./notify-owners";
+import { describeApiError, withModelFallback } from "./model-fallback";
 import { strategistModelOptions } from "./model-options";
 import { STATIC_SYSTEM_PROMPT, buildDynamicVisitorContext } from "./system-prompt";
 import { advisorTools } from "./tools";
@@ -60,6 +61,8 @@ export interface ChatDeps {
   background?: (task: () => Promise<unknown>) => void;
   ledger?: LeadLedger;
   fetch?: typeof fetch;
+  /** Stands in for Anthropic's API in tests (the real models, through the fallback). */
+  anthropicFetch?: typeof fetch;
 }
 
 const fail = (status: number, reason: AdvisorFailure) =>
@@ -102,7 +105,7 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
   if (isSessionId(body.sessionId)) captureTypedContact(body.sessionId, messages, body.snapshot, deps);
 
   const settings = chatSettings(deps.env);
-  const model = deps.model ?? createAnthropic({ apiKey: deps.env.ANTHROPIC_API_KEY })(settings.model);
+  const model = deps.model ?? advisorModel(settings, deps);
   const modelId = typeof model === "string" ? model : model.modelId;
   const snapshot = sanitizeSnapshot(body.snapshot);
 
@@ -137,15 +140,18 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
       originalMessages: messages,
       sendReasoning: false,
       onError: (error) => {
-        if (APICallError.isInstance(error)) {
-          if (error.statusCode === 401) log.error("[advisor] ANTHROPIC_API_KEY was rejected");
-          else if (error.statusCode === 429) log.warn("[advisor] Anthropic rate limit reached");
-          else log.error(`[advisor] Anthropic API error ${error.statusCode ?? ""}: ${error.message}`);
-        } else log.error("[advisor] reply failed", error instanceof Error ? error.message : error);
+        if (APICallError.isInstance(error) && error.statusCode === 401) log.error("[advisor] ANTHROPIC_API_KEY was rejected");
+        log.error(`[advisor] reply failed: ${describeApiError(error)}`);
         return "unavailable" satisfies AdvisorFailure;
       },
     }),
   });
+}
+
+/** The main model, wrapped so a refused request is answered by the fallback model instead. */
+function advisorModel(settings: ReturnType<typeof chatSettings>, deps: ChatDeps): LanguageModel {
+  const anthropic = createAnthropic({ apiKey: deps.env.ANTHROPIC_API_KEY, fetch: deps.anthropicFetch });
+  return withModelFallback({ primary: anthropic(settings.model), fallback: anthropic(settings.fallbackModel), log: deps.log ?? console });
 }
 
 const textOf = (m: AdvisorMessage) =>
