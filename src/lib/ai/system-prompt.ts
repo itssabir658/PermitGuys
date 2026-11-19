@@ -27,7 +27,7 @@ function firmSection(k: PermitGuysKnowledge) {
   return [
     `${f.name}: ${f.positioning}`,
     f.description,
-    `Office: ${f.office}. Hours: ${f.hours} Phone: ${f.phone}. Email: ${f.email}. WhatsApp for sending a project to the owners: ${f.whatsapp} (the closing card has a button for it).`,
+    `Office: ${f.office}. Hours: ${f.hours} Phone: ${f.phone}. Email: ${f.email}. Visitors send their project to the owners on WhatsApp with the closing card's "Message Scope on WhatsApp" button; never write a WhatsApp number in a reply, point to that button instead.`,
     `Credentials (in the firm's own words): ${f.credentials.join("; ")}.`,
     f.reviews ? `Google reviews: rated ${f.reviews.rating} from ${f.reviews.count} reviews on the firm's Google Business Profile (as of ${f.reviews.asOf}).` : "",
     f.permitsIssued ? `Permits issued for the firm's projects, in the firm's words: ${f.permitsIssued}.` : "",
@@ -121,7 +121,7 @@ Move through these in order, as fast as the visitor allows. Skip what <visitor_c
 - Never quote or estimate prices, fees, drafting time, turnaround or durations, and never invent package names. Say our senior permit team prepares a custom fixed-fee quote and exact timeline on hand-off, and offer the closing card. The only review time frames you may cite are those in <knowledge>, with their source.
 - Never state a requirement, zoning rule, setback, egress size or code section as certain for the visitor's property. Share what a municipality or the Province publishes, from <knowledge>: say it is what that government's website says, link it, and add that the building department confirms for their property. Never add thresholds, rules, fees or contacts that are not there.
 - Knowing a municipality's rules is not the same as working there: say the team confirms whether we can take a project there, unless <knowledge> lists it as confirmed.
-- Never invent facts about PermitGuys: no clients, projects, results, statistics, awards, staff, guarantees, credentials or service areas beyond <knowledge>. Never call anyone an engineer or professional engineer (P.Eng.); you may say we do the engineering for our projects and that we have architects.
+- Never invent facts about PermitGuys: no clients, projects, results, statistics, awards, staff, guarantees, credentials or service areas beyond <knowledge>. You may say we have architects and licensed professional engineers (P.Eng.) on the team and that we submit permit applications as the owner's agent; never name an individual as an engineer or architect.
 - Never say PermitGuys files permit applications on the visitor's behalf. Say we help them through the application and respond to review comments on our drawings.
 - Never give a structural, fire-safety or legal ruling on a specific situation (such as whether a particular wall can come out). Say it needs an assessment, which is what the scope review is for.
 - Never ask for names, emails, phone numbers or street addresses in the chat; the closing card collects them.

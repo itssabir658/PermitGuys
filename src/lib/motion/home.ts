@@ -1,4 +1,4 @@
-import { clamp, ease, mix, mixColorNum, mixColorOklab, smoothstep, tween } from "./math";
+import { clamp, ease, mix, mixColorNum, smoothstep, tween } from "./math";
 
 /*
  * The homepage choreography as pure functions of scroll. Every input is
@@ -26,9 +26,10 @@ import { clamp, ease, mix, mixColorNum, mixColorOklab, smoothstep, tween } from 
  *   - Rhythm: each beat holds 0.6–0.8 screens fully composed and hands over
  *     in about 0.3; the next section's first element starts entering before
  *     the last one leaves, so no frame is empty for more than 0.15 screens.
- *   - Materials: ivory hero sheet, stone Works, ivory Values, dusk into the
- *     night Services (an OKLab blend), the ivory Contact and the charcoal
- *     footer (pageGround).
+ *   - Materials: ivory hero sheet, stone Works, ivory Values, the night
+ *     Services sheet, the ivory Contact sheet and the charcoal footer
+ *     (pageGround). A sheet rises over the section before it, which sinks
+ *     behind it and dims (sheetHandover).
  */
 
 /** % travel of a masked line: clears the .16em overflow-clip-margin at line-height 0.85 and above. */
@@ -617,22 +618,25 @@ export const NIGHT = 0x191918;
 /**
  * The page ground, one material per section: cream, stone under Works (in
  * as Works rises over the top half of the screen, out over its last 0.35
- * screen), cream again for Values, then dusk falls quickly as Services
- * comes up (sso 0.24 → 0.46), blended in OKLab so the middle stays warm:
- * after the last Values word has gone and before the Services heading
- * rises, while the two sections' pictures fill the screen between them.
- * It stays night under Contact's own ivory and the footer.
+ * screen), cream again for Values and the making of a house, then night
+ * once Services' own night sheet has risen to the header (`ssoServicesAtHeader`
+ * is read at the header's line, so night falls just as the sheet reaches
+ * it). Services and Contact bring their own grounds, so the page ground is
+ * never seen changing: it stays night under Contact's ivory and the footer.
  */
-export function pageGround(ssoWorks: number, hsoWorks: number, ssoServices: number) {
+export function pageGround(ssoWorks: number, hsoWorks: number, ssoServicesAtHeader: number) {
   const stone = smoothstep(ssoWorks, 0.55, 0.95) * (1 - smoothstep(hsoWorks, -0.35, 0));
-  const fade = dusk(ssoServices);
-  return { fade, color: mixColorOklab(mixColorNum(CREAM, STONE, stone), NIGHT, fade) };
+  const fade = dusk(ssoServicesAtHeader);
+  return { fade, color: fade ? NIGHT : mixColorNum(CREAM, STONE, stone) };
 }
 
-/** How far dusk has fallen, 0–1, from Services' sso (pageGround). */
+/** Whether night has fallen, 0 or 1, from Services' sso at the header's line (pageGround): once its sheet has reached the header. */
 export function dusk(ssoServices: number) {
-  return smoothstep(ssoServices, 0.24, 0.46);
+  return ssoServices >= 1 ? 1 : 0;
 }
+
+/** Where the header's tone is read, px from the top of the screen (MainNav). */
+export const HEADER_LINE = 64;
 
 /**
  * What the header sits on, read where its tone is read (64px down, the lower
@@ -642,7 +646,7 @@ export function dusk(ssoServices: number) {
  * there, so the phone bar must too. Night turns the header light-on-dark.
  */
 export function headerGround(ground: { fade: number; color: number }, contactTop: number) {
-  const onContact = contactTop <= 64;
+  const onContact = contactTop <= HEADER_LINE;
   return { night: ground.fade > 0.5 && !onContact, color: onContact ? CREAM : ground.color };
 }
 
@@ -665,8 +669,7 @@ export function riseInset(p: number, top: number, height: number, vh: number) {
  * has risen above the bottom of the screen, in screens. Its sheet wipes up
  * from the bottom (riseInset) from the moment it shows, while the picture
  * settles from 1.2 and 6% low; over in half a screen, an entrance ease, so
- * the last of it settles slowly. With the stage's lead (servicesLead) it
- * starts while the last Values picture is still centred, just below it.
+ * the last of it settles slowly.
  */
 export function servicesReveal(rise: number) {
   return servicesRevealAt(tween(rise, 0.02, 0.5, ease.power3Out));
@@ -677,21 +680,7 @@ export function servicesRevealAt(r: number) {
   return { r, scale: mix(1.2, 1, r), y: (1 - r) * 6 };
 }
 
-/**
- * How far the stage rides above its place in the track as it comes up, in
- * screens: 0.3 until sso 0.4, so the picture follows close under the last
- * Values picture and the heading is in the middle of the screen as the
- * dusk ends; then it eases back to its place on power2In, which brings the
- * stage's speed to 0 just as it pins (0.3 × 2 / 0.6 = one screen per
- * screen), so it settles into the hold rather than stopping dead.
- */
-export const SERVICES_LEAD = 0.3;
-export function servicesLead(s: number) {
-  const u = clamp((s - 0.4) / 0.6);
-  return SERVICES_LEAD * (1 - u * u);
-}
-
-/** Heading line j rises from its mask from sso 0.36 of the track, 0.06 apart: as the ground passes night 0.5, so ivory type never sits on a pale ground. */
+/** Heading line j rises from its mask from sso 0.36 of the track, 0.06 apart, on Services' own night sheet. */
 export function servicesHeading(s: number, j: number) {
   return roll(tween(s, 0.36 + j * 0.06, 0.34, ease.power3Out), 0);
 }
@@ -778,10 +767,15 @@ export function swapLayer(k: number, kAbove: number) {
   return { clip: (1 - k) * 100, scale: 1.08 - 0.08 * k, brightness: 1 - 0.3 * kAbove };
 }
 
-/* ---- Services to Contact: the ivory sheet ---- */
+/* ---- Section to section: a sheet rising over the one before ---- */
 
-/** As Contact's sheet rises over it (x, Contact's sso, 0 → 1), Services lags 0.35 screen behind the scroll and dims to 0.45: it recedes into the night. */
-export function servicesHandover(x: number) {
+/**
+ * As a section's sheet rises over the one before it (x, the rising
+ * section's sso, 0 → 1), the one before lags 0.35 screen behind the scroll
+ * and dims to 0.45: it recedes under the sheet. The making of a house
+ * under Services' night sheet, Services under Contact's ivory one.
+ */
+export function sheetHandover(x: number) {
   const c = clamp(x);
   return { lift: 0.35 * c, opacity: 1 - 0.55 * c };
 }
@@ -939,11 +933,6 @@ export function worksPartWay(e: number, D: number, titles: readonly number[], la
 export function valuesPartWay(xs: readonly number[], s: number, lines: readonly number[], label = true) {
   const n = xs.length;
   return (label && lineCut(sectionLabel(s, LABEL_IN.values))) || xs.some((x, i) => lineCut(valuesTitle(x, i, n)) || anyOf(lines[i] ?? 0, (k) => lineCut(valuesDescLine(x, i, n, k))));
-}
-
-/** The page ground, from Services' sso: dusk part fallen. */
-export function duskPartWay(ssoServices: number) {
-  return partWay(dusk(ssoServices));
 }
 
 /** Services from its track's sso `s`, with `heading` lines in its heading and, on the pinned track, `slots` labels and rows in the list (0 where it flows): the eyebrow (if there is one), a heading line or a slot part out of its mask. */

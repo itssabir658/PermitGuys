@@ -13,7 +13,6 @@ import {
   contactPictureAt,
   contactRise,
   contactRiseAt,
-  duskPartWay,
   MAKING_FILM_AT,
   MAKING_LINE_DUR,
   MAKING_OVERSHOOT,
@@ -26,6 +25,7 @@ import {
   makingLine,
   makingPartWay,
   makingZoom,
+  HEADER_LINE,
   headerGround,
   HERO_DEPTH,
   heroPartWay,
@@ -42,11 +42,10 @@ import {
   pageGround,
   partWay,
   riseInset,
-  servicesHandover,
+  sheetHandover,
   servicesHeading,
   servicesHold,
   servicesIndex,
-  servicesLead,
   servicesPartWay,
   servicesReveal,
   servicesRevealAt,
@@ -184,12 +183,15 @@ interface Shared {
 
 /*
  * The page ground, one material per section (pageGround): cream, stone under
- * Works, cream for Values, dusk over the start of Services, night from there
- * on (Contact brings its own ivory, the footer its own charcoal). The colour
+ * Works, cream for Values and the making of a house, night once Services'
+ * own night sheet has risen to the header (Contact brings its own ivory,
+ * the footer its own charcoal). The colour
  * under the header (headerGround) goes to the phone header bar as --ground,
  * written on the bar itself: the property does not inherit (globals.css), so
  * a change restyles that one element, not the whole document. The still
  * layout keeps the stylesheet's grounds: ivory, then Services' own charcoal.
+ * Night here is a switch, never a blend: by the time it falls the sheet
+ * covers the screen below the header.
  */
 function ground(shared: Shared): MotionModule | null {
   // Any of the three may be missing (the About page has Works but no Services or Contact): each part of the ground follows only the sections that are there.
@@ -218,30 +220,22 @@ function ground(shared: Shared): MotionModule | null {
       if (!f.tracks) {
         setStyle(document.body, "backgroundColor", "");
         if (bar) setStyle(bar, "--ground", "");
-        if (services) setStyle(services, "backgroundColor", "");
         shared.fade = 0;
         setNight(false);
         return;
       }
-      // A missing Works never turns the ground to stone, a missing Services never brings dusk.
-      const g = pageGround(rWorks ? sso(rWorks, f) : -9, rWorks ? hso(rWorks, f) : 9, rServices ? sso(rServices, f) : -9);
+      // A missing Works never turns the ground to stone, a missing Services never brings night. Services is read at the header's line (64px down).
+      const g = pageGround(rWorks ? sso(rWorks, f) : -9, rWorks ? hso(rWorks, f) : 9, rServices ? sso(rServices, f) + HEADER_LINE / f.vh : -9);
       shared.fade = g.fade;
       setStyle(document.body, "backgroundColor", toHex(g.color));
-      // On the tracks Services shows the night ground through itself.
-      if (services) setStyle(services, "backgroundColor", "transparent");
       // Night until Contact's ivory reaches the header, and ivory under the header from then on.
       const h = headerGround(g, rContact ? rContact.top - f.scroll : Infinity);
       if (bar) setStyle(bar, "--ground", toHex(h.color));
       setNight(h.night);
     },
-    zones(f) {
-      const r = rServices;
-      return r ? zonesWhere(f, r.top - f.vh, r.top, (g) => duskPartWay(sso(r, g))) : [];
-    },
     destroy() {
       setStyle(document.body, "backgroundColor", "");
       if (bar) setStyle(bar, "--ground", "");
-      if (services) setStyle(services, "backgroundColor", "");
       delete html.dataset.ground;
     },
   };
@@ -1069,13 +1063,11 @@ function values(shared: Shared): MotionModule | null {
 
 /*
  * Services. On the pinned track (screens from 768px wide and 720px tall;
- * globals.css) the whole composition comes up through the dusk and holds
- * for two screens. The stage rides 0.3 screen ahead of its track until the
- * dusk is over and settles into the pin (servicesLead), so its picture
- * follows close under the last Values picture: the picture's sheet wipes
- * up from the bottom of the screen as the frame comes into view, then,
- * once the ground is past half night, the heading's lines rise out of
- * their masks, then the list's group labels and rows, each row's rule
+ * globals.css) the whole composition comes up on Services' own night
+ * sheet, rising over the making of a house (the making handover), and
+ * holds for two screens: the picture's sheet wipes up from the bottom of
+ * the screen as the frame comes into view, then the heading's lines rise
+ * out of their masks, then the list's group labels and rows, each row's rule
  * drawing across; it is whole as the stage pins. While it holds,
  * scrolling walks the rows. The frame shows the row hovered (with a fine
  * pointer), else the one focused, else the one scrolling has reached; the
@@ -1281,11 +1273,8 @@ function services(): MotionModule[] {
         if (caption) clear(caption, "opacity");
         return;
       }
-      // The stage's lead over its track as it comes up (px).
-      const lead = pinned ? servicesLead(sso(rTrack, f)) * f.vh : 0;
-      setStyle(stage, "transform", lead > 0.05 ? `translate3d(0, ${(-lead).toFixed(2)}px, 0)` : "");
       // The frame's top on the screen; the sheet rises from the bottom of the screen until the frame's own bottom edge is in view.
-      const top = pinned ? stageTop(f) + boxTop - lead : rCol.top - f.scroll;
+      const top = pinned ? stageTop(f) + boxTop : rCol.top - f.scroll;
       const rise = (f.vh - top) / f.vh;
       const rv = f.touch ? servicesRevealAt(tween(sinceImage(f.time, box, rise, 0.02), 0, SHEET_S, ease.power3Out)) : servicesReveal(rise);
       setStyle(reveal, "clipPath", `inset(${riseInset(rv.r, top, boxH, f.vh).toFixed(2)}% 0 0 0)`);
@@ -1366,29 +1355,55 @@ function services(): MotionModule[] {
 }
 
 /*
- * Services to Contact: Contact's ivory sheet rises over Services, which
- * lags behind the scroll by up to 0.35 screen and dims as it is covered,
- * so it sinks into the night. Contact starts to rise only after the
- * Services stage has released, so this never moves a pinned stage.
+ * A section's sheet rising over the one before it (sheetHandover): the one
+ * before lags behind the scroll by up to 0.35 screen and dims as it is
+ * covered, so it sinks under the sheet. `dim` is how it dims, from 1 down
+ * to 0.45. The sheet starts to rise only after the stage before it has
+ * released, so this never moves a pinned stage.
  */
-function handover(): MotionModule | null {
-  const inner = one("[data-services-inner]");
-  const contact = one("[data-contact]");
-  if (!inner || !contact) return null;
+function handover(order: number, below: HTMLElement | null, sheet: HTMLElement | null, dim: (el: HTMLElement, level: number | null) => void): MotionModule | null {
+  if (!below || !sheet) return null;
   let r: Range;
   return {
-    order: ORDER.handover,
+    order,
     measure() {
-      r = measureRange(contact);
+      r = measureRange(sheet);
     },
     update(f) {
       const x = f.tracks ? clamp(sso(r, f)) : 0;
-      if (x <= 0) return clear(inner, "transform", "opacity");
-      const h = servicesHandover(x);
-      setStyle(inner, "transform", lift(h.lift * f.vh));
-      setStyle(inner, "opacity", num(h.opacity));
+      if (x <= 0) {
+        clear(below, "transform");
+        return dim(below, null);
+      }
+      const h = sheetHandover(x);
+      setStyle(below, "transform", lift(h.lift * f.vh));
+      dim(below, h.opacity);
     },
   };
+}
+
+/*
+ * The making of a house to Services: Services' night sheet rises over the
+ * released stage, which sinks behind it under a night shade (the stage
+ * holds a film, so it is shaded rather than faded: the shade is one
+ * composited layer, and the paper beneath it stays put).
+ */
+function makingHandover(): MotionModule | null {
+  const stage = one("[data-making] [data-mk-stage]");
+  const shade = stage && one("[data-mk-shade]", stage);
+  return handover(ORDER.makingHandover, stage, one("[data-services]"), (_, level) => {
+    if (!shade) return;
+    if (level === null) clear(shade, "opacity");
+    else setStyle(shade, "opacity", num(1 - level));
+  });
+}
+
+/* Services to Contact: Contact's ivory sheet rises over Services, which recedes into the night. */
+function contactHandover(): MotionModule | null {
+  return handover(ORDER.handover, one("[data-services-inner]"), one("[data-contact]"), (el, level) => {
+    if (level === null) clear(el, "opacity");
+    else setStyle(el, "opacity", num(level));
+  });
 }
 
 /*
@@ -1529,7 +1544,7 @@ export function HomeMotion() {
   useEffect(() => {
     const shared: Shared = { fade: 0 };
     splitting = [];
-    const modules = [ground(shared), hero(), intro(), story(), works(), making(), values(shared), ...services(), handover(), contact()].filter((m): m is MotionModule => Boolean(m));
+    const modules = [ground(shared), hero(), intro(), story(), works(), making(), makingHandover(), values(shared), ...services(), contactHandover(), contact()].filter((m): m is MotionModule => Boolean(m));
     modules.push(splitter(splitting));
     const offs = modules.map((m) => engine.register(m));
     return () => offs.forEach((off) => off());

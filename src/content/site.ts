@@ -67,8 +67,13 @@ export const site = {
     title: "Where our projects are",
     permits: "2,000+",
   } as { mid: string; title: string; permits: string } | null,
-  /** Verified credentials only, in the business's own words (confirmed 2026-10-22). */
-  credentials: ["Small Buildings BCIN certified", "Full architectural stamps in house"] as string[],
+  /** Verified credentials only, in the business's own words (BCIN and stamps confirmed 2026-10-22; P.Eng. and the owner's agent 2026-11-19). */
+  credentials: [
+    "Small Buildings BCIN certified",
+    "Full architectural stamps in house",
+    "Licensed professional engineers (P.Eng.) on the team",
+    "Permit applications submitted for the owner, as the owner's agent",
+  ] as string[],
   /**
    * Official profiles the business controls, such as its Google Business
    * Profile, LinkedIn or Houzz page. Used for schema.org `sameAs`.

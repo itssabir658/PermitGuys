@@ -8,14 +8,14 @@ Two kinds of picture, registered as plates in `src/content/imagery.ts`. Each pla
 
 `public/images/projects/` holds design renderings from ten PermitGuys client projects, supplied by PermitGuys in October 2026. Many of the supplied files are the same angle under a different sky; those count as one picture, and the best-graded one was used. That leaves 16 different views.
 
-**No picture is shown twice** (Sebra, 14 November 2026). Each spot on the site has its own view; only the projects page, the archive of every view of every project, shows pictures that also appear elsewhere (Sebra chose to keep it complete). `tests/imagery.test.ts` fails when two spots name the same plate.
+**No picture is shown twice** (Sebra, 14 November 2026). Each spot on the site has its own view; only the projects page, the archive of every view of every project, shows pictures that also appear elsewhere (Sebra chose to keep it complete), and, since 19 November 2026, the five homepage Services pictures that also appear on the About page (below). `tests/imagery.test.ts` fails when two spots name the same plate.
 
 | Spot | Picture |
 | --- | --- |
 | Homepage hero | Contemporary house, rear terrace and pool (`terrace`) |
 | Homepage intro frame | Red-brick house (`redBrick`), then contemporary brick house (`brick`) |
 | Homepage making of a house | Contemporary house from the front (`making/`) |
-| Homepage Services, custom homes row | Stone house (`stone`) |
+| Homepage Services rows | Custom homes: stone house (`stone`). Since 19 November 2026 every other row shows a client project too: additions, prairie corner (`prairieCorner`); basement apartments, board and batten over stone (`whiteBatten`); decks, farmhouse bungalow (`farmhouse`); commercial, contemporary house at dusk (`dusk`); interior renovations, narrow contemporary house (`narrow`). These five also appear on the About page (`servicesAboutRepeats`), as no client view was left unused. |
 | Homepage Contact | Two-gabled house, corner view (`greenBatten`) |
 | About band | Contemporary house, corner view at dusk (`side`) |
 | About Values | Prairie corner, farmhouse bungalow, two-gabled house front, narrow contemporary house |
@@ -27,7 +27,7 @@ Two kinds of picture, registered as plates in `src/content/imagery.ts`. Each pla
 | How it works band | Drawings with markups (study, `drawingsMarkup`) |
 | Service areas band | Neighbourhood by the lake from the air (study, `aerial`) |
 | Permit guides band | Permit documents in a binder (study, `permitBinder`) |
-| Service pages for additions, commercial, interior renovations, basement apartments, decks | Their own studies (`servicePagePlates`); the homepage Services rows keep the older studies |
+| Service pages for additions, commercial, interior renovations, basement apartments, decks | Their own studies (`servicePagePlates`) |
 
 The nine studies added in November 2026 were generated with Higgsfield (GPT Image 2.6) at 1024 × 688 and enlarged to 2048 × 1376 (Lanczos, light sharpening); like every study, their captions say they are not client projects.
 
@@ -89,11 +89,11 @@ The section "The making of a house" (`Making.tsx`) is told on the big contempora
 
 ### Rendered studies
 
-`public/images/studies/` holds original renders made for this website. They are kept only for kinds of project that no client rendering shows: a rear addition, a basement second unit, main-street commercial units and a storefront, a rear deck, and an infill house (the fallback picture for any service without its own).
+`public/images/studies/` holds original renders made for this website, for the service pages and the index pages' bands. The Blender studies the homepage Services rows used (a rear addition, a basement second unit, main-street commercial units, a storefront, a rear deck) were removed on 19 November 2026, when Sebra asked for client projects there instead; only the infill house is left, the fallback picture for any service without its own.
 
 Four more were added in October 2026 with the service pages for below-grade entrances, detached garages, finished basements and load-bearing wall removal (`below-grade-entrance.jpg`, `detached-garage.jpg`, `finished-basement.jpg`, `beam-open-plan.jpg`). These were generated with Higgsfield (GPT Image 2, 2048 × 1360) rather than modelled in Blender, saved as progressive JPEGs at quality 84, and carry the same study caption. They show only the kind of work, with no people, signs or house numbers.
 
-Every caption carries "Rendered study for illustration, not a client project." (`STUDY_NOTE`). That includes the caption under the Services picture on the homepage, which switches between the two notes with the picture. The studies must never be presented as PermitGuys work.
+Every caption carries "Rendered study for illustration, not a client project." (`STUDY_NOTE`). The homepage Services pictures are all client projects, so their caption is the client note. The studies must never be presented as PermitGuys work.
 
 The illustrative SVG drawings (`src/components/ui/Drawing.tsx`) are still used on guide and case-study pages, captioned as illustrations.
 

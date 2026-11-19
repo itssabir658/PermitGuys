@@ -44,8 +44,8 @@ import { paths } from "@/lib/routes";
 
 const shown: Plate[] = [plates.whiteBatten, plates.prairieFront, plates.dusk, plates.farmhouseWide];
 
-const NOTE = "Renderings from client projects. Case studies will appear here as clients approve them.";
-const TAG = "Client project · Rendering";
+const NOTE = "Finished client projects, shown with each client’s permission.";
+const TAG = "Client project · Finished";
 /** How long a project holds the plate, in seconds. */
 const HOLD = 5;
 /** How far a finger or pointer must travel across the plate to change project, in pixels. */
@@ -160,7 +160,7 @@ export function ProjectShowcase() {
     >
       <Container className="pj__head">
         <div className="lg:col-span-7">
-          <p className="text-label text-stone-300">Client project renderings</p>
+          <p className="text-label text-stone-300">Finished client projects</p>
           <h2 id="works-heading" className="mt-6 font-display text-display-xl font-light text-ivory">
             Selected projects
           </h2>
@@ -173,7 +173,7 @@ export function ProjectShowcase() {
           className="pj__body"
           aria-roledescription="carousel"
           role="region"
-          aria-label="Client project renderings"
+          aria-label="Finished client projects"
           onFocus={(e) => setFocused(e.target.matches(":focus-visible"))}
           onBlur={(e) => {
             if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);

@@ -95,7 +95,7 @@ describe("instructions", () => {
     expect(prompt).toMatch(/call presentDealCloserCard/);
     expect(prompt).toMatch(/Never promise or imply a permit will be approved/);
     expect(prompt).toMatch(/Never quote or estimate prices, fees, drafting time/);
-    expect(prompt).toMatch(/Never call anyone an engineer/);
+    expect(prompt).toMatch(/never name an individual as an engineer/);
     expect(prompt).toMatch(/Never ask for names, emails, phone numbers or street addresses in the chat/);
     expect(prompt).toContain(site.contact.phone!);
   });
