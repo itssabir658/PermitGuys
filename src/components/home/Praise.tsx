@@ -47,7 +47,9 @@ function partnerLogo(name: string) {
  * partners' logos, in the same motion as the municipalities' row in the
  * intro (the list set twice, the second copy hidden from screen readers);
  * it stops under the pointer or keyboard focus so a card can be read. With
- * reduced motion it is a still row to swipe.
+ * reduced motion it is a still row to swipe. On phones the cards are small
+ * landscape cards (stars beside the name, the words held to a few lines)
+ * so the partners' logos come into view right below them.
  *
  * The review text and the quote are the business's own published copy
  * (src/content/recognition.ts); no review structured data is added.
@@ -150,13 +152,13 @@ export function Praise({ reviews }: { reviews: ReviewSummary | null }) {
                         </span>
                       </figcaption>
                       {review.rating ? (
-                        <p className="mt-5 flex items-center gap-2">
+                        <p className="praise-card__rating mt-5 flex items-center gap-2">
                           <Stars rating={review.rating} className="praise-card__stars" />
                           <span className="sr-only">Rated {review.rating} out of 5</span>
                         </p>
                       ) : null}
-                      <blockquote className="mt-4 flex-1">
-                        <p className="text-[1.0625rem] leading-relaxed text-ink">{review.text}</p>
+                      <blockquote className="praise-card__quote mt-4 flex-1">
+                        <p className="praise-card__text text-[1.0625rem] leading-relaxed text-ink">{review.text}</p>
                       </blockquote>
                     </figure>
                   </li>
