@@ -24,18 +24,18 @@ const LEAD = "Design, engineering and permits for every kind of project.";
  * From 768px: the list beside one framed picture, which shows the service
  * hovered, focused or reached, with its scope and the kind of picture under
  * it. On screens tall enough to hold it (720px) the section is a 300vh
- * track with the whole composition pinned for two screens. The stage rides
- * a little ahead of its track as it comes up, so the picture follows close
- * under the last Values picture: through the dusk the picture's sheet wipes
- * up from the bottom and settles, then the heading's lines, the group labels
+ * track with the whole composition pinned for two screens. The section is
+ * a night sheet that rises over the making of a house, which sinks behind
+ * it and dims (the same handover as Contact's over Services): the
+ * picture's sheet wipes up from the bottom and settles, then the heading's lines, the group labels
  * and the rows rise out of their masks, each row's rule drawing across, so
  * the composition is whole as the stage pins. While it holds, scrolling
  * walks the rows: the picture follows the row reached, or the one hovered
  * or focused, each new picture wiping up over the last as it darkens
  * (HomeMotion, services modules). The pictures are stacked layers, so a swap
  * never passes through the ones in between. Wide screens too short to hold
- * it flow, starting close under Values, and the picture follows the row
- * crossing the middle of the screen.
+ * it flow, and the picture follows the row crossing the middle of the
+ * screen.
  *
  * Services kept off the list (homeRow: false) lead the line under it, "Also
  * within our scope", linked to their own pages, so the pinned composition
@@ -74,7 +74,7 @@ export function Services() {
     { key: "businesses", label: "For businesses", items: services.filter((s) => s.category !== "residential") },
   ].filter((g) => g.items.length);
   return (
-    <section id="services" data-services="" data-tone="dark" aria-labelledby="services-heading" className="relative bg-charcoal-900 text-ivory">
+    <section id="services" data-services="" data-tone="dark" aria-labelledby="services-heading" className="relative z-[1] bg-charcoal-900 text-ivory">
       <div data-services-inner="">
         <div data-services-track="" className="services-track">
           <div data-services-stage="" className="services-stage">

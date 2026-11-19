@@ -237,6 +237,8 @@ export function Making() {
             ))}
           </ol>
         </Container>
+        {/* Night falling over the released stage as Services' sheet rises over it (HomeMotion, making handover). */}
+        <div data-mk-shade="" className="mk-shade" aria-hidden="true" />
       </div>
     </section>
   );

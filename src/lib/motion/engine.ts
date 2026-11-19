@@ -559,6 +559,7 @@ export const ORDER = {
   story: 3,
   works: 4,
   making: 5,
+  makingHandover: 5.5,
   values: 6,
   servicesImage: 7,
   services: 8,
