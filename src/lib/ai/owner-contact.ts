@@ -36,12 +36,6 @@ export function whatsappDisplay(number: string): string {
   return d.length === 11 && d.startsWith("1") ? `+1 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}` : `+${d}`;
 }
 
-/** "+1 647-968-6284": the shorter form for buttons. */
-export function whatsappShort(number: string): string {
-  const d = digits(number);
-  return d.length === 11 && d.startsWith("1") ? `+1 ${d.slice(1, 4)}-${d.slice(4, 7)}-${d.slice(7)}` : `+${d}`;
-}
-
 export const waLink = (number: string, text: string) => `https://wa.me/${digits(number)}?text=${encodeURIComponent(text)}`;
 
 /** The owner's WhatsApp number on the server. */

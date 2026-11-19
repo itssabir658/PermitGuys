@@ -126,7 +126,7 @@ test.describe("permit strategist", () => {
     await expect(closer).toBeVisible();
     await expect(closer.getByLabel("Town or city")).toHaveValue("Toronto");
     await expect(closer).toContainText("Custom fixed-fee quote & exact timeline prepared directly by PermitGuys upon handoff.");
-    await expect(closer.getByRole("link", { name: "Message Scope on WhatsApp (+1 647-968-6284)" })).toHaveAttribute("href", /^https:\/\/wa\.me\/16479686284\?text=/);
+    await expect(closer.getByRole("link", { name: "Message Scope on WhatsApp", exact: true })).toHaveAttribute("href", /^https:\/\/wa\.me\/16479686284\?text=/);
     await closer.getByLabel("Name").fill("Sam Visitor");
     await closer.getByLabel("Phone").fill("416 555 0100");
     await closer.getByLabel("Email").fill("sam@example.com");
