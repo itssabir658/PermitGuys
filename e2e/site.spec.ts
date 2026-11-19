@@ -691,6 +691,20 @@ test.describe("interactive pieces", () => {
     await expect.poll(() => shown.evaluate((el) => getComputedStyle(el).translate)).toMatch(/^(none|0px|0%)$/);
   });
 
+  test("About Selected projects fits one desktop screen and keeps rolling under the mouse", async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop", "desktop layout and mouse");
+    await page.goto("/about/");
+    await page.waitForSelector("html[data-preloaded]");
+    const showcase = page.locator("[data-showcase]");
+    const height = await showcase.evaluate((el) => el.getBoundingClientRect().height);
+    expect(height).toBeLessThanOrEqual(900 - 72);
+    await showcase.locator(".pj__stage").scrollIntoViewIfNeeded();
+    await showcase.locator(".pj__stage").hover();
+    await expect(showcase).toHaveAttribute("data-running", "");
+    await showcase.getByRole("tab").nth(2).click();
+    await expect(showcase).toHaveAttribute("data-running", "");
+  });
+
   test("a swipe across the About plate changes the project", async ({ page }, info) => {
     test.skip(info.project.name !== "mobile", "touch");
     await page.goto("/about/");

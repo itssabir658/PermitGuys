@@ -22,14 +22,20 @@ import { paths } from "@/lib/routes";
  * new choice mid-way simply starts a new sheet over the old one.
  *
  * While a project holds the plate its rendering settles slowly closer, and
- * a hairline under its row in the index fills over 7 seconds; the end of
+ * a hairline under its row in the index fills over 5 seconds; the end of
  * that fill is the clock that moves to the next project, so the line and
  * the change never disagree.
  *
- * Autoplay stops while the section is off screen, while the page is hidden,
- * while a mouse is over it, while a visitor's focus or finger is in it, when
- * the pause button is pressed, and never starts with reduced motion (then
- * the pictures change at once, without sliding or settling).
+ * Autoplay keeps rolling while a mouse moves over the section; choosing a
+ * project starts that project's 5 seconds afresh. It stops while the
+ * section is off screen, while the page is hidden, while a finger is on the
+ * plate or keyboard focus is in it, when the pause button is pressed, and
+ * never starts with reduced motion (then the pictures change at once,
+ * without sliding or settling). A mouse click on a row leaves focus on it
+ * but does not stop the slideshow: only keyboard focus (:focus-visible) does.
+ *
+ * Desktops: the heading, the plate and the index fit in one screen under
+ * the header (the plate's height comes from the screen's, see .pj__stage).
  *
  * Keyboard: the index is a tab list (arrow keys, Home and End move along it
  * and show that project; only the chosen row is in the tab order), the plate
@@ -41,7 +47,7 @@ const shown: Plate[] = [plates.whiteBatten, plates.prairieFront, plates.dusk, pl
 const NOTE = "Finished client projects, shown with each client’s permission.";
 const TAG = "Client project · Finished";
 /** How long a project holds the plate, in seconds. */
-const HOLD = 7;
+const HOLD = 5;
 /** How far a finger or pointer must travel across the plate to change project, in pixels. */
 const SWIPE = 48;
 
@@ -59,13 +65,12 @@ export function ProjectShowcase() {
   const [under, setUnder] = useState(-1);
   /** The way the last sheet was drawn; unset until the first change, so nothing animates on arrival. */
   const [dir, setDir] = useState<"next" | "prev" | null>(null);
-  /** Bumped on every change, so the row's 7-second line and the plate's settle start again. */
+  /** Bumped on every change, so the row's 5-second line and the plate's settle start again. */
   const [cycle, setCycle] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
   const [inView, setInView] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [hovered, setHovered] = useState(false);
   const [held, setHeld] = useState(false);
   const [focused, setFocused] = useState(false);
 
@@ -108,7 +113,7 @@ export function ProjectShowcase() {
   const next = useCallback(() => go(active + 1, "next"), [go, active]);
   const prev = useCallback(() => go(active - 1, "prev"), [go, active]);
 
-  const running = playing && !reduced && inView && visible && !hovered && !held && !focused;
+  const running = playing && !reduced && inView && visible && !held && !focused;
 
   const onTabKey = (e: KeyboardEvent<HTMLDivElement>) => {
     let to = -1;
@@ -152,8 +157,6 @@ export function ProjectShowcase() {
       style={{ "--hold": `${HOLD}s` } as CSSProperties}
       data-running={running ? "" : undefined}
       data-reduced={reduced ? "" : undefined}
-      onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)}
-      onPointerLeave={(e) => e.pointerType === "mouse" && setHovered(false)}
     >
       <Container className="pj__head">
         <div className="lg:col-span-7">
@@ -171,7 +174,7 @@ export function ProjectShowcase() {
           aria-roledescription="carousel"
           role="region"
           aria-label="Finished client projects"
-          onFocus={() => setFocused(true)}
+          onFocus={(e) => setFocused(e.target.matches(":focus-visible"))}
           onBlur={(e) => {
             if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
           }}
