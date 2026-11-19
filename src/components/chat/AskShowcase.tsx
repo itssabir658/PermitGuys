@@ -139,17 +139,17 @@ export function AskShowcase() {
       data-ask=""
       data-running={visible && !reduced ? "" : undefined}
       aria-labelledby="ask-heading"
-      className="ask relative overflow-hidden py-24 text-ink sm:py-28 lg:py-40"
+      className="ask relative overflow-hidden py-14 text-ink sm:py-16 lg:py-20"
     >
-      <Container className="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:gap-x-24">
-        <div className="lg:col-span-2">
+      <Container className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-16 gap-y-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:gap-x-24">
+        <div>
           <p className="ask-rise flex items-center gap-3 text-label text-ink" style={rise(0)}>
             <span aria-hidden="true" className="chat-live" />
             <span>
               <Wordmark className="text-[1.25em]" /> AI
             </span>
           </p>
-          <h2 id="ask-heading" className="mt-7 font-display text-[clamp(3.6rem,1.4rem+8.6vw,11rem)] leading-[0.92] font-light tracking-[-0.055em] whitespace-nowrap max-[359px]:whitespace-normal">
+          <h2 id="ask-heading" className="mt-7 font-display text-[clamp(3.6rem,1.4rem+8.6vw,11rem)] lg:text-[clamp(4.5rem,7.6vw,8rem)] leading-[0.92] font-light tracking-[-0.055em] whitespace-nowrap max-[359px]:whitespace-normal">
             <span className="ask-line">
               <span className="ask-rise block" style={rise(1)}>
                 Ask before
@@ -161,27 +161,24 @@ export function AskShowcase() {
               </span>
             </span>
           </h2>
-        </div>
-
-        <div className="lg:self-start">
-          <p className="ask-rise max-w-[44ch] text-[1.0625rem] leading-relaxed text-ink-muted lg:text-[1.125rem]" style={rise(3)}>
+          <p className="ask-rise mt-10 max-w-[44ch] lg:mt-12 text-[1.0625rem] leading-relaxed text-ink-muted lg:text-[1.125rem]" style={rise(3)}>
             Our AI assistant answers your permit questions any time of day. It draws on our guides and on what {names.length} GTA municipalities publish for homeowners, and it tells you where each
             answer comes from.
           </p>
           <ol className="mt-12 border-t border-line">
             {features.map((f, i) => (
-              <li key={f.title} className="ask-rise grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 border-b border-line py-5 sm:grid-cols-[3.5rem_10rem_minmax(0,1fr)]" style={rise(4 + i)}>
+              <li key={f.title} className="ask-rise grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 border-b border-line py-5 sm:grid-cols-[3.5rem_10rem_minmax(0,1fr)] lg:grid-cols-[2.75rem_minmax(0,1fr)] xl:grid-cols-[3.5rem_10rem_minmax(0,1fr)]" style={rise(4 + i)}>
                 <span aria-hidden="true" className="font-mono text-[0.75rem] leading-6 text-ink-muted">
                   0{i + 1}
                 </span>
                 <h3 className="font-display text-[1.0625rem] leading-6 text-ink">{f.title}</h3>
-                <p className="col-start-2 mt-1.5 text-[0.9375rem] leading-relaxed text-ink-muted sm:col-start-3 sm:mt-0">{f.body}</p>
+                <p className="col-start-2 mt-1.5 text-[0.9375rem] leading-relaxed text-ink-muted sm:col-start-3 sm:mt-0 lg:col-start-2 lg:mt-1.5 xl:col-start-3 xl:mt-0">{f.body}</p>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="ask-console ask-rise relative bg-charcoal-900 text-ivory shadow-[0_50px_100px_-40px_rgb(17_17_16/0.65)]" style={rise(3)}>
+        <div className="ask-console ask-rise relative lg:mt-[3.25rem] bg-charcoal-900 text-ivory shadow-[0_50px_100px_-40px_rgb(17_17_16/0.65)]" style={rise(3)}>
           <div aria-hidden="true" className="ask-console__grid" />
           <div className="relative flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-8">
             <p className="flex items-center gap-2.5 text-label text-charcoal-300">
