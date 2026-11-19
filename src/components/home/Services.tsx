@@ -47,10 +47,10 @@ const LEAD = "Design, engineering and permits for every kind of project.";
  * Without the tracks the list and picture simply sit side by side, the
  * picture following the hovered or focused row.
  *
- * Custom homes show a client rendering, the other services rendered studies
- * (no client rendering shows those kinds of project), so the caption under
- * each picture names its kind (under the frame, with what the service
- * covers, the block for the picture shown: data-on, set with the picture).
+ * Every row shows a client project (servicePlates in imagery.ts), and the
+ * caption under each picture names its kind (under the frame, with what the
+ * service covers, the block for the picture shown: data-on, set with the
+ * picture).
  *
  * The frame is portrait beside the list (at most 70% of the screen's height
  * and 44rem), so each picture is fetched as wide as it is drawn at that

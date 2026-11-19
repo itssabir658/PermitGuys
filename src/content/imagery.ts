@@ -11,9 +11,10 @@
  * address, street or town, and nothing about a project's scope or results.
  *
  * Rendered studies ("study"): original renders made for this website, kept
- * only for kinds of project no client rendering shows (additions, basement
- * units, commercial units, decks, and since October 2026 basement entrances,
- * finished basements, wall removals and detached garages). Their captions always say they are
+ * for the service pages and index bands (additions, basement units,
+ * commercial units, decks, basement entrances, finished basements, wall
+ * removals, detached garages). Since 19 November 2026 the homepage Services
+ * list shows client projects only. Their captions always say they are
  * studies, so they are never read as PermitGuys work.
  */
 
@@ -189,6 +190,7 @@ export const plates = {
   },
 
   /* ---- Rendered studies (no client rendering shows these kinds of project) ---- */
+  /* The fallback for a service with no picture of its own. */
   infill: {
     src: "/images/studies/infill-house-dusk.jpg",
     width: 2560,
@@ -196,51 +198,6 @@ export const plates = {
     alt: "A contemporary two-storey house at dusk on a residential street, its dark metal upper storey cantilevered over a pale, glazed ground floor.",
     caption: "Infill house at dusk",
     focus: "68% 60%",
-    kind: "study",
-  },
-  addition: {
-    src: "/images/studies/rear-addition-model.jpg",
-    width: 1600,
-    height: 2000,
-    alt: "Architectural model of a house with a new two-storey rear addition clad in dark metal and timber slats, opening onto a timber deck.",
-    caption: "Two-storey rear addition",
-    focus: "50% 50%",
-    kind: "study",
-  },
-  basement: {
-    src: "/images/studies/basement-section-model.jpg",
-    width: 2400,
-    height: 1600,
-    alt: "Sectional model of a two-storey house cut open to show a lit basement apartment with its own stair down to a separate entrance.",
-    caption: "Second unit, in section",
-    focus: "55% 55%",
-    kind: "study",
-  },
-  commercial: {
-    src: "/images/studies/main-street-commercial.jpg",
-    width: 1960,
-    height: 1600,
-    alt: "A brick main-street building at dusk with two glazed ground-floor commercial units lit from within.",
-    caption: "Main-street commercial units",
-    focus: "45% 70%",
-    kind: "study",
-  },
-  deck: {
-    src: "/images/studies/rear-deck.jpg",
-    width: 2400,
-    height: 1600,
-    alt: "A timber deck stepping down to a garden from a rear addition with full-height glazing and a timber screen above.",
-    caption: "Rear deck and glazing",
-    focus: "40% 60%",
-    kind: "study",
-  },
-  storefront: {
-    src: "/images/studies/commercial-storefront.jpg",
-    width: 1600,
-    height: 2000,
-    alt: "Close view of a brick main-street building at dusk, its glazed ground-floor shop lit from within under pendant lights.",
-    caption: "Storefront at dusk",
-    focus: "55% 60%",
     kind: "study",
   },
   /* Generated with Higgsfield (GPT Image 2) for this website, October 2026, for the service pages added then. */
@@ -417,19 +374,41 @@ export function projectOf(plate: Plate) {
   return clientProjects.find((p) => p.views.includes(plate));
 }
 
-/** The picture shown for each service: a client rendering where one shows that kind of project, otherwise a study. */
+/**
+ * The picture shown for each service: on the homepage Services list (the
+ * services with a home row) and on the page of any service without a page
+ * picture of its own.
+ *
+ * Since 19 November 2026 (Sebra: replace the renderings in Services with
+ * client projects) every home row shows a client project, matched to the
+ * service as closely as the client pictures allow: none shows an addition
+ * under way, a basement unit, a deck or a commercial job, so each shows a
+ * house with something of that work in it (a lower wing, a raised lower
+ * level with a walk-up stair, a porch with a railing, large glazing at
+ * dusk, lit interiors). Every client view is already shown elsewhere, so
+ * these five also appear on the About page (`servicesAboutRepeats`).
+ */
 export const servicePlates: Record<string, PlateKey> = {
-  "residential-additions": "addition",
-  "commercial-permits": "commercial",
-  "interior-renovation-permits": "storefront",
-  "legal-basement-permits": "basement",
-  "deck-permits": "deck",
+  "residential-additions": "prairieCorner",
+  "commercial-permits": "dusk",
+  "interior-renovation-permits": "narrow",
+  "legal-basement-permits": "whiteBatten",
+  "deck-permits": "farmhouse",
   "custom-home-permits": "stone",
   "finished-basement-permits": "finishedBasement",
   "below-grade-entrance-permits": "belowGrade",
   "load-bearing-wall-removal": "beam",
   "detached-garage-permits": "garage",
 };
+
+/**
+ * The client views the homepage Services list shares with the About page
+ * (Values and Selected projects): no unused client view was left when the
+ * Services studies were replaced on 19 November 2026. The one exception to
+ * "no picture in two places" besides the projects page; tests/imagery.test.ts
+ * allows these and no others.
+ */
+export const servicesAboutRepeats: PlateKey[] = ["prairieCorner", "dusk", "narrow", "whiteBatten", "farmhouse"];
 
 /**
  * A service page's own picture, where the homepage Services list already

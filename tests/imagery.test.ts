@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PROJECT_NOTE, STUDY_NOTE, clientProjects, coverWidth, coverWidthByHeight, heroLayers, pagePlateForService, plateForService, plateNote, plates, projectOf, type Plate } from "@/content/imagery";
+import { PROJECT_NOTE, STUDY_NOTE, clientProjects, coverWidth, coverWidthByHeight, heroLayers, pagePlateForService, plateForService, plateNote, plates, projectOf, servicesAboutRepeats, type Plate } from "@/content/imagery";
 import { getServices } from "@/lib/content";
 
 const all: Plate[] = Object.values(plates);
@@ -94,6 +94,10 @@ describe("imagery", () => {
     expect(STUDY_NOTE).toMatch(/not a client project/);
   });
 
+  it("shows a client project in every homepage Services row", () => {
+    for (const s of getServices().filter((s) => s.homeRow !== false)) expect(plateForService(s.slug).kind, s.slug).toBe("project");
+  });
+
   it("has a picture for every service", () => {
     for (const s of getServices()) {
       expect(all, s.slug).toContain(plateForService(s.slug));
@@ -115,11 +119,15 @@ describe("imagery", () => {
       if (homeRows.has(s.slug)) spots.push([key, `homepage Services: ${s.slug}`]);
       if (!homeRows.has(s.slug) || page !== key) spots.push([page, `service page: ${s.slug}`]);
     }
-    const seen = new Map<string, string>();
+    // The one other exception: client views the homepage Services list shares with the About page, as none was left unused (imagery.ts, servicesAboutRepeats).
+    const about = ["src/components/home/Values.tsx", "src/components/about/ProjectShowcase.tsx"];
+    const allowed = (key: string, a: string, b: string) =>
+      (servicesAboutRepeats as string[]).includes(key) && [a, b].some((w) => w.startsWith("homepage Services")) && [a, b].some((w) => about.includes(w));
+    const seen = new Map<string, string[]>();
     const repeats: string[] = [];
     for (const [key, where] of spots) {
-      if (seen.has(key)) repeats.push(`${key}: ${seen.get(key)} and ${where}`);
-      else seen.set(key, where);
+      for (const before of seen.get(key) ?? []) if (!allowed(key, before, where)) repeats.push(`${key}: ${before} and ${where}`);
+      seen.set(key, [...(seen.get(key) ?? []), where]);
     }
     expect(repeats).toEqual([]);
   });
