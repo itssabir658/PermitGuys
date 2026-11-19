@@ -31,7 +31,7 @@ export const revalidate = 86400;
  * on), the making of a house (one client house from its site to its permit
  * set), services, contact. Selected projects and the values are
  * on the About page. HomeMotion drives all of it from the scroll engine,
- * including the page ground (dusk falling over the start of Services).
+ * including the page ground and the sheets rising over one another.
  */
 export default async function HomePage() {
   const reviews = await getGoogleReviews();

@@ -7,8 +7,6 @@ import {
   contactRise,
   contactRiseAt,
   MAKING,
-  dusk,
-  duskPartWay,
   makingPartWay,
   heroPartWay,
   introPartWay,
@@ -180,17 +178,12 @@ describe("where a scene is part way", () => {
     }
   });
 
-  it("dusk and Services: part way only while the dusk falls and the heading rises, whole before the stage pins", () => {
-    expect(duskPartWay(0.2)).toBe(false);
-    expect(duskPartWay(0.35)).toBe(true);
-    expect(duskPartWay(0.5)).toBe(false);
-    expect(dusk(0.24)).toBe(0);
-    expect(dusk(0.46)).toBe(1);
+  it("Services: part way only while its label, heading and list rise, whole before the stage pins", () => {
     // A phone: the heading's three lines, the list flowing; a tablet's pinned track: the two labels and seven rows too.
     for (const slots of [0, 9]) {
-      const { zones } = settled(0, 2, (s) => servicesPartWay(s, 3, slots) || duskPartWay(s));
+      const { zones } = settled(0, 2, (s) => servicesPartWay(s, 3, slots));
       expect(zones).toHaveLength(1);
-      expect(zones[0][0]).toBeCloseTo(0.24, 2);
+      expect(zones[0][0]).toBeCloseTo(0.34, 2);
       expect(zones[0][1]).toBeLessThan(slots ? 1 : 0.75);
     }
   });
