@@ -13,7 +13,6 @@ import {
   VALUES_CAP,
   WORKS,
   WORKS_BUTTON,
-  SERVICES_LEAD,
   SERVICES_META_ON,
   SERVICES_WIPE,
   STORY,
@@ -45,11 +44,10 @@ import {
   pageGround,
   riseInset,
   roll,
-  servicesHandover,
+  sheetHandover,
   servicesHeading,
   servicesHold,
   servicesIndex,
-  servicesLead,
   servicesReveal,
   servicesRow,
   storyChapter,
@@ -541,7 +539,7 @@ describe("homepage choreography", () => {
     expect(valuesImage(0, 1).brightness).toBe(0.5);
   });
 
-  it("page ground: cream, stone under Works, cream for Values, then night from the start of Services on", () => {
+  it("page ground: cream, stone under Works, cream for Values and the making of a house, then night under Services' sheet", () => {
     // Before Works rises past the middle of the screen.
     expect(pageGround(0.5, -3, -10).color).toBe(CREAM);
     // Works over the whole screen: stone.
@@ -550,15 +548,11 @@ describe("homepage choreography", () => {
     // Works' last 0.35 screen hands back to cream, finished as its bottom reaches the top.
     expect(pageGround(4, -0.35, -10).color).toBe(STONE);
     expect(pageGround(5, 0, -10).color).toBe(CREAM);
-    // Dusk falls quickly as Services comes up (sso 0.24 → 0.46) and stays night after it.
-    expect(pageGround(10, 6, 0.24)).toEqual({ fade: 0, color: CREAM });
-    expect(pageGround(10, 6, 0.46)).toEqual({ fade: 1, color: NIGHT });
+    // Cream under the making of a house until Services' own night sheet reaches the header, then night: a switch, never a blend, as the sheet covers the screen.
+    expect(pageGround(10, 6, 0.5)).toEqual({ fade: 0, color: CREAM });
+    expect(pageGround(10, 6, 0.999)).toEqual({ fade: 0, color: CREAM });
+    expect(pageGround(10, 6, 1)).toEqual({ fade: 1, color: NIGHT });
     expect(pageGround(10, 6, 4).color).toBe(NIGHT);
-    expect(pageGround(10, 6, 0.35).fade).toBeCloseTo(0.5);
-    // The last Values word has gone just as the dusk passes its middle.
-    expect(valuesTitle(0.36, 3, 4)).toBeCloseTo(-MASK);
-    expect(pageGround(10, 6, 0.36).fade).toBeGreaterThan(0.5);
-    expect(pageGround(10, 6, 0.3).fade).toBeLessThan(0.3);
   });
 
   it("the stone ground changes only in two short windows", () => {
@@ -569,10 +563,10 @@ describe("homepage choreography", () => {
 
   it("the header reads the ground until Contact's ivory reaches it, then ivory, never the night behind Contact", () => {
     const night = pageGround(10, 6, 4);
-    const dusk = pageGround(10, 6, 0.35);
-    // Over Services the header sits on the ground, light on dark once the dusk is past half.
+    const making = pageGround(10, 6, 0.9);
+    // Over Services the header sits on the night ground, light on dark; over the making of a house, on cream.
     expect(headerGround(night, 400)).toEqual({ night: true, color: NIGHT });
-    expect(headerGround(dusk, 900)).toEqual({ night: dusk.fade > 0.5, color: dusk.color });
+    expect(headerGround(making, 900)).toEqual({ night: false, color: CREAM });
     expect(headerGround(pageGround(1, -3, -10), 3000)).toEqual({ night: false, color: STONE });
     // Contact's top at the header's tone line (64px) and above: ivory, not the body's night.
     expect(headerGround(night, 65)).toEqual({ night: true, color: NIGHT });
@@ -600,10 +594,7 @@ describe("homepage choreography", () => {
     expect(riseInset(0.25, 100, h, VH)).toBeCloseTo(75);
   });
 
-  it("services heading: its lines rise only once the dusk is past half, so ivory type never sits on a pale ground", () => {
-    for (const s of range(0, 1.2, 0.01)) {
-      if (servicesHeading(s, 0) < MASK) expect(pageGround(10, 6, s).fade).toBeGreaterThan(0.5);
-    }
+  it("services heading: its lines rise line by line and are whole before the stage pins", () => {
     for (const j of [0, 1, 2]) expect(servicesHeading(0.82, j)).toBe(0);
     // Line by line, 0.06 apart.
     expect(servicesHeading(0.6, 1)).toBeGreaterThan(servicesHeading(0.6, 0));
@@ -622,20 +613,6 @@ describe("homepage choreography", () => {
       // A row's scope and arrow follow its name: they are switched on (and fade in on their own) once it is most of the way up, and off again below that on the way back.
       for (let k = 0; k < 9; k++) expect(servicesRow(s, k).meta).toBe(servicesRow(s, k).t >= SERVICES_META_ON);
     }
-  });
-
-  it("services lead: the stage rides 0.3 screen ahead through the dusk and settles into the pin", () => {
-    expect(servicesLead(-2)).toBe(SERVICES_LEAD);
-    expect(servicesLead(0.4)).toBe(SERVICES_LEAD);
-    expect(servicesLead(1)).toBe(0);
-    expect(servicesLead(3)).toBe(0);
-    // On the screen the stage only ever rises (its top at (1 − s − lead) screens), slowing to a stop as it pins.
-    const at = (s: number) => 1 - s - servicesLead(s);
-    for (const s of range(-0.5, 1.2, 0.01)) expect(at(s + 0.01)).toBeLessThanOrEqual(at(s) + 1e-12);
-    const speed = (s: number) => (at(s - 0.001) - at(s + 0.001)) / 0.002;
-    expect(speed(0.2)).toBeCloseTo(1, 5);
-    expect(speed(0.7)).toBeCloseTo(0.5, 2);
-    expect(speed(0.999)).toBeLessThan(0.01);
   });
 
   it("services index: the two-screen hold is shared evenly between the rows", () => {
@@ -707,12 +684,12 @@ describe("homepage choreography", () => {
     }
   });
 
-  it("services to contact: Services sinks 0.35 screen behind the rising sheet and dims to 0.45", () => {
-    expect(servicesHandover(0)).toEqual({ lift: 0, opacity: 1 });
-    expect(servicesHandover(1).lift).toBe(0.35);
-    expect(servicesHandover(1).opacity).toBeCloseTo(0.45);
-    expect(servicesHandover(-1)).toEqual({ lift: 0, opacity: 1 });
-    expect(servicesHandover(3).lift).toBe(0.35);
+  it("sheet handover (making to Services, Services to Contact): the section before sinks 0.35 screen behind the rising sheet and dims to 0.45", () => {
+    expect(sheetHandover(0)).toEqual({ lift: 0, opacity: 1 });
+    expect(sheetHandover(1).lift).toBe(0.35);
+    expect(sheetHandover(1).opacity).toBeCloseTo(0.45);
+    expect(sheetHandover(-1)).toEqual({ lift: 0, opacity: 1 });
+    expect(sheetHandover(3).lift).toBe(0.35);
   });
 
   it("contact: the label, the heading and the paragraph rise line by line, 0.04 apart, without fading", () => {
