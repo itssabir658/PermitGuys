@@ -14,10 +14,10 @@ import { getGoogleReviews } from "@/lib/reviews";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "PermitGuys | Architecture, Engineering and Permit Drawings in the GTA",
+  title: "PermitGuys | Architects & Engineers for GTA Building Permits",
   absoluteTitle: true,
   description:
-    "An architecture and engineering firm in Oakville: additions, custom homes, basement apartments, decks and commercial projects across the GTA, from idea to permit.",
+    "Architecture and engineering firm in Oakville: additions, custom homes, basement apartments, decks and commercial projects across the GTA, idea to permit.",
   path: "/",
 });
 

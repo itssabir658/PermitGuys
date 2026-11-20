@@ -52,7 +52,9 @@ describe("project scope", () => {
     expect(scope.drawings.map((d) => d.discipline)).toEqual(expect.arrayContaining(["Site", "Structural"]));
     expect(scope.draftingTurnaround).toBe(TO_BE_CONFIRMED);
     expect(scope.cityReview.window).toBeNull();
-    expect(scope.serviceArea).toBe("to-confirm");
+    // Oakville is one of the municipalities the business confirmed it serves; Vaughan is not.
+    expect(scope.serviceArea).toBe("confirmed");
+    expect(buildProjectScope({ ...base, projectType: "deck", municipality: "Vaughan" }).serviceArea).toBe("to-confirm");
     expect(JSON.stringify(scope)).not.toMatch(/\$\s?\d/);
   });
 

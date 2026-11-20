@@ -7,14 +7,17 @@ import { Plate } from "@/components/ui/Plate";
 import { coverWidth, pagePlateForService } from "@/content/imagery";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { QuickOverview } from "@/components/ui/QuickOverview";
+import { serviceQuickFacts } from "@/content/quick-facts";
 import { StepList } from "@/components/ui/StepList";
 import { getProjectsForService, pickGuides, pickServices } from "@/lib/content";
-import { serviceSchema } from "@/lib/jsonld";
+import { faqPageSchema, serviceSchema } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 import { ProjectEvidence } from "./ProjectEvidence";
 import { RelatedContent } from "./RelatedContent";
 
 const toc = [
+  { id: "quick-overview", label: "Quick permit overview" },
   { id: "overview", label: "Overview" },
   { id: "who", label: "Who it is for" },
   { id: "requirements", label: "Typical requirements" },
@@ -55,6 +58,10 @@ export function ServiceTemplate({ service }: { service: Service }) {
       </PageHeader>
 
       <ArticleLayout toc={toc}>
+        <ArticleSection id="quick-overview" title="Quick permit overview">
+          <QuickOverview facts={serviceQuickFacts(service)} />
+        </ArticleSection>
+
         <ArticleSection id="overview" title="What does this service include?">
           <div className="prose-pg">
             {service.overview.map((p) => (
@@ -114,7 +121,7 @@ export function ServiceTemplate({ service }: { service: Service }) {
         title={`Discuss your ${service.navLabel.toLowerCase().replace(/ permits$/, "")} project.`}
         href={paths.contactFor(service.slug)}
       />
-      <JsonLd data={serviceSchema(service, path)} />
+      <JsonLd data={[serviceSchema(service, path), ...(service.faqs.length ? [faqPageSchema(service.faqs, path)] : [])]} />
     </>
   );
 }

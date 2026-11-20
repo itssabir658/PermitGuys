@@ -29,7 +29,15 @@ const nextConfig: NextConfig = {
     qualities: [75, 80, 85],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Vercel's own hostnames (permitguys.vercel.app and preview URLs) stay out of search indexes; www.permitguys.ca is the canonical site.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "(?<sub>.+)\\.vercel\\.app" }],
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
   },
   async redirects() {
     return legacyRedirects.map((r) => ({ ...r, permanent: true }));

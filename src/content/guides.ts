@@ -155,7 +155,7 @@ export const guides: Guide[] = [
     relatedGuides: ["do-i-need-a-building-permit", "permit-costs-and-timelines"],
     relatedServices: ["residential-additions", "custom-home-permits"],
     seo: {
-      title: "Home Addition Permits in the GTA: How the Process Works",
+      title: "Home Addition Permits in the GTA: How It Works",
       description:
         "How building permits work for home additions in the Greater Toronto Area, including zoning, drawings, minor variances and municipal review.",
     },

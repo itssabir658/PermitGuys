@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { SourceList, formatDate } from "@/components/ui/SourceList";
 import { pickGuides, pickServices } from "@/lib/content";
-import { guidePageFacts, guideSchema } from "@/lib/jsonld";
+import { guidePageFacts, faqPageSchema, guideSchema } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 import { RelatedContent } from "./RelatedContent";
 
@@ -114,7 +114,7 @@ export function GuideTemplate({ guide }: { guide: Guide }) {
       </ArticleLayout>
 
       <CtaPanel title="Have a question about your own project?" primaryLabel="Ask About Your Project" />
-      <JsonLd data={guideSchema(guide, path)} />
+      <JsonLd data={[guideSchema(guide, path), ...(guide.faqs.length ? [faqPageSchema(guide.faqs, path)] : [])]} />
     </>
   );
 }

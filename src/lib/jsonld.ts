@@ -1,15 +1,19 @@
-import type { Guide, Service } from "@/content/types";
+import { servedMunicipalities } from "@/content/locations";
+import type { Faq, Guide, Location, Service } from "@/content/types";
 import { site } from "@/content/site";
-import { getServices } from "@/lib/content";
+import { getLocations, getServices } from "@/lib/content";
 import { absoluteUrl, paths } from "@/lib/routes";
 
 /*
  * Schema.org builders. Every value comes from content that is visible on the
  * page or from verified business facts in content/site.ts. Nothing is added
- * for rich-result eligibility alone: no ratings, reviews, opening hours,
- * address or phone until the business supplies them, and no FAQPage markup
- * (Google limits FAQ rich results to government and health sites, and the
- * questions are already plain HTML on the page).
+ * for rich-result eligibility alone: never ratings or reviews (Google does
+ * not allow self-serving review markup).
+ *
+ * FAQPage markup mirrors the questions shown on the page, word for word.
+ * Google shows FAQ rich results only for government and health sites, but
+ * the markup still gives search and answer engines (Bing, ChatGPT search,
+ * Perplexity) the exact question-and-answer pairs to quote.
  *
  * Entities reference each other by @id so the organization, website and each
  * page form one connected graph.
@@ -52,8 +56,10 @@ export function organizationSchema() {
     url: url("/"),
     description: site.description,
     ...(site.logo ? { logo: absoluteUrl(site.logo, site.url) } : {}),
-    areaServed: { "@type": "AdministrativeArea", name: site.region },
+    areaServed: areaServed(),
     knowsAbout: getServices().map((s) => s.name),
+    slogan: "Architects, Engineers, Designers & Project Managers",
+    hasCredential: site.credentials.filter((c) => !/owner.s agent/i.test(c)).map((c) => ({ "@type": "EducationalOccupationalCredential", name: c })),
     ...(contact.phone ? { telephone: contact.phone } : {}),
     ...(contact.email ? { email: contact.email } : {}),
     ...(site.postalAddress ? { address: { "@type": "PostalAddress", ...site.postalAddress } } : contact.address ? { address: contact.address } : {}),
@@ -70,6 +76,20 @@ export function organizationSchema() {
     ...contactPoint,
     ...(site.social.length ? { sameAs: site.social.map((s) => s.url) } : {}),
   };
+}
+
+/** The municipalities the business has confirmed it serves, each linked to its page when it has one. */
+export function areaServed() {
+  const pages = new Map(getLocations().map((l) => [l.name, l]));
+  return servedMunicipalities.map(({ place }) => {
+    const page = pages.get(place);
+    return {
+      "@type": "City",
+      name: place,
+      containedInPlace: { "@type": "State", name: "Ontario" },
+      ...(page ? { url: url(paths.serviceArea(page.slug)) } : {}),
+    };
+  });
 }
 
 export function websiteSchema() {
@@ -141,8 +161,45 @@ export function serviceSchema(service: Service, path: string) {
     serviceType: service.name,
     category: service.category === "residential" ? "Residential building permits" : "Commercial building permits",
     provider: { "@id": ids.organization() },
-    areaServed: { "@type": "AdministrativeArea", name: site.region },
+    areaServed: areaServed(),
     mainEntityOfPage: { "@id": ids.page(path) },
+  };
+}
+
+/** Permit drawings and applications in one municipality, for its service-area page. */
+export function locationServiceSchema(location: Location, path: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${url(path)}#service`,
+    name: `Building permit drawings and applications in ${location.name}, Ontario`,
+    description: location.summary,
+    url: url(path),
+    serviceType: "Building permit drawings and permit applications",
+    provider: { "@id": ids.organization() },
+    areaServed: {
+      "@type": "City",
+      name: location.name,
+      containedInPlace: { "@type": "State", name: "Ontario" },
+    },
+    mainEntityOfPage: { "@id": ids.page(path) },
+  };
+}
+
+/** FAQPage for the questions shown on a page, in the same words. */
+export function faqPageSchema(faqs: Faq[], path: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": `${url(path)}#faq`,
+    url: url(path),
+    isPartOf: { "@id": ids.page(path) },
+    inLanguage: "en-CA",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: { "@type": "Answer", text: faq.answer.join("\n\n") },
+    })),
   };
 }
 
