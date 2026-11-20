@@ -34,3 +34,11 @@ Make sure the profile's website link points at the new domain, and that the busi
 - Run `npm run check:site -- https://<domain> --indexable` against production.
 - Validate a service page and a guide at https://search.google.com/test/rich-results and https://validator.schema.org.
 - Check share previews with a link in a messaging app or the LinkedIn Post Inspector.
+
+## Search and AI crawlers (November 2026)
+
+- The live origin is `https://www.permitguys.ca` (the bare domain redirects to it in Vercel). A Vercel production build uses it automatically; `NEXT_PUBLIC_SITE_URL` overrides it. Preview and local builds are noindex and robots.txt disallows them.
+- `*.vercel.app` hosts send `X-Robots-Tag: noindex, nofollow` (next.config.ts), so only www.permitguys.ca is indexed.
+- robots.txt names Googlebot, Bingbot, OAI-SearchBot, ChatGPT-User, GPTBot, PerplexityBot, Perplexity-User, ClaudeBot, Claude-SearchBot, Claude-User, Google-Extended, Applebot(-Extended) and DuckDuckBot, and keeps every crawler out of /api/.
+- `/llms.txt` (index) and `/llms-full.txt` (full text) are generated from the content files (src/lib/llms.ts).
+- Visits from ChatGPT carry `utm_source=chatgpt.com`; the inquiry form's attribution (src/lib/inquiry/attribution.ts) records it with the inquiry, along with the referring host.

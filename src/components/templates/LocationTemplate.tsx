@@ -1,25 +1,34 @@
 import type { Location } from "@/content/types";
-import { ArticleLayout, ArticleSection, RuledList } from "@/components/ui/Article";
+import { ArticleLayout, ArticleSection, Note, RuledList } from "@/components/ui/Article";
 import { CtaPanel } from "@/components/ui/CtaPanel";
+import { DirectAnswer } from "@/components/ui/DirectAnswer";
+import { FaqList } from "@/components/ui/FaqList";
 import { ExternalIcon } from "@/components/ui/Icons";
+import { JsonLd } from "@/components/ui/JsonLd";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { QuickOverview } from "@/components/ui/QuickOverview";
 import { getProjectsForLocation, pickGuides, pickServices } from "@/lib/content";
+import { faqPageSchema, locationServiceSchema } from "@/lib/jsonld";
 import { paths } from "@/lib/routes";
 import { ProjectEvidence } from "./ProjectEvidence";
 import { RelatedContent } from "./RelatedContent";
-import { Wordmark } from "@/components/ui/Wordmark";
 
-const toc = [
-  { id: "coverage", label: "Coverage" },
-  { id: "local-permits", label: "Local permit information" },
-  { id: "official", label: "Official municipal links" },
-  { id: "projects", label: "Local projects" },
-  { id: "related", label: "Related services and guides" },
-];
+const longDate = (iso: string) =>
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-CA", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 
 /** Rendered only for locations with coverage "confirmed" (see lib/content). */
 export function LocationTemplate({ location }: { location: Location }) {
   const path = paths.serviceArea(location.slug);
+  const projects = getProjectsForLocation(location.slug);
+  const faqs = location.faqs ?? [];
+  const toc = [
+    ...(location.quickFacts?.length ? [{ id: "quick-overview", label: "Quick permit overview" }] : []),
+    { id: "local-permits", label: "Local permit information" },
+    ...(faqs.length ? [{ id: "faq", label: "Questions" }] : []),
+    { id: "official", label: "Official municipal links" },
+    ...(projects.length ? [{ id: "projects", label: "Local projects" }] : []),
+    { id: "related", label: "Related services and guides" },
+  ];
   return (
     <>
       <PageHeader
@@ -28,24 +37,24 @@ export function LocationTemplate({ location }: { location: Location }) {
           { name: location.name, path },
         ]}
         eyebrow={location.region}
-        title={`Permit drawings and permit guidance in ${location.name}`}
-        lead={location.summary}
-      />
+        title={`Building permits and permit drawings in ${location.name}, ON`}
+      >
+        <DirectAnswer>{location.summary}</DirectAnswer>
+      </PageHeader>
       <ArticleLayout toc={toc}>
-        <ArticleSection id="coverage" title="Coverage">
-          <p className="prose-pg">
-            <Wordmark /> has confirmed it works with homeowners and property owners in {location.name}.</p>
-        </ArticleSection>
+        {location.quickFacts?.length ? (
+          <ArticleSection id="quick-overview" title="Quick permit overview">
+            <QuickOverview facts={location.quickFacts} />
+          </ArticleSection>
+        ) : null}
 
         <ArticleSection id="local-permits" title={`Building permits in ${location.name}`}>
           <div className="space-y-10">
             {location.localPermitInfo.map((block) => (
               <div key={block.heading}>
                 <h3 className="text-lg font-semibold text-charcoal-900">{block.heading}</h3>
-                <div className="prose-pg mt-3">
-                  {block.paragraphs.map((p) => (
-                    <p key={p}>{p}</p>
-                  ))}
+                <div className="mt-6">
+                  <RuledList items={block.paragraphs} />
                 </div>
                 {block.list ? (
                   <div className="mt-6">
@@ -55,7 +64,18 @@ export function LocationTemplate({ location }: { location: Location }) {
               </div>
             ))}
           </div>
+          <Note>
+            {location.checkedOn
+              ? `Summarised from the ${location.authority ?? "municipality"}'s own pages, read on ${longDate(location.checkedOn)}. These are not complete lists and rules change: the building department decides for each property, so check the official pages below.`
+              : "Rules change and the building department decides for each property, so check the official pages below."}
+          </Note>
         </ArticleSection>
+
+        {faqs.length ? (
+          <ArticleSection id="faq" title="Common questions">
+            <FaqList faqs={faqs} />
+          </ArticleSection>
+        ) : null}
 
         <ArticleSection id="official" title="Official municipal links">
           <ul className="space-y-3">
@@ -71,15 +91,18 @@ export function LocationTemplate({ location }: { location: Location }) {
           </ul>
         </ArticleSection>
 
-        <ArticleSection id="projects" title={`Projects in ${location.name}`}>
-          <ProjectEvidence projects={getProjectsForLocation(location.slug)} context={location.name} />
-        </ArticleSection>
+        {projects.length ? (
+          <ArticleSection id="projects" title={`Projects in ${location.name}`}>
+            <ProjectEvidence projects={projects} context={location.name} />
+          </ArticleSection>
+        ) : null}
 
         <ArticleSection id="related" title="Related services and guides">
           <RelatedContent services={pickServices(location.relatedServices)} guides={pickGuides(location.relatedGuides)} />
         </ArticleSection>
       </ArticleLayout>
       <CtaPanel title={`Planning a project in ${location.name}?`} />
+      <JsonLd data={[locationServiceSchema(location, path), ...(faqs.length ? [faqPageSchema(faqs, path)] : [])]} />
     </>
   );
 }

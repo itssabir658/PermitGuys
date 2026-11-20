@@ -163,6 +163,22 @@ export interface Location {
   relatedServices: string[];
   relatedGuides: string[];
   seo: SeoFields;
+  /** The body that issues permits there, e.g. "City of Mississauga". */
+  authority?: string;
+  /** The answer-first "Quick permit overview" near the top of the page. */
+  quickFacts?: QuickFact[];
+  /** Questions answered on the page (also its FAQPage structured data). */
+  faqs?: Faq[];
+  /** ISO date the official pages behind localPermitInfo were last read. */
+  checkedOn?: string;
+}
+
+/** One row of a "Quick permit overview" definition list. */
+export interface QuickFact {
+  term: string;
+  detail: string;
+  /** An official page that backs the detail. */
+  source?: OfficialLink;
 }
 
 export interface CaseStudy {

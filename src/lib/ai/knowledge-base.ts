@@ -1,7 +1,7 @@
 import { guides } from "@/content/guides";
 import { GTA_PERMITS_CHECKED_ON, gtaPermits, ontarioPermitFacts, type MunicipalPermitInfo, type SourceLink } from "@/content/gta-permits";
 import { homeFaqs } from "@/content/faqs";
-import { locations } from "@/content/locations";
+import { servedMunicipalities } from "@/content/locations";
 import { otherWork } from "@/content/other-work";
 import { homeSteps } from "@/content/process";
 import { services } from "@/content/services";
@@ -187,8 +187,8 @@ export const PERMIT_GUYS_KNOWLEDGE = {
     faqs: g.faqs,
   })),
   reviewTimeframes: reviewTimeframes(),
-  /** Municipalities the business has confirmed it serves (src/content/locations.ts). Empty means none confirmed yet. */
-  confirmedServiceAreas: locations.filter((l) => l.coverage === "confirmed").map((l) => l.name),
+  /** Municipalities the business has confirmed it serves (src/content/locations.ts, from the municipalities list). */
+  confirmedServiceAreas: servedMunicipalities.map((m) => m.place),
   ontario: { facts: ontarioPermitFacts.facts, sources: sources(ontarioPermitFacts.sources) },
   municipalities: { checkedOn: GTA_PERMITS_CHECKED_ON, list: gtaPermits },
   objections,

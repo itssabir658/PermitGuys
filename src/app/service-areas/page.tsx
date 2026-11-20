@@ -8,16 +8,16 @@ import { Placeholder } from "@/components/ui/Placeholder";
 import { PlateBand } from "@/components/ui/PlateBand";
 import { Section } from "@/components/ui/Section";
 import { plates } from "@/content/imagery";
-import { gtaMunicipalities } from "@/content/locations";
+import { gtaMunicipalities, servedWithoutPage } from "@/content/locations";
 import { getLocations } from "@/lib/content";
 import { paths } from "@/lib/routes";
 import { pageMetadata } from "@/lib/seo";
 import { Wordmark } from "@/components/ui/Wordmark";
 
 export const metadata = pageMetadata({
-  title: "Service Areas in the Greater Toronto Area",
+  title: "Building Permit Service Areas in the GTA",
   description:
-    "PermitGuys works with homeowners and property owners in the Greater Toronto Area. Find local permit information and official municipal links.",
+    "PermitGuys prepares permit drawings and applies for building permits in Toronto, Mississauga, Oakville, Brampton, Markham, Burlington, Hamilton and more.",
   path: paths.serviceAreas,
 });
 
@@ -43,7 +43,21 @@ export default function ServiceAreasPage() {
           </div>
           <div className="lg:col-span-8">
             {confirmed.length > 0 ? (
-              <LinkRows items={confirmed.map((l) => ({ href: paths.serviceArea(l.slug), title: l.name, description: l.summary, meta: l.region }))} />
+              <>
+                <LinkRows
+                  items={confirmed.map((l) => ({
+                    href: paths.serviceArea(l.slug),
+                    title: `${l.name}, ON`,
+                    description: `Building permits are issued by the ${l.authority ?? l.name}. What it publishes, how to apply and how we help.`,
+                    meta: l.region,
+                  }))}
+                />
+                {servedWithoutPage.length ? (
+                  <p className="mt-6 leading-relaxed text-ink-muted">
+                    We also work in {servedWithoutPage.join(", ")}. Ask us about a project there.
+                  </p>
+                ) : null}
+              </>
             ) : (
               <Placeholder block>
                 list of municipalities <Wordmark /> has confirmed it serves. Each confirmed municipality gets its own page with local permit information, generated from src/content/locations.ts.

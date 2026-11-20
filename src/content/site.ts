@@ -5,6 +5,12 @@
  *
  * Search the codebase for "PLACEHOLDER" to find every visible placeholder.
  */
+const PRODUCTION_URL = "https://www.permitguys.ca";
+
+/** Vercel sets VERCEL_ENV (and NEXT_PUBLIC_VERCEL_ENV for Next.js) to "production" for production builds only. */
+const isVercelProduction = (process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.VERCEL_ENV) === "production";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || (isVercelProduction ? PRODUCTION_URL : undefined);
+
 export const site = {
   name: "PermitGuys",
   legalName: null as string | null,
@@ -32,7 +38,7 @@ export const site = {
   /** Weekday opening hours for structured data; weekends are by appointment and left out. */
   openingHours: [{ days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "09:00", closes: "17:00" }] as { days: string[]; opens: string; closes: string }[],
   /** Absolute or root-relative URL of the supplied logo (square, at least 112px). */
-  logo: null as string | null,
+  logo: "/brand/permitguys-logo.png" as string | null,
   /**
    * Google review summary from the Business Profile, read from the
    * profile on the date in `asOf`. Shown as a link to the reviews; live
@@ -80,11 +86,18 @@ export const site = {
    */
   social: [] as { label: string; url: string }[],
   /**
-   * Set NEXT_PUBLIC_SITE_URL to the production origin. Until it is set,
-   * pages are served with noindex and robots.txt disallows crawling.
+   * The live origin. Vercel serves the site at www.permitguys.ca (the bare
+   * permitguys.ca redirects there), so canonical URLs, the sitemap and
+   * structured data all use it.
    */
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  indexable: Boolean(process.env.NEXT_PUBLIC_SITE_URL) && process.env.SITE_NOINDEX !== "true",
+  productionUrl: PRODUCTION_URL,
+  /**
+   * NEXT_PUBLIC_SITE_URL overrides the origin. Without it, a Vercel
+   * production build uses the live origin; previews and local builds use
+   * localhost and are served with noindex, and robots.txt disallows crawling.
+   */
+  url: SITE_URL ?? "http://localhost:3000",
+  indexable: Boolean(SITE_URL) && process.env.SITE_NOINDEX !== "true",
   /** Search engine ownership tokens (meta tag method). See docs/SEARCH_CONSOLE.md. */
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
