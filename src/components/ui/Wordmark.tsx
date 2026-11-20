@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from "react";
-import { WORDMARK } from "@/content/wordmark";
 import { site } from "@/content/site";
 import { cn } from "./cn";
+import { WordmarkSvg } from "./WordmarkSvg";
 
 /**
  * The logo in running text: the name set as the wordmark, at the size of the
@@ -13,10 +13,7 @@ import { cn } from "./cn";
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn("wordmark", className)}>
-      <svg viewBox={WORDMARK.viewBox} className="wordmark__svg" aria-hidden="true" focusable="false">
-        <path className="wordmark__permit" d={WORDMARK.permit} />
-        <path className="wordmark__guys" d={WORDMARK.guys} />
-      </svg>
+      <WordmarkSvg />
       <span className="sr-only">{site.name}</span>
     </span>
   );

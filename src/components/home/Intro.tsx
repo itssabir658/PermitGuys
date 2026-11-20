@@ -94,7 +94,7 @@ export function Intro() {
                   <div data-frame-inner="" className="intro-slide__inner">
                     <Image
                       src={plate.src}
-                      alt=""
+                      alt={plate.alt}
                       fill
                       sizes={`(max-aspect-ratio: 4/5) ${coverWidth(plate, 1, "92vw", 1.15)}, ${coverWidth(plate, FRAME_ASPECT, "48vw", 1.15)}`}
                       quality={80}
@@ -126,8 +126,7 @@ export function Intro() {
               municipalities.map((m) => (
                 <li key={`${copyNo}-${m.src}`} aria-hidden={copyNo === 1 || undefined} className="intro-marquee__item">
                   {/* eslint-disable-next-line @next/next/no-img-element -- small vector and line-art marks, drawn as they are */}
-                  <img src={m.src} alt="" width={m.width} height={m.height} loading="lazy" decoding="async" className="intro-marquee__mark" style={{ height: markHeight(m) }} />
-                  {copyNo === 0 ? <span className="sr-only">{m.name}</span> : null}
+                  <img src={m.src} alt={m.name} width={m.width} height={m.height} loading="lazy" decoding="async" className="intro-marquee__mark" style={{ height: markHeight(m) }} />
                 </li>
               )),
             )}

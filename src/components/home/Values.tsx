@@ -112,7 +112,7 @@ export function Values() {
             <div data-values-image="" className="absolute inset-0 overflow-hidden bg-stone-300">
               <Image
                 src={v.plate.src}
-                alt=""
+                alt={v.plate.alt}
                 fill
                 sizes={`(min-width: 1024px) ${coverWidth(v.plate, 3 / 4, "26rem")}, ${coverWidth(v.plate, 3 / 4, "80vw")}`}
                 quality={80}

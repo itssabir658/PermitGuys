@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "./cn";
 
 /*
@@ -30,6 +30,12 @@ const W = r4((BOX[2] - BOX[0]) * KX);
 const H = r4(BOX[3] - BOX[1]);
 const x = (lon: number) => r4((lon - BOX[0]) * KX);
 const y = (lat: number) => r4(BOX[3] - lat);
+
+/** True once the page has hydrated: the drawn points (several hundred circles) are left out of the server HTML to keep the page light for crawlers; the map is never on the first screen, so they are drawn long before anyone sees it. */
+const noSubscribe = () => () => {};
+function useHydrated() {
+  return useSyncExternalStore(noSubscribe, () => true, () => false);
+}
 
 function DotField({ points }: { points: [number, number][] }) {
   return (
@@ -71,6 +77,7 @@ export function ProjectsMapFrame({
   const frame = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  const hydrated = useHydrated();
 
   useEffect(() => {
     const el = frame.current;
@@ -102,7 +109,7 @@ export function ProjectsMapFrame({
   return (
     <div ref={frame} className={cn("projects-map__frame", className)}>
       <div className={cn("projects-map__cover", ready && "is-gone")}>
-        <DotField points={points} />
+        {hydrated ? <DotField points={points} /> : null}
       </div>
       {token ? <div ref={canvas} className="projects-map__canvas" role="region" aria-label="Map of our client projects" /> : null}
       <p className="projects-map__legend">

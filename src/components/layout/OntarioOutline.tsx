@@ -1,3 +1,6 @@
+"use client";
+
+// A client component only so that the outline's long path data travels in a cached script, not twice in every page's HTML (markup and server payload). It renders on the server all the same.
 import type { CSSProperties } from "react";
 import { GTA_POINT, ONTARIO_PATHS, ONTARIO_VIEWBOX } from "@/content/ontario";
 

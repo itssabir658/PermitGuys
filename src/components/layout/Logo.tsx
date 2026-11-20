@@ -1,3 +1,6 @@
+"use client";
+
+// A client component only so that the outlines travel in a cached script, not again in each page's server payload; it renders on the server all the same.
 import { site } from "@/content/site";
 import { WORDMARK } from "@/content/wordmark";
 
