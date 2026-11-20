@@ -167,7 +167,7 @@ export function Services() {
                             <div key={s.slug} data-services-pic={i} className="absolute inset-0" style={i ? { visibility: "hidden" } : undefined}>
                               <Image
                                 src={plate.src}
-                                alt=""
+                                alt={plate.alt}
                                 fill
                                 sizes={`(min-height: 1006px) ${coverWidthByHeight(plate, "44rem")}, ${coverWidthByHeight(plate, "70vh")}`}
                                 quality={75}

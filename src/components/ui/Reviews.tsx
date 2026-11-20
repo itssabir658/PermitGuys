@@ -9,18 +9,14 @@ import { cn } from "./cn";
  * never written by hand, and every card credits its author and Google.
  */
 
-const STAR = "M10 1.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.6 7.7l5.8-.8z";
-
+/**
+ * A row of five stars, 1em each with 0.125rem between them, in the text
+ * colour: one element masked by the star (globals.css, ".star-row") rather
+ * than five inline SVGs, because the homepage repeats it in every review
+ * card and the markup added up.
+ */
 function StarRow({ className }: { className?: string }) {
-  return (
-    <span className={cn("flex gap-0.5", className)}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <svg key={i} viewBox="0 0 20 20" className="size-[1em] shrink-0 fill-current" aria-hidden="true" focusable="false">
-          <path d={STAR} />
-        </svg>
-      ))}
-    </span>
-  );
+  return <span className={cn("star-row", className)} />;
 }
 
 /** Five stars filled to the rating. Decorative: the number is always given as text. */

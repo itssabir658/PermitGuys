@@ -54,3 +54,42 @@ test.describe("structured data and crawler files", () => {
     expect((await request.get("/llms-full.txt")).status()).toBe(200);
   });
 });
+
+/*
+ * What Bing Webmaster Tools' URL inspection checks on a page: one <h1>, alt
+ * text on every image, and an HTML document that is not too heavy. The
+ * homepage HTML was 441 KB before the drawings, map points, stars and logo
+ * outlines stopped being repeated in it (2026-11-20); the budget keeps it
+ * from creeping back.
+ */
+test.describe("Bing page checks", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "HTTP-only checks run once");
+  });
+
+  test("the homepage has exactly one h1, before and after scripts run", async ({ request, page }) => {
+    const html = await (await request.get("/")).text();
+    expect(html.match(/<h1[\s>]/g)?.length).toBe(1);
+    await page.goto("/");
+    await page.mouse.wheel(0, 20000);
+    await expect(page.locator("h1")).toHaveCount(1);
+  });
+
+  test("every page in the sitemap has exactly one h1 and every image has alt text", async ({ request }) => {
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    const paths = [...sitemap.matchAll(/<loc>https?:\/\/[^/<]+(\/[^<]*)<\/loc>/g)].map((m) => m[1]);
+    expect(paths.length).toBeGreaterThan(0);
+    for (const path of [...paths, "/this-page-does-not-exist/"]) {
+      const html = await (await request.get(path)).text();
+      expect(html.match(/<h1[\s>]/g)?.length, path).toBe(1);
+      const imgs = html.match(/<img\b[^>]*>/g) ?? [];
+      for (const img of imgs) expect(img, path).toMatch(/\balt="[^"]+"/);
+    }
+  });
+
+  test("the homepage HTML stays light", async ({ request }) => {
+    const html = await (await request.get("/")).text();
+    expect(html.length).toBeLessThan(360_000);
+  });
+});
+

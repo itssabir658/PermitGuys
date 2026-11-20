@@ -61,7 +61,7 @@ const sizes = {
 
 /** The far plane, through the image optimizer. */
 function FarPicture() {
-  const common = { alt: "", fill: true, quality: 80, fetchPriority: "high", loading: "eager" } as const;
+  const common = { alt: plate.alt, fill: true, quality: 80, fetchPriority: "high", loading: "eager" } as const;
   const {
     props: { srcSet: tallSet },
   } = getImageProps({ ...common, src: heroLayers.far.tall, sizes: sizes.tall });

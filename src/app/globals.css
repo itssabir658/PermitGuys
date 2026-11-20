@@ -4330,6 +4330,22 @@
     mask-image: linear-gradient(90deg, transparent, #000 4rem, #000 calc(100% - 4rem), transparent);
   }
 }
+/*
+ * Five rating stars (Reviews.tsx, StarRow): 1em each, 0.125rem apart, in the
+ * text colour. One element masked by the star, spaced out to the five, not
+ * five inline SVGs, so the review cards stay light in the page's HTML.
+ */
+.star-row {
+  --star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 1.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.6 7.7l5.8-.8z'/%3E%3C/svg%3E");
+  display: block;
+  flex-shrink: 0;
+  width: calc(5em + 0.5rem);
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask: var(--star) left center / 1em 1em space no-repeat;
+  mask: var(--star) left center / 1em 1em space no-repeat;
+}
+
 /* Each review a Google review card: a raised paper card with the reviewer's initials, name, the source and the stars, then the words. */
 .praise-card {
   padding: 1.6rem 1.5rem 1.75rem;
