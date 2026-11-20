@@ -117,7 +117,9 @@ describe("llms.txt", () => {
     const { llmsIndex, llmsFull } = await withEnv({ NEXT_PUBLIC_SITE_URL: "https://www.permitguys.ca" }, () => import("@/lib/llms"));
     const index = llmsIndex();
     expect(index.startsWith("# PermitGuys")).toBe(true);
-    for (const needle of ["416-479-9556", "info@permitguys.ca", "Mzaman@permitguys.ca", "+1 (647) 968-6284", "BCIN"]) expect(index).toContain(needle);
+    for (const needle of ["416-479-9556", "info@permitguys.ca", "https://www.permitguys.ca/contact/", "BCIN"]) expect(index).toContain(needle);
+    // The owner's direct email and WhatsApp are for lead routing only, never published here.
+    for (const text of [index, llmsFull()]) expect(text).not.toMatch(/mzaman@|647\D*968\D*6284|whatsapp/i);
     for (const l of locations) expect(index).toContain(`https://www.permitguys.ca${paths.serviceArea(l.slug)}`);
     for (const s of services) expect(index).toContain(`https://www.permitguys.ca${paths.service(s.slug)}`);
     expect(llmsFull().length).toBeGreaterThan(index.length);

@@ -3,7 +3,6 @@ import { servedWithoutPage } from "@/content/locations";
 import { serviceQuickFacts } from "@/content/quick-facts";
 import { site } from "@/content/site";
 import type { Faq, QuickFact } from "@/content/types";
-import { OWNER_DEFAULTS, whatsappDisplay } from "@/lib/ai/owner-contact";
 import { getGuides, getLocations, getServices } from "@/lib/content";
 import { absoluteUrl, paths } from "@/lib/routes";
 
@@ -36,8 +35,6 @@ function aboutBlock(): string[] {
     `- Hours: ${contact.hours}`,
     `- Phone: ${contact.phone}`,
     `- Email: ${contact.email}`,
-    `- Owner (email): ${OWNER_DEFAULTS.email}`,
-    `- WhatsApp: ${whatsappDisplay(OWNER_DEFAULTS.whatsapp)}`,
     `- Inquiry form: ${url(paths.contact)}`,
     "",
   ];
