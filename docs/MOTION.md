@@ -43,7 +43,7 @@ The screen is twelve tall dark blades side by side (eight below 640px), each a h
 | From `data-intro="play"` | What happens |
 |---|---|
 | Before first paint | The head script sets `data-motion`, `data-intro` on every load, `data-gentle` for reduced motion, and every flag after 8s whatever happens, so the page can never be held. The dark façade is in place, seamless. |
-| 0 | Two frames after hydration the Preloader sets `data-intro="play"` and the CSS timeline starts (the head script starts it anyway 1.5s after navigation). |
+| 0 | The head script sets `data-intro="play"` before first paint, so the CSS timeline runs with the first frame while the page's scripts load (all of it transforms and opacity, on the compositor). The hero's statement rests in place under the shut façade, so it is the page's first contentful paint, and its entrance starts at `data-revealed`. |
 | 0.15 to 1.75s | A raking light crosses the façade from left to right (`--e-inout-2`), as low sun crosses a building. |
 | 0.35 to 1.69s | The joints between the blades come up, left to right, 40ms apart (0.9s each): a dark line with a lit lip. |
 | 0.3 to 1.2s | The logo (on dark) rises into place in the middle (`--e-out-strong`). |
