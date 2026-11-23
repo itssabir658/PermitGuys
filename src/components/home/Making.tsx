@@ -107,7 +107,8 @@ export function Making() {
                     sizes={sizes}
                     quality={78}
                   />
-                  <video data-mk-film="" className="mk-film" aria-hidden="true" muted playsInline preload="none" poster={dusk.src} disablePictureInPicture>
+                  {/* No poster: the still under it shows until the film plays, and a poster would fetch the full-size JPEG on every visit. */}
+                  <video data-mk-film="" className="mk-film" aria-hidden="true" muted playsInline preload="none" disablePictureInPicture>
                     <source src="/videos/making/front-dusk-1080.mp4" type='video/mp4; codecs="avc1.640032"' media="(min-width: 1024px)" />
                     <source src="/videos/making/front-dusk-1080.webm" type='video/webm; codecs="vp9"' media="(min-width: 1024px)" />
                     <source src="/videos/making/front-dusk-720.mp4" type='video/mp4; codecs="avc1.64001f"' />

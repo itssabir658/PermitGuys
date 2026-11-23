@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headingFont, logoFont, monoFont } from "./fonts";
-import { PermitAdvisorWidget } from "@/components/ai/PermitAdvisorWidget";
+import { PermitAdvisorLazy } from "@/components/ai/PermitAdvisorLazy";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { InteractionEffects } from "@/components/layout/InteractionEffects";
@@ -67,8 +67,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <InteractionEffects />
         <MotionRoot />
         <ScreenTransition />
-        {/* The permit strategist, on only when ANTHROPIC_API_KEY is set at build time (docs/CHAT.md). */}
-        {chatConfigured(process.env) ? <PermitAdvisorWidget /> : null}
+        {/* The permit strategist, on only when ANTHROPIC_API_KEY is set at build time (docs/CHAT.md); fetched once the page has opened. */}
+        {chatConfigured(process.env) ? <PermitAdvisorLazy /> : null}
         </VisitorTelemetryProvider>
       </body>
     </html>

@@ -39,9 +39,11 @@ import { Logo } from "./Logo";
  * All of it is transforms and opacity: the light is one gradient moved
  * across each blade (each blade shows its own slice of one screen-wide
  * gradient, so the light reads as one), and the blades turn with rotateY on
- * the compositor. The timeline starts (data-intro="play") two frames after
- * hydration, as before; the head script starts it anyway after 1.5s. The
- * page underneath is first measured once the façade is complete
+ * the compositor. The timeline starts (data-intro="play") with the first
+ * frame, from the head script, so the façade plays while the page's scripts
+ * load and hydrate instead of after them (every piece of it is a transform
+ * or an opacity, on the compositor, so the main thread's work cannot stall
+ * it). The page underneath is first measured once the façade is complete
  * (engine.measureAfter), in the hold.
  *
  * The screen waits for the fonts and the page's opening pictures as before
@@ -55,12 +57,11 @@ import { Logo } from "./Logo";
  *
  * `motionScript` runs in the document head before first paint. It turns the
  * sequence on for every visitor with JavaScript (visitors who prefer reduced
- * motion get it too, with data-gentle: see "Gentle motion" in globals.css), marks
- * the load for the intro (data-intro), starts it
- * after 1.5s should the page not have hydrated by then, and sets every
+ * motion get it too, with data-gentle: see "Gentle motion" in globals.css),
+ * starts the intro's timeline at once (data-intro="play"), and sets every
  * flag after 8s whatever happens, so the page can never be held.
  */
-export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)d.dataset.gentle="";d.dataset.motion="";d.dataset.intro="";setTimeout(function(){d.dataset.intro="play"},1500);setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
+export const motionScript = `(function(){var d=document.documentElement;try{history.scrollRestoration="manual"}catch(e){}var go=function(){d.dataset.loaded="";d.dataset.revealed="";d.dataset.preloaded=""};if(matchMedia("(prefers-reduced-motion: reduce)").matches)d.dataset.gentle="";d.dataset.motion="";d.dataset.intro="play";setTimeout(function(){if(!("preloaded" in d.dataset))go()},8000)})()`;
 
 /** From navigation start, as the head script: the page is released by then whatever happens. */
 const SAFETY_MS = 8000;
@@ -86,10 +87,10 @@ export function Preloader() {
     const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const settled = (list: Animation[]) => Promise.all(list.map((a) => a.finished.catch(() => undefined)));
     let composedAt = 0;
-    // Two frames on, so every effect of the hydration has run and nothing heavy is left to stall the light.
+    // The head script started the timeline with the first frame; two frames on, every effect of the hydration has run.
     const composed = frame().then(frame).then(() => {
       html.dataset.intro = "play";
-      // Reading them brings the styles up to date, which starts the animations.
+      // Reading them brings the styles up to date; the façade is complete once they have finished.
       return settled(el.getAnimations({ subtree: true })).then(() => {
         composedAt = performance.now();
       });

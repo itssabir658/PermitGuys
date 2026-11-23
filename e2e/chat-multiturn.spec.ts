@@ -27,6 +27,8 @@ test("answers a first question, a quick-reply tap and a typed follow-up", async 
 
   await page.goto("/services/");
   const launcher = page.getByRole("button", { name: /Ask PermitGuys/ });
+  // The assistant is fetched once the page has opened (PermitAdvisorLazy.tsx).
+  await launcher.waitFor({ timeout: 12_000 }).catch(() => undefined);
   test.skip((await launcher.count()) === 0, "The assistant is off in this build (no ANTHROPIC_API_KEY at build time).");
   await launcher.click();
   const panel = page.getByRole("dialog", { name: "Ask about your project" });
@@ -73,6 +75,8 @@ test("offers a retry when a reply fails, and the retry answers", async ({ page }
   page.on("console", (m) => logged.push(m.text()));
   await page.goto("/services/");
   const launcher = page.getByRole("button", { name: /Ask PermitGuys/ });
+  // The assistant is fetched once the page has opened (PermitAdvisorLazy.tsx).
+  await launcher.waitFor({ timeout: 12_000 }).catch(() => undefined);
   test.skip((await launcher.count()) === 0, "The assistant is off in this build (no ANTHROPIC_API_KEY at build time).");
   await launcher.click();
   const panel = page.getByRole("dialog", { name: "Ask about your project" });

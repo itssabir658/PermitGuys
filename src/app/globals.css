@@ -1755,8 +1755,19 @@
   :root[data-motion][data-arrival="route"] .hero-sub-line .split-line__inner {
     animation-delay: calc(0.5s + var(--i, 0) * 0.07s);
   }
-  :root[data-motion]:not([data-revealed]) :is([data-hero-plate], .hero-sub-line .split-line__inner) {
+  :root[data-motion]:not([data-revealed]) [data-hero-plate] {
     animation-play-state: paused;
+  }
+  /*
+   * Until then the statement rests in place, under the closed façade (or
+   * the page transition's cover), where nobody sees it: so it is painted
+   * with the first frame, and browsers count it as the page's first
+   * content (Largest Contentful Paint) instead of waiting for the façade to
+   * open. The entrance starts from its masks at data-revealed, in the same
+   * frame, as before.
+   */
+  :root[data-motion]:not([data-revealed]) .hero-sub-line .split-line__inner {
+    animation: none;
   }
 }
 

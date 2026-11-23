@@ -66,7 +66,8 @@ test.describe("accessibility", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-gentle", "");
-    // The entrances play...
+    // The entrances play (the statement rests in place under the façade until the page is revealed)...
+    await page.waitForFunction(() => "revealed" in document.documentElement.dataset);
     expect(await page.locator(".hero-sub-line .split-line__inner").first().evaluate((el) => getComputedStyle(el).animationName)).toBe("line-up");
     await page.waitForFunction(() => "preloaded" in document.documentElement.dataset);
     // ...the homepage's sections come in as reveals...
