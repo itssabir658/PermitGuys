@@ -63,11 +63,11 @@ test("answers a first question, a quick-reply tap and a typed follow-up", async 
   console.expectNone();
 });
 
-test("offers a retry when a reply fails, and the retry answers", async ({ page }) => {
+test("retries a failed reply once quietly, then offers a retry, and the retry answers", async ({ page }) => {
   let calls = 0;
   await page.route("**/api/chat/", async (route) => {
     calls += 1;
-    if (calls === 1) return route.fulfill({ status: 500, body: "unavailable" });
+    if (calls <= 2) return route.fulfill({ status: 500, body: "unavailable" });
     const body = `data: ${JSON.stringify({ type: "start", messageId: "r1" })}\n\ndata: ${JSON.stringify({ type: "text-start", id: "t" })}\n\ndata: ${JSON.stringify({ type: "text-delta", id: "t", delta: "Back again: yes, a permit is needed." })}\n\ndata: ${JSON.stringify({ type: "text-end", id: "t" })}\n\ndata: ${JSON.stringify({ type: "finish" })}\n\ndata: [DONE]\n\n`;
     return route.fulfill({ status: 200, headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" }, body });
   });
@@ -82,10 +82,33 @@ test("offers a retry when a reply fails, and the retry answers", async ({ page }
   const panel = page.getByRole("dialog", { name: "Ask about your project" });
   await panel.getByLabel("Your question").fill("Do I need a permit?");
   await panel.getByLabel("Your question").press("Enter");
-  await expect(panel.getByRole("alert")).toContainText("couldn't reach our assistant");
+  // The first failure is asked again quietly; only the second one shows the notice.
+  await expect(panel.getByRole("alert")).toContainText("having trouble connecting");
+  expect(calls).toBe(2);
   expect(logged.some((l) => l.includes("[advisor] reply failed: unavailable"))).toBe(true);
   await panel.getByRole("button", { name: "Try again" }).click();
   await expect(panel.getByText("Back again: yes, a permit is needed.")).toBeVisible();
+  await expect(panel.getByRole("alert")).toHaveCount(0);
+  expect(calls).toBe(3);
+});
+
+test("a single dropped reply is retried without the visitor seeing an error", async ({ page }) => {
+  let calls = 0;
+  await page.route("**/api/chat/", async (route) => {
+    calls += 1;
+    if (calls === 1) return route.fulfill({ status: 500, body: "unavailable" });
+    const body = `data: ${JSON.stringify({ type: "start", messageId: "r1" })}\n\ndata: ${JSON.stringify({ type: "text-start", id: "t" })}\n\ndata: ${JSON.stringify({ type: "text-delta", id: "t", delta: "Answered on the quiet retry." })}\n\ndata: ${JSON.stringify({ type: "text-end", id: "t" })}\n\ndata: ${JSON.stringify({ type: "finish" })}\n\ndata: [DONE]\n\n`;
+    return route.fulfill({ status: 200, headers: { "content-type": "text/event-stream", "x-vercel-ai-ui-message-stream": "v1" }, body });
+  });
+  await page.goto("/services/");
+  const launcher = page.getByRole("button", { name: /Ask PermitGuys/ });
+  await launcher.waitFor({ timeout: 12_000 }).catch(() => undefined);
+  test.skip((await launcher.count()) === 0, "The assistant is off in this build (no ANTHROPIC_API_KEY at build time).");
+  await launcher.click();
+  const panel = page.getByRole("dialog", { name: "Ask about your project" });
+  await panel.getByLabel("Your question").fill("Can I schedule an appointment?");
+  await panel.getByLabel("Your question").press("Enter");
+  await expect(panel.getByText("Answered on the quiet retry.")).toBeVisible();
   await expect(panel.getByRole("alert")).toHaveCount(0);
   expect(calls).toBe(2);
 });

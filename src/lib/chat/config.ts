@@ -18,6 +18,15 @@ export const DEFAULT_FALLBACK_MODEL = "claude-opus-5-5";
 /** The fallback when the main model already is DEFAULT_FALLBACK_MODEL. */
 const SECOND_FALLBACK_MODEL = "claude-sonnet-5-5";
 
+/**
+ * The backup route when Anthropic cannot answer (a rejected key, an outage):
+ * Vercel AI Gateway, which signs in with the deployment's own OIDC token on
+ * Vercel, or AI_GATEWAY_API_KEY elsewhere. CHAT_GATEWAY_BACKUP=off turns it off.
+ */
+export const DEFAULT_BACKUP_MODEL = "anthropic/claude-sonnet-5.5";
+/** The Anthropic model whose request options the backup takes. */
+const BACKUP_OPTIONS_FOR = "claude-sonnet-5-5";
+
 const num = (v: string | undefined, fallback: number) => {
   const n = Number(v);
   return v !== undefined && v !== "" && Number.isFinite(n) && n > 0 ? n : fallback;
@@ -32,6 +41,12 @@ export function chatSettings(env: Env) {
   return {
     model,
     fallbackModel: fallback === model && !env.ANTHROPIC_FALLBACK_MODEL ? SECOND_FALLBACK_MODEL : fallback,
+    backup:
+      env.CHAT_GATEWAY_BACKUP !== "off" && (env.AI_GATEWAY_API_KEY || env.VERCEL)
+        ? { model: env.CHAT_BACKUP_MODEL || DEFAULT_BACKUP_MODEL, optionsFor: env.CHAT_BACKUP_MODEL ? (env.CHAT_BACKUP_MODEL.split("/").pop() ?? "").replace(/\./g, "-") : BACKUP_OPTIONS_FOR }
+        : null,
+    /** Seconds one model may stay silent before the next is tried. */
+    firstResponseMs: num(env.CHAT_FIRST_RESPONSE_SECONDS, 20) * 1000,
     rateLimitMax: num(env.CHAT_RATE_LIMIT_MAX, 30),
     rateLimitWindowMs: num(env.CHAT_RATE_LIMIT_WINDOW_MINUTES, 10) * 60_000,
   };
