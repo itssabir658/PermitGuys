@@ -1,6 +1,7 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import {
   APICallError,
+  createGateway,
   createUIMessageStreamResponse,
   hasToolCall,
   isStepCount,
@@ -17,6 +18,7 @@ import { parseConversation, toModelHistory } from "./history";
 import { isSessionId, sharedLeadLedger, type LeadLedger } from "./lead-sessions";
 import { chatContactNotice, notifyOwners } from "./notify-owners";
 import { describeApiError, withModelFallback } from "./model-fallback";
+import { offlineReply } from "./offline-reply";
 import { strategistModelOptions } from "./model-options";
 import { STATIC_SYSTEM_PROMPT, buildDynamicVisitorContext } from "./system-prompt";
 import { advisorTools } from "./tools";
@@ -63,6 +65,8 @@ export interface ChatDeps {
   fetch?: typeof fetch;
   /** Stands in for Anthropic's API in tests (the real models, through the fallback). */
   anthropicFetch?: typeof fetch;
+  /** Stands in for Vercel AI Gateway in tests. */
+  gatewayFetch?: typeof fetch;
 }
 
 const fail = (status: number, reason: AdvisorFailure) =>
@@ -148,10 +152,28 @@ export async function handleChat(rawBody: string, deps: ChatDeps): Promise<Respo
   });
 }
 
-/** The main model, wrapped so a refused request is answered by the fallback model instead. */
+/**
+ * The main model, wrapped so a refused or silent request is answered by the
+ * fallback model, then by the gateway backup, and at worst by the offline
+ * reply (src/lib/ai/model-fallback.ts): a visitor never gets an error.
+ */
 function advisorModel(settings: ReturnType<typeof chatSettings>, deps: ChatDeps): LanguageModel {
   const anthropic = createAnthropic({ apiKey: deps.env.ANTHROPIC_API_KEY, fetch: deps.anthropicFetch });
-  return withModelFallback({ primary: anthropic(settings.model), fallback: anthropic(settings.fallbackModel), log: deps.log ?? console });
+  const backup = settings.backup
+    ? {
+        model: createGateway({ apiKey: deps.env.AI_GATEWAY_API_KEY || undefined, fetch: deps.gatewayFetch })(settings.backup.model),
+        optionsFor: settings.backup.optionsFor,
+        usesAnthropicKey: false,
+      }
+    : undefined;
+  return withModelFallback({
+    primary: anthropic(settings.model),
+    fallback: anthropic(settings.fallbackModel),
+    backup,
+    offline: offlineReply,
+    firstResponseMs: settings.firstResponseMs,
+    log: deps.log ?? console,
+  });
 }
 
 const textOf = (m: AdvisorMessage) =>

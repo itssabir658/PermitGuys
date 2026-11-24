@@ -230,10 +230,18 @@ export function scriptedReply(body: Json): FakeBlock[] {
 }
 
 /** A fetch for createAnthropic({ fetch }) that checks every request and answers from the script. */
-export function fakeAnthropicFetch(log: { requests: Json[]; rejected: string[] }, opts: { unavailableModels?: readonly string[] } = {}) {
+export function fakeAnthropicFetch(log: { requests: Json[]; rejected: string[] }, opts: { unavailableModels?: readonly string[]; invalidKey?: boolean } = {}) {
   return async (_url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const body = JSON.parse(String(init?.body)) as Json;
     log.requests.push(body);
+    // Like the live API with a deleted or disabled key (production, 2026-11-24).
+    if (opts.invalidKey) {
+      log.rejected.push("invalid x-api-key");
+      return new Response(JSON.stringify({ type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } }), {
+        status: 401,
+        headers: { "content-type": "application/json", "x-should-retry": "false" },
+      });
+    }
     // Like the live API for a model this account cannot use (production, 2026-11-17: claude-sonnet-4-5).
     if (opts.unavailableModels?.includes(String(body.model))) {
       log.rejected.push(`model: ${String(body.model)}`);

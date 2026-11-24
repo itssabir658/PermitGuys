@@ -15,12 +15,12 @@ import { fakeAnthropicFetch } from "./fake-anthropic";
 type Log = { info(...a: unknown[]): void; warn(...a: unknown[]): void; error(...a: unknown[]): void };
 const quiet: Log = { info() {}, warn() {}, error() {} };
 
-function conversation(modelId = "claude-opus-5-5", live?: { env: Record<string, string>; unavailableModels: string[]; log: Log }) {
+function conversation(modelId = "claude-opus-5-5", live?: { env: Record<string, string>; unavailableModels: string[]; invalidKey?: boolean; log: Log }) {
   const api = {
     requests: [] as Record<string, unknown>[],
     rejected: [] as string[],
   };
-  const apiFetch = fakeAnthropicFetch(api, { unavailableModels: live?.unavailableModels }) as typeof fetch;
+  const apiFetch = fakeAnthropicFetch(api, { unavailableModels: live?.unavailableModels, invalidKey: live?.invalidKey }) as typeof fetch;
   // With `live`, the handler builds its own models from env (main + fallback), as in production.
   const model = live ? undefined : createAnthropic({ apiKey: "test", fetch: apiFetch })(modelId);
   const posted: { messages: AdvisorMessage[] }[] = [];
@@ -298,13 +298,35 @@ describe("model fallback", () => {
     expect(logged.some((l) => l.includes("status 404") && l.includes("not_found_error"))).toBe(true);
   });
 
-  it("does not hide a rejected API key behind the fallback", async () => {
-    const { shouldFallBack } = await import("@/lib/ai/model-fallback");
-    const { APICallError } = await import("ai");
-    const err = (statusCode: number) => new APICallError({ message: "x", url: "u", requestBodyValues: {}, statusCode });
-    expect(shouldFallBack(err(401))).toBe(false);
-    expect(shouldFallBack(err(404))).toBe(true);
-    expect(shouldFallBack(err(400))).toBe(true);
-    expect(shouldFallBack(err(529))).toBe(true);
+  it("answers with the offline reply and the closing card when the API key is rejected (2026-11-24)", async () => {
+    const logged: string[] = [];
+    const log: Log = { info() {}, warn: (m) => void logged.push(String(m)), error: (m) => void logged.push(String(m)) };
+    const { chat, api, statuses } = conversation(undefined, {
+      env: { ANTHROPIC_API_KEY: "revoked" },
+      unavailableModels: [],
+      invalidKey: true,
+      log,
+    });
+    await chat.sendMessage({ text: "Can I schedule an appointment?" });
+    expect(chat.error).toBeUndefined();
+    expect(statuses).toEqual([200]);
+    const reply = lastReply(chat);
+    const text = replyText(reply);
+    expect(text).toContain("books consultations");
+    expect(text).toContain("416-479-9556");
+    expect(text).toContain("info@permitguys.ca");
+    expect(text).not.toMatch(/647|968|mzaman/i);
+    const card = reply.parts.find((p) => p.type === "tool-presentDealCloserCard");
+    expect(card && card.state === "output-available" && card.output.recommendedAction).toBe("Priority call back");
+    // A rejected key is not retried on another model with the same key.
+    expect(api.requests).toHaveLength(1);
+    expect(logged.some((l) => l.includes("ACTION NEEDED"))).toBe(true);
+
+    // The next turn still works, and the offline turn is valid history for a model that is back.
+    await chat.sendMessage({ text: "I want to build a deck in Oakville" });
+    expect(chat.error).toBeUndefined();
+    const second = lastReply(chat).parts.find((p) => p.type === "tool-presentDealCloserCard");
+    expect(second && second.state === "output-available" && second.output.projectType).toBe("deck");
+    expect(second && second.state === "output-available" && second.output.municipality).toBe("Oakville");
   });
 });

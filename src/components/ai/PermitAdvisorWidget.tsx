@@ -48,7 +48,7 @@ const failures: Record<AdvisorFailure, string> = {
   rate_limited: "You have sent a lot of messages in a short time. Please wait a few minutes and try again.",
   invalid: "Something went wrong with that message. Please try again.",
   too_long: "This conversation has reached its length limit. Start a new chat, or send us your project below.",
-  unavailable: "I couldn't reach our assistant just now. Please try again in a moment.",
+  unavailable: "Our assistant is having trouble connecting, but our team can help you directly.",
 };
 
 const failureOf = (error: Error | undefined): string | null => {
@@ -226,6 +226,28 @@ export function PermitAdvisorWidget() {
     regenerate().catch((err: unknown) => console.error("[advisor] retry failed", err));
   };
 
+  /** One quiet retry per turn for a dropped connection or a failed reply. */
+  const autoRetried = useRef(false);
+  const [autoRetrying, setAutoRetrying] = useState(false);
+  const retryRef = useRef(retry);
+  useEffect(() => {
+    retryRef.current = retry;
+  });
+  useEffect(() => {
+    if (status === "ready" && !error) autoRetried.current = false;
+    if (!error || autoRetried.current || /too_long|rate_limited|not_configured|invalid/.test(error.message)) return;
+    autoRetried.current = true;
+    setAutoRetrying(true);
+    const t = setTimeout(() => {
+      setAutoRetrying(false);
+      retryRef.current();
+    }, 1500);
+    return () => {
+      clearTimeout(t);
+      setAutoRetrying(false);
+    };
+  }, [error, status]);
+
   useEffect(() => {
     const onAsk = (e: Event) => {
       const { question, source } = (e as CustomEvent<AskDetail>).detail ?? { source: "unknown" };
@@ -326,6 +348,8 @@ export function PermitAdvisorWidget() {
   const notice = failureOf(error);
   // Too long, rate limited or switched off: asking again at once would fail the same way.
   const retryable = Boolean(error) && !/too_long|rate_limited|not_configured/.test(error?.message ?? "");
+  // A dropped connection is asked again once, quietly, before the visitor sees a notice.
+  const showNotice = notice && !autoRetrying;
 
   return (
     <>
@@ -505,7 +529,7 @@ export function PermitAdvisorWidget() {
             ),
           )}
 
-          {status === "submitted" && last?.role === "user" ? (
+          {(status === "submitted" || autoRetrying) && last?.role === "user" ? (
             <div className="mt-6 border-l border-ink/20 pl-4">
               <Typing />
             </div>
@@ -523,7 +547,7 @@ export function PermitAdvisorWidget() {
             </ul>
           ) : null}
 
-          {notice ? (
+          {showNotice ? (
             <div role="alert" className="mt-6 border-l-2 border-brand-500 bg-brand-500/5 px-4 py-3 text-sm text-brand-800">
               <p>
                 {notice}{" "}
